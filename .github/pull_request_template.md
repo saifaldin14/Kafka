@@ -14,6 +14,7 @@
 
 ## Checklist
 
+- [ ] Every addition is needed for the goal and is the best available choice; nothing is added "just in case" (see "More is not better" in the engineering skill)
 - [ ] `cargo xtask ci` passes
 - [ ] Tests at the right level (unit/property, simulation, fuzz, compatibility)
 - [ ] Errors carry context; state transitions emit events with a `reason`; hot paths have metrics

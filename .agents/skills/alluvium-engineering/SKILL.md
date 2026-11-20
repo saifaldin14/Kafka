@@ -9,6 +9,19 @@ Alluvium is a Rust reimplementation of Apache Kafka. Feature parity with **Apach
 
 The goal is a codebase that a new engineer can understand in a day and debug at 3 a.m. Every rule below serves one of these: **correctness, security, debuggability, maintainability, scalability**. When they conflict, that order decides. Performance only wins with benchmark evidence.
 
+## More is not better (Braess' paradox)
+
+In Braess' paradox, adding a road to a traffic network makes everyone's journey slower. Software behaves the same way: every extra line, feature, option, abstraction, dependency, task or doc adds paths to reason about, test, secure and debug, and it can make the whole system worse even when it looks like an improvement on its own.
+
+So every addition must earn its place:
+
+- **Purposeful.** Each line of code, feature, config key and doc sentence exists because the end goal needs it: Kafka 4.4.0 parity first, then an ADR-approved improvement. "Might be useful", "for completeness" and "while I'm here" are not reasons.
+- **The best choice, not just a working one.** Before adding something, consider the alternatives, including changing or removing existing code, and doing nothing. Pick the option that best serves the goal with the least new surface.
+- **Removal is progress.** Deleting code, options or docs that no longer serve the goal is a valued change, not a risky one.
+- **Prove the gain.** If you claim an addition makes things better (faster, safer, easier to debug), show it: a test, a benchmark, or a concrete failure it prevents.
+
+The anti-slop rules below are specific cases of this principle. Apply its intent to cases they don't name.
+
 ## Current phase
 
 **Design phase. No Rust code exists yet.**
@@ -87,6 +100,7 @@ These are the habits that make code hard to debug and maintain. Reviewers reject
 
 A change is done only when all of these hold:
 
+- [ ] Every added line, feature, option and dependency is needed for the end goal and is the best available choice ([more is not better](#more-is-not-better-braess-paradox)).
 - [ ] `cargo xtask ci` passes: fmt, clippy `-D warnings`, nextest, doc, deny, layers, codegen drift. (Available from M0.)
 - [ ] New behavior has tests at the right level: unit/property for logic, simulation for distributed logic, a fuzz target for any decoder, compatibility tests for client-visible behavior.
 - [ ] Errors carry context. New state transitions emit events with a `reason` and are in the flight recorder. New hot paths have metrics.

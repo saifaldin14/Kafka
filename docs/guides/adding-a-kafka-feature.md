@@ -26,6 +26,7 @@ Write down the edge cases you find: each error code and the condition that trigg
 
 - Update the API's row in [docs/parity.md](../parity.md) to **In progress**, with a link to the issue.
 - If the change crosses crates, deviates from Kafka, or needs a new abstraction, write an ADR first.
+- Build exactly what Kafka 4.4.0 does for this feature, no more. Extra options, abstractions or "nice to have" behavior make the system harder to test and debug ([more is not better](../../.agents/skills/alluvium-engineering/SKILL.md#more-is-not-better-braess-paradox)).
 - Split the work into PRs that each leave `main` green and correct. A typical split is: codegen, then state machine, then driver and handler, then compatibility tests and advertising.
 
 ## 3. Build bottom-up

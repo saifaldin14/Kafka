@@ -14,6 +14,7 @@ Alluvium is a Rust implementation of Apache Kafka, targeting wire and semantic c
 
 ## Hard rules (summary; the skill is authoritative)
 
+- More is not better (Braess' paradox): every line, feature, option and dependency must be purposeful and the best choice for the end goal. Adding things can make the system worse.
 - Match Kafka 4.4.0 behavior. Read the Kafka source; don't guess. Deviations need an ADR in `docs/adr/`.
 - Core logic does no I/O, reads no clock, spawns no tasks and uses no unseeded randomness.
 - Crates depend only on lower layers ([docs/architecture.md](docs/architecture.md)).

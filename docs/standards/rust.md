@@ -2,6 +2,8 @@
 
 These rules apply to all Rust code in Alluvium. Most are enforced by the compiler, clippy or `xtask`. The rest are enforced in review. Each rule says why, so you can apply its intent to cases it doesn't name.
 
+Above all of them: more code is not better. Every line, item, feature flag, config key and dependency must serve the end goal and be the best available choice ([more is not better](../../.agents/skills/alluvium-engineering/SKILL.md#more-is-not-better-braess-paradox)). In Rust terms: no `pub` item without a caller, no Cargo feature or generic without a current need, and no dependency feature left enabled that isn't used.
+
 ## Toolchain
 
 - The toolchain is pinned in `rust-toolchain.toml` (currently **1.99.0**, edition **2024**). Upgrade it in a dedicated PR that fixes any new lints.

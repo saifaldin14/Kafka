@@ -37,7 +37,7 @@ cargo run -- server --config config/dev.toml   # local single-node broker
 1. **Pick or open an issue.** Each change has a reason someone can find later.
 2. **Find the Kafka reference.** For Kafka behavior, locate the code in Kafka at tag `4.4.0` and the KIP. Link them in the PR.
 3. **Write the test first** for bugs, and early for features.
-4. **Keep it small.** One concern per PR, ideally under ~400 changed lines excluding generated code. Refactors and behavior changes go in separate PRs.
+4. **Keep it small and purposeful.** One concern per PR, ideally under ~400 changed lines excluding generated code. Refactors and behavior changes go in separate PRs. Add only what the goal needs; adding more can make the system worse ([more is not better](.agents/skills/alluvium-engineering/SKILL.md#more-is-not-better-braess-paradox)).
 5. **Update docs in the same PR**: module docs, [docs/parity.md](docs/parity.md), standards, ADRs, glossary.
 6. **Run `cargo xtask ci`** before pushing.
 7. **Fill in the PR template.** For bug fixes, the root cause and "why it escaped" are required.
