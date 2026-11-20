@@ -1,0 +1,180 @@
+# Rust standards
+
+These rules apply to all Rust code in Alluvium. Most are enforced by the compiler, clippy or `xtask`. The rest are enforced in review. Each rule says why, so you can apply its intent to cases it doesn't name.
+
+## Toolchain
+
+- The toolchain is pinned in `rust-toolchain.toml` (currently **1.99.0**, edition **2024**). Upgrade it in a dedicated PR that fixes any new lints.
+- Use rustup's `cargo`. Homebrew and distribution builds ignore `rust-toolchain.toml`.
+- Alluvium is an application, so its minimum supported Rust version is simply the pinned toolchain.
+
+## Workspace configuration
+
+The root `Cargo.toml` contains exactly this lint table. Every crate has `[lints] workspace = true`. CI runs clippy with `-D warnings`, so `warn` fails CI but doesn't block local iteration.
+
+```toml
+[workspace.lints.rust]
+unsafe_code = "forbid"                  # exceptions need an ADR (standards/security.md)
+missing_docs = "warn"
+missing_debug_implementations = "warn"  # every public type must be printable when debugging
+unreachable_pub = "warn"
+unused_qualifications = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"       # `storage::StorageError` reads fine
+must_use_candidate = "allow"            # too noisy; add #[must_use] where ignoring is a bug
+allow_attributes = "warn"               # use #[expect(..., reason = "...")]
+allow_attributes_without_reason = "warn"
+await_holding_lock = "deny"
+await_holding_refcell_ref = "deny"
+dbg_macro = "deny"
+exit = "deny"
+expect_used = "warn"                    # allowed only as expect("invariant: ...") with #[expect]
+large_futures = "warn"
+mem_forget = "deny"
+panic = "warn"
+print_stderr = "deny"                   # use tracing
+print_stdout = "deny"                   # use tracing (the CLI's output module is the exception)
+todo = "deny"
+unimplemented = "deny"
+unwrap_used = "deny"
+undocumented_unsafe_blocks = "deny"
+rc_buffer = "warn"
+string_slice = "warn"                   # byte slicing of str panics on char boundaries
+```
+
+Decoder code must check input-derived indexing and arithmetic. Cargo doesn't let a crate combine `workspace = true` with extra lints, so the decoder crates (`alluvium-protocol`, `alluvium-records`) put `#![deny(clippy::indexing_slicing, clippy::arithmetic_side_effects)]` at the top of `lib.rs`. `alluvium-storage` puts the same attribute on its decoding modules.
+
+The root `clippy.toml` contains exactly this:
+
+```toml
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true
+allow-indexing-slicing-in-tests = true
+allow-dbg-in-tests = true
+allow-print-in-tests = true
+disallowed-methods = [
+  { path = "std::time::Instant::now", reason = "inject time through alluvium_types::Clock" },
+  { path = "std::time::SystemTime::now", reason = "inject time through alluvium_types::Clock" },
+  { path = "std::thread::sleep", reason = "use the Clock; never block a thread to wait" },
+  { path = "std::thread::spawn", reason = "spawn through the task supervisor" },
+  { path = "tokio::spawn", reason = "spawn through the task supervisor so tasks are named, traced and shut down" },
+  { path = "tokio::task::spawn", reason = "spawn through the task supervisor so tasks are named, traced and shut down" },
+  { path = "tokio::time::sleep", reason = "use the Clock so simulation controls time" },
+  { path = "tokio::time::Instant::now", reason = "inject time through alluvium_types::Clock" },
+  { path = "tokio::sync::mpsc::unbounded_channel", reason = "all queues are bounded; use mpsc::channel with a configured capacity" },
+  { path = "rand::rng", reason = "use the injected seeded RNG" },
+  { path = "rand::thread_rng", reason = "use the injected seeded RNG" },
+  { path = "std::collections::HashMap::new", reason = "RandomState breaks deterministic replay; use BTreeMap or alluvium_types::collections::SeededHashMap" },
+  { path = "std::collections::HashMap::with_capacity", reason = "RandomState breaks deterministic replay; use BTreeMap or alluvium_types::collections::SeededHashMap" },
+  { path = "std::collections::HashSet::new", reason = "RandomState breaks deterministic replay; use BTreeSet or alluvium_types::collections::SeededHashSet" },
+  { path = "std::collections::HashSet::with_capacity", reason = "RandomState breaks deterministic replay; use BTreeSet or alluvium_types::collections::SeededHashSet" },
+  { path = "std::process::exit", reason = "only the binary's main may exit; return errors" },
+]
+disallowed-types = [
+  { path = "std::collections::hash_map::RandomState", reason = "breaks deterministic replay; seed hashers from the injected RNG" },
+]
+```
+
+Each disallowed item has exactly one sanctioned wrapper, and the wrapper carries a single `#[expect(clippy::disallowed_methods, reason = "…")]`. For example, `SystemClock` is the one place that calls `Instant::now`. The seeded hash maps take their seed from the injected RNG: random per process in production, so attacker-chosen keys can't cause hash flooding, and fixed in simulation, so runs replay exactly.
+
+Release profile:
+
+```toml
+[profile.release]
+panic = "abort"              # a panic is a bug; never continue with corrupted state (ADR-0004)
+overflow-checks = true       # correctness over a few percent of speed; revisit only with benchmarks
+debug = "line-tables-only"   # usable backtraces in production
+lto = "thin"
+```
+
+## Errors
+
+Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
+
+- **Each library crate has one or a few `thiserror` enums**, named for what failed (`StorageError`, `DecodeError`), plus `type Result<T, E = XError> = std::result::Result<T, E>`.
+- **Variants carry context as fields**, not as formatted strings. Use `SegmentCorrupt { topic_partition, base_offset, position, reason: CorruptionReason }`, not `Other(String)`.
+- **`Display` messages** are lowercase sentence fragments without trailing punctuation, and don't repeat the source error's text. The chain is printed through `source()`.
+- **Kafka error codes are mapped in one place per crate**: `impl From<&XError> for ErrorCode`, as an exhaustive `match` with no `_ =>` arm. A new variant must force a decision. Error codes that depend on the request version are chosen in the handler, next to the version logic.
+- **Log an error once**, at the place that handles it (decides to retry, respond or crash). Code that passes an error upward does not log it.
+- **No silent discards.** `let _ = x;` and `.ok()` on a `Result` need a `// Ignored because …` comment.
+- `anyhow` is allowed in the binary, `xtask` and tests only.
+
+## Panics
+
+- A panic means an Alluvium bug. Nothing reachable from network or disk input may panic.
+- Use `expect` only to state an invariant the code itself guarantees, with the message `"invariant: <what holds and why>"`. Mark it `#[expect(clippy::expect_used, reason = "invariant")]`.
+- State machines check invariants with `debug_assert!` in hot paths and `assert!` where a violation would corrupt data. ([architecture §8](../architecture.md#8-invariants))
+
+## Types and naming
+
+- **Newtypes for identifiers and positions**: `Offset(i64)`, `LeaderEpoch(i32)`, `BrokerId(i32)`, `PartitionIndex(i32)`, `ProducerId(i64)`, `ProducerEpoch(i16)`, `Sequence(i32)`. The compiler then catches swapped arguments, which are a classic bug in this domain.
+- **Validated construction** via `TryFrom`. For example, `TopicName` enforces Kafka's rules: legal characters `[a-zA-Z0-9._-]`, at most 249 characters, not `.` or `..`. Once you hold a `TopicName`, it is valid.
+- **Enums instead of booleans** in signatures: `IsolationLevel::ReadCommitted`, not `read_committed: bool`.
+- **Make illegal states unrepresentable**: a leader-only field lives in the `Leader` variant, not in an `Option` on a shared struct.
+- **Kafka's names, exactly**: `high_watermark`, `log_end_offset`, `last_stable_offset`, `log_start_offset`, `isr`, `leader_epoch`. The [glossary](../glossary.md) is the authority. Inventing a synonym is a review failure.
+- Units in names where ambiguous: `timeout_ms`, `segment_bytes`, `retention: Duration`.
+
+## Modules and documentation
+
+- Each crate's `lib.rs` starts with a `//!` doc covering: responsibility, layer, Kafka counterpart (with path at tag `4.4.0`), key invariants, and an entry-point type.
+- Each non-trivial module starts with a `//!` doc covering what it owns, its invariants, and its lock or ownership rules.
+- **One responsibility per module.** No `utils`, `helpers`, `common` or `misc`. A module over ~600 lines (excluding tests) is a signal to split by responsibility.
+- Use `foo.rs` with `foo/` for submodules, not `mod.rs`.
+- **Default to `pub(crate)`.** A crate's `pub` items are its contract, documented with `missing_docs`.
+- Comments explain *why*. Use these standard tags:
+  - `// Parity: <kafka path>@4.4.0 <Class.method> (KIP-n)` for code mirroring Kafka behavior.
+  - `// Deviation: ADR-NNNN` where behavior intentionally differs.
+  - `// INVARIANT: …` for a property the surrounding code relies on.
+  - `// SAFETY: …` for any approved `unsafe`.
+  - `// TODO(#issue): …`. TODOs without an issue are rejected.
+- No commented-out code. Git remembers it.
+
+## Async and concurrency
+
+- **Layers 0–2 are synchronous and runtime-free** ([architecture §5](../architecture.md#5-layering-rules)).
+- **Never block a Tokio worker**: no `std::fs`, no `std::thread::sleep`, no CPU work over ~100 µs (large decompression, CRC over big batches) outside the designated blocking pools.
+- **Never hold a lock across `.await`**. This is enforced by clippy for std locks. For async locks, prefer restructuring over `tokio::sync::Mutex`.
+- **Prefer single ownership plus messages to shared locks.** If a lock is needed, the module doc lists what it protects and the lock order. Acquiring locks in any other order is a bug.
+- **Bounded channels only.** Capacity comes from config and is documented next to the channel, along with what happens when it is full.
+- **Every network wait has a timeout** derived from config (Kafka's `request.timeout.ms`, `connections.max.idle.ms` and so on).
+- **Cancellation safety**: every `select!` branch documents whether its future is cancel-safe. Non-cancel-safe work is moved into a task that owns it.
+- **Tasks** are spawned only via the supervisor in `alluvium-server` (`supervisor.spawn(name, future)`). It attaches a span, registers the task for shutdown and diagnostics, and escalates panics.
+
+## Dependencies
+
+- All versions live in `[workspace.dependencies]`. Crates use `dep = { workspace = true }`.
+- Enable minimal features (`default-features = false` where practical).
+- A new dependency needs the justification in [security.md](security.md#dependencies).
+- Preferred building blocks: `bytes`, `thiserror`, `tracing`, `tokio`, `rustls`, `crc32c`, `proptest`, `prometheus-client`. Introduce alternatives only with an ADR.
+
+## Generated code
+
+- Protocol and metadata types are generated by `cargo xtask codegen` from the vendored Kafka schemas ([ADR-0008](../adr/0008-protocol-code-generated-from-kafka-schemas.md)).
+- Output is **committed** under `src/generated/`, starts with `// @generated by xtask codegen from schemas/kafka-4.4.0 — do not edit`, and is formatted with rustfmt. That way it can be read, grepped, stepped through in a debugger, and reviewed in diffs.
+- CI fails if regenerating changes anything. To change generated code, change the generator.
+
+## Performance
+
+- Correctness and clarity first. An optimization that makes code harder to understand needs a benchmark showing the gain on a realistic workload, and the PR must include the numbers.
+- Hot paths (record batch handling, fetch, produce append, request decode) avoid per-record allocation. Payloads stay as `bytes::Bytes` and are never copied into `Vec<u8>`.
+- Criterion benchmarks for hot paths live in each crate's `benches/`. Regressions above the agreed threshold fail the benchmark job.
+
+## Tooling commands (contract implemented in M0)
+
+| Command | Does |
+|---|---|
+| `cargo xtask ci` | Everything below in CI order. Run it before pushing. |
+| `cargo fmt --all --check` | Formatting (default rustfmt settings) |
+| `cargo clippy --workspace --all-targets -- -D warnings` | Lints |
+| `cargo nextest run --workspace` | Tests |
+| `cargo doc --workspace --no-deps` with `RUSTDOCFLAGS="-D warnings"` | Docs build, no broken links |
+| `cargo deny check` | Advisories, licenses, banned and duplicate crates, sources |
+| `cargo xtask check-layers` | Crate dependency layering ([architecture §5](../architecture.md#5-layering-rules)) |
+| `cargo xtask codegen --check` | Generated code is up to date |
+| `cargo xtask compat` | Real-client and differential tests (Docker) |
+| `cargo xtask fuzz <target> [--time 60s]` | Run a fuzz target |
