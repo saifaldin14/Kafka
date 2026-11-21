@@ -24,17 +24,17 @@ The anti-slop rules below are specific cases of this principle. Apply its intent
 
 ## Current phase
 
-**Design phase. No Rust code exists yet.**
+**Milestone M0 (workspace skeleton and tooling) is in progress.** The Cargo workspace and the `cargo xtask` checks exist; the first product crate is `alluvium-types`, which is part of M0.
 
-The first code milestone is **M0: workspace skeleton and tooling** (see the [milestones](../../../docs/backlog/README.md#milestones)). Do not implement any feature until M0 has landed: the workspace, lint config, `xtask` checks and CI. If asked to build a feature before then, say so and offer to do M0 first.
+Do not implement any feature outside M0 until M0 has landed: the workspace, lint config, `xtask` checks, CI and `alluvium-types` (see the [milestones](../../../docs/backlog/README.md#milestones)). If asked to build a feature before then, say so and offer to do M0 first.
 
-To find the next task, run `python3 docs/backlog/tools/backlog.py next`. From M0 onward this moves to `cargo xtask backlog next`.
+To find the next task, run `cargo xtask backlog next`.
 
 Update this section when the phase changes.
 
 ## Before any task
 
-1. **Find the backlog task.** If asked "what's next", or given no specific task, pick one with `backlog.py next` and follow the [selection rules](../../../docs/backlog/README.md#choosing-the-next-task). If you were given work, find its task (`grep` or `backlog.py show <ID>`). If no task exists for it, add one first ([adding work](../../../docs/backlog/README.md#adding-work)). Check that the task's dependencies are `Done`, then set it to `In Progress`.
+1. **Find the backlog task.** If asked "what's next", or given no specific task, pick one with `cargo xtask backlog next` and follow the [selection rules](../../../docs/backlog/README.md#choosing-the-next-task). If you were given work, find its task (`grep` or `cargo xtask backlog show <ID>`). If no task exists for it, add one first ([adding work](../../../docs/backlog/README.md#adding-work)). Check that the task's dependencies are `Done`, then set it to `In Progress`.
 2. Identify the crate(s) and layer you are touching in [docs/architecture.md](../../../docs/architecture.md). If the work doesn't fit the layering rules, stop and propose an ADR. Do not bend the rules.
 3. Read the module docs (`//!`) of the code you are changing. They state its responsibility and invariants.
 4. For Kafka behavior, read the **Kafka 4.4.0 source** (tag `4.4.0` of `apache/kafka`) and the relevant KIP. Never guess Kafka semantics from memory.
@@ -104,7 +104,7 @@ Don't start a task whose dependencies aren't `Done`. Don't start work that has n
 
 **Refactoring.** Make no behavior change in the same PR. Tests must pass before and after, unchanged. If tests need changing, it isn't a pure refactor.
 
-**Adding a crate.** Only when its first real code lands, never as an empty placeholder. Register its layer in `xtask` and [docs/architecture.md](../../../docs/architecture.md). It inherits `[workspace.lints]`. Its `lib.rs` starts with a `//!` doc covering responsibility, layer, Kafka counterpart and key invariants.
+**Adding a crate.** Only when its first real code lands, never as an empty placeholder. Register its layer in `xtask` and [docs/architecture.md](../../../docs/architecture.md). It inherits `[workspace.lints]`. Its `lib.rs` starts with a `//!` doc covering responsibility, layer, Kafka counterpart and key invariants. Its deep dive in [docs/crates/](../../../docs/crates/README.md) is written from the template as the crate fills out (each crate has a DOCS-F11 task).
 
 **Adding a dependency.** Add it in `[workspace.dependencies]` with minimal features. `cargo deny check` must pass. Justify it in the PR: what it does, why std or existing dependencies can't, maintenance status, `unsafe` usage, transitive dependency count.
 
@@ -122,7 +122,7 @@ A change is done only when all of these hold:
 - [ ] Errors carry context. New state transitions emit events with a `reason` and are in the flight recorder. New hot paths have metrics.
 - [ ] No new `unsafe`, unbounded queue, untimed network wait, unnamed task, secret in logs, or panic reachable from input.
 - [ ] Kafka-mirroring code has `// Parity:` citations.
-- [ ] The backlog task is updated (`In Review`, then `Done`), and new work found along the way is added as tasks. `backlog.py check` passes.
+- [ ] The backlog task is updated (`In Review`, then `Done`), and new work found along the way is added as tasks. `cargo xtask backlog check` passes.
 - [ ] Docs that describe the changed thing are updated in the same PR: module docs, architecture, standards, glossary, ADR.
 - [ ] A new engineer could understand the change from the code, its docs and the PR description alone.
 
@@ -135,6 +135,7 @@ Standards evolve. If a rule is wrong for a case, change the standard (and add an
 | Need | Read |
 |---|---|
 | System design, crates, layers, runtime model, invariants | [docs/architecture.md](../../../docs/architecture.md) |
+| How one crate works inside, and how to debug it | [docs/crates/](../../../docs/crates/README.md) |
 | Rust rules, lint config, async, errors, tooling commands | [docs/standards/rust.md](../../../docs/standards/rust.md) |
 | Logging, tracing fields, metrics, flight recorders, debug tools | [docs/standards/debuggability.md](../../../docs/standards/debuggability.md) |
 | Threat model, input handling, TLS/SASL/ACLs, dependencies | [docs/standards/security.md](../../../docs/standards/security.md) |

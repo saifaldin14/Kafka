@@ -520,11 +520,11 @@ Done when: the guide maps existing Kafka dashboards, alerts and log configuratio
 P2 · M9 · Task · deps: DOCS-0115 · labels: docs
 Done when: a FAQ answers recurring migration questions, each linking to the canonical page, and lists open known issues by Bug id.
 
-## [To Do] DOCS-F11 Contributor deep dives
+## [In Progress] DOCS-F11 Contributor deep dives
 P1 · M0 · Feature · deps: none
 Scope: Per-crate design docs as crates land.
 
-### [To Do] DOCS-0120 Deep-dive template and crate index
+### [Done] DOCS-0120 Deep-dive template and crate index
 P1 · M0 · Task · deps: none · labels: docs
 Done when: docs/crates/README.md indexes crates in the order of the architecture code map; the template has sections for responsibility and layer, Kafka counterpart with parity citations, state machines (inputs, actions, states), invariants and where they are checked, events, metrics and flight recorder, error enum and Kafka error mapping, test strategy, and how to debug the crate.
 

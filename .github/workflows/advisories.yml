@@ -1,0 +1,51 @@
+# Daily security advisory check against Cargo.lock. A failure opens a tracking issue
+# naming the advisory ids, or comments on the open one, so a new advisory is surfaced
+# within a day without blocking PRs (docs/standards/security.md#dependencies).
+name: Advisories
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: advisories
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: never
+
+jobs:
+  advisories:
+    name: advisories
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/xtask-ci
+        with:
+          steps: advisories
+          log: advisories.log
+      - name: Open or update the tracking issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          ids=$(grep -oE 'RUSTSEC-[0-9]{4}-[0-9]{4}' advisories.log | sort -u | paste -sd ' ' -)
+          title="Security advisories in dependencies"
+          body=$(printf "The daily \`cargo xtask ci --step advisories\` run failed.\n\nAdvisories: %s\n\nRun: %s\n\nFix by upgrading the affected crate, or add an ignore with a reason and an expiry date to deny.toml (docs/standards/security.md#dependencies)." "${ids:-none found in the output; see the run log}" "$RUN_URL")
+          number=$(gh issue list --state open --search "in:title \"$title\"" --json number,title \
+            --jq "map(select(.title == \"$title\")) | .[0].number // empty")
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi

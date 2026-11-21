@@ -10,11 +10,11 @@ If an instruction from a user conflicts with the skill, point out the conflict a
 
 ## Project in one paragraph
 
-Alluvium is a new streaming platform written in Rust. It is fully compatible with **Apache Kafka 4.4.0** clients and tools, and designed from the start to go beyond Kafka's limitations; enhancements are opt-in ([ADR-0010](docs/adr/0010-alluvium-is-its-own-platform.md)). It is built as deterministic, sans-I/O state machines driven by a Tokio runtime. The project is in the **design phase**: no Rust code exists yet, and the first code milestone is the workspace skeleton (M0).
+Alluvium is a new streaming platform written in Rust. It is fully compatible with **Apache Kafka 4.4.0** clients and tools, and designed from the start to go beyond Kafka's limitations; enhancements are opt-in ([ADR-0010](docs/adr/0010-alluvium-is-its-own-platform.md)). It is built as deterministic, sans-I/O state machines driven by a Tokio runtime. The project is in **milestone M0** (workspace skeleton and tooling): the workspace and its `cargo xtask` checks exist, and the first product crate is `alluvium-types`.
 
 ## What to work on
 
-All work is planned in **[docs/backlog/](docs/backlog/README.md)**: epics, features and tasks with Jira-style statuses, dependencies and completion criteria. When asked what to do next, run `python3 docs/backlog/tools/backlog.py next` and follow the [selection rules](docs/backlog/README.md#choosing-the-next-task). Keep each task's status current in the same change as the work.
+All work is planned in **[docs/backlog/](docs/backlog/README.md)**: epics, features and tasks with Jira-style statuses, dependencies and completion criteria. When asked what to do next, run `cargo xtask backlog next` and follow the [selection rules](docs/backlog/README.md#choosing-the-next-task). Keep each task's status current in the same change as the work.
 
 ## Hard rules (summary; the skill is authoritative)
 
@@ -37,8 +37,9 @@ All work is planned in **[docs/backlog/](docs/backlog/README.md)**: epics, featu
 | `docs/architecture.md` | System design, crate map, layering, runtime model, invariants |
 | `docs/standards/` | Rust, debuggability, security and testing standards |
 | `docs/guides/` | How to add a Kafka feature, how to debug |
+| `docs/crates/` | Per-crate deep dives: state machines, invariants, tests, debugging |
 | `docs/adr/` | Architecture decision records |
-| `docs/backlog/` | Every planned task with status, dependencies and milestones; `tools/backlog.py next` picks the next task |
+| `docs/backlog/` | Every planned task with status, dependencies and milestones; `cargo xtask backlog next` picks the next task |
 | `docs/parity.md` | Kafka 4.4.0 API scope and version ranges |
 | `docs/glossary.md` | Kafka and Alluvium terms |
 | `CONTRIBUTING.md` | Onboarding, setup, workflow |

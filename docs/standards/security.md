@@ -11,7 +11,7 @@ Alluvium stores other people's data and listens on the network. Security is a de
 | Eavesdropping or tampering on the network | TLS via rustls; plaintext only on loopback unless explicitly allowed |
 | Credential theft | SCRAM stored as salted hashes; `Secret<T>`; secrets never in logs, metrics, debug output or command-line arguments |
 | Corrupted or tampered data on disk | CRC32C validation on recovery and replication paths; `verify log`; disk input treated as untrusted |
-| Hash-flooding denial of service | Per-process random hasher seeds (see [rust.md](rust.md#workspace-configuration)) |
+| Hash-flooding denial of service | SipHash-1-3 hash maps keyed per process from OS entropy; the keys are never logged ([ADR-0012](../adr/0012-seeded-randomness-and-hashing.md)) |
 | Malicious or compromised dependency | Minimal dependencies, `cargo deny`, lockfile, review of new crates |
 | Exposed diagnostics | Diagnostics endpoint loopback-only by default; authentication required otherwise |
 
@@ -86,7 +86,7 @@ Before adding a dependency, the PR answers:
 4. How many transitive dependencies does it add (`cargo tree -e normal -p <crate>`)?
 5. Is its license allowed by `deny.toml`?
 
-[`deny.toml`](../../deny.toml) policy, checked by the `deny` step of `cargo xtask ci`:
+[`deny.toml`](../../deny.toml) policy, checked by the `deny` and `advisories` steps of `cargo xtask ci`:
 
 - **Scope:** every dependency on the supported targets, including optional ones (`all-features = true`).
 - **Advisories:** vulnerable, unsound, unmaintained and yanked crates are errors. Each ignore has a reason and an expiry date, written as `{ id = "RUSTSEC-…", reason = "…", expiry = "YYYY-MM-DD" }`. The `manifests` step requires both fields; cargo-deny rejects a malformed date and reports the advisory again once the date passes.
@@ -94,9 +94,9 @@ Before adding a dependency, the PR answers:
 - **Bans:** duplicate versions warn and wildcard versions are errors. `openssl`, `openssl-sys` and `native-tls` are denied, to keep TLS on rustls (ADR-0006).
 - **Sources:** crates.io only. No other registries and no git dependencies (the `[sources]` section of `deny.toml`).
 
-Fixture tests in `xtask/tests/deny.rs` prove that a banned crate, a wildcard version and a GPL-licensed dependency are rejected.
+Fixture tests in `xtask/tests/deny.rs` prove that a banned crate, a wildcard version and a GPL-licensed dependency are rejected. In CI, `deny` is a required job. `advisories` runs on every PR without blocking it, and [`advisories.yml`](../../.github/workflows/advisories.yml) runs it daily: a failure opens a tracking issue naming the advisory ids, or comments on the open one.
 
-`Cargo.lock` is committed. Dependency updates are separate PRs: Dependabot opens one PR per crate each week ([`.github/dependabot.yml`](../../.github/dependabot.yml)). CI pins GitHub Actions by commit SHA.
+`Cargo.lock` is committed. Dependency updates are separate PRs: Dependabot opens one PR per crate each week ([`.github/dependabot.yml`](../../.github/dependabot.yml)). CI pins GitHub Actions by commit SHA, with the version in a comment; `cargo xtask check-workflows` enforces that, along with job timeouts and explicit permissions, and Dependabot proposes SHA bumps weekly.
 
 ## Durability as a security property
 

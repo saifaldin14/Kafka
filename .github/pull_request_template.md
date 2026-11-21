@@ -20,6 +20,6 @@
 - [ ] Errors carry context; state transitions emit events with a `reason`; hot paths have metrics
 - [ ] No new `unsafe`, unbounded queue, untimed network wait, unnamed task, logged secret, or input-reachable panic
 - [ ] `// Parity:` citations added for Kafka-mirroring code
-- [ ] Backlog task status updated; new work found along the way added as tasks; `python3 docs/backlog/tools/backlog.py check` passes
+- [ ] Backlog task status updated; new work found along the way added as tasks; `cargo xtask backlog check` passes
 - [ ] Docs describing the changed behavior are updated (module docs, architecture, standards, ADRs, glossary)
 - [ ] New dependencies are justified (see `docs/standards/security.md#dependencies`)

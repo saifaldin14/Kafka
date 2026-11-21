@@ -136,11 +136,12 @@ On-disk formats are documented in `docs/formats/` (created with storage in M2) p
 ## Reproduction
 
 - Every simulation test prints its seed on failure, along with the exact command to replay it: `ALLUVIUM_SIM_SEED=<seed> cargo nextest run <test>`.
+- Production RNG keys and hash seeds are the opposite: never logged, printed, exported or shown on a debug endpoint, since they would let an attacker flood hash maps or predict timeouts. `SeededRng` and `HashSeed` print no state in `Debug` ([ADR-0012](../adr/0012-seeded-randomness-and-hashing.md)).
 - Because core logic is sans-I/O, drivers can **journal the inputs** to a state machine (off by default; metadata only, never payloads). A journal can be replayed locally against the same code to reproduce a production state exactly.
 
 ## Printing values
 
 - Every type implements `Debug` (lint-enforced).
 - `Secret<T>` prints `Secret(***)`.
-- Payload bytes print as their length and a CRC, for example `Bytes { len: 1048576, crc32c: 0x1a2b3c4d }`, never their contents.
+- Payload bytes print as their length and a CRC, for example `Bytes { len: 1048576, crc32c: 0x1a2b3c4d }`, never their contents: wrap them in `alluvium_types::PayloadSummary`.
 - Never log credentials, SASL tokens, record keys, values or headers. Topic names, group ids, client ids and principals may be logged, as Kafka does.

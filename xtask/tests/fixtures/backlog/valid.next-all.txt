@@ -1,0 +1,7 @@
+Current milestone: M0
+BBB-0001         P0 M0   Story  A task whose feature dependency is satisfied up to its milestone
+                 02-bbb-beta.md:7 · Done when: It is ready although AAA-0005 is open.
+AAA-0002         P1 M0   Task   A ready task
+                 01-aaa-alpha.md:22 · Done when: It appears in `next`.
+AAA-0005         P1 M2   Task   A later-milestone task of the first feature
+                 01-aaa-alpha.md:14 · Done when: It is ready but in a later milestone.
