@@ -1,8 +1,6 @@
 [workspace]
 resolver = "3"
-# Product crates will live under `crates/`; add the `crates/*` glob with the
-# first one (Cargo rejects a glob that matches nothing).
-members = ["xtask", "xtask/lint-canary"]
+members = ["crates/*", "xtask", "xtask/lint-canary"]
 
 [workspace.package]
 edition = "2024"
@@ -10,10 +8,15 @@ rust-version = "1.99"
 publish = false
 
 [workspace.dependencies]
+crc32c = { version = "0.6.9", default-features = false }
+getrandom = { version = "0.4.3", default-features = false }
+proptest = { version = "1.12.0", default-features = false, features = ["std"] }
 rand = { version = "0.10.4", default-features = false }
 serde_json = { version = "1.0.154", default-features = false, features = ["std"] }
+thiserror = { version = "2.0.21", default-features = false }
 tokio = { version = "1.54.1", default-features = false }
 toml = { version = "1.2.2", default-features = false, features = ["parse", "serde", "std"] }
+zeroize = { version = "1.9.2", default-features = false, features = ["alloc"] }
 
 # docs/standards/rust.md#workspace-configuration
 [workspace.lints.rust]

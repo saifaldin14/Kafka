@@ -8,10 +8,11 @@ publish.workspace = true
 [features]
 # Compiles the fixtures, which break the lints on purpose. Only
 # `cargo xtask lint-canary` enables it.
-canary = ["dep:rand", "dep:tokio"]
+canary = ["dep:getrandom", "dep:rand", "dep:tokio"]
 
-# Only for the fixtures that call the disallowed tokio and rand functions.
+# Only for the fixtures that call the disallowed getrandom, rand and tokio functions.
 [dependencies]
+getrandom = { workspace = true, optional = true }
 rand = { workspace = true, optional = true, features = ["std", "thread_rng"] }
 tokio = { workspace = true, optional = true, features = ["rt", "sync", "time"] }
 

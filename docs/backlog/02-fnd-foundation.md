@@ -37,9 +37,13 @@ Notes: rand 0.10 removed `rand::thread_rng`, and `tokio::task::spawn` is the sam
 P0 · M0 · Task · deps: FND-0004 · labels: test · ref: docs/standards/rust.md#panics
 Done when: Covered: a bare `#[allow]` fires `allow_attributes`; `#[expect]` without a reason fires `allow_attributes_without_reason`; the sanctioned forms pass (`#[expect(clippy::disallowed_methods, reason = "…")]` wrapper, `#[expect(clippy::expect_used, reason = "invariant")]` with `expect("invariant: …")`); `await_holding_lock`, `string_slice`, `missing_docs` and `unreachable_pub` fire. Negative fixtures fire exactly the named lint and positive fixtures produce zero diagnostics; `await_holding_lock` is exercised with a `std::sync::Mutex` held across `.await` in an `async fn` without any runtime dependency; the sanctioned-wrapper pattern is documented in the canary crate's `//!` doc with a link to rust.md.
 
-### [To Do] FND-0063 clippy.toml bans rand 0.10's other unseeded entry points, not only `rand::rng`
+### [Done] FND-0063 clippy.toml bans rand 0.10's other unseeded entry points, not only `rand::rng`
 P1 · M0 · Task · deps: FND-0005 · labels: test · ref: docs/standards/rust.md#workspace-configuration
 Done when: Every public function in rand 0.10 (the version in `Cargo.lock`) that draws from the thread-local or OS RNG without a caller-supplied seed is listed, from reading its source (for example `rand::random`, `random_iter`, `random_range`, `random_bool`, `random_ratio`, `fill` and OS-seeded constructors); each is added to clippy.toml and the rust.md block with the reason "use the injected seeded RNG"; each has a lint canary fixture; `cargo xtask lint-canary` passes.
+
+### [Done] FND-0064 clippy.toml bans the remaining clock, timer and entropy entry points from ADR-0011 and ADR-0012
+P1 · M0 · Task · deps: FND-0004 · labels: test · ref: ADR-0011, ADR-0012
+Done when: `disallowed-methods` gains `std::time::Instant::elapsed`, `std::time::SystemTime::elapsed`, `tokio::time::sleep_until`, `tokio::time::timeout`, `tokio::time::timeout_at`, `tokio::time::interval`, `tokio::time::interval_at`, `getrandom::fill`, `getrandom::fill_uninit`, `getrandom::u32` and `getrandom::u64`, in clippy.toml and the rust.md block together; reasons point to `Clock`, `Timer` and `SeededRng::from_os_entropy`; every new entry has a lint canary fixture; `xtask`'s `Stopwatch` carries the matching `#[expect]`; `cargo xtask ci` passes.
 
 ### [Done] FND-0007 `cargo xtask check-manifests` (first rules): `[workspace.lints]` and `clippy.toml` must equal the TOML blocks in docs/standards/rust.md (parsed and compared semantically), and every workspace member must declare `[lints] workspace = true`
 P0 · M0 · Task · deps: FND-0003, FND-0018 · labels: docs · ref: docs/standards/rust.md#workspace-configuration
@@ -78,7 +82,7 @@ Done when: `cargo deny check sources` passes; a fixture with a git dependency fa
 P0 · M0 · Task · deps: FND-0012, FND-0011, FND-0013, FND-0020, FND-0021 · labels: security · ref: docs/standards/rust.md#tooling-commands-contract-implemented-in-m0
 Done when: `cargo xtask ci --step deny` runs all four checks and fails with the cargo-deny diagnostics on any violation; a missing or wrong-version cargo-deny gives an error with the install command; the rust.md tooling table is still accurate.
 
-### [To Do] FND-0015 `check-manifests` rule: member crates declare every dependency as `{ workspace = true }` (optionally adding `features`/`optional`), never with an inline version, path or git source
+### [Done] FND-0015 `check-manifests` rule: member crates declare every dependency as `{ workspace = true }` (optionally adding `features`/`optional`), never with an inline version, path or git source
 P1 · M0 · Task · deps: FND-0007 · labels: security · ref: docs/standards/rust.md#dependencies
 Done when: Fixture tests cover inline versions, inline paths for non-workspace crates, and git sources, each rejected with the crate and dependency named; workspace-internal path dependencies are declared in `[workspace.dependencies]` too, so the rule has no exceptions.
 
@@ -86,10 +90,10 @@ Done when: Fixture tests cover inline versions, inline paths for non-workspace c
 P2 · M1 · Task · deps: FND-0014 · labels: security, docs · ref: docs/standards/security.md#dependencies
 Done when: The command lists added, removed and upgraded crates from the two `Cargo.lock` files with license and transitive count; the PR template's dependency checkbox links to the five questions in security.md#dependencies. The command works offline from the two lockfiles plus `cargo metadata`; a unit test on two fixture lockfiles checks the diff; CI writes the output to the job summary when `Cargo.lock` changes; the questions are linked, not copied.
 
-### [In Progress] FND-0017 `.github/dependabot.yml` for the `cargo` ecosystem: weekly, one PR per dependency, lockfile updates labelled `dependencies`
+### [Done] FND-0017 `.github/dependabot.yml` for the `cargo` ecosystem: weekly, one PR per dependency, lockfile updates labelled `dependencies`
 P1 · M0 · Task · deps: none · labels: security · ref: docs/standards/security.md#dependencies
 Done when: Dependabot's config validation passes on GitHub; the policy "dependency updates are separate PRs" in security.md is now automated and the doc says so.
-Notes: config committed and parsed locally; GitHub's Dependabot validation can only be confirmed after it is pushed. Set Done once the repository's Dependabot page shows no config errors.
+Notes: Verified after the push of c9fa497: GitHub's `.github/dependabot.yml` check run succeeded, and two Dependabot `cargo in /.` update runs completed successfully.
 
 ## [Done] FND-F04 `xtask` framework
 P0 · M0 · Feature · deps: FND-F01
@@ -116,7 +120,7 @@ Done when: `cargo xtask ci` runs the steps in the documented order and exits non
 P0 · M0 · Task · deps: FND-0021 · labels: test · ref: docs/standards/testing.md#rules
 Done when: `cargo nextest run --profile ci` writes the JUnit file; a deliberately slow test (not committed) is reported as slow and then terminated, as shown in the PR; testing.md links to the profile and explains why retries are 0.
 
-## [Done] FND-F05 Crate layer checker
+## [In Progress] FND-F05 Crate layer checker
 P0 · M0 · Feature · deps: FND-F04
 Scope: `cargo xtask check-layers`: layer table, forbidden runtime dependencies for layers 0-2, allow-list with ADR references, sync check with docs/architecture.md.
 
@@ -152,41 +156,53 @@ Done when: Fixtures in `xtask/tests/fixtures/layers/` use path dependencies only
 P0 · M0 · Task · deps: FND-0023, FND-0021 · labels: docs · ref: ADR-0009
 Done when: Moving a crate to another layer in only one of the two places fails with a diff that lists crates missing on each side and layer mismatches; a test runs against a copy of the real architecture.md; `cargo xtask ci --step layers` runs on the real workspace; architecture §5 and ADR-0009 point to the command.
 
-## [To Do] FND-F06 CI pipeline
+### [To Do] FND-0065 `check-layers` source rule: no layer 1–2 crate names `SystemClock` or `SeededRng::from_os_entropy` (ADR-0011, ADR-0012)
+P2 · M1 · Task · deps: FND-0030 · ref: ADR-0011
+Done when: The rule scans the `src/` of layer 1–2 workspace crates (layer 0 is `alluvium-types`, which defines them) and reports each use with file:line and the ADR; fixture crates show a use rejected and a doc comment mentioning the names accepted; the real workspace passes.
+
+## [In Progress] FND-F06 CI pipeline
 P0 · M0 · Feature · deps: FND-F02, FND-F03, FND-F04, FND-F05
 Scope: GitHub Actions running `cargo xtask ci` on Linux and macOS, caching, SHA-pinned actions, required checks.
 
-### [To Do] FND-0031 `.github/workflows/ci.yml` skeleton with least-privilege defaults and the `lint` job
+### [Done] FND-0031 `.github/workflows/ci.yml` skeleton with least-privilege defaults and the `lint` job
 P0 · M0 · Task · deps: FND-0021 · labels: security · ref: docs/standards/security.md#dependencies
 Done when: Triggers are `pull_request`, `push` to main and `merge_group`; workflow-level `permissions: {}` and per-job `contents: read`; per-ref concurrency with cancel-in-progress for PRs; `actions/checkout` with `persist-credentials: false`; `timeout-minutes` on every job; the `lint` job runs `cargo xtask ci --step fmt --step clippy` on ubuntu-24.04. All actions are pinned to full commit SHAs with a `# vX.Y.Z` comment; the toolchain comes from `rust-toolchain.toml` through the runner's rustup, with no third-party toolchain action; a PR with a formatting error fails the `lint` job.
+Notes: Verified on GitHub once the repository was made public (the private repository's Actions were blocked by billing). PR #1's run [44934033847](https://github.com/saifaldin14/Kafka/actions/runs/44934033847) passed every job, and a PR with a formatting error ([#3](https://github.com/saifaldin14/Kafka/pull/3), run [44934858823](https://github.com/saifaldin14/Kafka/actions/runs/44934858823)) failed `lint`. actionlint 1.7.12 reports nothing on the workflows.
 
-### [To Do] FND-0032 CI caching: SHA-pinned `Swatinem/rust-cache` keyed on OS, toolchain and `Cargo.lock`, which also caches the tools installed by `cargo xtask tools install`; only pushes to main save the cache, PRs restore only
+### [In Review] FND-0032 CI caching: SHA-pinned `Swatinem/rust-cache` keyed on OS, toolchain and `Cargo.lock`, which also caches the tools installed by `cargo xtask tools install`; only pushes to main save the cache, PRs restore only
 P0 · M0 · Task · deps: FND-0031 · labels: perf
 Done when: A second run of an unchanged PR restores the cache and skips tool installation (cold and warm times are in the PR description); PR runs cannot write the cache that main uses (`save-if` on main only), which protects against cache poisoning.
+Notes: Cold times on PR #1, with tools built from source: lint 0.4 min, policy 0.4, deny 2.3, advisories 1.9, docs 3.6, test 6.2 (ubuntu-24.04) and 7.0 (macos-15). Still to do: show a PR restoring the cache that main saves, and record the warm times, after #1 merges.
 
-### [To Do] FND-0033 CI `test` job: matrix of ubuntu-24.04 and macos-15 (arm64), `fail-fast: false`, running `cargo xtask ci --step test` and uploading the nextest JUnit report as an artifact
+### [Done] FND-0033 CI `test` job: matrix of ubuntu-24.04 and macos-15 (arm64), `fail-fast: false`, running `cargo xtask ci --step test` and uploading the nextest JUnit report as an artifact
 P0 · M0 · Task · deps: FND-0031, FND-0022 · labels: test · ref: docs/standards/testing.md#rules
 Done when: Both matrix legs run on every PR; a failing test fails only its leg and the report artifact is downloadable; runner images are pinned by label (not `-latest`), and the labels are recorded in the NFR-F10 portability matrix once it exists.
+Notes: Both legs ran on every PR. A test failing only on macOS ([#7](https://github.com/saifaldin14/Kafka/pull/7), run [44934882076](https://github.com/saifaldin14/Kafka/actions/runs/44934882076)) failed `test (macos-15)` while `test (ubuntu-24.04)` passed, and both `junit-<os>` artifacts were downloadable. The first CI run found a real bug: the cargo-deny fixture tests depended on terminal colour, fixed in fdc054f. NFR-F10's matrix doesn't exist yet; it should record ubuntu-24.04 and macos-15.
 
-### [To Do] FND-0034 CI `docs` job running `cargo xtask ci --step doc --step links`
+### [Done] FND-0034 CI `docs` job running `cargo xtask ci --step doc --step links`
 P0 · M0 · Task · deps: FND-0031, FND-0054, FND-0055 · labels: docs
 Done when: An intentionally broken intra-doc link or Markdown anchor in a test PR fails the job; the job runs on Linux only, with a documented reason (rustdoc output does not depend on the platform).
+Notes: A PR with a broken intra-doc link and a broken Markdown anchor ([#5](https://github.com/saifaldin14/Kafka/pull/5), run [44934873977](https://github.com/saifaldin14/Kafka/actions/runs/44934873977)) failed both steps: rustdoc reported "unresolved link to `NoSuchType`" and lychee "Cannot find fragment".
 
-### [To Do] FND-0035 CI dependency jobs: `deny` (bans, licenses, sources) as a required check, plus a separate `advisories` job that runs on PRs without blocking them and on a daily schedule that opens or updates a tracking issue when it fails
+### [In Review] FND-0035 CI dependency jobs: `deny` (bans, licenses, sources) as a required check, plus a separate `advisories` job that runs on PRs without blocking them and on a daily schedule that opens or updates a tracking issue when it fails
 P0 · M0 · Task · deps: FND-0031, FND-0014 · labels: security · ref: docs/standards/security.md#dependencies
 Done when: A newly published advisory cannot block unrelated PRs, yet it is surfaced within a day as an issue with the advisory id; the scheduled job has `issues: write` only; a banned crate fails the required `deny` job.
+Notes: `deny` is verified: a banned `openssl-sys` ([#6](https://github.com/saifaldin14/Kafka/pull/6), run [44934876168](https://github.com/saifaldin14/Kafka/actions/runs/44934876168)) failed it with "explicitly banned". `advisories` runs on PRs without failing them. The issue step has been tested both ways: once accidentally against GitHub, opening (since deleted) issue #2 with deduplicated advisory ids, and against a stand-in `gh` for the comment path. Still to do: a scheduled or dispatched run from main, possible only after #1 merges.
 
-### [To Do] FND-0036 CI `policy` job: `cargo xtask ci --step layers --step manifests --step lint-canary` (later policy steps such as `backlog` and `workflows` are added to this job when they land)
+### [Done] FND-0036 CI `policy` job: `cargo xtask ci --step layers --step manifests --step lint-canary` (later policy steps such as `backlog` and `workflows` are added to this job when they land)
 P0 · M0 · Task · deps: FND-0031, FND-0030, FND-0007, FND-0004 · ref: ADR-0009
 Done when: A PR that adds an upward crate dependency fails this job with the check-layers message; a PR that weakens a lint in `[workspace.lints]` fails `manifests` and `lint-canary`.
+Notes: An upward crate dependency ([#8](https://github.com/saifaldin14/Kafka/pull/8), run [44934887613](https://github.com/saifaldin14/Kafka/actions/runs/44934887613)) failed `policy` with "alluvium-types (layer 0) -> alluvium-storage (layer 1): a crate may depend only on lower layers". Setting `todo` to `allow` ([#4](https://github.com/saifaldin14/Kafka/pull/4), run [44935062251](https://github.com/saifaldin14/Kafka/actions/runs/44935062251)) failed both `manifests` and `lint-canary`.
 
-### [To Do] FND-0037 CI `ci-success` aggregator job (`needs:` every required job, `if: always()`) as the single required status check
+### [Done] FND-0037 CI `ci-success` aggregator job (`needs:` every required job, `if: always()`) as the single required status check
 P0 · M0 · Task · deps: FND-0033, FND-0034, FND-0035, FND-0036
 Done when: The job fails when any needed job failed, was cancelled or was skipped unexpectedly, and passes only when all succeeded; adding a new required job means adding it to `needs:`, which the workflow comment states; FND-F11's repository settings name `ci-success` as the required check.
+Notes: `ci-success` failed in all six demonstration PRs ([#3](https://github.com/saifaldin14/Kafka/pull/3) to [#8](https://github.com/saifaldin14/Kafka/pull/8)), each with exactly one other failing job, and passed on [44934033847](https://github.com/saifaldin14/Kafka/actions/runs/44934033847). Making it a required check is a repository setting that is now possible because the repository is public; FND-0061 (repository settings and ruleset) does it.
 
-### [To Do] FND-0038 `cargo xtask check-workflows` (SHA pinning, no `pull_request_target`, timeouts, permissions) and Dependabot for actions
+### [In Review] FND-0038 `cargo xtask check-workflows` (SHA pinning, no `pull_request_target`, timeouts, permissions) and Dependabot for actions
 P1 · M0 · Task · deps: FND-0031, FND-0007 · labels: security · ref: docs/standards/security.md#dependencies
 Done when: Every `uses:` in `.github/workflows/*.yml` must be pinned to a 40-hex SHA with a `# v…` comment; every job sets `timeout-minutes` and explicit `permissions`; Dependabot covers the `github-actions` ecosystem weekly. Fixture workflows (tag-pinned action, missing timeout, missing permissions, `pull_request_target`) are each rejected with file:line; the real workflows pass; registered as the `workflows` step in the `policy` job; Dependabot opens SHA-bump PRs that keep the version comment.
+Notes: check-workflows is verified locally and runs in `policy` on every PR. Still to do: show a Dependabot github-actions PR bumping a SHA while keeping the version comment. All actions are at their latest release today, so this waits for the next upstream release.
 
 ### [To Do] FND-0039 Lint workflow files with actionlint (version pinned in the xtask tool table) as part of the `workflows` step
 P2 · M0 · Task · deps: FND-0038
@@ -196,29 +212,32 @@ Done when: A workflow with an invalid expression or an unknown runner label fail
 P0 · M0 · Task · deps: FND-0037, FND-0038, FND-0045 · labels: docs
 Done when: Both runs are linked in the PR; the "Current phase" section of the engineering skill, AGENTS.md ("design phase"), CONTRIBUTING.md ("contract that milestone M0 implements") and the M0 row of docs/parity.md describe the new state; the remaining open M0 tasks (if any) are listed in the PR as non-blocking for starting M1 work.
 
-## [To Do] FND-F07 Backlog tooling
+## [In Progress] FND-F07 Backlog tooling
 P1 · M0 · Feature · deps: FND-F04
 Scope: Port `docs/backlog/tools/backlog.py` (check, next, stats) to `cargo xtask backlog` and run `backlog check` in CI.
 
-### [To Do] FND-0041 `cargo xtask backlog` parser: read `docs/backlog/*.md` into typed items (`Status`, `Priority`, `Milestone`, item type, deps, labels, ref, `Done when`, trailers) following the README item format, with file:line on every parse error
+### [Done] FND-0041 `cargo xtask backlog` parser: read `docs/backlog/*.md` into typed items (`Status`, `Priority`, `Milestone`, item type, deps, labels, ref, `Done when`, trailers) following the README item format, with file:line on every parse error
 P1 · M0 · Task · deps: none · labels: docs · ref: docs/backlog/README.md
 Done when: Parsing the real backlog gives the same item count and fields as `backlog.py` (checked by a test that compares against a committed JSON golden produced once by `backlog.py`); malformed headings, metadata lines and missing `Done when` are reported with file:line; unit tests use the README examples.
+Notes: The committed goldens cover fixture backlogs in `xtask/tests/fixtures/backlog/`, because a golden of the real backlog would go stale with every status change. On the real backlog, both parsers gave the same 7,836 items field for field, checked once when the port landed.
 
-### [To Do] FND-0042 `cargo xtask backlog check [--allow-empty-features] [--epic CODE]` with every rule of `backlog.py check`
+### [Done] FND-0042 `cargo xtask backlog check [--allow-empty-features] [--epic CODE]` with every rule of `backlog.py check`
 P1 · M0 · Task · deps: FND-0041 · labels: docs · ref: docs/backlog/README.md
 Done when: Rules: id formats, duplicates, unknown deps, cross-epic deps only on features, no deps on later-milestone tasks, feature milestone = earliest task, feature status derived from tasks, Blocked/Won't Do trailers, cycles, README epic table and totals. For each rule, a fixture backlog triggers exactly the error text that `backlog.py` produces (committed goldens); the real backlog gives identical output from both tools; exit code 1 on any error.
 
-### [To Do] FND-0043 `cargo xtask backlog next [--all] [-n N]` and `show <ID>`: readiness with feature-dependency expansion by milestone, ordered by milestone, priority, epic table order and id
+### [Done] FND-0043 `cargo xtask backlog next [--all] [-n N]` and `show <ID>`: readiness with feature-dependency expansion by milestone, ordered by milestone, priority, epic table order and id
 P1 · M0 · Task · deps: FND-0041 · labels: docs · ref: docs/backlog/README.md
 Done when: Golden tests on fixture backlogs cover: a blocked task, a feature dependency satisfied only up to the task's milestone, claimed tasks skipped, and working ahead when the current milestone has nothing ready; the output on the real backlog matches `backlog.py next --all`.
 
-### [To Do] FND-0044 `cargo xtask backlog stats [--write]`: per-epic and per-milestone totals rewritten between the README `backlog-stats` markers
+### [Done] FND-0044 `cargo xtask backlog stats [--write]`: per-epic and per-milestone totals rewritten between the README `backlog-stats` markers
 P2 · M0 · Task · deps: FND-0041 · labels: docs · ref: docs/backlog/README.md
 Done when: The generated table is byte-identical to `backlog.py stats` on the real backlog; `--write` changes only the text between the markers; `check` (without `--allow-empty-features`) fails when the totals are stale.
+Notes: `stats` and `--write` landed first, byte-identical on the real backlog. The stale-totals failure arrived with `check` (FND-0042).
 
-### [To Do] FND-0045 Run `cargo xtask backlog check` as the `backlog` step in the CI `policy` job, delete `docs/backlog/tools/backlog.py`, and point the README, the engineering skill and CONTRIBUTING to `cargo xtask backlog`
+### [In Review] FND-0045 Run `cargo xtask backlog check` as the `backlog` step in the CI `policy` job, delete `docs/backlog/tools/backlog.py`, and point the README, the engineering skill and CONTRIBUTING to `cargo xtask backlog`
 P1 · M0 · Task · deps: FND-0042, FND-0043, FND-0044, FND-0036 · labels: docs · ref: docs/backlog/README.md
 Done when: CI fails a PR that breaks the backlog format or a dependency rule; no file references `backlog.py` (grep is clean); the golden tests no longer need Python.
+Notes: `git grep backlog.py` matches only FND-F07's own task descriptions, which record what was ported; every instruction, doc, code comment and error message now points to `cargo xtask backlog`. The goldens are the specification now, so their two Python-specific details changed: Rust string quoting for a malformed metadata line, and the item count for a backlog with invalid items.
 
 ## [To Do] FND-F08 Licensing and attribution
 P1 · M0 · Feature · deps: none

@@ -1,0 +1,143 @@
+# Every check is a step of `cargo xtask ci` (xtask/src/ci.rs); jobs only choose which
+# steps run where. Security defaults (docs/standards/security.md#dependencies):
+# no permissions unless a job asks, actions pinned to full commit SHAs, no persisted
+# checkout credentials, and a timeout on every job.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  lint:
+    name: lint (fmt, clippy)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/xtask-ci
+        with:
+          steps: fmt clippy
+
+  policy:
+    name: policy (layers, manifests, workflows, backlog, lint canary)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/xtask-ci
+        with:
+          steps: layers manifests workflows backlog lint-canary
+
+  docs:
+    name: docs (rustdoc, links)
+    # Linux only: rustdoc output and Markdown links don't depend on the platform.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/xtask-ci
+        with:
+          steps: doc links
+
+  deny:
+    name: deny (bans, licenses, sources)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/xtask-ci
+        with:
+          steps: deny
+
+  advisories:
+    name: advisories (non-blocking)
+    # A new advisory depends on the date, not on the change, so it must not block
+    # unrelated PRs: this job is not in ci-success's `needs`, and its failure doesn't
+    # fail the run. advisories.yml checks daily and tracks failures in an issue.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/xtask-ci
+        with:
+          steps: advisories
+
+  test:
+    name: test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        # Runner images pinned by label, never `-latest`.
+        os: [ubuntu-24.04, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/xtask-ci
+        with:
+          steps: test
+      - name: Upload the JUnit report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: junit-${{ matrix.os }}
+          path: target/nextest/ci/junit.xml
+          if-no-files-found: warn
+          retention-days: 14
+
+  ci-success:
+    name: ci-success
+    # The single required status check. Every job that must pass is in `needs`: add a
+    # new required job here. `advisories` is deliberately left out.
+    if: always()
+    needs: [lint, policy, docs, deny, test]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Require every needed job to have succeeded
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          if echo "$NEEDS" | jq -e 'any(.[]; .result != "success")' > /dev/null; then
+            echo "A required job failed, was cancelled or was skipped."
+            exit 1
+          fi

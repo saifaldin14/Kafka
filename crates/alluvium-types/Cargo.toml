@@ -1,0 +1,23 @@
+[package]
+name = "alluvium-types"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[features]
+# `alluvium_types::strategies`: proptest strategies for this crate's types, for other
+# crates' property tests (docs/standards/testing.md#shared-strategies).
+proptest-strategies = ["dep:proptest"]
+
+[dependencies]
+crc32c = { workspace = true }
+proptest = { workspace = true, optional = true }
+thiserror = { workspace = true }
+zeroize = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+
+[lints]
+workspace = true

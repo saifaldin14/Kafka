@@ -28,6 +28,10 @@ Done when: Tests show `run_for` stops at the exact simulated time, a never-true 
 P1 · M2 · Task · deps: TEST-0004 · labels: test, nfr
 Done when: Tests show two nodes reading different wall times at the same simulated instant, a scheduled 10-minute backwards jump visible only on the target node, and monotonic readings unaffected; NFR-F13's skew tests use this API.
 
+### [To Do] TEST-0131 Simulation `Timer`: futures from `sleep_until` complete when the scheduler advances `SimClock` past their deadline (ADR-0011)
+P0 · M2 · Task · deps: TEST-0003 · labels: test · ref: ADR-0011
+Done when: Tests show a future stays pending until the scheduler reaches its deadline, futures with equal deadlines wake in registration order, and a dropped future's timer is cancelled without leaking a queue slot; it works with whichever executor TEST-0002 chooses.
+
 ## [To Do] TEST-F02 Simulated network
 P0 · M3 · Feature · deps: TEST-F01
 Scope: Message delivery with configurable drop, delay, duplication, reordering and partitions between nodes.

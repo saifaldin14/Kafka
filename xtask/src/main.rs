@@ -27,8 +27,13 @@
 //!
 //! Commands arrive with the backlog task that needs them; nothing is added ahead of use.
 
+mod backlog;
+mod backlog_check;
+mod backlog_next;
+mod backlog_stats;
 mod check_layers;
 mod check_manifests;
+mod check_workflows;
 mod ci;
 mod cli;
 mod clock;
@@ -42,7 +47,7 @@ mod tools;
 
 use std::process::ExitCode;
 
-use cli::Command;
+use cli::{BacklogCommand, Command};
 
 /// How an `xtask` invocation ended. Converted to the process exit code in `main`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -85,9 +90,16 @@ fn run(command: &Command, out: &mut impl std::io::Write) -> Exit {
             Exit::Success
         }
         Command::Ci(options) => ci::run(options, out),
-        Command::ToolsInstall => install::run(out),
+        Command::ToolsInstall { steps } => install::run(steps, out),
         Command::CheckLayers(options) => check_layers::run(options, out),
         Command::CheckManifests => check_manifests::run(out),
+        Command::CheckWorkflows => check_workflows::run(out),
+        Command::Backlog(BacklogCommand::Next { all, count }) => {
+            backlog_next::run_next(*all, *count, out)
+        }
+        Command::Backlog(BacklogCommand::Show { id }) => backlog_next::run_show(id, out),
+        Command::Backlog(BacklogCommand::Stats { write }) => backlog_stats::run(*write, out),
+        Command::Backlog(BacklogCommand::Check(options)) => backlog_check::run(options, out),
         Command::LintCanary => lint_canary::run(out),
     }
 }

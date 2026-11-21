@@ -62,13 +62,31 @@ allow-print-in-tests = true
 disallowed-methods = [
   { path = "std::time::Instant::now", reason = "inject time through alluvium_types::Clock" },
   { path = "std::time::SystemTime::now", reason = "inject time through alluvium_types::Clock" },
-  { path = "std::thread::sleep", reason = "use the Clock; never block a thread to wait" },
+  { path = "std::time::Instant::elapsed", reason = "read time through alluvium_types::Clock" },
+  { path = "std::time::SystemTime::elapsed", reason = "read time through alluvium_types::Clock" },
+  { path = "std::thread::sleep", reason = "never block a thread to wait; async code waits through alluvium_types::Timer" },
   { path = "std::thread::spawn", reason = "spawn through the task supervisor" },
-  { path = "tokio::spawn", reason = "spawn through the task supervisor so tasks are named, traced and shut down" },
-  { path = "tokio::time::sleep", reason = "use the Clock so simulation controls time" },
-  { path = "tokio::time::Instant::now", reason = "inject time through alluvium_types::Clock" },
-  { path = "tokio::sync::mpsc::unbounded_channel", reason = "all queues are bounded; use mpsc::channel with a configured capacity" },
-  { path = "rand::rng", reason = "use the injected seeded RNG" },
+  { path = "tokio::spawn", reason = "spawn through the task supervisor so tasks are named, traced and shut down", allow-invalid = true },
+  { path = "tokio::time::sleep", reason = "wait through alluvium_types::Timer so simulation controls time", allow-invalid = true },
+  { path = "tokio::time::sleep_until", reason = "wait through alluvium_types::Timer so simulation controls time", allow-invalid = true },
+  { path = "tokio::time::timeout", reason = "wait through alluvium_types::Timer so simulation controls time", allow-invalid = true },
+  { path = "tokio::time::timeout_at", reason = "wait through alluvium_types::Timer so simulation controls time", allow-invalid = true },
+  { path = "tokio::time::interval", reason = "wait through alluvium_types::Timer so simulation controls time", allow-invalid = true },
+  { path = "tokio::time::interval_at", reason = "wait through alluvium_types::Timer so simulation controls time", allow-invalid = true },
+  { path = "tokio::time::Instant::now", reason = "inject time through alluvium_types::Clock", allow-invalid = true },
+  { path = "tokio::sync::mpsc::unbounded_channel", reason = "all queues are bounded; use mpsc::channel with a configured capacity", allow-invalid = true },
+  { path = "rand::rng", reason = "use the injected seeded RNG", allow-invalid = true },
+  { path = "rand::random", reason = "use the injected seeded RNG", allow-invalid = true },
+  { path = "rand::random_iter", reason = "use the injected seeded RNG", allow-invalid = true },
+  { path = "rand::random_range", reason = "use the injected seeded RNG", allow-invalid = true },
+  { path = "rand::random_bool", reason = "use the injected seeded RNG", allow-invalid = true },
+  { path = "rand::random_ratio", reason = "use the injected seeded RNG", allow-invalid = true },
+  { path = "rand::fill", reason = "use the injected seeded RNG", allow-invalid = true },
+  { path = "rand::make_rng", reason = "use the injected seeded RNG; OS entropy is read only by SeededRng::from_os_entropy", allow-invalid = true },
+  { path = "getrandom::fill", reason = "use the injected seeded RNG; OS entropy is read only by SeededRng::from_os_entropy", allow-invalid = true },
+  { path = "getrandom::fill_uninit", reason = "use the injected seeded RNG; OS entropy is read only by SeededRng::from_os_entropy", allow-invalid = true },
+  { path = "getrandom::u32", reason = "use the injected seeded RNG; OS entropy is read only by SeededRng::from_os_entropy", allow-invalid = true },
+  { path = "getrandom::u64", reason = "use the injected seeded RNG; OS entropy is read only by SeededRng::from_os_entropy", allow-invalid = true },
   { path = "std::collections::HashMap::new", reason = "RandomState breaks deterministic replay; use BTreeMap or alluvium_types::collections::SeededHashMap" },
   { path = "std::collections::HashMap::with_capacity", reason = "RandomState breaks deterministic replay; use BTreeMap or alluvium_types::collections::SeededHashMap" },
   { path = "std::collections::HashSet::new", reason = "RandomState breaks deterministic replay; use BTreeSet or alluvium_types::collections::SeededHashSet" },
@@ -76,13 +94,15 @@ disallowed-methods = [
   { path = "std::process::exit", reason = "only the binary's main may exit; return errors" },
 ]
 disallowed-types = [
+  { path = "rand::rngs::ThreadRng", reason = "use the injected seeded RNG", allow-invalid = true },
+  { path = "rand::rngs::SysRng", reason = "use the injected seeded RNG; OS entropy is read only by SeededRng::from_os_entropy", allow-invalid = true },
   { path = "std::collections::hash_map::RandomState", reason = "breaks deterministic replay; seed hashers from the injected RNG" },
 ]
 ```
 
 Each disallowed item has exactly one sanctioned wrapper, and the wrapper carries a single `#[expect(clippy::disallowed_methods, reason = "…")]`. For example, `SystemClock` is the one place that calls `Instant::now`. The seeded hash maps take their seed from the injected RNG: random per process in production, so attacker-chosen keys can't cause hash flooding, and fixed in simulation, so runs replay exactly.
 
-Clippy matches functions, not paths, so one entry bans every path to a function: `tokio::spawn` also covers `tokio::task::spawn`. A second entry for the same function would silently replace the first one's reason. Every entry needs a fixture in the lint canary, which also checks that clippy reports the configured reason.
+Clippy matches functions, not paths, so one entry bans every path to a function: `tokio::spawn` also covers `tokio::task::spawn`. A second entry for the same function would silently replace the first one's reason. Clippy also can't ban a trait method by path (`ThreadRng::default`), so such cases ban the type in `disallowed-types`. The `tokio` and `rand` entries carry `allow-invalid = true`: their functions exist only with some of the crates' features (rand's `thread_rng`, tokio's `rt` and `time`), and without it clippy warns in every crate that uses fewer features. A misspelled entry is still caught, because the lint canary compiles them all and requires every entry to fire. Every entry needs a fixture in the lint canary, which also checks that clippy reports the configured reason.
 
 Release profile:
 
@@ -149,7 +169,7 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 
 ## Dependencies
 
-- All versions live in `[workspace.dependencies]`. Crates use `dep = { workspace = true }`.
+- All versions and sources live in `[workspace.dependencies]`, including path dependencies between workspace crates. Crates use `dep = { workspace = true }`, adding only `features` or `optional`. The `manifests` step enforces this.
 - Enable minimal features (`default-features = false` where practical).
 - A new dependency needs the justification in [security.md](security.md#dependencies).
 - Preferred building blocks: `bytes`, `thiserror`, `tracing`, `tokio`, `rustls`, `crc32c`, `proptest`, `prometheus-client`. Introduce alternatives only with an ADR.
@@ -168,14 +188,15 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 
 ## Tooling commands (contract implemented in M0)
 
-`cargo xtask ci` runs every check CI runs, as named steps in a fixed order. CI jobs pick steps with `--step`, so each check is defined once, in `xtask/src/ci.rs`.
+`cargo xtask ci` runs every check CI runs, as named steps in a fixed order. CI jobs pick steps with `--step`, so each check is defined once, in `xtask/src/ci.rs`. Each job in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) runs its steps through the [`xtask-ci`](../../.github/actions/xtask-ci/action.yml) action, which installs the pinned toolchain, restores the cache (saved only by pushes to main, so a PR can't poison it) and installs only the tools those steps need, and runs them with `--keep-going` so a job reports every failing step.
 
 | Command | Does |
 |---|---|
 | `cargo xtask ci` | Runs every step below in order; stops at the first failure unless `--keep-going` is given. Run it before pushing. |
 | `cargo xtask ci --list` | Lists the steps in run order |
 | `cargo xtask ci --step <name>` | Runs only the named steps (repeatable), still in run order |
-| `cargo xtask tools install` | Installs the pinned versions of the external tools (`xtask/src/tools.rs` is the only place versions appear) |
+| `cargo xtask tools install [--step <name>]...` | Installs the pinned versions of the external tools, or only those the named steps need (`xtask/src/tools.rs` is the only place versions appear) |
+| `cargo xtask backlog check`, `next [--all] [-n N]`, `show <ID>`, `stats [--write]` | The backlog rules, the next ready tasks, one item with its dependencies, and the totals in the backlog README ([backlog rules](../backlog/README.md#choosing-the-next-task)) |
 
 | Step | Runs |
 |---|---|
@@ -183,9 +204,12 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 | `clippy` | `cargo clippy --workspace --all-targets --locked -- -D warnings` |
 | `doc` | `cargo doc --workspace --no-deps --document-private-items --locked` with `RUSTDOCFLAGS="-D warnings"`: docs build with no broken intra-doc links or invalid HTML. Private items are documented too, because most items are `pub(crate)` and their docs must stay correct |
 | `layers` | `cargo xtask check-layers`: crate dependency layering ([architecture §5](../architecture.md#5-layering-rules)); `--print` shows the layer table |
-| `manifests` | `cargo xtask check-manifests`: `[workspace.lints]` and `clippy.toml` equal the blocks in [workspace configuration](#workspace-configuration), compared as parsed TOML, and every member has `[lints] workspace = true`; every advisory ignore in `deny.toml` has a `reason` and an `expiry` |
+| `manifests` | `cargo xtask check-manifests`: `[workspace.lints]` and `clippy.toml` equal the blocks in [workspace configuration](#workspace-configuration), compared as parsed TOML, and every member has `[lints] workspace = true` and inherits every dependency with `{ workspace = true }`; every advisory ignore in `deny.toml` has a `reason` and an `expiry` |
+| `workflows` | `cargo xtask check-workflows`: every `uses:` in `.github/workflows/` and `.github/actions/` is pinned to a commit SHA with a `# v…` comment, no workflow uses `pull_request_target`, and every job sets `timeout-minutes` and `permissions` |
+| `backlog` | `cargo xtask backlog check`: the backlog's format, dependency rules, feature statuses and README totals ([backlog rules](../backlog/README.md)) |
 | `lint-canary` | `cargo xtask lint-canary`: clippy on the fixtures in [`xtask/lint-canary`](../../xtask/lint-canary/src/lib.rs) must report exactly the lints their `expect-lint:` comments name, so a removed or weakened lint fails. Every `clippy.toml` entry must fire with its configured reason |
-| `deny` | `cargo deny --locked check`: advisories, licenses, banned and duplicate crates, sources ([`deny.toml`](../../deny.toml)) |
+| `deny` | `cargo deny --locked check bans licenses sources`: banned and duplicate crates, licenses, sources ([`deny.toml`](../../deny.toml)) |
+| `advisories` | `cargo deny --locked check advisories`: security advisories against `Cargo.lock`. Separate from `deny` because a new advisory depends on the date, not the change, so CI reports it without blocking unrelated PRs |
 | `links` | `lychee --offline --include-fragments` over README.md, AGENTS.md, CLAUDE.md, CONTRIBUTING.md, `docs/`, `.agents/` and `.github/`: relative links and `#anchors` resolve. External URLs are not checked here |
 | `test` | `cargo nextest run --workspace --locked --profile ci` ([`.config/nextest.toml`](../../.config/nextest.toml)) |
 

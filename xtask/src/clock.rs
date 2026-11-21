@@ -19,6 +19,10 @@ impl Stopwatch {
         Self(Instant::now())
     }
 
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "xtask is a dev tool outside simulation; this is its only elapsed-time read"
+    )]
     pub(crate) fn elapsed(self) -> Duration {
         self.0.elapsed()
     }
