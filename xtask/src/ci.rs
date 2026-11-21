@@ -129,9 +129,19 @@ pub(crate) const STEPS: &[CiStep] = &[
     },
     CiStep {
         name: "deny",
-        summary: "Dependency policy: advisories, bans, licenses, sources (deny.toml)",
+        summary: "Dependency policy: bans, licenses, sources (deny.toml)",
         program: Program::Cargo,
-        args: &["deny", "--locked", "check"],
+        args: &["deny", "--locked", "check", "bans", "licenses", "sources"],
+        env: &[],
+        requires: &[&tools::DENY],
+    },
+    // Separate from `deny`: a newly published advisory depends on the date, not on the
+    // change being tested, so CI reports it without blocking unrelated PRs.
+    CiStep {
+        name: "advisories",
+        summary: "Security advisories against Cargo.lock (cargo deny check advisories)",
+        program: Program::Cargo,
+        args: &["deny", "--locked", "check", "advisories"],
         env: &[],
         requires: &[&tools::DENY],
     },
@@ -261,6 +271,7 @@ mod tests {
             "manifests",
             "lint-canary",
             "deny",
+            "advisories",
             "links",
             "test",
         ] {

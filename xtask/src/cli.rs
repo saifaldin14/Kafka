@@ -15,7 +15,10 @@ use crate::ci;
 pub(crate) enum Command {
     Help,
     Ci(CiOptions),
-    ToolsInstall,
+    /// `tools install [--step <name>]...`: only the tools those CI steps need, or all.
+    ToolsInstall {
+        steps: Vec<String>,
+    },
     CheckLayers(LayerOptions),
     CheckManifests,
     LintCanary,
@@ -52,8 +55,8 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
         "Run the CI checks; `--list` shows the steps",
     ),
     (
-        "tools install",
-        "Install the pinned versions of the external tools the checks use",
+        "tools install [--step <name>]...",
+        "Install the pinned external tools, or only those the named CI steps need",
     ),
     (
         "check-layers [--print] [--manifest-path <path>]",
@@ -167,7 +170,7 @@ pub(crate) fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Command,
         "tools" => match rest.split_first() {
             None => Err(UsageError::MissingSubcommand { command: "tools" }),
             Some((sub, rest)) if sub == "install" => {
-                no_arguments("tools install", rest).map(|()| Command::ToolsInstall)
+                parse_tools_install(rest).map(|steps| Command::ToolsInstall { steps })
             }
             Some((sub, _)) => Err(UsageError::UnknownSubcommand {
                 command: "tools",
@@ -236,6 +239,24 @@ fn parse_check_layers(rest: &[String]) -> Result<LayerOptions, UsageError> {
         }
     }
     Ok(options)
+}
+
+fn parse_tools_install(rest: &[String]) -> Result<Vec<String>, UsageError> {
+    let mut options = CiOptions::default();
+    let mut args = rest.iter();
+    while let Some(arg) = args.next() {
+        if arg != "--step" {
+            return Err(UsageError::UnexpectedArgument {
+                command: "tools install",
+                argument: arg.clone(),
+            });
+        }
+        let name = args
+            .next()
+            .ok_or(UsageError::MissingValue { flag: "--step" })?;
+        add_step(&mut options, name)?;
+    }
+    Ok(options.steps)
 }
 
 fn parse_backlog(rest: &[String]) -> Result<BacklogCommand, UsageError> {
@@ -424,7 +445,19 @@ mod tests {
     fn tools_install_parses_and_other_subcommands_do_not() {
         assert_eq!(
             parse(args(&["tools", "install"])),
-            Ok(Command::ToolsInstall)
+            Ok(Command::ToolsInstall { steps: Vec::new() })
+        );
+        assert_eq!(
+            parse(args(&[
+                "tools", "install", "--step", "test", "--step", "links"
+            ])),
+            Ok(Command::ToolsInstall {
+                steps: vec!["test".to_owned(), "links".to_owned()]
+            })
+        );
+        assert_eq!(
+            parse(args(&["tools", "install", "--step", "nope"])),
+            Err(UsageError::UnknownStep("nope".to_owned()))
         );
         assert_eq!(
             parse(args(&["tools"])),
