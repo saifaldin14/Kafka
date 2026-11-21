@@ -12,6 +12,39 @@ publish = false
 [workspace.dependencies]
 
 # docs/standards/rust.md#workspace-configuration
+[workspace.lints.rust]
+unsafe_code = "forbid"                  # exceptions need an ADR (standards/security.md)
+missing_docs = "warn"
+missing_debug_implementations = "warn"  # every public type must be printable when debugging
+unreachable_pub = "warn"
+unused_qualifications = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"       # `storage::StorageError` reads fine
+must_use_candidate = "allow"            # too noisy; add #[must_use] where ignoring is a bug
+allow_attributes = "warn"               # use #[expect(..., reason = "...")]
+allow_attributes_without_reason = "warn"
+await_holding_lock = "deny"
+await_holding_refcell_ref = "deny"
+dbg_macro = "deny"
+exit = "deny"
+expect_used = "warn"                    # allowed only as expect("invariant: ...") with #[expect]
+large_futures = "warn"
+mem_forget = "deny"
+panic = "warn"
+print_stderr = "deny"                   # use tracing
+print_stdout = "deny"                   # use tracing (the CLI's output module is the exception)
+todo = "deny"
+unimplemented = "deny"
+unwrap_used = "deny"
+undocumented_unsafe_blocks = "deny"
+rc_buffer = "warn"
+string_slice = "warn"                   # byte slicing of str panics on char boundaries
+
+# docs/standards/rust.md#workspace-configuration
 [profile.release]
 panic = "abort"              # a panic is a bug; never continue with corrupted state (ADR-0004)
 overflow-checks = true       # correctness over a few percent of speed; revisit only with benchmarks
