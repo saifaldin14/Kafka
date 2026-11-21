@@ -1,0 +1,8 @@
+[package]
+name = "alluvium-server"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+alluvium-testkit = { path = "../testkit" }

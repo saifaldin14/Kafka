@@ -6,6 +6,7 @@
 use std::ffi::OsString;
 use std::fmt;
 
+use crate::check_layers::LayerOptions;
 use crate::ci;
 
 /// A parsed `xtask` command.
@@ -14,6 +15,7 @@ pub(crate) enum Command {
     Help,
     Ci(CiOptions),
     ToolsInstall,
+    CheckLayers(LayerOptions),
 }
 
 /// Options for `cargo xtask ci`.
@@ -35,6 +37,10 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
     (
         "tools install",
         "Install the pinned versions of the external tools the checks use",
+    ),
+    (
+        "check-layers [--print] [--manifest-path <path>]",
+        "Check the crate layering rules (ADR-0009); `--print` shows the layer table",
     ),
 ];
 
@@ -97,6 +103,7 @@ pub(crate) fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Command,
     match name.as_str() {
         "help" | "--help" | "-h" => no_arguments("help", rest).map(|()| Command::Help),
         "ci" => parse_ci(rest).map(Command::Ci),
+        "check-layers" => parse_check_layers(rest).map(Command::CheckLayers),
         "tools" => match rest.split_first() {
             None => Err(UsageError::MissingSubcommand { command: "tools" }),
             Some((sub, rest)) if sub == "install" => {
@@ -143,6 +150,29 @@ fn parse_ci(rest: &[String]) -> Result<CiOptions, UsageError> {
                     });
                 }
             },
+        }
+    }
+    Ok(options)
+}
+
+fn parse_check_layers(rest: &[String]) -> Result<LayerOptions, UsageError> {
+    let mut options = LayerOptions::default();
+    let mut args = rest.iter();
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "--print" => options.print = true,
+            "--manifest-path" => {
+                let path = args.next().ok_or(UsageError::MissingValue {
+                    flag: "--manifest-path",
+                })?;
+                options.manifest_path = Some(path.into());
+            }
+            _ => {
+                return Err(UsageError::UnexpectedArgument {
+                    command: "check-layers",
+                    argument: arg.clone(),
+                });
+            }
         }
     }
     Ok(options)
@@ -268,6 +298,28 @@ mod tests {
             Err(UsageError::UnknownSubcommand {
                 command: "tools",
                 name: "remove".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn check_layers_flags_parse() {
+        assert_eq!(
+            parse(args(&[
+                "check-layers",
+                "--print",
+                "--manifest-path",
+                "a/Cargo.toml"
+            ])),
+            Ok(Command::CheckLayers(crate::check_layers::LayerOptions {
+                print: true,
+                manifest_path: Some("a/Cargo.toml".into()),
+            }))
+        );
+        assert_eq!(
+            parse(args(&["check-layers", "--manifest-path"])),
+            Err(UsageError::MissingValue {
+                flag: "--manifest-path"
             })
         );
     }

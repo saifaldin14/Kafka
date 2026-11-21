@@ -109,39 +109,39 @@ Done when: `cargo xtask ci` runs the steps in the documented order and exits non
 P0 · M0 · Task · deps: FND-0021 · labels: test · ref: docs/standards/testing.md#rules
 Done when: `cargo nextest run --profile ci` writes the JUnit file; a deliberately slow test (not committed) is reported as slow and then terminated, as shown in the PR; testing.md links to the profile and explains why retries are 0.
 
-## [To Do] FND-F05 Crate layer checker
+## [Done] FND-F05 Crate layer checker
 P0 · M0 · Feature · deps: FND-F04
 Scope: `cargo xtask check-layers`: layer table, forbidden runtime dependencies for layers 0-2, allow-list with ADR references, sync check with docs/architecture.md.
 
-### [To Do] FND-0023 Layer table in `xtask/src/layers.rs`: one constant mapping every crate from architecture §4 (layers 0-5 and dev, including `alluvium-testkit`, `xtask` and `lint-canary`) to a `Layer` enum, printed by `cargo xtask check-layers --print`
+### [Done] FND-0023 Layer table in `xtask/src/layers.rs`: one constant mapping every crate from architecture §4 (layers 0-5 and dev, including `alluvium-testkit`, `xtask` and `lint-canary`) to a `Layer` enum, printed by `cargo xtask check-layers --print`
 P0 · M0 · Task · deps: none · ref: ADR-0009
 Done when: The table lists all target crates, including ones not created yet (it is data, not code paths); `--print` shows crate, layer and whether it exists in the workspace; the module `//!` doc states that this table and architecture §4 must agree and that `check-layers` enforces it.
 
-### [To Do] FND-0024 Load the dependency graph for `check-layers` from `cargo metadata --format-version 1 --locked` (with `--manifest-path` for fixtures): workspace members, resolved nodes, and edges with their dependency kinds (normal, build, dev)
+### [Done] FND-0024 Load the dependency graph for `check-layers` from `cargo metadata --format-version 1 --locked` (with `--manifest-path` for fixtures): workspace members, resolved nodes, and edges with their dependency kinds (normal, build, dev)
 P0 · M0 · Task · deps: FND-0023 · ref: ADR-0009
 Done when: The parsed model is unit-tested against a committed metadata JSON fixture; the parsing crate (`cargo_metadata` or `serde_json`) is justified per security.md#dependencies; a missing `cargo` or a failed `cargo metadata` produces an error that includes cargo's stderr.
 
-### [To Do] FND-0025 check-layers rule: every workspace member must appear in the layer table
+### [Done] FND-0025 check-layers rule: every workspace member must appear in the layer table
 P0 · M0 · Task · deps: FND-0024 · ref: ADR-0009
 Done when: A member that is not in the table fails with `crate <name> has no layer: add it to xtask/src/layers.rs and docs/architecture.md §4`; covered by a fixture test.
 
-### [To Do] FND-0026 check-layers rules for edges between workspace crates: layer order, same-layer allow-list, dev crates, binary
+### [Done] FND-0026 check-layers rules for edges between workspace crates: layer order, same-layer allow-list, dev crates, binary
 P0 · M0 · Task · deps: FND-0024 · ref: ADR-0009
 Done when: Rules: normal and build dependencies must point to a strictly lower layer; same-layer edges only through the allow-list; dev crates only as dev-dependencies; nothing depends on the layer 5 binary. Each violation prints `<from> (layer a) -> <to> (layer b): <rule>` and the command exits 1; every violation is reported in one run, not just the first; unit tests on synthetic graphs cover each rule.
 
-### [To Do] FND-0027 check-layers rule: no async runtime or networking crate under layers 0-2, directly or transitively
+### [Done] FND-0027 check-layers rule: no async runtime or networking crate under layers 0-2, directly or transitively
 P0 · M0 · Task · deps: FND-0024 · labels: security · ref: ADR-0009
 Done when: Deny-list: `tokio`, `tokio-util`, `mio`, `async-std`, `smol`, `async-io`, `async-executor`, `futures-executor`, `hyper`, `h2`, `reqwest`, `tonic`, `axum`, `tower`, `socket2`; only normal and build edges count. The violation message prints the full path (for example `alluvium-records -> foo -> mio`); dev-dependencies of layer 0-2 crates are not flagged; the deny-list is one constant, and each entry has a reason; unit tests cover direct and three-hop transitive cases.
 
-### [To Do] FND-0028 check-layers same-layer allow-list: entries `{ from, to, adr }`, where the ADR file must exist in docs/adr/ with `Status: Accepted`; unused entries are errors
+### [Done] FND-0028 check-layers same-layer allow-list: entries `{ from, to, adr }`, where the ADR file must exist in docs/adr/ with `Status: Accepted`; unused entries are errors
 P1 · M0 · Task · deps: FND-0026 · ref: ADR-0009
 Done when: The allow-list ships empty (architecture §5 says there are no exceptions today); unit tests use injected entries to show: an allowed same-layer edge passes, an entry with a missing ADR fails, a Proposed ADR fails, and an unused entry fails.
 
-### [To Do] FND-0029 Deliberately wrong dependency tests: offline fixture workspaces for every check-layers rule
+### [Done] FND-0029 Deliberately wrong dependency tests: offline fixture workspaces for every check-layers rule
 P0 · M0 · Task · deps: FND-0025, FND-0026, FND-0027 · labels: test · ref: ADR-0009
 Done when: Fixtures in `xtask/tests/fixtures/layers/` use path dependencies only and are each their own `[workspace]` root: `upward` (types -> server), `same-layer` (raft -> storage), `runtime-in-core` (records -> local stub -> a local crate named `tokio`), `dev-as-normal` (server -> testkit), `unknown-crate`, plus one passing fixture. An xtask integration test runs real `cargo metadata` plus check-layers on each fixture and asserts the exact violation lines and exit code 1 (exit code 0 for the passing fixture); the tests run in `cargo xtask ci` without network access; this is the M0 exit evidence that "the layer check rejects a deliberately wrong dependency".
 
-### [To Do] FND-0030 check-layers sync with docs/architecture.md: parse the §4 code-map table (layer and crate columns) and require the same crate set and layers as the xtask table; register `check-layers` as the `layers` step of `cargo xtask ci`
+### [Done] FND-0030 check-layers sync with docs/architecture.md: parse the §4 code-map table (layer and crate columns) and require the same crate set and layers as the xtask table; register `check-layers` as the `layers` step of `cargo xtask ci`
 P0 · M0 · Task · deps: FND-0023, FND-0021 · labels: docs · ref: ADR-0009
 Done when: Moving a crate to another layer in only one of the two places fails with a diff that lists crates missing on each side and layer mismatches; a test runs against a copy of the real architecture.md; `cargo xtask ci --step layers` runs on the real workspace; architecture §5 and ADR-0009 point to the command.
 

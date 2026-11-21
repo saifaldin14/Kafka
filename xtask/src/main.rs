@@ -27,10 +27,13 @@
 //!
 //! Commands arrive with the backlog task that needs them; nothing is added ahead of use.
 
+mod check_layers;
 mod ci;
 mod cli;
 mod clock;
+mod graph;
 mod install;
+mod layers;
 mod output;
 mod steps;
 mod tools;
@@ -76,6 +79,7 @@ fn run(command: &Command, out: &mut impl std::io::Write) -> Exit {
         }
         Command::Ci(options) => ci::run(options, out),
         Command::ToolsInstall => install::run(out),
+        Command::CheckLayers(options) => check_layers::run(options, out),
     }
 }
 
