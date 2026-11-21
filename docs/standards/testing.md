@@ -42,7 +42,7 @@ Decisions are in [ADR-0003](../adr/0003-deterministic-simulation-testing.md).
 
 - Run with `cargo xtask compat`. Real Kafka 4.4.0 and the client tools run in containers whose images are pinned by digest.
 - Client matrix: the Apache Kafka Java client 4.4.0, librdkafka (current stable), franz-go (current stable), and the `kafka-*.sh` admin tools.
-- An API is marked **Done** in [parity.md](../parity.md) only when its compatibility and differential tests pass.
+- An API's backlog feature is marked **Done** only when its compatibility and differential tests pass.
 
 ## Coverage
 

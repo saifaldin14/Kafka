@@ -13,7 +13,7 @@ An ADR records a decision that is hard to reverse, crosses crates, deviates from
 
 | ADR | Title | Status |
 |---|---|---|
-| [0001](0001-kafka-4-4-compatibility-is-the-parity-contract.md) | Kafka 4.4 compatibility is the parity contract | Accepted |
+| [0001](0001-kafka-4-4-compatibility-is-the-parity-contract.md) | Kafka 4.4 compatibility is the parity contract | Superseded by 0010 |
 | [0002](0002-sans-io-state-machines-driven-by-tokio.md) | Sans-I/O state machines driven by Tokio | Accepted |
 | [0003](0003-deterministic-simulation-testing.md) | Deterministic simulation testing | Accepted |
 | [0004](0004-error-model-and-panic-policy.md) | Error model and panic policy | Accepted |
@@ -22,3 +22,4 @@ An ADR records a decision that is hard to reverse, crosses crates, deviates from
 | [0007](0007-record-batches-stored-in-wire-format.md) | Record batches stored in wire format | Accepted |
 | [0008](0008-protocol-code-generated-from-kafka-schemas.md) | Protocol code generated from Kafka schemas | Accepted |
 | [0009](0009-crate-layering-and-dependency-rules.md) | Crate layering and dependency rules | Accepted |
+| [0010](0010-alluvium-is-its-own-platform.md) | Alluvium is its own platform; Kafka 4.4 is a compatibility surface | Accepted |

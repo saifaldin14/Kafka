@@ -83,3 +83,24 @@ Kafka has precise terms, and Alluvium uses them exactly, in code, logs and docs.
 - **Simulation / seed**: deterministic test execution under simulated time, network and disk. The seed reproduces a run exactly ([ADR-0003](adr/0003-deterministic-simulation-testing.md)).
 - **Layer**: a crate's position in the dependency order ([architecture §5](architecture.md#5-layering-rules)).
 - **Parity citation**: a `// Parity:` comment pointing to the Kafka 4.4.0 source that code mirrors.
+- **Kafka surface**: the Kafka 4.4.0 wire protocol and semantics that Alluvium implements exactly. Native APIs and enhancements sit beside it ([ADR-0010](adr/0010-alluvium-is-its-own-platform.md)).
+- **Service layer**: protocol-agnostic services (produce, fetch, admin, groups) shared by the Kafka handlers and the native APIs, so behavior and authorization can't drift between them.
+- **Foundation hook**: an extension point built during the parity track for a planned enhancement, labelled `foundation-for:<epic>` in the backlog ([architecture §10](architecture.md#10-beyond-kafka-foundation-hooks)).
+- **Segment store**: the interface through which logs reach their segments, so local disk, tiered storage and object storage are interchangeable.
+- **Namespace**: an isolated scope of topics, groups, ACLs and quotas for one tenant. Plain Kafka names live in the default namespace.
+- **Key hash / key range**: a key's position in a fixed hash space, and a contiguous slice of that space. Elastic partitions map key ranges to partitions, so a partition can split or merge without breaking per-key order.
+- **Sealed partition**: a partition that accepts no more writes after a split or merge, kept readable until its consumers have moved on.
+- **Per-record delivery state**: the acquisition, acknowledgement and redelivery state of individual records. It underlies share groups and queue semantics.
+- **Chunked record**: one logical message stored as several records with chunk headers, so it can exceed the per-record size limit.
+- **Claim check**: storing a large value in object storage and keeping only a reference in the log.
+- **Diskless topic**: a topic whose data is written directly to object storage instead of broker disks.
+- **Mirror topic**: a read-only copy of a topic in another cluster, with identical offsets.
+
+## Backlog
+
+- **Epic**: a large area of work with one file in `docs/backlog/`, identified by a code (`STOR`, `X-QUEUE`).
+- **Feature**: a deliverable within an epic (`STOR-F04`). Its status follows its tasks.
+- **Task**: one reviewable change (`STOR-0031`), with a `Done when` condition.
+- **Spike**: a research task that ends in an ADR.
+- **Milestone**: a release-sized slice of the plan (M0–M18), with exit criteria ([milestones](backlog/README.md#milestones)).
+- **Parity track / enhancement track**: milestones M0–M9 (Kafka compatibility plus foundations) and M10–M18 (features beyond Kafka).
