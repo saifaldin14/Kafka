@@ -21,6 +21,7 @@ pub(crate) enum Command {
     },
     CheckLayers(LayerOptions),
     CheckManifests,
+    CheckWorkflows,
     LintCanary,
     Backlog(BacklogCommand),
 }
@@ -65,6 +66,10 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
     (
         "check-manifests",
         "Check [workspace.lints], clippy.toml and member manifests against rust.md, and deny.toml ignores",
+    ),
+    (
+        "check-workflows",
+        "Check that GitHub Actions files pin actions by SHA and set timeouts and permissions",
     ),
     (
         "lint-canary",
@@ -164,6 +169,9 @@ pub(crate) fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Command,
         "check-layers" => parse_check_layers(rest).map(Command::CheckLayers),
         "check-manifests" => {
             no_arguments("check-manifests", rest).map(|()| Command::CheckManifests)
+        }
+        "check-workflows" => {
+            no_arguments("check-workflows", rest).map(|()| Command::CheckWorkflows)
         }
         "backlog" => parse_backlog(rest).map(Command::Backlog),
         "lint-canary" => no_arguments("lint-canary", rest).map(|()| Command::LintCanary),
@@ -501,6 +509,10 @@ mod tests {
             Ok(Command::CheckManifests)
         );
         assert_eq!(parse(args(&["lint-canary"])), Ok(Command::LintCanary));
+        assert_eq!(
+            parse(args(&["check-workflows"])),
+            Ok(Command::CheckWorkflows)
+        );
         assert_eq!(
             parse(args(&["lint-canary", "--fix"])),
             Err(UsageError::UnexpectedArgument {

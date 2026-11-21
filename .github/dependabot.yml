@@ -9,3 +9,14 @@ updates:
     labels:
       - dependencies
     open-pull-requests-limit: 10
+
+  # Actions are pinned to commit SHAs (cargo xtask check-workflows); Dependabot bumps
+  # the SHA and keeps the `# vX.Y.Z` comment in step with it.
+  - package-ecosystem: github-actions
+    directories:
+      - /
+      - /.github/actions/*
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
