@@ -94,7 +94,7 @@ Before adding a dependency, the PR answers:
 - **Bans:** duplicate versions warn and wildcard versions are errors. `openssl`, `openssl-sys` and `native-tls` are denied, to keep TLS on rustls (ADR-0006).
 - **Sources:** crates.io only. No other registries and no git dependencies (the `[sources]` section of `deny.toml`).
 
-Fixture tests in `xtask/tests/deny.rs` prove that a banned crate, a wildcard version and a GPL-licensed dependency are rejected.
+Fixture tests in `xtask/tests/deny.rs` prove that a banned crate, a wildcard version and a GPL-licensed dependency are rejected. In CI, `deny` is a required job. `advisories` runs on every PR without blocking it, and [`advisories.yml`](../../.github/workflows/advisories.yml) runs it daily: a failure opens a tracking issue naming the advisory ids, or comments on the open one.
 
 `Cargo.lock` is committed. Dependency updates are separate PRs: Dependabot opens one PR per crate each week ([`.github/dependabot.yml`](../../.github/dependabot.yml)). CI pins GitHub Actions by commit SHA.
 

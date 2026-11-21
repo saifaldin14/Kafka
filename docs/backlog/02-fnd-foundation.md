@@ -180,7 +180,7 @@ Done when: Both matrix legs run on every PR; a failing test fails only its leg a
 P0 · M0 · Task · deps: FND-0031, FND-0054, FND-0055 · labels: docs
 Done when: An intentionally broken intra-doc link or Markdown anchor in a test PR fails the job; the job runs on Linux only, with a documented reason (rustdoc output does not depend on the platform).
 
-### [To Do] FND-0035 CI dependency jobs: `deny` (bans, licenses, sources) as a required check, plus a separate `advisories` job that runs on PRs without blocking them and on a daily schedule that opens or updates a tracking issue when it fails
+### [In Review] FND-0035 CI dependency jobs: `deny` (bans, licenses, sources) as a required check, plus a separate `advisories` job that runs on PRs without blocking them and on a daily schedule that opens or updates a tracking issue when it fails
 P0 · M0 · Task · deps: FND-0031, FND-0014 · labels: security · ref: docs/standards/security.md#dependencies
 Done when: A newly published advisory cannot block unrelated PRs, yet it is surfaced within a day as an issue with the advisory id; the scheduled job has `issues: write` only; a banned crate fails the required `deny` job.
 
