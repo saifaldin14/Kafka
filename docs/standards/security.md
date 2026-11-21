@@ -86,7 +86,7 @@ Before adding a dependency, the PR answers:
 4. How many transitive dependencies does it add (`cargo tree -e normal -p <crate>`)?
 5. Is its license allowed by `deny.toml`?
 
-[`deny.toml`](../../deny.toml) policy, checked by the `deny` step of `cargo xtask ci`:
+[`deny.toml`](../../deny.toml) policy, checked by the `deny` and `advisories` steps of `cargo xtask ci`:
 
 - **Scope:** every dependency on the supported targets, including optional ones (`all-features = true`).
 - **Advisories:** vulnerable, unsound, unmaintained and yanked crates are errors. Each ignore has a reason and an expiry date, written as `{ id = "RUSTSEC-…", reason = "…", expiry = "YYYY-MM-DD" }`. The `manifests` step requires both fields; cargo-deny rejects a malformed date and reports the advisory again once the date passes.

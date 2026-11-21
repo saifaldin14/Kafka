@@ -195,7 +195,7 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 | `cargo xtask ci` | Runs every step below in order; stops at the first failure unless `--keep-going` is given. Run it before pushing. |
 | `cargo xtask ci --list` | Lists the steps in run order |
 | `cargo xtask ci --step <name>` | Runs only the named steps (repeatable), still in run order |
-| `cargo xtask tools install` | Installs the pinned versions of the external tools (`xtask/src/tools.rs` is the only place versions appear) |
+| `cargo xtask tools install [--step <name>]...` | Installs the pinned versions of the external tools, or only those the named steps need (`xtask/src/tools.rs` is the only place versions appear) |
 | `cargo xtask backlog check`, `next [--all] [-n N]`, `show <ID>`, `stats [--write]` | The backlog rules, the next ready tasks, one item with its dependencies, and the totals in the backlog README ([backlog rules](../backlog/README.md#choosing-the-next-task)); the same output as `backlog.py`, which FND-0045 retires |
 
 | Step | Runs |
@@ -206,7 +206,8 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 | `layers` | `cargo xtask check-layers`: crate dependency layering ([architecture §5](../architecture.md#5-layering-rules)); `--print` shows the layer table |
 | `manifests` | `cargo xtask check-manifests`: `[workspace.lints]` and `clippy.toml` equal the blocks in [workspace configuration](#workspace-configuration), compared as parsed TOML, and every member has `[lints] workspace = true` and inherits every dependency with `{ workspace = true }`; every advisory ignore in `deny.toml` has a `reason` and an `expiry` |
 | `lint-canary` | `cargo xtask lint-canary`: clippy on the fixtures in [`xtask/lint-canary`](../../xtask/lint-canary/src/lib.rs) must report exactly the lints their `expect-lint:` comments name, so a removed or weakened lint fails. Every `clippy.toml` entry must fire with its configured reason |
-| `deny` | `cargo deny --locked check`: advisories, licenses, banned and duplicate crates, sources ([`deny.toml`](../../deny.toml)) |
+| `deny` | `cargo deny --locked check bans licenses sources`: banned and duplicate crates, licenses, sources ([`deny.toml`](../../deny.toml)) |
+| `advisories` | `cargo deny --locked check advisories`: security advisories against `Cargo.lock`. Separate from `deny` because a new advisory depends on the date, not the change, so CI reports it without blocking unrelated PRs |
 | `links` | `lychee --offline --include-fragments` over README.md, AGENTS.md, CLAUDE.md, CONTRIBUTING.md, `docs/`, `.agents/` and `.github/`: relative links and `#anchors` resolve. External URLs are not checked here |
 | `test` | `cargo nextest run --workspace --locked --profile ci` ([`.config/nextest.toml`](../../.config/nextest.toml)) |
 

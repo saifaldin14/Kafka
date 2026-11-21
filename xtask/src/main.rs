@@ -89,7 +89,7 @@ fn run(command: &Command, out: &mut impl std::io::Write) -> Exit {
             Exit::Success
         }
         Command::Ci(options) => ci::run(options, out),
-        Command::ToolsInstall => install::run(out),
+        Command::ToolsInstall { steps } => install::run(steps, out),
         Command::CheckLayers(options) => check_layers::run(options, out),
         Command::CheckManifests => check_manifests::run(out),
         Command::Backlog(BacklogCommand::Next { all, count }) => {
