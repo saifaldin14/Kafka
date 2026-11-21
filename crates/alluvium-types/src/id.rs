@@ -131,7 +131,24 @@ impl fmt::Display for BrokerId {
 
 #[cfg(test)]
 mod tests {
+    use proptest::prelude::{any, prop_assert_eq, proptest};
+
     use super::{BrokerId, IdError, IdKind, NodeId};
+    use crate::strategies;
+
+    proptest! {
+        #[test]
+        fn try_from_accepts_exactly_the_non_negative_values(value in any::<i32>()) {
+            prop_assert_eq!(NodeId::try_from(value).map(NodeId::get).ok(), (value >= 0).then_some(value));
+            prop_assert_eq!(BrokerId::try_from(value).map(BrokerId::get).ok(), (value >= 0).then_some(value));
+        }
+
+        #[test]
+        fn nullable_wire_values_round_trip(id in strategies::node_id(), broker in strategies::broker_id()) {
+            prop_assert_eq!(NodeId::from_wire_nullable(id.get()), Ok(Some(id)));
+            prop_assert_eq!(BrokerId::from_wire_nullable(broker.get()), Ok(Some(broker)));
+        }
+    }
 
     #[test]
     fn non_negative_values_are_ids() {

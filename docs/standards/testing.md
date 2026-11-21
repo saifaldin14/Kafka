@@ -30,6 +30,10 @@ Decisions are in [ADR-0003](../adr/0003-deterministic-simulation-testing.md).
 9. **Cover each supported API version.** Version-dependent behavior is tested for every version in the advertised range.
 10. **Port Kafka's tests where they encode tricky semantics.** Name the source in a comment: `// Ported from: core/src/test/scala/unit/kafka/cluster/PartitionTest.scala@4.4.0 testXyz`. Follow the attribution rules in [ADR-0008](../adr/0008-protocol-code-generated-from-kafka-schemas.md).
 
+## Shared strategies
+
+Proptest strategies for a crate's types live in that crate, in a `strategies` module behind its `proptest-strategies` feature. Other crates enable the feature on their dev-dependency: `alluvium-types = { workspace = true, features = ["proptest-strategies"] }`. They don't live in `alluvium-testkit`, because testkit depends on those crates: a dev-dependency back to testkit would compile two copies of the types, and values from one copy wouldn't type-check against the other. Strategies produce valid values only and favour boundaries (0, 1, the maximum, and the wire sentinels where those are valid).
+
 ## Simulation harness (`alluvium-testkit`)
 
 - Drives real layer 1–2 state machines (and, where needed, real drivers) with a simulated clock, network and disk, all controlled by one seeded RNG.

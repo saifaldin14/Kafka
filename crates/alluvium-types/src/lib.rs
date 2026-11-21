@@ -20,10 +20,14 @@
 //!
 //! - [`NodeId`] and [`BrokerId`]: which process, and which broker.
 //! - [`IdError`]: why a value was rejected.
+//! - `strategies` (feature `proptest-strategies`): proptest strategies for these types,
+//!   for property tests in other crates.
 //!
 //! Errors here carry no Kafka error code: the Kafka error depends on where the value
 //! came from, so the decoder or handler that rejects it maps it.
 
 mod id;
+#[cfg(any(test, feature = "proptest-strategies"))]
+pub mod strategies;
 
 pub use id::{BrokerId, IdError, IdKind, NodeId};

@@ -12,7 +12,7 @@ Scope: `BrokerId`, `NodeId`, `PartitionIndex`, `ProducerId`, `ProducerEpoch`, `S
 P0 · M0 · Task · deps: none · ref: clients/src/main/java/org/apache/kafka/common/Node.java @4.4.0
 Done when: The crate lives at `crates/alluvium-types` (the workspace switches to `members = ["crates/*", "xtask"]`), inherits `[workspace.lints]`, and its `lib.rs` `//!` doc covers responsibility, layer 0, Kafka counterparts at 4.4.0, invariants and entry-point types; `from_wire_nullable(-1)` is `Ok(None)` and other negatives return `IdError::Negative { kind, value }`; `Debug` prints `NodeId(3)` and `Display` prints `3`; the doc comment explains when to use `BrokerId` and when `NodeId` (glossary terms); `check-layers` passes.
 
-### [To Do] TYPE-0002 Shared proptest strategies: add `proptest` to `[workspace.dependencies]` and a `proptest-strategies` Cargo feature exposing `alluvium_types::strategies`, starting with `NodeId`/`BrokerId` biased towards 0, 1 and `i32::MAX`
+### [Done] TYPE-0002 Shared proptest strategies: add `proptest` to `[workspace.dependencies]` and a `proptest-strategies` Cargo feature exposing `alluvium_types::strategies`, starting with `NodeId`/`BrokerId` biased towards 0, 1 and `i32::MAX`
 P0 · M0 · Task · deps: TYPE-0001 · labels: test · ref: docs/standards/testing.md#test-levels
 Done when: docs/standards/testing.md states where shared strategies live (in the owning crate behind `proptest-strategies`, not in `alluvium-testkit`, because a dev-dependency cycle would compile two copies of the types); property tests show `TryFrom<i32>` accepts exactly the non-negative values; the `proptest` justification follows security.md#dependencies; the module is absent without the feature.
 
