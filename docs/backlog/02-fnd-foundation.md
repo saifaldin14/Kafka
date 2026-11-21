@@ -12,11 +12,11 @@ Scope: Root `Cargo.toml` workspace, `rust-toolchain.toml`, release/dev profiles,
 P0 · M0 · Task · deps: none · ref: docs/standards/rust.md
 Done when: `Cargo.toml` has `[workspace]` with `resolver = "3"` and `members = []`, `[workspace.package]` (edition 2024, `rust-version = "1.99"`, `publish = false`) and an empty `[workspace.dependencies]`; `rustup show active-toolchain` in the repo reports 1.99.0 with rustfmt and clippy installed; `cargo generate-lockfile` produces the committed `Cargo.lock` (format version 4) with no diff; `[profile.release]` has exactly `panic = "abort"`, `overflow-checks = true`, `debug = "line-tables-only"`, `lto = "thin"`; members are listed explicitly because Cargo rejects a `crates/*` glob that matches nothing (the first crate switches to the glob); `.gitignore` still ignores `/target`.
 
-## [To Do] FND-F02 Lint configuration
+## [In Progress] FND-F02 Lint configuration
 P0 · M0 · Feature · deps: FND-F01
 Scope: `[workspace.lints]`, `clippy.toml` and rustfmt exactly as in docs/standards/rust.md, plus smoke tests proving each disallowed item is rejected.
 
-### [To Do] FND-0002 Add `[workspace.lints.rust]` and `[workspace.lints.clippy]` to the root `Cargo.toml`, copied verbatim from docs/standards/rust.md
+### [Done] FND-0002 Add `[workspace.lints.rust]` and `[workspace.lints.clippy]` to the root `Cargo.toml`, copied verbatim from docs/standards/rust.md
 P0 · M0 · Task · deps: none · labels: nfr · ref: docs/standards/rust.md#workspace-configuration
 Done when: Both tables match the rust.md block key for key, value for value and priority for priority (including `rust_2018_idioms` and `all`/`pedantic` at priority -1 and `unsafe_code = "forbid"`); the inline comments are kept; `cargo metadata` parses the manifest once the first member exists; no member crate exists yet, so enforcement is proven by the lint canary tasks.
 
