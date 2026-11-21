@@ -143,5 +143,5 @@ On-disk formats are documented in `docs/formats/` (created with storage in M2) p
 
 - Every type implements `Debug` (lint-enforced).
 - `Secret<T>` prints `Secret(***)`.
-- Payload bytes print as their length and a CRC, for example `Bytes { len: 1048576, crc32c: 0x1a2b3c4d }`, never their contents.
+- Payload bytes print as their length and a CRC, for example `Bytes { len: 1048576, crc32c: 0x1a2b3c4d }`, never their contents: wrap them in `alluvium_types::PayloadSummary`.
 - Never log credentials, SASL tokens, record keys, values or headers. Topic names, group ids, client ids and principals may be logged, as Kafka does.

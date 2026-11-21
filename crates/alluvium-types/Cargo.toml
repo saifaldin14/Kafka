@@ -11,6 +11,7 @@ publish.workspace = true
 proptest-strategies = ["dep:proptest"]
 
 [dependencies]
+crc32c = { workspace = true }
 proptest = { workspace = true, optional = true }
 thiserror = { workspace = true }
 zeroize = { workspace = true }
