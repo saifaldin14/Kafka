@@ -168,7 +168,7 @@ Scope: GitHub Actions running `cargo xtask ci` on Linux and macOS, caching, SHA-
 P0 · M0 · Task · deps: FND-0021 · labels: security · ref: docs/standards/security.md#dependencies
 Done when: Triggers are `pull_request`, `push` to main and `merge_group`; workflow-level `permissions: {}` and per-job `contents: read`; per-ref concurrency with cancel-in-progress for PRs; `actions/checkout` with `persist-credentials: false`; `timeout-minutes` on every job; the `lint` job runs `cargo xtask ci --step fmt --step clippy` on ubuntu-24.04. All actions are pinned to full commit SHAs with a `# vX.Y.Z` comment; the toolchain comes from `rust-toolchain.toml` through the runner's rustup, with no third-party toolchain action; a PR with a formatting error fails the `lint` job.
 
-### [To Do] FND-0032 CI caching: SHA-pinned `Swatinem/rust-cache` keyed on OS, toolchain and `Cargo.lock`, which also caches the tools installed by `cargo xtask tools install`; only pushes to main save the cache, PRs restore only
+### [In Review] FND-0032 CI caching: SHA-pinned `Swatinem/rust-cache` keyed on OS, toolchain and `Cargo.lock`, which also caches the tools installed by `cargo xtask tools install`; only pushes to main save the cache, PRs restore only
 P0 · M0 · Task · deps: FND-0031 · labels: perf
 Done when: A second run of an unchanged PR restores the cache and skips tool installation (cold and warm times are in the PR description); PR runs cannot write the cache that main uses (`save-if` on main only), which protects against cache poisoning.
 
