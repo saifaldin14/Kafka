@@ -18,6 +18,16 @@ pub(crate) enum Command {
     CheckLayers(LayerOptions),
     CheckManifests,
     LintCanary,
+    Backlog(BacklogCommand),
+}
+
+/// A `cargo xtask backlog` subcommand.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum BacklogCommand {
+    /// `next [--all] [-n <count>]`.
+    Next { all: bool, count: usize },
+    /// `show <id>`.
+    Show { id: String },
 }
 
 /// Options for `cargo xtask ci`.
@@ -52,6 +62,14 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
         "lint-canary",
         "Prove the workspace lints fire on the fixtures in xtask/lint-canary",
     ),
+    (
+        "backlog next [--all] [-n <count>]",
+        "List the ready backlog tasks in the order docs/backlog/README.md defines",
+    ),
+    (
+        "backlog show <id>",
+        "Show one backlog item, what it waits for and what needs it",
+    ),
 ];
 
 /// Why the command line could not be parsed. Always exit code 2.
@@ -65,6 +83,14 @@ pub(crate) enum UsageError {
     },
     MissingValue {
         flag: &'static str,
+    },
+    InvalidNumber {
+        flag: &'static str,
+        value: String,
+    },
+    MissingArgument {
+        command: &'static str,
+        name: &'static str,
     },
     UnknownStep(String),
     MissingSubcommand {
@@ -86,6 +112,12 @@ impl fmt::Display for UsageError {
                 write!(f, "`{command}` does not take the argument `{argument}`")
             }
             UsageError::MissingValue { flag } => write!(f, "`{flag}` needs a value"),
+            UsageError::InvalidNumber { flag, value } => {
+                write!(f, "`{flag}` needs a number, not `{value}`")
+            }
+            UsageError::MissingArgument { command, name } => {
+                write!(f, "`{command}` needs {name}")
+            }
             UsageError::UnknownStep(name) => write!(
                 f,
                 "unknown step `{name}`; `cargo xtask ci --list` shows the steps"
@@ -117,6 +149,7 @@ pub(crate) fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Command,
         "check-manifests" => {
             no_arguments("check-manifests", rest).map(|()| Command::CheckManifests)
         }
+        "backlog" => parse_backlog(rest).map(Command::Backlog),
         "lint-canary" => no_arguments("lint-canary", rest).map(|()| Command::LintCanary),
         "tools" => match rest.split_first() {
             None => Err(UsageError::MissingSubcommand { command: "tools" }),
@@ -192,6 +225,53 @@ fn parse_check_layers(rest: &[String]) -> Result<LayerOptions, UsageError> {
     Ok(options)
 }
 
+fn parse_backlog(rest: &[String]) -> Result<BacklogCommand, UsageError> {
+    let Some((sub, rest)) = rest.split_first() else {
+        return Err(UsageError::MissingSubcommand { command: "backlog" });
+    };
+    match sub.as_str() {
+        "next" => {
+            let mut all = false;
+            let mut count = crate::backlog_next::DEFAULT_COUNT;
+            let mut args = rest.iter();
+            while let Some(arg) = args.next() {
+                match arg.as_str() {
+                    "--all" => all = true,
+                    "-n" => {
+                        let value = args.next().ok_or(UsageError::MissingValue { flag: "-n" })?;
+                        count = value.parse().map_err(|_| UsageError::InvalidNumber {
+                            flag: "-n",
+                            value: value.clone(),
+                        })?;
+                    }
+                    _ => {
+                        return Err(UsageError::UnexpectedArgument {
+                            command: "backlog next",
+                            argument: arg.clone(),
+                        });
+                    }
+                }
+            }
+            Ok(BacklogCommand::Next { all, count })
+        }
+        "show" => match rest {
+            [id] => Ok(BacklogCommand::Show { id: id.clone() }),
+            [] => Err(UsageError::MissingArgument {
+                command: "backlog show",
+                name: "an item id",
+            }),
+            [_, extra, ..] => Err(UsageError::UnexpectedArgument {
+                command: "backlog show",
+                argument: extra.clone(),
+            }),
+        },
+        _ => Err(UsageError::UnknownSubcommand {
+            command: "backlog",
+            name: sub.clone(),
+        }),
+    }
+}
+
 fn add_step(options: &mut CiOptions, name: &str) -> Result<(), UsageError> {
     if !ci::is_step(name) {
         return Err(UsageError::UnknownStep(name.to_owned()));
@@ -206,7 +286,7 @@ fn add_step(options: &mut CiOptions, name: &str) -> Result<(), UsageError> {
 mod tests {
     use std::ffi::OsString;
 
-    use super::{CiOptions, Command, UsageError, parse};
+    use super::{BacklogCommand, CiOptions, Command, UsageError, parse};
 
     fn args(list: &[&str]) -> Vec<OsString> {
         list.iter().map(OsString::from).collect()
@@ -351,6 +431,59 @@ mod tests {
                 command: "lint-canary",
                 argument: "--fix".to_owned()
             })
+        );
+    }
+
+    #[test]
+    fn backlog_subcommands_parse() {
+        assert_eq!(
+            parse(args(&["backlog", "next"])),
+            Ok(Command::Backlog(BacklogCommand::Next {
+                all: false,
+                count: 10
+            }))
+        );
+        assert_eq!(
+            parse(args(&["backlog", "next", "-n", "3", "--all"])),
+            Ok(Command::Backlog(BacklogCommand::Next {
+                all: true,
+                count: 3
+            }))
+        );
+        assert_eq!(
+            parse(args(&["backlog", "show", "FND-0041"])),
+            Ok(Command::Backlog(BacklogCommand::Show {
+                id: "FND-0041".to_owned()
+            }))
+        );
+    }
+
+    #[test]
+    fn backlog_usage_errors_name_the_problem() {
+        assert_eq!(
+            parse(args(&["backlog", "next", "-n", "many"])),
+            Err(UsageError::InvalidNumber {
+                flag: "-n",
+                value: "many".to_owned()
+            })
+        );
+        assert_eq!(
+            parse(args(&["backlog", "show"])),
+            Err(UsageError::MissingArgument {
+                command: "backlog show",
+                name: "an item id"
+            })
+        );
+        assert_eq!(
+            parse(args(&["backlog", "show", "A", "B"])),
+            Err(UsageError::UnexpectedArgument {
+                command: "backlog show",
+                argument: "B".to_owned()
+            })
+        );
+        assert_eq!(
+            parse(args(&["backlog"])),
+            Err(UsageError::MissingSubcommand { command: "backlog" })
         );
     }
 
