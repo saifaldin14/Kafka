@@ -20,7 +20,7 @@ Scope: `[workspace.lints]`, `clippy.toml` and rustfmt exactly as in docs/standar
 P0 · M0 · Task · deps: none · labels: nfr · ref: docs/standards/rust.md#workspace-configuration
 Done when: Both tables match the rust.md block key for key, value for value and priority for priority (including `rust_2018_idioms` and `all`/`pedantic` at priority -1 and `unsafe_code = "forbid"`); the inline comments are kept; `cargo metadata` parses the manifest once the first member exists; no member crate exists yet, so enforcement is proven by the lint canary tasks.
 
-### [To Do] FND-0003 Add the root `clippy.toml` verbatim from docs/standards/rust.md (test allowances, 16 `disallowed-methods`, 1 `disallowed-types`, each with its reason)
+### [Done] FND-0003 Add the root `clippy.toml` verbatim from docs/standards/rust.md (test allowances, 16 `disallowed-methods`, 1 `disallowed-types`, each with its reason)
 P0 · M0 · Task · deps: FND-0002, FND-0018 · labels: nfr · ref: docs/standards/rust.md#workspace-configuration
 Done when: File content equals the rust.md block; `cargo clippy --workspace --all-targets -- -D warnings` passes on the xtask crate with no clippy configuration warnings, even though `tokio` and `rand` are not in the dependency graph; if clippy 1.99 warns about unresolvable paths, the fix (for example `allow-invalid = true` on those entries) is applied to clippy.toml and rust.md together in this PR.
 
