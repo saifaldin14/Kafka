@@ -1,0 +1,19 @@
+[workspace]
+resolver = "3"
+# Listed explicitly: Cargo rejects a `crates/*` glob that matches nothing.
+# The first crate switches this to the glob.
+members = []
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.99"
+publish = false
+
+[workspace.dependencies]
+
+# docs/standards/rust.md#workspace-configuration
+[profile.release]
+panic = "abort"              # a panic is a bug; never continue with corrupted state (ADR-0004)
+overflow-checks = true       # correctness over a few percent of speed; revisit only with benchmarks
+debug = "line-tables-only"   # usable backtraces in production
+lto = "thin"

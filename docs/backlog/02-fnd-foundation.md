@@ -4,11 +4,11 @@
 
 Everything needed before the first line of product code: the Cargo workspace, pinned toolchain, lint and dependency policy, the `xtask` automation entry point, CI, and backlog tooling. M0 is done when `cargo xtask ci` passes in CI and enforces every machine-checkable rule in the standards.
 
-## [To Do] FND-F01 Cargo workspace and toolchain pin
+## [Done] FND-F01 Cargo workspace and toolchain pin
 P0 · M0 · Feature · deps: none
 Scope: Root `Cargo.toml` workspace, `rust-toolchain.toml`, release/dev profiles, `.cargo/config.toml`, committed `Cargo.lock`.
 
-### [To Do] FND-0001 Create the Cargo workspace: root `Cargo.toml` with `[workspace]` (resolver 3) and the release profile, `rust-toolchain.toml` pinned to 1.99.0 with rustfmt and clippy, and a committed `Cargo.lock`
+### [Done] FND-0001 Create the Cargo workspace: root `Cargo.toml` with `[workspace]` (resolver 3) and the release profile, `rust-toolchain.toml` pinned to 1.99.0 with rustfmt and clippy, and a committed `Cargo.lock`
 P0 · M0 · Task · deps: none · ref: docs/standards/rust.md
 Done when: `Cargo.toml` has `[workspace]` with `resolver = "3"` and `members = []`, `[workspace.package]` (edition 2024, `rust-version = "1.99"`, `publish = false`) and an empty `[workspace.dependencies]`; `rustup show active-toolchain` in the repo reports 1.99.0 with rustfmt and clippy installed; `cargo generate-lockfile` produces the committed `Cargo.lock` (format version 4) with no diff; `[profile.release]` has exactly `panic = "abort"`, `overflow-checks = true`, `debug = "line-tables-only"`, `lto = "thin"`; members are listed explicitly because Cargo rejects a `crates/*` glob that matches nothing (the first crate switches to the glob); `.gitignore` still ignores `/target`.
 
