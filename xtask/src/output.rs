@@ -6,8 +6,11 @@
 
 use std::io::Write;
 
+use std::collections::BTreeSet;
+
 use crate::ci::CiStep;
 use crate::cli::{COMMANDS, UsageError};
+use crate::layers::Layer;
 use crate::steps::{Outcome, Report};
 
 /// Writes the usage text and the command list.
@@ -82,6 +85,26 @@ pub(crate) fn summary(out: &mut impl Write, reports: &[Report]) {
             &format!("  {mark} {name:width$}  {seconds:6.1}s{detail}\n"),
         );
     }
+}
+
+/// Writes the crate layer table, marking which crates exist in the workspace.
+pub(crate) fn layer_table(
+    out: &mut impl Write,
+    layers: &[(&str, Layer)],
+    present: &BTreeSet<&str>,
+) {
+    let rows: Vec<[String; 2]> = layers
+        .iter()
+        .map(|(name, layer)| {
+            let status = if present.contains(name) {
+                "in workspace"
+            } else {
+                "not created yet"
+            };
+            [(*name).to_owned(), format!("layer {layer:<3}  {status}")]
+        })
+        .collect();
+    table(out, &rows);
 }
 
 fn table(out: &mut impl Write, rows: &[[String; 2]]) {

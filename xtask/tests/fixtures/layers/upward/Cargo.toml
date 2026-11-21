@@ -1,0 +1,4 @@
+# Offline fixture workspace for `cargo xtask check-layers` (FND-0029).
+[workspace]
+resolver = "3"
+members = ["types", "server"]

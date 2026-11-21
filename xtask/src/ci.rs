@@ -50,6 +50,20 @@ pub(crate) const STEPS: &[CiStep] = &[
         requires: None,
     },
     CiStep {
+        name: "layers",
+        summary: "Crate layering rules (cargo xtask check-layers)",
+        cargo_args: &[
+            "run",
+            "--quiet",
+            "--locked",
+            "--package",
+            "xtask",
+            "--",
+            "check-layers",
+        ],
+        requires: None,
+    },
+    CiStep {
         name: "test",
         summary: "Tests (cargo-nextest, ci profile)",
         cargo_args: &[
@@ -127,7 +141,7 @@ mod tests {
 
     #[test]
     fn documented_steps_are_registered() {
-        for name in ["fmt", "clippy", "test"] {
+        for name in ["fmt", "clippy", "layers", "test"] {
             assert!(is_step(name), "{name}");
         }
         assert!(!is_step("nope"));

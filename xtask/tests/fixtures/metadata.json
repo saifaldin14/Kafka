@@ -1,0 +1,42 @@
+{
+  "packages": [
+    { "id": "path+file:///ws/types#alluvium-types@0.0.0", "name": "alluvium-types" },
+    { "id": "path+file:///ws/records#alluvium-records@0.0.0", "name": "alluvium-records" },
+    { "id": "path+file:///ws/testkit#alluvium-testkit@0.0.0", "name": "alluvium-testkit" },
+    { "id": "registry+https://github.com/rust-lang/crates.io-index#cc@1.2.0", "name": "cc" }
+  ],
+  "workspace_members": [
+    "path+file:///ws/types#alluvium-types@0.0.0",
+    "path+file:///ws/records#alluvium-records@0.0.0",
+    "path+file:///ws/testkit#alluvium-testkit@0.0.0"
+  ],
+  "resolve": {
+    "nodes": [
+      {
+        "id": "path+file:///ws/records#alluvium-records@0.0.0",
+        "deps": [
+          {
+            "name": "alluvium_types",
+            "pkg": "path+file:///ws/types#alluvium-types@0.0.0",
+            "dep_kinds": [{ "kind": null, "target": null }]
+          },
+          {
+            "name": "alluvium_testkit",
+            "pkg": "path+file:///ws/testkit#alluvium-testkit@0.0.0",
+            "dep_kinds": [{ "kind": "dev", "target": null }]
+          },
+          {
+            "name": "cc",
+            "pkg": "registry+https://github.com/rust-lang/crates.io-index#cc@1.2.0",
+            "dep_kinds": [{ "kind": null, "target": null }, { "kind": "build", "target": null }]
+          }
+        ]
+      },
+      { "id": "path+file:///ws/types#alluvium-types@0.0.0", "deps": [] },
+      { "id": "path+file:///ws/testkit#alluvium-testkit@0.0.0", "deps": [] },
+      { "id": "registry+https://github.com/rust-lang/crates.io-index#cc@1.2.0", "deps": [] }
+    ],
+    "root": null
+  },
+  "version": 1
+}
