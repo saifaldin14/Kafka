@@ -86,12 +86,14 @@ Before adding a dependency, the PR answers:
 4. How many transitive dependencies does it add (`cargo tree -e normal -p <crate>`)?
 5. Is its license allowed by `deny.toml`?
 
-`deny.toml` policy:
+[`deny.toml`](../../deny.toml) policy, checked by the `deny` step of `cargo xtask ci`:
 
-- **Advisories:** deny vulnerable and unmaintained crates. Each ignore has a reason and an expiry date.
-- **Licenses:** an allow-list of permissive licenses (MIT, Apache-2.0, BSD-2/3-Clause, ISC, Unicode-3.0, Zlib).
-- **Bans:** duplicate versions warn; known-problematic crates are denied (for example `openssl`, to keep TLS on rustls).
-- **Sources:** crates.io only. No git dependencies on `main`.
+- **Advisories:** vulnerable, unsound, unmaintained and yanked crates are errors. Each ignore has a reason and an expiry date, written as `{ id = "RUSTSEC-…", reason = "…", expiry = "YYYY-MM-DD" }`; cargo-deny reports the advisory again once the date passes.
+- **Licenses:** an allow-list of permissive licenses (MIT, Apache-2.0, BSD-2/3-Clause, ISC, Unicode-3.0, Zlib). An exception names the crate, the license and the reason.
+- **Bans:** duplicate versions warn and wildcard versions are errors. `openssl`, `openssl-sys` and `native-tls` are denied, to keep TLS on rustls (ADR-0006).
+- **Sources:** crates.io only. No other registries and no git dependencies (the `[sources]` section of `deny.toml`).
+
+Fixture tests in `xtask/tests/deny.rs` prove that a banned crate, a wildcard version and a GPL-licensed dependency are rejected.
 
 `Cargo.lock` is committed. Dependency updates are separate PRs. CI pins GitHub Actions by commit SHA.
 

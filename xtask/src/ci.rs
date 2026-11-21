@@ -24,7 +24,8 @@ pub(crate) struct CiStep {
     pub(crate) summary: &'static str,
     /// Arguments to `cargo`.
     pub(crate) cargo_args: &'static [&'static str],
-    pub(crate) requires: Option<&'static Tool>,
+    /// Pinned tools the step needs, checked before it runs.
+    pub(crate) requires: &'static [&'static Tool],
 }
 
 /// Every CI step, in run order.
@@ -33,7 +34,7 @@ pub(crate) const STEPS: &[CiStep] = &[
         name: "fmt",
         summary: "Formatting (rustfmt)",
         cargo_args: &["fmt", "--all", "--check"],
-        requires: None,
+        requires: &[],
     },
     CiStep {
         name: "clippy",
@@ -47,7 +48,7 @@ pub(crate) const STEPS: &[CiStep] = &[
             "-D",
             "warnings",
         ],
-        requires: None,
+        requires: &[],
     },
     CiStep {
         name: "layers",
@@ -61,7 +62,13 @@ pub(crate) const STEPS: &[CiStep] = &[
             "--",
             "check-layers",
         ],
-        requires: None,
+        requires: &[],
+    },
+    CiStep {
+        name: "deny",
+        summary: "Dependency policy: advisories, bans, licenses, sources (deny.toml)",
+        cargo_args: &["deny", "--locked", "check"],
+        requires: &[&tools::DENY],
     },
     CiStep {
         name: "test",
@@ -74,7 +81,8 @@ pub(crate) const STEPS: &[CiStep] = &[
             "--profile",
             "ci",
         ],
-        requires: Some(&tools::NEXTEST),
+        // The deny.toml fixture tests in xtask run cargo-deny.
+        requires: &[&tools::NEXTEST, &tools::DENY],
     },
 ];
 
@@ -141,7 +149,7 @@ mod tests {
 
     #[test]
     fn documented_steps_are_registered() {
-        for name in ["fmt", "clippy", "layers", "test"] {
+        for name in ["fmt", "clippy", "layers", "deny", "test"] {
             assert!(is_step(name), "{name}");
         }
         assert!(!is_step("nope"));

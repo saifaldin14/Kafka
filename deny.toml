@@ -1,0 +1,58 @@
+# Dependency policy, checked by `cargo deny check` (the `deny` step of `cargo xtask ci`).
+# Why each rule exists: docs/standards/security.md#dependencies.
+# cargo-deny's version is pinned in xtask/src/tools.rs.
+
+[graph]
+# The supported platforms. Dependencies used only on other targets are not checked.
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "aarch64-unknown-linux-gnu",
+    "aarch64-apple-darwin",
+]
+
+[advisories]
+# Vulnerability and unsound advisories are always errors.
+unmaintained = "all"
+yanked = "deny"
+# Every ignored advisory needs a reason and an expiry:
+#   { id = "RUSTSEC-YYYY-NNNN", reason = "...", expiry = "YYYY-MM-DD" }
+ignore = []
+
+[licenses]
+# The permissive licenses allowed by docs/standards/security.md#dependencies.
+# An exception must name the crate, the license and the reason.
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "Zlib",
+]
+confidence-threshold = 0.93
+# The allow-list is the policy, not a record of what is currently used.
+unused-allowed-license = "allow"
+exceptions = []
+
+[licenses.private]
+# Workspace crates have `publish = false` and no license field yet (see FND-0046).
+ignore = true
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+# Path dependencies between workspace crates carry no version; that is not a wildcard.
+allow-wildcard-paths = true
+deny = [
+    { crate = "openssl", reason = "TLS is rustls only (ADR-0006)", use-instead = "rustls" },
+    { crate = "openssl-sys", reason = "TLS is rustls only (ADR-0006)", use-instead = "rustls" },
+    { crate = "native-tls", reason = "TLS is rustls only (ADR-0006)", use-instead = "rustls" },
+]
+
+[sources]
+# crates.io only: no other registries and no git dependencies.
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

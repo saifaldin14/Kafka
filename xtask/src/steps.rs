@@ -20,8 +20,8 @@ pub(crate) struct Step {
     pub(crate) name: String,
     pub(crate) program: OsString,
     pub(crate) args: Vec<String>,
-    /// A tool that must be installed at its pinned version before the step can run.
-    pub(crate) requires: Option<&'static Tool>,
+    /// Tools that must be installed at their pinned versions before the step can run.
+    pub(crate) requires: &'static [&'static Tool],
 }
 
 impl Step {
@@ -31,7 +31,7 @@ impl Step {
             name: name.to_owned(),
             program: tools::cargo_program(),
             args: args.iter().map(|arg| (*arg).to_owned()).collect(),
-            requires: None,
+            requires: &[],
         }
     }
 
@@ -123,12 +123,12 @@ pub(crate) fn all_passed(reports: &[Report]) -> bool {
 }
 
 fn run_one(step: &Step) -> Outcome {
-    if let Some(tool) = step.requires
-        && let Err(problem) = tools::check(tool)
-    {
-        return Outcome::CouldNotStart {
-            reason: problem.to_string(),
-        };
+    for tool in step.requires {
+        if let Err(problem) = tools::check(tool) {
+            return Outcome::CouldNotStart {
+                reason: problem.to_string(),
+            };
+        }
     }
     match Command::new(&step.program).args(&step.args).status() {
         Ok(status) if status.success() => Outcome::Passed,
@@ -151,7 +151,7 @@ mod tests {
             name: "missing".to_owned(),
             program: "alluvium-xtask-test-no-such-program".into(),
             args: Vec::new(),
-            requires: None,
+            requires: &[],
         }
     }
 
@@ -211,13 +211,14 @@ mod tests {
 
     #[test]
     fn a_missing_required_tool_blocks_the_step_with_the_install_command() {
-        static TOOL: Tool = Tool {
+        const TOOL: Tool = Tool {
             crate_name: "cargo-alluvium-test-absent",
             version: "1.2.3",
             subcommand: "alluvium-test-absent",
         };
+        static REQUIRES: [&Tool; 1] = [&TOOL];
         let mut step = Step::cargo("needs-tool", &["--version"]);
-        step.requires = Some(&TOOL);
+        step.requires = &REQUIRES;
         let (outcomes, text) = outcomes(&[step], false);
         assert!(
             matches!(&outcomes[..], [Outcome::CouldNotStart { .. }]),
