@@ -1,7 +1,7 @@
 name: cargo xtask ci
 description: >-
-  Installs the toolchain pinned in rust-toolchain.toml and the tools the given steps
-  need, then runs those `cargo xtask ci` steps. Every CI job runs its checks through
+  Installs the toolchain pinned in rust-toolchain.toml, restores the cache, installs
+  the tools the given steps need, then runs those `cargo xtask ci` steps. Every CI job runs its checks through
   this action, so each check is defined once, in xtask/src/ci.rs.
 
 inputs:
@@ -20,6 +20,14 @@ runs:
       shell: bash
       # With no name, rustup installs the toolchain and components from rust-toolchain.toml.
       run: rustup toolchain install --profile minimal
+
+    - name: Restore the cache (dependencies, build output, installed tools)
+      uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      with:
+        # Keyed on the job, OS, toolchain and Cargo.lock. Only pushes to main save, so
+        # a PR can never write the cache main restores (cache poisoning).
+        save-if: ${{ github.ref == 'refs/heads/main' }}
+        cache-bin: "true"
 
     - name: Install the tools the steps need
       shell: bash
