@@ -6,7 +6,8 @@ This document describes how Alluvium is organized and why. Read it before changi
 
 **Goals**
 
-- Wire and semantic compatibility with Apache Kafka 4.4.0 for client-facing APIs ([ADR-0001](adr/0001-kafka-4-4-compatibility-is-the-parity-contract.md)).
+- Wire and semantic compatibility with Apache Kafka 4.4.0 for client-facing APIs, as a permanent protocol surface ([ADR-0010](adr/0010-alluvium-is-its-own-platform.md)).
+- Core types and interfaces that don't inherit Kafka's limitations, so the planned enhancements fit without rework (§10).
 - A single cluster mode: KRaft. Nodes run as broker, controller, or both.
 - Every component testable in deterministic simulation and debuggable from its logs, metrics, flight recorder and on-disk state.
 
@@ -15,7 +16,7 @@ This document describes how Alluvium is organized and why. Read it before changi
 - ZooKeeper mode, and the ZooKeeper-era APIs (keys 4–7) removed in Kafka 4.0.
 - Message formats v0 and v1, which Kafka 4.0 dropped ([KIP-724](https://cwiki.apache.org/confluence/display/KAFKA/KIP-724%3A+Drop+support+for+message+formats+v0+and+v1)).
 - Mixed clusters of Kafka and Alluvium nodes.
-- Reimplementing Kafka Streams or Kafka Connect. They are client-side and run against Alluvium through the protocol.
+- Reimplementing the Kafka Streams or Kafka Connect runtimes. They are client-side and run against Alluvium through the protocol. Built-in processing is a separate, native feature (X-SQL, X-WASM).
 - JMX. Metrics are exported in Prometheus format, with a documented mapping from Kafka metric names.
 
 ## 2. Bird's-eye view
@@ -82,6 +83,18 @@ The workspace is a set of crates under `crates/`. **A crate is created when its 
 
 `fuzz/` holds the cargo-fuzz targets. `tests/compat/` holds the compatibility and differential suites.
 
+The enhancement track adds crates when their first code lands. Each one's layer is decided in its epic's design ADR:
+- `alluvium-api` and `alluvium-client` (native APIs and SDK);
+- `alluvium-schema` (schema registry);
+- `alluvium-queue` (queue semantics);
+- `alluvium-kv` (key index);
+- `alluvium-diskless` (object-storage topics);
+- `alluvium-link` (geo-replication);
+- `alluvium-transform` (WASM);
+- `alluvium-sql`;
+- `alluvium-autopilot`;
+- `alluvium-embedded`.
+
 ## 5. Layering rules
 
 Machine-checked by `cargo xtask check-layers` ([ADR-0009](adr/0009-crate-layering-and-dependency-rules.md)).
@@ -109,8 +122,8 @@ Chosen in [ADR-0002](adr/0002-sans-io-state-machines-driven-by-tokio.md).
 
 - **Tokio multi-threaded runtime** for network and request handling. The runtime is created in exactly one place, the binary.
 - **Drivers.** Each layer 1–2 state machine has a driver in `alluvium-server`. The driver owns the machine and feeds it inputs (requests, peer messages, timer ticks, completed I/O). It executes the returned actions and records transitions in the flight recorder.
-- **Single writer per partition.** All mutations of a partition's log and replication state go through one owner. Readers (fetches) read published offsets (high watermark, last stable offset, log end offset) without taking the writer's lock. *Whether the owner is an actor task or a lock is decided in the storage/replication ADR (open, §10).*
-- **Blocking work** (file I/O, fsync, compression of large batches) never runs on Tokio worker threads. The storage driver owns where it runs (§10).
+- **Single writer per partition.** All mutations of a partition's log and replication state go through one owner. Readers (fetches) read published offsets (high watermark, last stable offset, log end offset) without taking the writer's lock. *Whether the owner is an actor task or a lock is decided by the spike REPL-F01, which ends in an ADR.*
+- **Blocking work** (file I/O, fsync, compression of large batches) never runs on Tokio worker threads. The storage driver owns where it runs (spike STOR-F18).
 - **Tasks** are spawned only through a supervisor that names them, attaches a span, tracks them for shutdown, and treats a task panic as a process-fatal bug ([ADR-0004](adr/0004-error-model-and-panic-policy.md)).
 - **Shutdown order** is the reverse of startup:
   1. Stop accepting connections.
@@ -166,18 +179,21 @@ These are checked with `debug_assert!` in state machines, with property tests, a
 | Test levels, simulation, fuzzing, compatibility | [standards/testing.md](standards/testing.md) |
 | Configuration: Kafka key names, typed, validated, each value's source visible in `check-config` and `DescribeConfigs` | `alluvium-config` (M0) |
 
-## 10. Open decisions
+## 10. Beyond Kafka: foundation hooks
 
-Each will get an ADR before the related code is written.
+Alluvium is designed to lift Kafka's limitations ([ADR-0010](adr/0010-alluvium-is-its-own-platform.md)). The enhancements themselves come after the parity track, but these extension points are built during it, so the enhancements don't force a redesign. Each is a backlog feature labelled `foundation-for:<epic>`. Each has exactly one implementation until its enhancement lands, which is the sanctioned exception to "no speculative abstraction".
 
-| Decision | Options under consideration | Needed by |
+| Kafka limitation | Foundation (parity track) | Enhancement |
 |---|---|---|
-| Storage I/O execution | Dedicated I/O thread pool; `io_uring` on Linux with a fallback | M2 |
-| Partition ownership mechanism | Actor task per partition with bounded mailbox; or sharded locks with lock-free published offsets | M2 |
-| Segment and index file formats | Kafka-like (`.log`, `.index`, `.timeindex`), documented and versioned by us ([ADR-0007](adr/0007-record-batches-stored-in-wire-format.md)) | M2 |
-| fsync policy defaults | Kafka parity (rely on replication, `flush.messages`/`flush.ms` unset) versus stricter defaults | M2 |
-| Tiered storage plug-in interface | KIP-405 compatible `RemoteStorageManager` equivalent | M9 |
-| GSSAPI/Kerberos | Native Rust versus a reviewed FFI exception to `forbid(unsafe_code)` | M4 (may be deferred) |
+| Adding partitions breaks key ordering; partitions can't be removed | Key hash space and key ranges (TYPE-F11); key-range mapping records (META-F08) | Elastic partitions (X-ELASTIC) |
+| Not a queue: no per-message ack, delay, retry, DLQ or priority | Per-record delivery state store (SHARE-F08) | Queue semantics (X-QUEUE) |
+| Storage tied to brokers; costly cross-zone replication | Segment store abstraction (STOR-F02) | Diskless topics (X-DISKLESS), tiered storage (TIER) |
+| No multi-tenancy | Namespace identity (TYPE-F10); namespace records (META-F07) | Multi-tenancy (X-TENANT) |
+| Kafka protocol only | Protocol-agnostic service layer (SRV-F10) | Native HTTP/gRPC APIs (X-NATIVE) |
+| Not a database: no key lookups | Append observer hook (STOR-F24) | Key lookups (X-KV) |
+| ~1 MB messages; no schema enforcement; no end-to-end tracing | Reserved record-header conventions (REC-F13) | Large messages (X-LARGE), schema validation (X-SCHEMA), tracing (X-OBSX) |
+
+Open design decisions are backlog `Spike` tasks that end in an ADR. Examples: storage I/O execution (STOR-F18), partition ownership (REPL-F01), fsync defaults (STOR-F17), GSSAPI (SEC-F06), and the design spike that opens each enhancement epic.
 
 ## 11. Repository layout (target)
 

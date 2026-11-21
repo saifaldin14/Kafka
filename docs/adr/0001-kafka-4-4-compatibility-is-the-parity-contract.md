@@ -1,6 +1,6 @@
 # ADR-0001: Kafka 4.4 compatibility is the parity contract
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-0010](0010-alluvium-is-its-own-platform.md)
 - **Date:** 2026-11-20
 
 ## Context

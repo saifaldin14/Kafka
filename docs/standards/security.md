@@ -51,7 +51,7 @@ Alluvium stores other people's data and listens on the network. Security is a de
 | `PLAIN` | M4 | Refused on plaintext non-loopback listeners unless explicitly allowed |
 | `SCRAM-SHA-256`, `SCRAM-SHA-512` | M4 | Credentials stored as salted, iterated hashes in metadata, like Kafka |
 | `OAUTHBEARER` | M4 | JWT validation with JWKS. No network calls on the request path; keys are cached and refreshed in the background |
-| `GSSAPI` (Kerberos) | Later | Needs a decision on FFI ([architecture §10](../architecture.md#10-open-decisions)) |
+| `GSSAPI` (Kerberos) | Later | Needs a decision on FFI (backlog spike SEC-F06) |
 
 - SASL mechanisms are sans-I/O state machines in `alluvium-security`, fed bytes by `alluvium-network`.
 - Credential comparisons use constant-time equality (`subtle`).
@@ -99,4 +99,4 @@ Before adding a dependency, the PR answers:
 
 - CRC32C is validated where Kafka validates it: on produce (record validation), on log recovery, on follower fetch, and by `verify log`.
 - After an unclean shutdown, recovery validates the active segments and truncates at the first invalid batch, recording an event with the truncated range.
-- The fsync policy is explicit and documented ([architecture §10](../architecture.md#10-open-decisions)). Acknowledgement semantics never claim more durability than the policy provides.
+- The fsync policy is explicit and documented (backlog STOR-F17, which ends in an ADR). Acknowledgement semantics never claim more durability than the policy provides.

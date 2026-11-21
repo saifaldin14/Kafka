@@ -12,7 +12,7 @@ Design decisions are in [ADR-0005](../adr/0005-observability-model.md).
 
 ## Tracing
 
-Built on `tracing`. The binary installs the subscriber: JSON lines in production, human-readable output in development. The filter uses `RUST_LOG` syntax from the `ALLUVIUM_LOG` environment variable or the `log.filter` config. It can be changed at runtime through the diagnostics endpoint, and through Kafka's `BROKER_LOGGER` config resource (`IncrementalAlterConfigs`), as in Kafka.
+Built on `tracing`. The binary installs the subscriber: JSON lines in production, human-readable output in development. The filter uses `RUST_LOG` syntax from the `ALLUVIUM_LOG` environment variable or the `alluvium.log.filter` config. It can be changed at runtime through the diagnostics endpoint, and through Kafka's `BROKER_LOGGER` config resource (`IncrementalAlterConfigs`), as in Kafka.
 
 ### Span hierarchy
 
@@ -96,7 +96,7 @@ Built on `prometheus-client` with an **explicitly passed registry**. There is no
 
 - Names follow `alluvium_<subsystem>_<name>_<unit>`. Counters end in `_total`, durations in `_seconds`, sizes in `_bytes`.
 - Every metric that corresponds to a Kafka metric is listed in `docs/metrics.md` (created with the first metric) next to its Kafka JMX name, so existing dashboards can be translated.
-- **Label cardinality is bounded.** `topic` labels are allowed. `partition` labels only appear when `metrics.per.partition.enabled` is set. A `client_id` label is allowed only on quota metrics, with a cap on distinct values. Never use unbounded labels (offsets, member ids, connection ids).
+- **Label cardinality is bounded.** `topic` labels are allowed. `partition` labels only appear when `alluvium.metrics.per.partition.enabled` is set. A `client_id` label is allowed only on quota metrics, with a cap on distinct values. Never use unbounded labels (offsets, member ids, connection ids).
 - **Every queue** exports depth, capacity and rejections (or mute events).
 - **Every API** exports request count, error count by `error_code`, and latency histograms split by phase, mirroring Kafka's request metrics: queue time, local time, remote time (waiting in purgatory), throttle time, response queue time, response send time, total. These phases are what tell you where latency comes from.
 

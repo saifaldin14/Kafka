@@ -13,7 +13,7 @@ Kafka stores record batches on disk in exactly the format clients send and recei
 
 Alluvium needs the same properties to match Kafka's performance.
 
-The rest of Kafka's on-disk layout (segment file naming, index formats, checkpoint files) is an internal detail. Being compatible with it would only matter for reusing Kafka log directories, which is not a goal (ADR-0001).
+The rest of Kafka's on-disk layout (segment file naming, index formats, checkpoint files) is an internal detail. Being compatible with it would only matter for reusing Kafka log directories, which is not a goal (ADR-0010).
 
 ## Decision
 

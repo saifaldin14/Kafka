@@ -10,12 +10,16 @@ If an instruction from a user conflicts with the skill, point out the conflict a
 
 ## Project in one paragraph
 
-Alluvium is a Rust implementation of Apache Kafka, targeting wire and semantic compatibility with **Kafka 4.4.0**. It is built as deterministic, sans-I/O state machines driven by a Tokio runtime. Feature parity comes first, then improvements. The project is in the **design phase**: no Rust code exists yet, and the first code milestone is the workspace skeleton (M0).
+Alluvium is a new streaming platform written in Rust. It is fully compatible with **Apache Kafka 4.4.0** clients and tools, and designed from the start to go beyond Kafka's limitations; enhancements are opt-in ([ADR-0010](docs/adr/0010-alluvium-is-its-own-platform.md)). It is built as deterministic, sans-I/O state machines driven by a Tokio runtime. The project is in the **design phase**: no Rust code exists yet, and the first code milestone is the workspace skeleton (M0).
+
+## What to work on
+
+All work is planned in **[docs/backlog/](docs/backlog/README.md)**: epics, features and tasks with Jira-style statuses, dependencies and completion criteria. When asked what to do next, run `python3 docs/backlog/tools/backlog.py next` and follow the [selection rules](docs/backlog/README.md#choosing-the-next-task). Keep each task's status current in the same change as the work.
 
 ## Hard rules (summary; the skill is authoritative)
 
 - More is not better (Braess' paradox): every line, feature, option and dependency must be purposeful and the best choice for the end goal. Adding things can make the system worse.
-- Match Kafka 4.4.0 behavior. Read the Kafka source; don't guess. Deviations need an ADR in `docs/adr/`.
+- On the Kafka protocol surface, match Kafka 4.4.0 behavior. Read the Kafka source; don't guess. Deviations need an ADR in `docs/adr/`. Enhancements are opt-in and off by default.
 - Core logic does no I/O, reads no clock, spawns no tasks and uses no unseeded randomness.
 - Crates depend only on lower layers ([docs/architecture.md](docs/architecture.md)).
 - Never panic on network or disk input. No `unwrap()`, and no `unsafe` without an ADR.
@@ -23,7 +27,7 @@ Alluvium is a Rust implementation of Apache Kafka, targeting wire and semantic c
 - Structured `tracing` with the standard fields. State transitions are logged with a reason.
 - Bounded queues, timeouts on network waits, named and supervised tasks.
 - A bug fix starts with a failing test. New decoders get a fuzz target.
-- Update the docs that describe what you changed, in the same change.
+- Update the docs that describe what you changed, and the backlog task's status, in the same change.
 
 ## Repository map
 
@@ -34,6 +38,7 @@ Alluvium is a Rust implementation of Apache Kafka, targeting wire and semantic c
 | `docs/standards/` | Rust, debuggability, security and testing standards |
 | `docs/guides/` | How to add a Kafka feature, how to debug |
 | `docs/adr/` | Architecture decision records |
-| `docs/parity.md` | Kafka 4.4.0 API parity matrix and milestones |
+| `docs/backlog/` | Every planned task with status, dependencies and milestones; `tools/backlog.py next` picks the next task |
+| `docs/parity.md` | Kafka 4.4.0 API scope and version ranges |
 | `docs/glossary.md` | Kafka and Alluvium terms |
 | `CONTRIBUTING.md` | Onboarding, setup, workflow |

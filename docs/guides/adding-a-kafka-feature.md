@@ -24,10 +24,10 @@ Write down the edge cases you find: each error code and the condition that trigg
 
 ## 2. Plan
 
-- Update the API's row in [docs/parity.md](../parity.md) to **In progress**, with a link to the issue.
+- Find the work in the [backlog](../backlog/README.md): the API's feature (`API-Fnn`, where nn is the API key) and the domain features it depends on. Set the task you're taking to `In Progress`. If a behavior you found in step 1 has no task, add one.
 - If the change crosses crates, deviates from Kafka, or needs a new abstraction, write an ADR first.
 - Build exactly what Kafka 4.4.0 does for this feature, no more. Extra options, abstractions or "nice to have" behavior make the system harder to test and debug ([more is not better](../../.agents/skills/alluvium-engineering/SKILL.md#more-is-not-better-braess-paradox)).
-- Split the work into PRs that each leave `main` green and correct. A typical split is: codegen, then state machine, then driver and handler, then compatibility tests and advertising.
+- Each backlog task is one PR that leaves `main` green and correct. The tasks are already split roughly as codegen, then state machine, then driver and handler, then compatibility tests and advertising.
 
 ## 3. Build bottom-up
 
@@ -55,10 +55,16 @@ Write down the edge cases you find: each error code and the condition that trigg
 
 ## 5. Finish
 
-- Mark the API **Done** in [docs/parity.md](../parity.md) with the supported version range.
+- Mark each finished task `Done` in the backlog. The API's feature becomes `Done` when its last task, advertising in ApiVersions, is done.
 - Update module docs, the [glossary](../glossary.md) for new terms, and the [architecture](../architecture.md) if any flows changed.
 - Check the [definition of done](../../.agents/skills/alluvium-engineering/SKILL.md#definition-of-done).
 
 ## Improving on Kafka
 
-Improvements ("superior" behavior) come only after the area reaches parity. They need an ADR and an opt-in config, and they must not change behavior that existing clients can observe under default settings. Differential tests keep running with the improvement turned off.
+Enhancements beyond Kafka are planned as the `X-*` epics in the [backlog](../backlog/README.md) ([ADR-0010](../adr/0010-alluvium-is-its-own-platform.md)).
+- Each starts with a design spike that ends in an ADR.
+- Each builds on the `foundation-for:<epic>` interfaces created during the parity track.
+- Each is opt-in, and must not change behavior that existing clients can observe under default settings.
+- Differential tests keep running with the enhancement turned off, and with it on but unused.
+
+When implementing parity work, build the foundation interfaces your backlog task names, but nothing beyond them.
