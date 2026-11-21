@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-/// Prints a payload as its length and CRC32C, never its contents:
+/// See [`NoSuchType`]. Prints a payload as its length and CRC32C, never its contents:
 /// `Bytes { len: 1048576, crc32c: 0x1a2b3c4d }`.
 ///
 /// Record keys, values and headers may hold personal or secret data, so they never

@@ -28,3 +28,5 @@ Crates, in code-map order:
 | `alluvium-testkit` | Not written yet |
 | `xtask` | Not written yet |
 | `lint-canary` | Not written yet |
+
+See [the missing section](template.md#no-such-section).
