@@ -63,3 +63,11 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod demo {
+    #[test]
+    fn fails_only_on_macos() {
+        assert!(!cfg!(target_os = "macos"), "deliberate failure on macOS only");
+    }
+}
