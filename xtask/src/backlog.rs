@@ -301,7 +301,7 @@ pub(crate) fn with_repository_backlog<W: Write>(
     }
     output::line(
         out,
-        "backlog has format errors; run `python3 docs/backlog/tools/backlog.py check`",
+        "backlog has format errors; run `cargo xtask backlog check`",
     );
     Exit::CheckFailed
 }
@@ -355,22 +355,40 @@ pub(crate) fn parse(readme: &str, files: &[(String, String)]) -> Parsed {
     parsed
 }
 
-/// Epic codes from the README epic table rows (`| 2 | FND | [Title](02-….md) | … |`).
-fn epic_order(readme: &str) -> Vec<String> {
-    readme.lines().filter_map(epic_row_code).collect()
+/// A row of the README epic table: `| 2 | FND | [Title](02-fnd-foundation.md) | … |`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct EpicRow {
+    /// The build-order number, as written.
+    pub(crate) number: String,
+    pub(crate) code: String,
+    /// The linked epic file.
+    pub(crate) file: String,
 }
 
-fn epic_row_code(line: &str) -> Option<String> {
+/// The README epic table rows, in order.
+pub(crate) fn epic_rows(readme: &str) -> Vec<EpicRow> {
+    readme.lines().filter_map(epic_row).collect()
+}
+
+fn epic_order(readme: &str) -> Vec<String> {
+    epic_rows(readme).into_iter().map(|row| row.code).collect()
+}
+
+fn epic_row(line: &str) -> Option<EpicRow> {
     let rest = line.strip_prefix("| ")?;
     let (number, rest) = rest.split_once(" | ")?;
     let (code, rest) = rest.split_once(" | [")?;
     let (_, after_title) = rest.split_once("](")?;
-    let (target, _) = after_title.split_once(')')?;
+    let (file, _) = after_title.split_once(')')?;
     let valid = !number.is_empty()
         && number.bytes().all(|byte| byte.is_ascii_digit())
         && is_epic_code(code)
-        && !target.is_empty();
-    valid.then(|| code.to_owned())
+        && !file.is_empty();
+    valid.then(|| EpicRow {
+        number: number.to_owned(),
+        code: code.to_owned(),
+        file: file.to_owned(),
+    })
 }
 
 /// `[A-Z][A-Z-]*`.

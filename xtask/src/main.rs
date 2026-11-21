@@ -28,6 +28,7 @@
 //! Commands arrive with the backlog task that needs them; nothing is added ahead of use.
 
 mod backlog;
+mod backlog_check;
 mod backlog_next;
 mod backlog_stats;
 mod check_layers;
@@ -96,6 +97,7 @@ fn run(command: &Command, out: &mut impl std::io::Write) -> Exit {
         }
         Command::Backlog(BacklogCommand::Show { id }) => backlog_next::run_show(id, out),
         Command::Backlog(BacklogCommand::Stats { write }) => backlog_stats::run(*write, out),
+        Command::Backlog(BacklogCommand::Check(options)) => backlog_check::run(options, out),
         Command::LintCanary => lint_canary::run(out),
     }
 }

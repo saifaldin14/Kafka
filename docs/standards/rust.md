@@ -176,7 +176,7 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 | `cargo xtask ci --list` | Lists the steps in run order |
 | `cargo xtask ci --step <name>` | Runs only the named steps (repeatable), still in run order |
 | `cargo xtask tools install` | Installs the pinned versions of the external tools (`xtask/src/tools.rs` is the only place versions appear) |
-| `cargo xtask backlog next [--all] [-n N]`, `show <ID>`, `stats [--write]` | The next ready tasks, one item with its dependencies, and the totals in the backlog README ([backlog rules](../backlog/README.md#choosing-the-next-task)); the same output as `backlog.py`, which FND-0045 retires |
+| `cargo xtask backlog check`, `next [--all] [-n N]`, `show <ID>`, `stats [--write]` | The backlog rules, the next ready tasks, one item with its dependencies, and the totals in the backlog README ([backlog rules](../backlog/README.md#choosing-the-next-task)); the same output as `backlog.py`, which FND-0045 retires |
 
 | Step | Runs |
 |---|---|

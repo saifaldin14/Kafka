@@ -6,6 +6,7 @@
 use std::ffi::OsString;
 use std::fmt;
 
+use crate::backlog_check::CheckOptions;
 use crate::check_layers::LayerOptions;
 use crate::ci;
 
@@ -30,6 +31,8 @@ pub(crate) enum BacklogCommand {
     Show { id: String },
     /// `stats [--write]`.
     Stats { write: bool },
+    /// `check [--allow-empty-features] [--epic <code>]...`.
+    Check(CheckOptions),
 }
 
 /// Options for `cargo xtask ci`.
@@ -63,6 +66,10 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
     (
         "lint-canary",
         "Prove the workspace lints fire on the fixtures in xtask/lint-canary",
+    ),
+    (
+        "backlog check [--allow-empty-features] [--epic <code>]...",
+        "Check the backlog against the rules in docs/backlog/README.md",
     ),
     (
         "backlog next [--all] [-n <count>]",
@@ -271,6 +278,28 @@ fn parse_backlog(rest: &[String]) -> Result<BacklogCommand, UsageError> {
                 argument: extra.clone(),
             }),
         },
+        "check" => {
+            let mut options = CheckOptions::default();
+            let mut args = rest.iter();
+            while let Some(arg) = args.next() {
+                match arg.as_str() {
+                    "--allow-empty-features" => options.allow_empty_features = true,
+                    "--epic" => {
+                        let code = args
+                            .next()
+                            .ok_or(UsageError::MissingValue { flag: "--epic" })?;
+                        options.epics.push(code.clone());
+                    }
+                    _ => {
+                        return Err(UsageError::UnexpectedArgument {
+                            command: "backlog check",
+                            argument: arg.clone(),
+                        });
+                    }
+                }
+            }
+            Ok(BacklogCommand::Check(options))
+        }
         "stats" => match rest {
             [] => Ok(BacklogCommand::Stats { write: false }),
             [flag] if flag == "--write" => Ok(BacklogCommand::Stats { write: true }),
@@ -463,6 +492,23 @@ mod tests {
                 all: true,
                 count: 3
             }))
+        );
+        assert_eq!(
+            parse(args(&[
+                "backlog",
+                "check",
+                "--epic",
+                "FND",
+                "--allow-empty-features",
+                "--epic",
+                "TYPE"
+            ])),
+            Ok(Command::Backlog(BacklogCommand::Check(
+                crate::backlog_check::CheckOptions {
+                    allow_empty_features: true,
+                    epics: vec!["FND".to_owned(), "TYPE".to_owned()],
+                }
+            )))
         );
         assert_eq!(
             parse(args(&["backlog", "stats", "--write"])),
