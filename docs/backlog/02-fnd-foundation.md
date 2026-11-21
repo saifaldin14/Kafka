@@ -188,9 +188,10 @@ Done when: A newly published advisory cannot block unrelated PRs, yet it is surf
 P0 · M0 · Task · deps: FND-0031, FND-0030, FND-0007, FND-0004 · ref: ADR-0009
 Done when: A PR that adds an upward crate dependency fails this job with the check-layers message; a PR that weakens a lint in `[workspace.lints]` fails `manifests` and `lint-canary`.
 
-### [To Do] FND-0037 CI `ci-success` aggregator job (`needs:` every required job, `if: always()`) as the single required status check
+### [In Review] FND-0037 CI `ci-success` aggregator job (`needs:` every required job, `if: always()`) as the single required status check
 P0 · M0 · Task · deps: FND-0033, FND-0034, FND-0035, FND-0036
 Done when: The job fails when any needed job failed, was cancelled or was skipped unexpectedly, and passes only when all succeeded; adding a new required job means adding it to `needs:`, which the workflow comment states; FND-F11's repository settings name `ci-success` as the required check.
+Notes: The repository is private on GitHub's free plan, which refuses branch protection and rulesets (HTTP 403 from the API), so `ci-success` can't be made a required check yet. The job itself is in place; FND-F11's repository settings make it required once the plan or visibility allows.
 
 ### [To Do] FND-0038 `cargo xtask check-workflows` (SHA pinning, no `pull_request_target`, timeouts, permissions) and Dependabot for actions
 P1 · M0 · Task · deps: FND-0031, FND-0007 · labels: security · ref: docs/standards/security.md#dependencies

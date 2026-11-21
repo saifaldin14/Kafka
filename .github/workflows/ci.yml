@@ -121,3 +121,23 @@ jobs:
           path: target/nextest/ci/junit.xml
           if-no-files-found: warn
           retention-days: 14
+
+  ci-success:
+    name: ci-success
+    # The single required status check. Every job that must pass is in `needs`: add a
+    # new required job here. `advisories` is deliberately left out.
+    if: always()
+    needs: [lint, policy, docs, deny, test]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Require every needed job to have succeeded
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          if echo "$NEEDS" | jq -e 'any(.[]; .result != "success")' > /dev/null; then
+            echo "A required job failed, was cancelled or was skipped."
+            exit 1
+          fi
