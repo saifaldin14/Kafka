@@ -212,7 +212,7 @@ Done when: A workflow with an invalid expression or an unknown runner label fail
 P0 · M0 · Task · deps: FND-0037, FND-0038, FND-0045 · labels: docs
 Done when: Both runs are linked in the PR; the "Current phase" section of the engineering skill, AGENTS.md ("design phase"), CONTRIBUTING.md ("contract that milestone M0 implements") and the M0 row of docs/parity.md describe the new state; the remaining open M0 tasks (if any) are listed in the PR as non-blocking for starting M1 work.
 
-## [In Progress] FND-F07 Backlog tooling
+## [Done] FND-F07 Backlog tooling
 P1 · M0 · Feature · deps: FND-F04
 Scope: Port `docs/backlog/tools/backlog.py` (check, next, stats) to `cargo xtask backlog` and run `backlog check` in CI.
 
@@ -234,10 +234,10 @@ P2 · M0 · Task · deps: FND-0041 · labels: docs · ref: docs/backlog/README.m
 Done when: The generated table is byte-identical to `backlog.py stats` on the real backlog; `--write` changes only the text between the markers; `check` (without `--allow-empty-features`) fails when the totals are stale.
 Notes: `stats` and `--write` landed first, byte-identical on the real backlog. The stale-totals failure arrived with `check` (FND-0042).
 
-### [In Review] FND-0045 Run `cargo xtask backlog check` as the `backlog` step in the CI `policy` job, delete `docs/backlog/tools/backlog.py`, and point the README, the engineering skill and CONTRIBUTING to `cargo xtask backlog`
+### [Done] FND-0045 Run `cargo xtask backlog check` as the `backlog` step in the CI `policy` job, delete `docs/backlog/tools/backlog.py`, and point the README, the engineering skill and CONTRIBUTING to `cargo xtask backlog`
 P1 · M0 · Task · deps: FND-0042, FND-0043, FND-0044, FND-0036 · labels: docs · ref: docs/backlog/README.md
 Done when: CI fails a PR that breaks the backlog format or a dependency rule; no file references `backlog.py` (grep is clean); the golden tests no longer need Python.
-Notes: `git grep backlog.py` matches only FND-F07's own task descriptions, which record what was ported; every instruction, doc, code comment and error message now points to `cargo xtask backlog`. The goldens are the specification now, so their two Python-specific details changed: Rust string quoting for a malformed metadata line, and the item count for a backlog with invalid items.
+Notes: A PR breaking the backlog format ([#9](https://github.com/saifaldin14/Kafka/pull/9), run [44936714614](https://github.com/saifaldin14/Kafka/actions/runs/44936714614)) failed `policy` at the `backlog` step: "01-type-domain-types.md:19: malformed heading", plus stale totals. `git grep backlog.py` matches only FND-F07's own task descriptions, which record what was ported; every instruction, doc, code comment and error message now points to `cargo xtask backlog`. The goldens are the specification now, so their two Python-specific details changed: Rust string quoting for a malformed metadata line, and the item count for a backlog with invalid items.
 
 ## [To Do] FND-F08 Licensing and attribution
 P1 · M0 · Feature · deps: none
