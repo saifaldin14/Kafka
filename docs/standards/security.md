@@ -95,7 +95,7 @@ Before adding a dependency, the PR answers:
 
 Fixture tests in `xtask/tests/deny.rs` prove that a banned crate, a wildcard version and a GPL-licensed dependency are rejected.
 
-`Cargo.lock` is committed. Dependency updates are separate PRs. CI pins GitHub Actions by commit SHA.
+`Cargo.lock` is committed. Dependency updates are separate PRs: Dependabot opens one PR per crate each week ([`.github/dependabot.yml`](../../.github/dependabot.yml)). CI pins GitHub Actions by commit SHA.
 
 ## Durability as a security property
 

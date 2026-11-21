@@ -1,0 +1,11 @@
+# Dependency updates as separate PRs (docs/standards/security.md#dependencies).
+# Each update is its own PR: no groups.
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+    open-pull-requests-limit: 10

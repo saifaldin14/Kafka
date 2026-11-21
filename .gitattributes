@@ -1,0 +1,9 @@
+# Line endings: LF in the repository and in every checkout.
+* text=auto eol=lf
+
+# Collapsed by default in PR views but still diffable, as ADR-0008 requires.
+**/src/generated/** linguist-generated=true
+Cargo.lock linguist-generated=true
+
+# Vendored, unmodified Kafka schemas (ADR-0008).
+schemas/kafka-4.4.0/** linguist-vendored=true
