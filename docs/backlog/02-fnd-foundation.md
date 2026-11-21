@@ -37,7 +37,7 @@ Notes: rand 0.10 removed `rand::thread_rng`, and `tokio::task::spawn` is the sam
 P0 · M0 · Task · deps: FND-0004 · labels: test · ref: docs/standards/rust.md#panics
 Done when: Covered: a bare `#[allow]` fires `allow_attributes`; `#[expect]` without a reason fires `allow_attributes_without_reason`; the sanctioned forms pass (`#[expect(clippy::disallowed_methods, reason = "…")]` wrapper, `#[expect(clippy::expect_used, reason = "invariant")]` with `expect("invariant: …")`); `await_holding_lock`, `string_slice`, `missing_docs` and `unreachable_pub` fire. Negative fixtures fire exactly the named lint and positive fixtures produce zero diagnostics; `await_holding_lock` is exercised with a `std::sync::Mutex` held across `.await` in an `async fn` without any runtime dependency; the sanctioned-wrapper pattern is documented in the canary crate's `//!` doc with a link to rust.md.
 
-### [To Do] FND-0063 clippy.toml bans rand 0.10's other unseeded entry points, not only `rand::rng`
+### [Done] FND-0063 clippy.toml bans rand 0.10's other unseeded entry points, not only `rand::rng`
 P1 · M0 · Task · deps: FND-0005 · labels: test · ref: docs/standards/rust.md#workspace-configuration
 Done when: Every public function in rand 0.10 (the version in `Cargo.lock`) that draws from the thread-local or OS RNG without a caller-supplied seed is listed, from reading its source (for example `rand::random`, `random_iter`, `random_range`, `random_bool`, `random_ratio`, `fill` and OS-seeded constructors); each is added to clippy.toml and the rust.md block with the reason "use the injected seeded RNG"; each has a lint canary fixture; `cargo xtask lint-canary` passes.
 
