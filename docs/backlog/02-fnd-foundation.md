@@ -184,7 +184,7 @@ Done when: An intentionally broken intra-doc link or Markdown anchor in a test P
 P0 · M0 · Task · deps: FND-0031, FND-0014 · labels: security · ref: docs/standards/security.md#dependencies
 Done when: A newly published advisory cannot block unrelated PRs, yet it is surfaced within a day as an issue with the advisory id; the scheduled job has `issues: write` only; a banned crate fails the required `deny` job.
 
-### [To Do] FND-0036 CI `policy` job: `cargo xtask ci --step layers --step manifests --step lint-canary` (later policy steps such as `backlog` and `workflows` are added to this job when they land)
+### [In Review] FND-0036 CI `policy` job: `cargo xtask ci --step layers --step manifests --step lint-canary` (later policy steps such as `backlog` and `workflows` are added to this job when they land)
 P0 · M0 · Task · deps: FND-0031, FND-0030, FND-0007, FND-0004 · ref: ADR-0009
 Done when: A PR that adds an upward crate dependency fails this job with the check-layers message; a PR that weakens a lint in `[workspace.lints]` fails `manifests` and `lint-canary`.
 
