@@ -164,39 +164,45 @@ Done when: The rule scans the `src/` of layer 1–2 workspace crates (layer 0 is
 P0 · M0 · Feature · deps: FND-F02, FND-F03, FND-F04, FND-F05
 Scope: GitHub Actions running `cargo xtask ci` on Linux and macOS, caching, SHA-pinned actions, required checks.
 
-### [In Review] FND-0031 `.github/workflows/ci.yml` skeleton with least-privilege defaults and the `lint` job
+### [Done] FND-0031 `.github/workflows/ci.yml` skeleton with least-privilege defaults and the `lint` job
 P0 · M0 · Task · deps: FND-0021 · labels: security · ref: docs/standards/security.md#dependencies
 Done when: Triggers are `pull_request`, `push` to main and `merge_group`; workflow-level `permissions: {}` and per-job `contents: read`; per-ref concurrency with cancel-in-progress for PRs; `actions/checkout` with `persist-credentials: false`; `timeout-minutes` on every job; the `lint` job runs `cargo xtask ci --step fmt --step clippy` on ubuntu-24.04. All actions are pinned to full commit SHAs with a `# vX.Y.Z` comment; the toolchain comes from `rust-toolchain.toml` through the runner's rustup, with no third-party toolchain action; a PR with a formatting error fails the `lint` job.
-Notes: The workflows are in PR #1. GitHub didn't start any of its jobs: "recent account payments have failed or your spending limit needs to be increased" (run 44932780848). That is an account billing block on private-repository Actions minutes. So FND-0031 to FND-0038 stay In Review until a run can execute. Verified locally instead: actionlint 1.7.12 with shellcheck finds nothing in the workflows; check-workflows passes; the xtask-ci action's toolchain install, tool selection, `--keep-going` run, and exit-code propagation through `tee` behave as intended; and advisories.yml's issue step both comments on an open issue and creates one.
+Notes: Verified on GitHub once the repository was made public (the private repository's Actions were blocked by billing). PR #1's run [44934033847](https://github.com/saifaldin14/Kafka/actions/runs/44934033847) passed every job, and a PR with a formatting error ([#3](https://github.com/saifaldin14/Kafka/pull/3), run [44934858823](https://github.com/saifaldin14/Kafka/actions/runs/44934858823)) failed `lint`. actionlint 1.7.12 reports nothing on the workflows.
 
 ### [In Review] FND-0032 CI caching: SHA-pinned `Swatinem/rust-cache` keyed on OS, toolchain and `Cargo.lock`, which also caches the tools installed by `cargo xtask tools install`; only pushes to main save the cache, PRs restore only
 P0 · M0 · Task · deps: FND-0031 · labels: perf
 Done when: A second run of an unchanged PR restores the cache and skips tool installation (cold and warm times are in the PR description); PR runs cannot write the cache that main uses (`save-if` on main only), which protects against cache poisoning.
+Notes: Cold times on PR #1, with tools built from source: lint 0.4 min, policy 0.4, deny 2.3, advisories 1.9, docs 3.6, test 6.2 (ubuntu-24.04) and 7.0 (macos-15). Still to do: show a PR restoring the cache that main saves, and record the warm times, after #1 merges.
 
-### [In Review] FND-0033 CI `test` job: matrix of ubuntu-24.04 and macos-15 (arm64), `fail-fast: false`, running `cargo xtask ci --step test` and uploading the nextest JUnit report as an artifact
+### [Done] FND-0033 CI `test` job: matrix of ubuntu-24.04 and macos-15 (arm64), `fail-fast: false`, running `cargo xtask ci --step test` and uploading the nextest JUnit report as an artifact
 P0 · M0 · Task · deps: FND-0031, FND-0022 · labels: test · ref: docs/standards/testing.md#rules
 Done when: Both matrix legs run on every PR; a failing test fails only its leg and the report artifact is downloadable; runner images are pinned by label (not `-latest`), and the labels are recorded in the NFR-F10 portability matrix once it exists.
+Notes: Both legs ran on every PR. A test failing only on macOS ([#7](https://github.com/saifaldin14/Kafka/pull/7), run [44934882076](https://github.com/saifaldin14/Kafka/actions/runs/44934882076)) failed `test (macos-15)` while `test (ubuntu-24.04)` passed, and both `junit-<os>` artifacts were downloadable. The first CI run found a real bug: the cargo-deny fixture tests depended on terminal colour, fixed in fdc054f. NFR-F10's matrix doesn't exist yet; it should record ubuntu-24.04 and macos-15.
 
-### [In Review] FND-0034 CI `docs` job running `cargo xtask ci --step doc --step links`
+### [Done] FND-0034 CI `docs` job running `cargo xtask ci --step doc --step links`
 P0 · M0 · Task · deps: FND-0031, FND-0054, FND-0055 · labels: docs
 Done when: An intentionally broken intra-doc link or Markdown anchor in a test PR fails the job; the job runs on Linux only, with a documented reason (rustdoc output does not depend on the platform).
+Notes: A PR with a broken intra-doc link and a broken Markdown anchor ([#5](https://github.com/saifaldin14/Kafka/pull/5), run [44934873977](https://github.com/saifaldin14/Kafka/actions/runs/44934873977)) failed both steps: rustdoc reported "unresolved link to `NoSuchType`" and lychee "Cannot find fragment".
 
 ### [In Review] FND-0035 CI dependency jobs: `deny` (bans, licenses, sources) as a required check, plus a separate `advisories` job that runs on PRs without blocking them and on a daily schedule that opens or updates a tracking issue when it fails
 P0 · M0 · Task · deps: FND-0031, FND-0014 · labels: security · ref: docs/standards/security.md#dependencies
 Done when: A newly published advisory cannot block unrelated PRs, yet it is surfaced within a day as an issue with the advisory id; the scheduled job has `issues: write` only; a banned crate fails the required `deny` job.
+Notes: `deny` is verified: a banned `openssl-sys` ([#6](https://github.com/saifaldin14/Kafka/pull/6), run [44934876168](https://github.com/saifaldin14/Kafka/actions/runs/44934876168)) failed it with "explicitly banned". `advisories` runs on PRs without failing them. The issue step has been tested both ways: once accidentally against GitHub, opening (since deleted) issue #2 with deduplicated advisory ids, and against a stand-in `gh` for the comment path. Still to do: a scheduled or dispatched run from main, possible only after #1 merges.
 
-### [In Review] FND-0036 CI `policy` job: `cargo xtask ci --step layers --step manifests --step lint-canary` (later policy steps such as `backlog` and `workflows` are added to this job when they land)
+### [Done] FND-0036 CI `policy` job: `cargo xtask ci --step layers --step manifests --step lint-canary` (later policy steps such as `backlog` and `workflows` are added to this job when they land)
 P0 · M0 · Task · deps: FND-0031, FND-0030, FND-0007, FND-0004 · ref: ADR-0009
 Done when: A PR that adds an upward crate dependency fails this job with the check-layers message; a PR that weakens a lint in `[workspace.lints]` fails `manifests` and `lint-canary`.
+Notes: An upward crate dependency ([#8](https://github.com/saifaldin14/Kafka/pull/8), run [44934887613](https://github.com/saifaldin14/Kafka/actions/runs/44934887613)) failed `policy` with "alluvium-types (layer 0) -> alluvium-storage (layer 1): a crate may depend only on lower layers". Setting `todo` to `allow` ([#4](https://github.com/saifaldin14/Kafka/pull/4), run [44935062251](https://github.com/saifaldin14/Kafka/actions/runs/44935062251)) failed both `manifests` and `lint-canary`.
 
-### [In Review] FND-0037 CI `ci-success` aggregator job (`needs:` every required job, `if: always()`) as the single required status check
+### [Done] FND-0037 CI `ci-success` aggregator job (`needs:` every required job, `if: always()`) as the single required status check
 P0 · M0 · Task · deps: FND-0033, FND-0034, FND-0035, FND-0036
 Done when: The job fails when any needed job failed, was cancelled or was skipped unexpectedly, and passes only when all succeeded; adding a new required job means adding it to `needs:`, which the workflow comment states; FND-F11's repository settings name `ci-success` as the required check.
-Notes: The repository is private on GitHub's free plan, which refuses branch protection and rulesets (HTTP 403 from the API), so `ci-success` can't be made a required check yet. The job itself is in place; FND-F11's repository settings make it required once the plan or visibility allows.
+Notes: `ci-success` failed in all six demonstration PRs ([#3](https://github.com/saifaldin14/Kafka/pull/3) to [#8](https://github.com/saifaldin14/Kafka/pull/8)), each with exactly one other failing job, and passed on [44934033847](https://github.com/saifaldin14/Kafka/actions/runs/44934033847). Making it a required check is a repository setting that is now possible because the repository is public; FND-0061 (repository settings and ruleset) does it.
 
 ### [In Review] FND-0038 `cargo xtask check-workflows` (SHA pinning, no `pull_request_target`, timeouts, permissions) and Dependabot for actions
 P1 · M0 · Task · deps: FND-0031, FND-0007 · labels: security · ref: docs/standards/security.md#dependencies
 Done when: Every `uses:` in `.github/workflows/*.yml` must be pinned to a 40-hex SHA with a `# v…` comment; every job sets `timeout-minutes` and explicit `permissions`; Dependabot covers the `github-actions` ecosystem weekly. Fixture workflows (tag-pinned action, missing timeout, missing permissions, `pull_request_target`) are each rejected with file:line; the real workflows pass; registered as the `workflows` step in the `policy` job; Dependabot opens SHA-bump PRs that keep the version comment.
+Notes: check-workflows is verified locally and runs in `policy` on every PR. Still to do: show a Dependabot github-actions PR bumping a SHA while keeping the version comment. All actions are at their latest release today, so this waits for the next upstream release.
 
 ### [To Do] FND-0039 Lint workflow files with actionlint (version pinned in the xtask tool table) as part of the `workflows` step
 P2 · M0 · Task · deps: FND-0038
