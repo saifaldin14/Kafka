@@ -50,7 +50,10 @@ fn ci_list_prints_the_steps_in_run_order() -> Result<(), Box<dyn Error>> {
         .lines()
         .filter_map(|line| line.split_whitespace().next())
         .collect();
-    assert_eq!(names, ["fmt", "clippy", "doc", "layers", "deny", "test"]);
+    assert_eq!(
+        names,
+        ["fmt", "clippy", "doc", "layers", "deny", "links", "test"]
+    );
     Ok(())
 }
 

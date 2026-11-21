@@ -179,11 +179,6 @@ impl fmt::Display for Violation {
     }
 }
 
-/// The repository root (the parent of the `xtask` crate).
-fn repo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("..")
-}
-
 /// Runs the command.
 pub(crate) fn run(options: &LayerOptions, out: &mut impl Write) -> Exit {
     let graph = match graph::load(options.manifest_path.as_deref()) {
@@ -198,7 +193,7 @@ pub(crate) fn run(options: &LayerOptions, out: &mut impl Write) -> Exit {
         output::layer_table(out, LAYERS, &present);
         return Exit::Success;
     }
-    let root = repo_root();
+    let root = crate::repo_root();
     let mut violations = check_graph(&graph, SAME_LAYER_ALLOWED, &root.join("docs/adr"));
     match std::fs::read_to_string(root.join("docs/architecture.md")) {
         Ok(text) => violations.extend(check_architecture(&text)),

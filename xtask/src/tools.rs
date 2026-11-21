@@ -8,31 +8,46 @@ use std::ffi::OsString;
 use std::fmt;
 use std::process::Command;
 
-/// An external cargo subcommand installed from crates.io.
+/// An external tool installed from crates.io with `cargo install`.
 #[derive(Debug)]
 pub(crate) struct Tool {
     /// The crate to `cargo install`, which is also the first word of `--version` output.
     pub(crate) crate_name: &'static str,
     pub(crate) version: &'static str,
-    /// The cargo subcommand it provides: `cargo <subcommand>`.
-    pub(crate) subcommand: &'static str,
+    pub(crate) invocation: Invocation,
+}
+
+/// How a tool is run.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Invocation {
+    /// As `cargo <subcommand>`.
+    CargoSubcommand(&'static str),
+    /// As a program on `PATH`.
+    Binary(&'static str),
 }
 
 /// Every pinned tool.
-pub(crate) const TOOLS: &[Tool] = &[NEXTEST, DENY];
+pub(crate) const TOOLS: &[Tool] = &[NEXTEST, DENY, LYCHEE];
 
 /// Test runner used by the `test` step.
 pub(crate) const NEXTEST: Tool = Tool {
     crate_name: "cargo-nextest",
     version: "0.9.152",
-    subcommand: "nextest",
+    invocation: Invocation::CargoSubcommand("nextest"),
 };
 
 /// Dependency policy checker used by the `deny` step.
 pub(crate) const DENY: Tool = Tool {
     crate_name: "cargo-deny",
     version: "0.22.0",
-    subcommand: "deny",
+    invocation: Invocation::CargoSubcommand("deny"),
+};
+
+/// Link checker used by the `links` step.
+pub(crate) const LYCHEE: Tool = Tool {
+    crate_name: "lychee",
+    version: "0.24.2",
+    invocation: Invocation::Binary("lychee"),
 };
 
 impl Tool {
@@ -98,10 +113,15 @@ pub(crate) fn check(tool: &Tool) -> Result<(), ToolProblem> {
         version: tool.version,
         install: tool.install_command(),
     };
-    let output = Command::new(cargo_program())
-        .args([tool.subcommand, "--version"])
-        .output()
-        .map_err(|_| missing())?;
+    let mut command = match tool.invocation {
+        Invocation::CargoSubcommand(subcommand) => {
+            let mut command = Command::new(cargo_program());
+            command.arg(subcommand);
+            command
+        }
+        Invocation::Binary(program) => Command::new(program),
+    };
+    let output = command.arg("--version").output().map_err(|_| missing())?;
     if !output.status.success() {
         return Err(missing());
     }
@@ -167,6 +187,14 @@ mod tests {
                 tool.version
             );
         }
+    }
+
+    #[test]
+    fn parses_lychee_version_output() {
+        assert_eq!(
+            parse_version("lychee 0.24.2\n", super::LYCHEE.crate_name),
+            Some("0.24.2")
+        );
     }
 
     #[test]

@@ -15,15 +15,24 @@ use crate::Exit;
 use crate::cli::CiOptions;
 use crate::output;
 use crate::steps::{self, Step};
-use crate::tools::{self, Tool};
+use crate::tools::{self, Invocation, Tool};
+
+/// What a step runs.
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum Program {
+    /// The `cargo` that started `xtask`.
+    Cargo,
+    /// A pinned tool from `tools::TOOLS`, run the way its `Invocation` says.
+    Tool(&'static Tool),
+}
 
 /// One CI check.
 #[derive(Debug)]
 pub(crate) struct CiStep {
     pub(crate) name: &'static str,
     pub(crate) summary: &'static str,
-    /// Arguments to `cargo`.
-    pub(crate) cargo_args: &'static [&'static str],
+    pub(crate) program: Program,
+    pub(crate) args: &'static [&'static str],
     /// Environment variables for the command.
     pub(crate) env: &'static [(&'static str, &'static str)],
     /// Pinned tools the step needs, checked before it runs.
@@ -35,14 +44,16 @@ pub(crate) const STEPS: &[CiStep] = &[
     CiStep {
         name: "fmt",
         summary: "Formatting (rustfmt)",
-        cargo_args: &["fmt", "--all", "--check"],
+        program: Program::Cargo,
+        args: &["fmt", "--all", "--check"],
         env: &[],
         requires: &[],
     },
     CiStep {
         name: "clippy",
         summary: "Lints, with warnings as errors",
-        cargo_args: &[
+        program: Program::Cargo,
+        args: &[
             "clippy",
             "--workspace",
             "--all-targets",
@@ -57,7 +68,8 @@ pub(crate) const STEPS: &[CiStep] = &[
     CiStep {
         name: "doc",
         summary: "API docs build, private items included, warnings as errors",
-        cargo_args: &[
+        program: Program::Cargo,
+        args: &[
             "doc",
             "--workspace",
             "--no-deps",
@@ -70,7 +82,8 @@ pub(crate) const STEPS: &[CiStep] = &[
     CiStep {
         name: "layers",
         summary: "Crate layering rules (cargo xtask check-layers)",
-        cargo_args: &[
+        program: Program::Cargo,
+        args: &[
             "run",
             "--quiet",
             "--locked",
@@ -85,14 +98,35 @@ pub(crate) const STEPS: &[CiStep] = &[
     CiStep {
         name: "deny",
         summary: "Dependency policy: advisories, bans, licenses, sources (deny.toml)",
-        cargo_args: &["deny", "--locked", "check"],
+        program: Program::Cargo,
+        args: &["deny", "--locked", "check"],
         env: &[],
         requires: &[&tools::DENY],
     },
     CiStep {
+        name: "links",
+        summary: "Relative links and #anchors in the docs, offline (lychee)",
+        program: Program::Tool(&tools::LYCHEE),
+        args: &[
+            "--offline",
+            "--include-fragments",
+            "--no-progress",
+            "README.md",
+            "AGENTS.md",
+            "CLAUDE.md",
+            "CONTRIBUTING.md",
+            "docs",
+            ".agents",
+            ".github",
+        ],
+        env: &[],
+        requires: &[&tools::LYCHEE],
+    },
+    CiStep {
         name: "test",
         summary: "Tests (cargo-nextest, ci profile)",
-        cargo_args: &[
+        program: Program::Cargo,
+        args: &[
             "nextest",
             "run",
             "--workspace",
@@ -118,10 +152,27 @@ pub(crate) fn run(options: &CiOptions, out: &mut impl Write) -> Exit {
         return Exit::Success;
     }
     let steps: Vec<Step> = selected(&options.steps)
-        .map(|ci_step| Step {
-            env: ci_step.env,
-            requires: ci_step.requires,
-            ..Step::cargo(ci_step.name, ci_step.cargo_args)
+        .map(|ci_step| {
+            let (program, prefix) = match ci_step.program {
+                Program::Cargo => (tools::cargo_program(), None),
+                Program::Tool(tool) => match tool.invocation {
+                    Invocation::CargoSubcommand(subcommand) => {
+                        (tools::cargo_program(), Some(subcommand))
+                    }
+                    Invocation::Binary(binary) => (binary.into(), None),
+                },
+            };
+            Step {
+                name: ci_step.name.to_owned(),
+                program,
+                args: prefix
+                    .into_iter()
+                    .chain(ci_step.args.iter().copied())
+                    .map(str::to_owned)
+                    .collect(),
+                env: ci_step.env,
+                requires: ci_step.requires,
+            }
         })
         .collect();
     let reports = steps::run(&steps, options.keep_going, out);
@@ -170,7 +221,7 @@ mod tests {
 
     #[test]
     fn documented_steps_are_registered() {
-        for name in ["fmt", "clippy", "doc", "layers", "deny", "test"] {
+        for name in ["fmt", "clippy", "doc", "layers", "deny", "links", "test"] {
             assert!(is_step(name), "{name}");
         }
         assert!(!is_step("nope"));
