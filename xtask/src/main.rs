@@ -1,0 +1,89 @@
+//! `xtask`: the repository's automation entry point, run as `cargo xtask <command>`.
+//!
+//! Layer: dev ([ADR-0009](../../docs/adr/0009-crate-layering-and-dependency-rules.md)).
+//! It may depend on anything, and nothing except tests depends on it.
+//!
+//! Every repository check that CI runs is a command here, so CI and a developer's
+//! machine run exactly the same thing. `cargo xtask help` lists the commands.
+//!
+//! # Exit codes
+//!
+//! | Code | Meaning |
+//! |---|---|
+//! | 0 | Success |
+//! | 1 | A check failed |
+//! | 2 | Usage error: unknown command or bad arguments |
+//!
+//! # Adding a command
+//!
+//! 1. Add a variant to `cli::Command`, its parsing in `cli::parse` and its line in
+//!    `cli::COMMANDS`, with parser tests.
+//! 2. Implement it in its own module. It returns an `Exit` and writes only through
+//!    the `output` module.
+//! 3. Dispatch it in `run` below.
+//!
+//! Commands arrive with the backlog task that needs them; nothing is added ahead of use.
+
+mod cli;
+mod output;
+
+use std::process::ExitCode;
+
+use cli::Command;
+
+/// How an `xtask` invocation ended. Converted to the process exit code in `main`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Exit {
+    Success,
+    Usage,
+}
+
+impl Exit {
+    fn code(self) -> u8 {
+        match self {
+            Exit::Success => 0,
+            Exit::Usage => 2,
+        }
+    }
+}
+
+fn main() -> ExitCode {
+    let exit = match cli::parse(std::env::args_os().skip(1)) {
+        Ok(command) => run(&command, &mut std::io::stdout().lock()),
+        Err(error) => {
+            output::usage_error(&mut std::io::stderr().lock(), &error);
+            Exit::Usage
+        }
+    };
+    ExitCode::from(exit.code())
+}
+
+fn run(command: &Command, out: &mut impl std::io::Write) -> Exit {
+    match command {
+        Command::Help => {
+            output::usage(out);
+            Exit::Success
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Exit, run};
+    use crate::cli::Command;
+
+    #[test]
+    fn exit_codes_match_the_documented_contract() {
+        assert_eq!(Exit::Success.code(), 0);
+        assert_eq!(Exit::Usage.code(), 2);
+    }
+
+    #[test]
+    fn help_prints_usage_and_succeeds() {
+        let mut out = Vec::new();
+        assert_eq!(run(&Command::Help, &mut out), Exit::Success);
+        let text = String::from_utf8_lossy(&out);
+        assert!(text.starts_with("Usage: cargo xtask <command>"), "{text}");
+        assert!(text.contains("  help "), "{text}");
+    }
+}

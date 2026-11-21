@@ -84,13 +84,14 @@ Done when: The command lists added, removed and upgraded crates from the two `Ca
 P1 · M0 · Task · deps: none · labels: security · ref: docs/standards/security.md#dependencies
 Done when: Dependabot's config validation passes on GitHub; the policy "dependency updates are separate PRs" in security.md is now automated and the doc says so.
 
-## [To Do] FND-F04 `xtask` framework
+## [In Progress] FND-F04 `xtask` framework
 P0 · M0 · Feature · deps: FND-F01
 Scope: `xtask` crate, command dispatch, `cargo xtask ci` orchestration with clear step output and exit codes.
 
-### [To Do] FND-0018 Create the `xtask` crate with command dispatch, typed usage errors and exit codes, and the `cargo xtask` alias
+### [Done] FND-0018 Create the `xtask` crate with command dispatch, typed usage errors and exit codes, and the `cargo xtask` alias
 P0 · M0 · Task · deps: FND-0002 · ref: ADR-0009
 Done when: The crate is a workspace member with `[lints] workspace = true`; `.cargo/config.toml` has `[alias] xtask = "run --package xtask --"`; exit codes are 0 (success), 1 (check failed) and 2 (usage error). `cargo xtask help` lists the available commands; an unknown command exits 2 with the usage; arguments are parsed with std or one minimal crate justified per security.md#dependencies; the `//!` doc states the responsibility and explains how to add a command and a ci step (later commands such as `codegen`, `fuzz` and `compat` arrive with their own epics; nothing is stubbed); unit tests cover dispatch and the exit codes.
+Notes: exit code 1 is documented in the crate doc and first produced by the step runner (FND-0019); no check exists before it, and an unused variant would be dead code.
 
 ### [To Do] FND-0019 xtask step runner: run an external command as a named step with a `==> [n/N] <step>` header, inherited output, elapsed time and exit status, then print a summary table of all steps
 P0 · M0 · Task · deps: FND-0018 · ref: ADR-0009
