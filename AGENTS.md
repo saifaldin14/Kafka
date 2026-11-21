@@ -37,6 +37,7 @@ All work is planned in **[docs/backlog/](docs/backlog/README.md)**: epics, featu
 | `docs/architecture.md` | System design, crate map, layering, runtime model, invariants |
 | `docs/standards/` | Rust, debuggability, security and testing standards |
 | `docs/guides/` | How to add a Kafka feature, how to debug |
+| `docs/crates/` | Per-crate deep dives: state machines, invariants, tests, debugging |
 | `docs/adr/` | Architecture decision records |
 | `docs/backlog/` | Every planned task with status, dependencies and milestones; `tools/backlog.py next` picks the next task |
 | `docs/parity.md` | Kafka 4.4.0 API scope and version ranges |
