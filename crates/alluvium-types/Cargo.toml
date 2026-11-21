@@ -11,6 +11,7 @@ publish.workspace = true
 proptest-strategies = ["dep:proptest"]
 
 [dependencies]
+alluvium-storage = { workspace = true }
 crc32c = { workspace = true }
 proptest = { workspace = true, optional = true }
 thiserror = { workspace = true }
