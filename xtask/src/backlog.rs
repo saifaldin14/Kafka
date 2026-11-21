@@ -5,6 +5,9 @@
 //! line, and each task has a `Done when:` line and optional trailers. Parsing collects
 //! every format error with its file and line rather than stopping at the first one.
 //!
+//! The commands load the repository backlog through [`with_repository_backlog`], which
+//! refuses to run on a backlog with format errors.
+//!
 //! This ports the parser of docs/backlog/tools/backlog.py (FND-F07). Until that script
 //! is deleted, error messages match its output exactly: the goldens in
 //! `xtask/tests/fixtures/backlog/` were produced by it. An item with an unknown status,
@@ -13,7 +16,11 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
-use std::path::Path;
+use std::io::Write;
+use std::path::{Path, PathBuf};
+
+use crate::Exit;
+use crate::output;
 
 /// A task's or feature's status, in the README's order.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -97,10 +104,13 @@ pub(crate) struct Milestone(u8);
 impl Milestone {
     const LAST: u8 = 18;
 
+    /// Every milestone, in order.
+    pub(crate) fn all() -> impl Iterator<Item = Milestone> {
+        (0..=Self::LAST).map(Milestone)
+    }
+
     fn parse(text: &str) -> Option<Milestone> {
-        (0..=Self::LAST)
-            .map(Milestone)
-            .find(|milestone| milestone.to_string() == text)
+        Self::all().find(|milestone| milestone.to_string() == text)
     }
 }
 
@@ -259,6 +269,41 @@ impl Backlog {
 pub(crate) struct Parsed {
     pub(crate) backlog: Backlog,
     pub(crate) errors: Vec<String>,
+}
+
+/// The repository's backlog directory.
+pub(crate) fn repository_dir() -> PathBuf {
+    crate::repo_root().join("docs/backlog")
+}
+
+/// At most this many format errors are printed before a command refuses to run.
+const ERRORS_SHOWN: usize = 20;
+
+/// Loads the repository backlog and runs `command` on it. With format errors, prints
+/// the first few and fails instead: commands that select or count work need a valid
+/// backlog.
+pub(crate) fn with_repository_backlog<W: Write>(
+    out: &mut W,
+    command: impl FnOnce(&Backlog, &mut W) -> Exit,
+) -> Exit {
+    let Parsed { backlog, errors } = match load(&repository_dir()) {
+        Ok(parsed) => parsed,
+        Err(error) => {
+            output::line(out, &format!("error: {error}"));
+            return Exit::CheckFailed;
+        }
+    };
+    if errors.is_empty() {
+        return command(&backlog, out);
+    }
+    for error in errors.iter().take(ERRORS_SHOWN) {
+        output::line(out, &format!("error: {error}"));
+    }
+    output::line(
+        out,
+        "backlog has format errors; run `python3 docs/backlog/tools/backlog.py check`",
+    );
+    Exit::CheckFailed
 }
 
 /// Reads and parses the backlog in `dir`: its README.md and every other `.md` file.
