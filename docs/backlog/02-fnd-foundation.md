@@ -86,10 +86,10 @@ Done when: Fixture tests cover inline versions, inline paths for non-workspace c
 P2 · M1 · Task · deps: FND-0014 · labels: security, docs · ref: docs/standards/security.md#dependencies
 Done when: The command lists added, removed and upgraded crates from the two `Cargo.lock` files with license and transitive count; the PR template's dependency checkbox links to the five questions in security.md#dependencies. The command works offline from the two lockfiles plus `cargo metadata`; a unit test on two fixture lockfiles checks the diff; CI writes the output to the job summary when `Cargo.lock` changes; the questions are linked, not copied.
 
-### [In Progress] FND-0017 `.github/dependabot.yml` for the `cargo` ecosystem: weekly, one PR per dependency, lockfile updates labelled `dependencies`
+### [Done] FND-0017 `.github/dependabot.yml` for the `cargo` ecosystem: weekly, one PR per dependency, lockfile updates labelled `dependencies`
 P1 · M0 · Task · deps: none · labels: security · ref: docs/standards/security.md#dependencies
 Done when: Dependabot's config validation passes on GitHub; the policy "dependency updates are separate PRs" in security.md is now automated and the doc says so.
-Notes: config committed and parsed locally; GitHub's Dependabot validation can only be confirmed after it is pushed. Set Done once the repository's Dependabot page shows no config errors.
+Notes: Verified after the push of c9fa497: GitHub's `.github/dependabot.yml` check run succeeded, and two Dependabot `cargo in /.` update runs completed successfully.
 
 ## [Done] FND-F04 `xtask` framework
 P0 · M0 · Feature · deps: FND-F01
