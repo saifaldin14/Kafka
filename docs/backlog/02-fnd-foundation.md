@@ -78,7 +78,7 @@ Done when: `cargo deny check sources` passes; a fixture with a git dependency fa
 P0 · M0 · Task · deps: FND-0012, FND-0011, FND-0013, FND-0020, FND-0021 · labels: security · ref: docs/standards/rust.md#tooling-commands-contract-implemented-in-m0
 Done when: `cargo xtask ci --step deny` runs all four checks and fails with the cargo-deny diagnostics on any violation; a missing or wrong-version cargo-deny gives an error with the install command; the rust.md tooling table is still accurate.
 
-### [To Do] FND-0015 `check-manifests` rule: member crates declare every dependency as `{ workspace = true }` (optionally adding `features`/`optional`), never with an inline version, path or git source
+### [Done] FND-0015 `check-manifests` rule: member crates declare every dependency as `{ workspace = true }` (optionally adding `features`/`optional`), never with an inline version, path or git source
 P1 · M0 · Task · deps: FND-0007 · labels: security · ref: docs/standards/rust.md#dependencies
 Done when: Fixture tests cover inline versions, inline paths for non-workspace crates, and git sources, each rejected with the crate and dependency named; workspace-internal path dependencies are declared in `[workspace.dependencies]` too, so the rule has no exceptions.
 

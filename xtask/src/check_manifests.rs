@@ -7,7 +7,12 @@
 //! 2. `clippy.toml` equals the clippy.toml block there.
 //! 3. Every workspace member declares `[lints] workspace = true`, so it inherits the
 //!    lints.
-//! 4. Every `[advisories] ignore` entry in deny.toml is a table with an `id`, a
+//! 4. Every member declares each dependency as `{ workspace = true }`, adding only
+//!    `features` or `optional`: versions and sources live once, in the root
+//!    `[workspace.dependencies]` (docs/standards/rust.md#dependencies). Workspace
+//!    crates that depend on each other are listed there too, so there are no
+//!    exceptions.
+//! 5. Every `[advisories] ignore` entry in deny.toml is a table with an `id`, a
 //!    `reason` and an `expiry` (docs/standards/security.md#dependencies). cargo-deny
 //!    itself rejects a malformed date and reports the advisory again once the date
 //!    passes; it does not require either field.
@@ -98,7 +103,9 @@ fn check_repository(root: &Path) -> Result<Vec<String>, String> {
             .into_owned();
         let text = std::fs::read_to_string(path)
             .map_err(|error| format!("could not read {file}: {error}"))?;
-        problems.extend(check_member(&file, &parse(&file, &text)?));
+        let manifest = parse(&file, &text)?;
+        problems.extend(check_member(&file, &manifest));
+        problems.extend(check_member_dependencies(&file, &manifest));
     }
     Ok(problems)
 }
@@ -190,7 +197,48 @@ pub(crate) fn check_member(file: &str, manifest: &Value) -> Option<String> {
     })
 }
 
-/// Rule 4: every advisory ignore in deny.toml carries a reason and an expiry.
+/// The keys Cargo allows next to `workspace = true` in a member's dependency.
+const INHERITED_DEPENDENCY_KEYS: [&str; 3] = ["workspace", "features", "optional"];
+
+const DEPENDENCY_TABLES: [&str; 3] = ["dependencies", "dev-dependencies", "build-dependencies"];
+
+/// Rule 4: a member inherits every dependency from `[workspace.dependencies]`.
+pub(crate) fn check_member_dependencies(file: &str, manifest: &Value) -> Vec<String> {
+    let mut tables = Vec::new();
+    for table in DEPENDENCY_TABLES {
+        tables.push((table.to_owned(), &manifest[table]));
+    }
+    for (target, target_tables) in manifest["target"].as_object().into_iter().flatten() {
+        for table in DEPENDENCY_TABLES {
+            tables.push((format!("target.{target}.{table}"), &target_tables[table]));
+        }
+    }
+    let mut problems = Vec::new();
+    for (table, dependencies) in tables {
+        for (name, spec) in dependencies.as_object().into_iter().flatten() {
+            let inline_keys: Vec<String> = match spec {
+                Value::Object(spec) if spec.get("workspace") == Some(&Value::Bool(true)) => spec
+                    .keys()
+                    .filter(|key| !INHERITED_DEPENDENCY_KEYS.contains(&key.as_str()))
+                    .map(|key| format!("`{key}`"))
+                    .collect(),
+                Value::Object(spec) => spec.keys().map(|key| format!("`{key}`")).collect(),
+                _ => vec![format!("the version {spec}")],
+            };
+            if !inline_keys.is_empty() {
+                problems.push(format!(
+                    "{file}: `[{table}]` dependency `{name}` sets {} inline; declare it once in the \
+                     root [workspace.dependencies] and use `{{ workspace = true }}` here, adding \
+                     only `features` or `optional` (docs/standards/rust.md#dependencies)",
+                    inline_keys.join(", ")
+                ));
+            }
+        }
+    }
+    problems
+}
+
+/// Rule 5: every advisory ignore in deny.toml carries a reason and an expiry.
 pub(crate) fn check_advisory_ignores(deny_toml: &Value) -> Vec<String> {
     let mut problems = Vec::new();
     for entry in deny_toml["advisories"]["ignore"]
@@ -274,7 +322,8 @@ mod tests {
     use serde_json::Value;
 
     use super::{
-        Standard, check_advisory_ignores, check_clippy, check_lints, check_member, parse, standard,
+        Standard, check_advisory_ignores, check_clippy, check_lints, check_member,
+        check_member_dependencies, parse, standard,
     };
 
     const RUST_MD: &str = "# Rust\n\n## Workspace configuration\n\nLints:\n\n```toml\n[workspace.lints.rust]\nunsafe_code = \"forbid\"\n\n[workspace.lints.clippy]\npedantic = { level = \"warn\", priority = -1 }\ntodo = \"deny\"\n```\n\nClippy:\n\n```toml\nallow-unwrap-in-tests = true\ndisallowed-methods = [\n  { path = \"std::process::exit\", reason = \"return errors\" },\n  { path = \"rand::rng\", reason = \"use the seeded RNG\" },\n]\n```\n\nRelease profile:\n\n```toml\n[profile.release]\npanic = \"abort\"\n```\n\n## Errors\n\n```toml\n[workspace.lints.rust]\nignored = \"because it is in another section\"\n```\n";
@@ -431,6 +480,36 @@ mod tests {
                 .iter()
                 .all(|problem| problem.contains("`RUSTSEC-2026-0002`")),
             "{problems:?}"
+        );
+    }
+
+    #[test]
+    fn inherited_dependencies_may_add_only_features_and_optional() {
+        let manifest = "[dependencies]\nserde_json = { workspace = true }\ntokio = { workspace = true, optional = true, features = [\"rt\"] }\n\n[dev-dependencies]\nalluvium-testkit = { workspace = true }\n";
+        assert_eq!(
+            check_member_dependencies("a/Cargo.toml", &toml(manifest)),
+            Vec::<String>::new()
+        );
+    }
+
+    #[test]
+    fn inline_versions_paths_and_git_sources_are_rejected_by_crate_and_dependency() {
+        let manifest = "[dependencies]\nbytes = \"1.10\"\nthiserror = { version = \"2\" }\nhelper = { path = \"../helper\" }\nforked = { git = \"https://example.com/forked\" }\nrand = { workspace = true, version = \"0.10\" }\n\n[target.'cfg(unix)'.build-dependencies]\ncc = \"1\"\n";
+        let problems = check_member_dependencies("a/Cargo.toml", &toml(manifest));
+        let starts: Vec<&str> = problems
+            .iter()
+            .map(|problem| problem.split(" inline;").next().unwrap_or_default())
+            .collect();
+        assert_eq!(
+            starts,
+            [
+                "a/Cargo.toml: `[dependencies]` dependency `bytes` sets the version \"1.10\"",
+                "a/Cargo.toml: `[dependencies]` dependency `forked` sets `git`",
+                "a/Cargo.toml: `[dependencies]` dependency `helper` sets `path`",
+                "a/Cargo.toml: `[dependencies]` dependency `rand` sets `version`",
+                "a/Cargo.toml: `[dependencies]` dependency `thiserror` sets `version`",
+                "a/Cargo.toml: `[target.cfg(unix).build-dependencies]` dependency `cc` sets the version \"1\"",
+            ]
         );
     }
 }

@@ -149,7 +149,7 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 
 ## Dependencies
 
-- All versions live in `[workspace.dependencies]`. Crates use `dep = { workspace = true }`.
+- All versions and sources live in `[workspace.dependencies]`, including path dependencies between workspace crates. Crates use `dep = { workspace = true }`, adding only `features` or `optional`. The `manifests` step enforces this.
 - Enable minimal features (`default-features = false` where practical).
 - A new dependency needs the justification in [security.md](security.md#dependencies).
 - Preferred building blocks: `bytes`, `thiserror`, `tracing`, `tokio`, `rustls`, `crc32c`, `proptest`, `prometheus-client`. Introduce alternatives only with an ADR.
@@ -183,7 +183,7 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 | `clippy` | `cargo clippy --workspace --all-targets --locked -- -D warnings` |
 | `doc` | `cargo doc --workspace --no-deps --document-private-items --locked` with `RUSTDOCFLAGS="-D warnings"`: docs build with no broken intra-doc links or invalid HTML. Private items are documented too, because most items are `pub(crate)` and their docs must stay correct |
 | `layers` | `cargo xtask check-layers`: crate dependency layering ([architecture §5](../architecture.md#5-layering-rules)); `--print` shows the layer table |
-| `manifests` | `cargo xtask check-manifests`: `[workspace.lints]` and `clippy.toml` equal the blocks in [workspace configuration](#workspace-configuration), compared as parsed TOML, and every member has `[lints] workspace = true`; every advisory ignore in `deny.toml` has a `reason` and an `expiry` |
+| `manifests` | `cargo xtask check-manifests`: `[workspace.lints]` and `clippy.toml` equal the blocks in [workspace configuration](#workspace-configuration), compared as parsed TOML, and every member has `[lints] workspace = true` and inherits every dependency with `{ workspace = true }`; every advisory ignore in `deny.toml` has a `reason` and an `expiry` |
 | `lint-canary` | `cargo xtask lint-canary`: clippy on the fixtures in [`xtask/lint-canary`](../../xtask/lint-canary/src/lib.rs) must report exactly the lints their `expect-lint:` comments name, so a removed or weakened lint fails. Every `clippy.toml` entry must fire with its configured reason |
 | `deny` | `cargo deny --locked check`: advisories, licenses, banned and duplicate crates, sources ([`deny.toml`](../../deny.toml)) |
 | `links` | `lychee --offline --include-fragments` over README.md, AGENTS.md, CLAUDE.md, CONTRIBUTING.md, `docs/`, `.agents/` and `.github/`: relative links and `#anchors` resolve. External URLs are not checked here |
