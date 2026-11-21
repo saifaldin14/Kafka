@@ -60,6 +60,11 @@ impl Exit {
     }
 }
 
+/// The repository root (the parent of the `xtask` crate). Steps and checks run here.
+pub(crate) fn repo_root() -> std::path::PathBuf {
+    std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..")
+}
+
 fn main() -> ExitCode {
     let exit = match cli::parse(std::env::args_os().skip(1)) {
         Ok(command) => run(&command, &mut std::io::stdout().lock()),

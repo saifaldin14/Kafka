@@ -263,7 +263,7 @@ Scope: `cargo doc` with `-D warnings`, Markdown link and anchor checking in CI.
 P1 · M0 · Task · deps: FND-0021 · labels: docs · ref: docs/standards/rust.md#tooling-commands-contract-implemented-in-m0
 Done when: A broken intra-doc link, in either a public or a `pub(crate)` item, fails the step; the rust.md tooling table states that private items are documented too and why (most items are `pub(crate)`).
 
-### [To Do] FND-0055 Register the `links` step: check relative links and `#anchors` in README.md, AGENTS.md, CONTRIBUTING.md, `docs/**`, `.agents/**` and `.github/**` offline with lychee (version pinned in the xtask tool table, `--offline --include-fragments`)
+### [Done] FND-0055 Register the `links` step: check relative links and `#anchors` in README.md, AGENTS.md, CONTRIBUTING.md, `docs/**`, `.agents/**` and `.github/**` offline with lychee (version pinned in the xtask tool table, `--offline --include-fragments`)
 P1 · M0 · Task · deps: FND-0021, FND-0020 · labels: docs
 Done when: A test PR with a broken relative link and a wrong heading anchor fails the step, naming both; all existing broken links are fixed in this PR, so main starts clean; external URLs are excluded from this step.
 

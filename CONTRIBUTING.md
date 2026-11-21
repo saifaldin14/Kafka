@@ -22,7 +22,7 @@ Keep [docs/standards/](docs/standards/) open as a reference. You don't need to m
 
 - **Rust via rustup.** Don't use Homebrew's or your distribution's `cargo`. They ignore `rust-toolchain.toml`, so you'd build with the wrong compiler. Check with `which cargo`, which should point into `~/.cargo/bin`.
 - The pinned toolchain installs automatically on the first `cargo` command.
-- Tools: `cargo xtask tools install` installs the pinned versions of cargo-nextest and cargo-deny. `cargo-fuzz` and a nightly toolchain are needed only for fuzzing.
+- Tools: `cargo xtask tools install` installs the pinned versions of cargo-nextest, cargo-deny and lychee. `cargo-fuzz` and a nightly toolchain are needed only for fuzzing.
 - Docker, only for compatibility and differential tests (they run real Kafka clients and a real Kafka 4.4.0 broker).
 
 ```bash

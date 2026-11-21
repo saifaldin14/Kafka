@@ -27,7 +27,8 @@ pub(crate) struct Step {
 }
 
 impl Step {
-    /// A step that runs `cargo` (the one that started `xtask`) with `args`.
+    /// A step that runs `cargo` (the one that started `xtask`) with `args`. Every step
+    /// runs in the repository root.
     pub(crate) fn cargo(name: &str, args: &[&str]) -> Self {
         Self {
             name: name.to_owned(),
@@ -139,6 +140,7 @@ fn run_one(step: &Step) -> Outcome {
         }
     }
     let status = Command::new(&step.program)
+        .current_dir(crate::repo_root())
         .args(&step.args)
         .envs(step.env.iter().copied())
         .status();
@@ -156,7 +158,7 @@ fn run_one(step: &Step) -> Outcome {
 #[cfg(test)]
 mod tests {
     use super::{Outcome, Step, all_passed, run};
-    use crate::tools::Tool;
+    use crate::tools::{Invocation, Tool};
 
     fn missing_program() -> Step {
         Step {
@@ -227,7 +229,7 @@ mod tests {
         const TOOL: Tool = Tool {
             crate_name: "cargo-alluvium-test-absent",
             version: "1.2.3",
-            subcommand: "alluvium-test-absent",
+            invocation: Invocation::CargoSubcommand("alluvium-test-absent"),
         };
         static REQUIRES: [&Tool; 1] = [&TOOL];
         let mut step = Step::cargo("needs-tool", &["--version"]);
