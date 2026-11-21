@@ -57,10 +57,10 @@ Scope: `deny.toml` (advisories, licenses, bans, sources), `cargo deny` wiring, d
 P0 · M0 · Task · deps: FND-0018 · labels: security · ref: docs/standards/security.md#dependencies
 Done when: `cargo deny check advisories` passes on the workspace; the file header comment links to docs/standards/security.md#dependencies; the `[graph]` targets list x86_64 and aarch64 Linux and aarch64 macOS (the NFR-F10 support matrix replaces it if it differs).
 
-### [To Do] FND-0010 `check-manifests` rule: every `[advisories] ignore` entry has a `reason` that ends in `(expires YYYY-MM-DD)`, and expired entries fail
+### [Done] FND-0010 `check-manifests` rule: every `[advisories] ignore` entry has a `reason` that ends in `(expires YYYY-MM-DD)`, and expired entries fail
 P1 · M0 · Task · deps: FND-0009, FND-0007 · labels: security · ref: docs/standards/security.md#dependencies
 Done when: Fixture tests cover: a missing reason, a missing expiry, a malformed date, and an expired date (evaluated against an injected date, so the test is deterministic); the failure message names the advisory id and the expiry; security.md documents the reason format.
-Notes: cargo-deny 0.22 supports a native `expiry` field on ignore entries and re-reports an advisory once it passes (now documented in security.md). This task may reduce to requiring `reason` and `expiry` on every entry rather than parsing the reason text.
+Notes: Reduced to requiring `reason` and `expiry` on every entry. Checked with cargo-deny 0.22 against RUSTSEC-2026-0374: it reports an ignore whose `expiry` has passed (2000-01-01) again, rejects a malformed date (2099-13-45) as a config error, and accepts entries without `reason` or `expiry`. So xtask checks only that both fields are present, and parses no dates and reads no clock.
 
 ### [Done] FND-0011 `deny.toml` `[licenses]`: the exact allow-list from security.md (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Unicode-3.0, Zlib), `confidence-threshold = 0.93`, workspace crates ignored as private (`publish = false`), no exceptions
 P0 · M0 · Task · deps: FND-0009 · labels: security · ref: docs/standards/security.md#dependencies
