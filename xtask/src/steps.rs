@@ -20,6 +20,8 @@ pub(crate) struct Step {
     pub(crate) name: String,
     pub(crate) program: OsString,
     pub(crate) args: Vec<String>,
+    /// Environment variables set for the command, on top of the inherited ones.
+    pub(crate) env: &'static [(&'static str, &'static str)],
     /// Tools that must be installed at their pinned versions before the step can run.
     pub(crate) requires: &'static [&'static Tool],
 }
@@ -31,21 +33,27 @@ impl Step {
             name: name.to_owned(),
             program: tools::cargo_program(),
             args: args.iter().map(|arg| (*arg).to_owned()).collect(),
+            env: &[],
             requires: &[],
         }
     }
 
     /// The command line as the user would type it, for the step header.
     pub(crate) fn command_line(&self) -> String {
+        let env = self
+            .env
+            .iter()
+            .map(|(name, value)| format!("{name}=\"{value}\" "));
         let program = if self.program == tools::cargo_program() {
             "cargo".to_owned()
         } else {
             self.program.to_string_lossy().into_owned()
         };
-        std::iter::once(program)
+        let command = std::iter::once(program)
             .chain(self.args.iter().cloned())
             .collect::<Vec<_>>()
-            .join(" ")
+            .join(" ");
+        env.chain(std::iter::once(command)).collect()
     }
 }
 
@@ -130,7 +138,11 @@ fn run_one(step: &Step) -> Outcome {
             };
         }
     }
-    match Command::new(&step.program).args(&step.args).status() {
+    let status = Command::new(&step.program)
+        .args(&step.args)
+        .envs(step.env.iter().copied())
+        .status();
+    match status {
         Ok(status) if status.success() => Outcome::Passed,
         Ok(status) => Outcome::Failed {
             exit_code: status.code(),
@@ -151,6 +163,7 @@ mod tests {
             name: "missing".to_owned(),
             program: "alluvium-xtask-test-no-such-program".into(),
             args: Vec::new(),
+            env: &[],
             requires: &[],
         }
     }
@@ -226,6 +239,23 @@ mod tests {
         );
         assert!(
             text.contains("cargo install --locked --version 1.2.3 cargo-alluvium-test-absent"),
+            "{text}"
+        );
+    }
+
+    #[test]
+    fn step_environment_reaches_the_command_and_the_header() {
+        let mut step = Step::cargo("env", &["locate-project"]);
+        let (without_env, _) = outcomes(std::slice::from_ref(&step), false);
+        assert_eq!(without_env, [Outcome::Passed]);
+        step.env = &[("CARGO_TERM_COLOR", "bogus")];
+        let (with_env, text) = outcomes(&[step], false);
+        assert!(
+            matches!(with_env[..], [Outcome::Failed { .. }]),
+            "cargo should reject the colour setting: {with_env:?}"
+        );
+        assert!(
+            text.contains("(CARGO_TERM_COLOR=\"bogus\" cargo locate-project)"),
             "{text}"
         );
     }

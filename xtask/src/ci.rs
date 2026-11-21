@@ -24,6 +24,8 @@ pub(crate) struct CiStep {
     pub(crate) summary: &'static str,
     /// Arguments to `cargo`.
     pub(crate) cargo_args: &'static [&'static str],
+    /// Environment variables for the command.
+    pub(crate) env: &'static [(&'static str, &'static str)],
     /// Pinned tools the step needs, checked before it runs.
     pub(crate) requires: &'static [&'static Tool],
 }
@@ -34,6 +36,7 @@ pub(crate) const STEPS: &[CiStep] = &[
         name: "fmt",
         summary: "Formatting (rustfmt)",
         cargo_args: &["fmt", "--all", "--check"],
+        env: &[],
         requires: &[],
     },
     CiStep {
@@ -48,6 +51,20 @@ pub(crate) const STEPS: &[CiStep] = &[
             "-D",
             "warnings",
         ],
+        env: &[],
+        requires: &[],
+    },
+    CiStep {
+        name: "doc",
+        summary: "API docs build, private items included, warnings as errors",
+        cargo_args: &[
+            "doc",
+            "--workspace",
+            "--no-deps",
+            "--document-private-items",
+            "--locked",
+        ],
+        env: &[("RUSTDOCFLAGS", "-D warnings")],
         requires: &[],
     },
     CiStep {
@@ -62,12 +79,14 @@ pub(crate) const STEPS: &[CiStep] = &[
             "--",
             "check-layers",
         ],
+        env: &[],
         requires: &[],
     },
     CiStep {
         name: "deny",
         summary: "Dependency policy: advisories, bans, licenses, sources (deny.toml)",
         cargo_args: &["deny", "--locked", "check"],
+        env: &[],
         requires: &[&tools::DENY],
     },
     CiStep {
@@ -81,6 +100,7 @@ pub(crate) const STEPS: &[CiStep] = &[
             "--profile",
             "ci",
         ],
+        env: &[],
         // The deny.toml fixture tests in xtask run cargo-deny.
         requires: &[&tools::NEXTEST, &tools::DENY],
     },
@@ -99,6 +119,7 @@ pub(crate) fn run(options: &CiOptions, out: &mut impl Write) -> Exit {
     }
     let steps: Vec<Step> = selected(&options.steps)
         .map(|ci_step| Step {
+            env: ci_step.env,
             requires: ci_step.requires,
             ..Step::cargo(ci_step.name, ci_step.cargo_args)
         })
@@ -149,7 +170,7 @@ mod tests {
 
     #[test]
     fn documented_steps_are_registered() {
-        for name in ["fmt", "clippy", "layers", "deny", "test"] {
+        for name in ["fmt", "clippy", "doc", "layers", "deny", "test"] {
             assert!(is_step(name), "{name}");
         }
         assert!(!is_step("nope"));

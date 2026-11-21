@@ -255,11 +255,11 @@ Done when: Hooks are never installed automatically; installing twice is idempote
 P3 · M0 · Task · deps: FND-0020
 Done when: In the container, `cargo xtask doctor` reports all required checks ok and `cargo xtask ci` passes; the image digest is updated by Dependabot (`devcontainers` ecosystem).
 
-## [To Do] FND-F10 Documentation build checks
+## [In Progress] FND-F10 Documentation build checks
 P1 · M0 · Feature · deps: FND-F04
 Scope: `cargo doc` with `-D warnings`, Markdown link and anchor checking in CI.
 
-### [To Do] FND-0054 Register the `doc` step: `cargo doc --workspace --no-deps --document-private-items --locked` with `RUSTDOCFLAGS="-D warnings"`
+### [Done] FND-0054 Register the `doc` step: `cargo doc --workspace --no-deps --document-private-items --locked` with `RUSTDOCFLAGS="-D warnings"`
 P1 · M0 · Task · deps: FND-0021 · labels: docs · ref: docs/standards/rust.md#tooling-commands-contract-implemented-in-m0
 Done when: A broken intra-doc link, in either a public or a `pub(crate)` item, fails the step; the rust.md tooling table states that private items are documented too and why (most items are `pub(crate)`).
 

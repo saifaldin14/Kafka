@@ -421,7 +421,7 @@ pub(crate) fn check_architecture(architecture: &str) -> Vec<Violation> {
     violations
 }
 
-/// Reads `| <layer> | `<crate>` ... |` rows from the "## 4. Code map" section.
+/// Reads the layer and crate columns of the table rows in the "## 4. Code map" section.
 fn parse_code_map(architecture: &str) -> Result<BTreeMap<String, Layer>, String> {
     let section = architecture
         .split("\n## ")
