@@ -18,16 +18,16 @@ Keep [docs/standards/](docs/standards/) open as a reference. You don't need to m
 
 ## 2. Set up your machine
 
-*The commands below are the contract that milestone M0 implements. Until M0 lands, only the docs exist.*
+*Milestone M0 is building these commands. `cargo xtask ci --list` shows the checks that exist today; the [tooling table](docs/standards/rust.md#tooling-commands-contract-implemented-in-m0) lists what exists and what is still to come.*
 
 - **Rust via rustup.** Don't use Homebrew's or your distribution's `cargo`. They ignore `rust-toolchain.toml`, so you'd build with the wrong compiler. Check with `which cargo`, which should point into `~/.cargo/bin`.
 - The pinned toolchain installs automatically on the first `cargo` command.
-- Tools: `cargo install --locked cargo-nextest cargo-deny`. `cargo-fuzz` and a nightly toolchain are needed only for fuzzing.
+- Tools: `cargo xtask tools install` installs the pinned versions of cargo-nextest and cargo-deny. `cargo-fuzz` and a nightly toolchain are needed only for fuzzing.
 - Docker, only for compatibility and differential tests (they run real Kafka clients and a real Kafka 4.4.0 broker).
 
 ```bash
-cargo xtask ci          # everything CI runs: fmt, clippy, tests, docs, deny, layers, codegen drift
-cargo nextest run       # tests only
+cargo xtask ci                # everything CI runs, step by step
+cargo xtask ci --step test    # one step only; --list shows them all
 cargo xtask codegen     # regenerate protocol code from the Kafka schemas
 cargo xtask compat      # compatibility and differential tests (needs Docker)
 cargo run -- server --config config/dev.toml   # local single-node broker

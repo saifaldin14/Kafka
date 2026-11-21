@@ -84,7 +84,7 @@ Done when: The command lists added, removed and upgraded crates from the two `Ca
 P1 · M0 · Task · deps: none · labels: security · ref: docs/standards/security.md#dependencies
 Done when: Dependabot's config validation passes on GitHub; the policy "dependency updates are separate PRs" in security.md is now automated and the doc says so.
 
-## [In Progress] FND-F04 `xtask` framework
+## [Done] FND-F04 `xtask` framework
 P0 · M0 · Feature · deps: FND-F01
 Scope: `xtask` crate, command dispatch, `cargo xtask ci` orchestration with clear step output and exit codes.
 
@@ -93,19 +93,19 @@ P0 · M0 · Task · deps: FND-0002 · ref: ADR-0009
 Done when: The crate is a workspace member with `[lints] workspace = true`; `.cargo/config.toml` has `[alias] xtask = "run --package xtask --"`; exit codes are 0 (success), 1 (check failed) and 2 (usage error). `cargo xtask help` lists the available commands; an unknown command exits 2 with the usage; arguments are parsed with std or one minimal crate justified per security.md#dependencies; the `//!` doc states the responsibility and explains how to add a command and a ci step (later commands such as `codegen`, `fuzz` and `compat` arrive with their own epics; nothing is stubbed); unit tests cover dispatch and the exit codes.
 Notes: exit code 1 is documented in the crate doc and first produced by the step runner (FND-0019); no check exists before it, and an unused variant would be dead code.
 
-### [To Do] FND-0019 xtask step runner: run an external command as a named step with a `==> [n/N] <step>` header, inherited output, elapsed time and exit status, then print a summary table of all steps
+### [Done] FND-0019 xtask step runner: run an external command as a named step with a `==> [n/N] <step>` header, inherited output, elapsed time and exit status, then print a summary table of all steps
 P0 · M0 · Task · deps: FND-0018 · ref: ADR-0009
 Done when: Each step returns a typed result (passed, failed with exit code, or could not start with the OS error); the summary marks each step with ok/FAILED and its duration; the overall exit code is 1 if any step failed; `--keep-going` runs the remaining steps after a failure (by default the runner stops at the first one); unit tests use a step that spawns `cargo --version` and one that cannot start.
 
-### [To Do] FND-0020 One table of pinned external tool versions in xtask (cargo-nextest, cargo-deny, plus later tools added there), with `cargo xtask tools install` (`cargo install --locked --version …`) and a version check before steps that need a tool
+### [Done] FND-0020 One table of pinned external tool versions in xtask (cargo-nextest, cargo-deny, plus later tools added there), with `cargo xtask tools install` (`cargo install --locked --version …`) and a version check before steps that need a tool
 P0 · M0 · Task · deps: FND-0019 · ref: docs/standards/rust.md#tooling-commands-contract-implemented-in-m0
 Done when: The tool table is the only place tool versions appear (CI and `doctor` read it); a step whose tool is missing or the wrong version fails before running, with the exact install command; a unit test parses `--version` output for each listed tool.
 
-### [To Do] FND-0021 `cargo xtask ci` orchestration with steps `fmt` (`cargo fmt --all --check`), `clippy` (`--workspace --all-targets --locked -- -D warnings`) and `test` (`cargo nextest run --workspace --locked --profile ci`), plus `--step <name>` (repeatable) and `--list`
+### [Done] FND-0021 `cargo xtask ci` orchestration with steps `fmt` (`cargo fmt --all --check`), `clippy` (`--workspace --all-targets --locked -- -D warnings`) and `test` (`cargo nextest run --workspace --locked --profile ci`), plus `--step <name>` (repeatable) and `--list`
 P0 · M0 · Task · deps: FND-0019, FND-0020 · ref: docs/standards/rust.md#tooling-commands-contract-implemented-in-m0
 Done when: `cargo xtask ci` runs the steps in the documented order and exits non-zero if any step fails; `--list` prints every registered step in order; later tasks register `doc`, `deny`, `layers`, `manifests`, `lint-canary`, `links`, `workflows` and `backlog` in the same table; the rust.md tooling table and CONTRIBUTING describe the commands as they now exist.
 
-### [To Do] FND-0022 `.config/nextest.toml` with `default` and `ci` profiles: no retries (flaky tests are bugs), `fail-fast = false` in ci, slow-test warning at 60 s and termination at 300 s, JUnit output at `target/nextest/ci/junit.xml`
+### [Done] FND-0022 `.config/nextest.toml` with `default` and `ci` profiles: no retries (flaky tests are bugs), `fail-fast = false` in ci, slow-test warning at 60 s and termination at 300 s, JUnit output at `target/nextest/ci/junit.xml`
 P0 · M0 · Task · deps: FND-0021 · labels: test · ref: docs/standards/testing.md#rules
 Done when: `cargo nextest run --profile ci` writes the JUnit file; a deliberately slow test (not committed) is reported as slow and then terminated, as shown in the PR; testing.md links to the profile and explains why retries are 0.
 

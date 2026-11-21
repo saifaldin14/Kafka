@@ -168,15 +168,28 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 
 ## Tooling commands (contract implemented in M0)
 
+`cargo xtask ci` runs every check CI runs, as named steps in a fixed order. CI jobs pick steps with `--step`, so each check is defined once, in `xtask/src/ci.rs`.
+
 | Command | Does |
 |---|---|
-| `cargo xtask ci` | Everything below in CI order. Run it before pushing. |
-| `cargo fmt --all --check` | Formatting (default rustfmt settings) |
-| `cargo clippy --workspace --all-targets -- -D warnings` | Lints |
-| `cargo nextest run --workspace` | Tests |
-| `cargo doc --workspace --no-deps` with `RUSTDOCFLAGS="-D warnings"` | Docs build, no broken links |
-| `cargo deny check` | Advisories, licenses, banned and duplicate crates, sources |
-| `cargo xtask check-layers` | Crate dependency layering ([architecture §5](../architecture.md#5-layering-rules)) |
+| `cargo xtask ci` | Runs every step below in order; stops at the first failure unless `--keep-going` is given. Run it before pushing. |
+| `cargo xtask ci --list` | Lists the steps in run order |
+| `cargo xtask ci --step <name>` | Runs only the named steps (repeatable), still in run order |
+| `cargo xtask tools install` | Installs the pinned versions of the external tools (`xtask/src/tools.rs` is the only place versions appear) |
+
+| Step | Runs |
+|---|---|
+| `fmt` | `cargo fmt --all --check` (default rustfmt settings) |
+| `clippy` | `cargo clippy --workspace --all-targets --locked -- -D warnings` |
+| `test` | `cargo nextest run --workspace --locked --profile ci` ([`.config/nextest.toml`](../../.config/nextest.toml)) |
+
+Steps and commands still to come, each added by its backlog task:
+
+| Planned | Does |
+|---|---|
+| `doc` step | `cargo doc --workspace --no-deps` with `RUSTDOCFLAGS="-D warnings"`: docs build, no broken links |
+| `deny` step | `cargo deny check`: advisories, licenses, banned and duplicate crates, sources |
+| `layers` step (`cargo xtask check-layers`) | Crate dependency layering ([architecture §5](../architecture.md#5-layering-rules)) |
 | `cargo xtask codegen --check` | Generated code is up to date |
 | `cargo xtask compat` | Real-client and differential tests (Docker) |
 | `cargo xtask fuzz <target> [--time 60s]` | Run a fuzz target |

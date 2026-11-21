@@ -22,10 +22,18 @@
 //!    the `output` module.
 //! 3. Dispatch it in `run` below.
 //!
+//! CI checks are not commands: they are steps of `cargo xtask ci`, registered in the
+//! `ci` module.
+//!
 //! Commands arrive with the backlog task that needs them; nothing is added ahead of use.
 
+mod ci;
 mod cli;
+mod clock;
+mod install;
 mod output;
+mod steps;
+mod tools;
 
 use std::process::ExitCode;
 
@@ -35,6 +43,7 @@ use cli::Command;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Exit {
     Success,
+    CheckFailed,
     Usage,
 }
 
@@ -42,6 +51,7 @@ impl Exit {
     fn code(self) -> u8 {
         match self {
             Exit::Success => 0,
+            Exit::CheckFailed => 1,
             Exit::Usage => 2,
         }
     }
@@ -64,6 +74,8 @@ fn run(command: &Command, out: &mut impl std::io::Write) -> Exit {
             output::usage(out);
             Exit::Success
         }
+        Command::Ci(options) => ci::run(options, out),
+        Command::ToolsInstall => install::run(out),
     }
 }
 
@@ -75,6 +87,7 @@ mod tests {
     #[test]
     fn exit_codes_match_the_documented_contract() {
         assert_eq!(Exit::Success.code(), 0);
+        assert_eq!(Exit::CheckFailed.code(), 1);
         assert_eq!(Exit::Usage.code(), 2);
     }
 
