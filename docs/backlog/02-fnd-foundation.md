@@ -41,7 +41,7 @@ Done when: Covered: a bare `#[allow]` fires `allow_attributes`; `#[expect]` with
 P1 · M0 · Task · deps: FND-0005 · labels: test · ref: docs/standards/rust.md#workspace-configuration
 Done when: Every public function in rand 0.10 (the version in `Cargo.lock`) that draws from the thread-local or OS RNG without a caller-supplied seed is listed, from reading its source (for example `rand::random`, `random_iter`, `random_range`, `random_bool`, `random_ratio`, `fill` and OS-seeded constructors); each is added to clippy.toml and the rust.md block with the reason "use the injected seeded RNG"; each has a lint canary fixture; `cargo xtask lint-canary` passes.
 
-### [To Do] FND-0007 `cargo xtask check-manifests` (first rules): `[workspace.lints]` and `clippy.toml` must equal the TOML blocks in docs/standards/rust.md (parsed and compared semantically), and every workspace member must declare `[lints] workspace = true`
+### [Done] FND-0007 `cargo xtask check-manifests` (first rules): `[workspace.lints]` and `clippy.toml` must equal the TOML blocks in docs/standards/rust.md (parsed and compared semantically), and every workspace member must declare `[lints] workspace = true`
 P0 · M0 · Task · deps: FND-0003, FND-0018 · labels: docs · ref: docs/standards/rust.md#workspace-configuration
 Done when: Unit tests with fixture manifests cover: a changed lint level, an added or removed disallowed method, and a member without `[lints] workspace = true`; each fails with a message naming the file and the differing key; the real repository passes; the command is registered as the `manifests` step of `cargo xtask ci`.
 

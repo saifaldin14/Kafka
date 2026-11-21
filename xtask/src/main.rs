@@ -28,6 +28,7 @@
 //! Commands arrive with the backlog task that needs them; nothing is added ahead of use.
 
 mod check_layers;
+mod check_manifests;
 mod ci;
 mod cli;
 mod clock;
@@ -86,6 +87,7 @@ fn run(command: &Command, out: &mut impl std::io::Write) -> Exit {
         Command::Ci(options) => ci::run(options, out),
         Command::ToolsInstall => install::run(out),
         Command::CheckLayers(options) => check_layers::run(options, out),
+        Command::CheckManifests => check_manifests::run(out),
         Command::LintCanary => lint_canary::run(out),
     }
 }

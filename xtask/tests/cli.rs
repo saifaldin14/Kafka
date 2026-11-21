@@ -57,6 +57,7 @@ fn ci_list_prints_the_steps_in_run_order() -> Result<(), Box<dyn Error>> {
             "clippy",
             "doc",
             "layers",
+            "manifests",
             "lint-canary",
             "deny",
             "links",
