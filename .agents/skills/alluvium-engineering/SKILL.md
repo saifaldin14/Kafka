@@ -24,9 +24,9 @@ The anti-slop rules below are specific cases of this principle. Apply its intent
 
 ## Current phase
 
-**Design phase. No Rust code exists yet.**
+**Milestone M0 (workspace skeleton and tooling) is in progress.** The Cargo workspace and the `cargo xtask` checks exist; the first product crate is `alluvium-types`, which is part of M0.
 
-The first code milestone is **M0: workspace skeleton and tooling** (see the [milestones](../../../docs/backlog/README.md#milestones)). Do not implement any feature until M0 has landed: the workspace, lint config, `xtask` checks and CI. If asked to build a feature before then, say so and offer to do M0 first.
+Do not implement any feature outside M0 until M0 has landed: the workspace, lint config, `xtask` checks, CI and `alluvium-types` (see the [milestones](../../../docs/backlog/README.md#milestones)). If asked to build a feature before then, say so and offer to do M0 first.
 
 To find the next task, run `python3 docs/backlog/tools/backlog.py next`. From M0 onward this moves to `cargo xtask backlog next`.
 
