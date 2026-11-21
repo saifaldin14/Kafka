@@ -65,12 +65,10 @@ disallowed-methods = [
   { path = "std::thread::sleep", reason = "use the Clock; never block a thread to wait" },
   { path = "std::thread::spawn", reason = "spawn through the task supervisor" },
   { path = "tokio::spawn", reason = "spawn through the task supervisor so tasks are named, traced and shut down" },
-  { path = "tokio::task::spawn", reason = "spawn through the task supervisor so tasks are named, traced and shut down" },
   { path = "tokio::time::sleep", reason = "use the Clock so simulation controls time" },
   { path = "tokio::time::Instant::now", reason = "inject time through alluvium_types::Clock" },
   { path = "tokio::sync::mpsc::unbounded_channel", reason = "all queues are bounded; use mpsc::channel with a configured capacity" },
   { path = "rand::rng", reason = "use the injected seeded RNG" },
-  { path = "rand::thread_rng", reason = "use the injected seeded RNG" },
   { path = "std::collections::HashMap::new", reason = "RandomState breaks deterministic replay; use BTreeMap or alluvium_types::collections::SeededHashMap" },
   { path = "std::collections::HashMap::with_capacity", reason = "RandomState breaks deterministic replay; use BTreeMap or alluvium_types::collections::SeededHashMap" },
   { path = "std::collections::HashSet::new", reason = "RandomState breaks deterministic replay; use BTreeSet or alluvium_types::collections::SeededHashSet" },
@@ -83,6 +81,8 @@ disallowed-types = [
 ```
 
 Each disallowed item has exactly one sanctioned wrapper, and the wrapper carries a single `#[expect(clippy::disallowed_methods, reason = "…")]`. For example, `SystemClock` is the one place that calls `Instant::now`. The seeded hash maps take their seed from the injected RNG: random per process in production, so attacker-chosen keys can't cause hash flooding, and fixed in simulation, so runs replay exactly.
+
+Clippy matches functions, not paths, so one entry bans every path to a function: `tokio::spawn` also covers `tokio::task::spawn`. A second entry for the same function would silently replace the first one's reason. Every entry needs a fixture in the lint canary, which also checks that clippy reports the configured reason.
 
 Release profile:
 
@@ -183,7 +183,7 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 | `clippy` | `cargo clippy --workspace --all-targets --locked -- -D warnings` |
 | `doc` | `cargo doc --workspace --no-deps --document-private-items --locked` with `RUSTDOCFLAGS="-D warnings"`: docs build with no broken intra-doc links or invalid HTML. Private items are documented too, because most items are `pub(crate)` and their docs must stay correct |
 | `layers` | `cargo xtask check-layers`: crate dependency layering ([architecture §5](../architecture.md#5-layering-rules)); `--print` shows the layer table |
-| `lint-canary` | `cargo xtask lint-canary`: clippy on the fixtures in [`xtask/lint-canary`](../../xtask/lint-canary/src/lib.rs) must report exactly the lints their `expect-lint:` comments name, so a removed or weakened lint fails |
+| `lint-canary` | `cargo xtask lint-canary`: clippy on the fixtures in [`xtask/lint-canary`](../../xtask/lint-canary/src/lib.rs) must report exactly the lints their `expect-lint:` comments name, so a removed or weakened lint fails. Every `clippy.toml` entry must fire with its configured reason |
 | `deny` | `cargo deny --locked check`: advisories, licenses, banned and duplicate crates, sources ([`deny.toml`](../../deny.toml)) |
 | `links` | `lychee --offline --include-fragments` over README.md, AGENTS.md, CLAUDE.md, CONTRIBUTING.md, `docs/`, `.agents/` and `.github/`: relative links and `#anchors` resolve. External URLs are not checked here |
 | `test` | `cargo nextest run --workspace --locked --profile ci` ([`.config/nextest.toml`](../../.config/nextest.toml)) |

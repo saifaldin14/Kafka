@@ -4,10 +4,14 @@
 //! rules in `[workspace.lints]` and clippy.toml on purpose. Each offending line ends
 //! with an `expect-lint:` line comment listing the lints it must trip, comma-separated,
 //! spelled as in clippy's JSON output (`unsafe_code`, `clippy::todo`). This command runs
-//! clippy on that crate with its `canary` feature and requires the diagnostics to match
-//! the annotations exactly: every annotated lint fires on its line, and nothing else
-//! fires. A lint removed, misspelled or weakened to `allow` stops firing, and the
-//! command fails naming the fixture line.
+//! clippy on that crate with its `canary` feature and requires:
+//!
+//! 1. The diagnostics match the annotations exactly: every annotated lint fires on its
+//!    line, and nothing else fires. A lint removed, misspelled or weakened to `allow`
+//!    stops firing, and the command names the fixture line.
+//! 2. Every `disallowed-methods` and `disallowed-types` diagnostic carries the reason
+//!    clippy.toml configures for its path, and every entry fires at least once, so a
+//!    new entry needs a fixture.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
@@ -37,6 +41,12 @@ const CLIPPY_ARGS: &[&str] = &[
 
 const MARKER: &str = "// expect-lint:";
 
+/// The clippy.toml keys whose entries carry a reason, and the lint each one drives.
+const DISALLOWED_KEYS: [(&str, &str); 2] = [
+    ("disallowed-methods", "clippy::disallowed_methods"),
+    ("disallowed-types", "clippy::disallowed_types"),
+];
+
 /// Where a diagnostic points: a file relative to the repository root and a 1-based
 /// line. `None` for diagnostics without a source location, such as an unknown lint
 /// name in `[workspace.lints]`.
@@ -44,6 +54,21 @@ pub(crate) type Location = Option<(String, u64)>;
 
 /// Lint names by location, for both the annotations and clippy's diagnostics.
 pub(crate) type Lints = BTreeMap<Location, BTreeSet<String>>;
+
+/// The configured reason for each `(lint, path)` entry in clippy.toml.
+pub(crate) type Disallowed = BTreeMap<(&'static str, String), String>;
+
+/// One diagnostic from clippy's JSON output, at one of its primary locations.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct Diagnostic {
+    pub(crate) location: Location,
+    /// The lint or error code. A diagnostic without a location also carries its
+    /// message, and one without a code is its level and message.
+    pub(crate) name: String,
+    pub(crate) message: String,
+    /// The `note` children. For the `disallowed_*` lints, one is the configured reason.
+    pub(crate) notes: Vec<String>,
+}
 
 /// A location where the lints that fired differ from the annotation.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -55,16 +80,20 @@ pub(crate) struct Mismatch {
 
 impl fmt::Display for Mismatch {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self.location {
-            Some((file, line)) => write!(f, "{file}:{line}")?,
-            None => f.write_str("(no source location)")?,
-        }
         write!(
             f,
-            ": expected {}; clippy reported {}",
+            "{}: expected {}; clippy reported {}",
+            location_text(&self.location),
             list(&self.expected),
             list(&self.actual)
         )
+    }
+}
+
+fn location_text(location: &Location) -> String {
+    match location {
+        Some((file, line)) => format!("{file}:{line}"),
+        None => "(no source location)".to_owned(),
     }
 }
 
@@ -79,13 +108,51 @@ fn list(lints: &BTreeSet<String>) -> String {
 /// Runs the command.
 pub(crate) fn run(out: &mut impl Write) -> Exit {
     let root = crate::repo_root();
-    let expected = match read_annotations(&root) {
-        Ok(expected) => expected,
+    let checked = read_annotations(&root).and_then(|expected| {
+        let clippy_toml = std::fs::read_to_string(root.join("clippy.toml"))
+            .map_err(|error| format!("could not read clippy.toml: {error}"))?;
+        let disallowed = parse_disallowed(&clippy_toml)?;
+        let diagnostics = run_clippy(&root, out)?;
+        let mismatches = compare(&expected, &by_location(&diagnostics));
+        let reason_problems = check_reasons(&disallowed, &diagnostics);
+        Ok((expected, mismatches, reason_problems))
+    });
+    let (expected, mismatches, reason_problems) = match checked {
+        Ok(checked) => checked,
         Err(error) => {
             output::line(out, &format!("error: {error}"));
             return Exit::CheckFailed;
         }
     };
+    if mismatches.is_empty() && reason_problems.is_empty() {
+        let count: usize = expected.values().map(BTreeSet::len).sum();
+        output::line(
+            out,
+            &format!(
+                "lint-canary: ok ({count} annotated lints fired with their configured reasons, nothing else)"
+            ),
+        );
+        return Exit::Success;
+    }
+    for mismatch in &mismatches {
+        output::line(out, &mismatch.to_string());
+    }
+    for problem in &reason_problems {
+        output::line(out, problem);
+    }
+    output::line(
+        out,
+        &format!(
+            "lint-canary: {} problem(s). A lint that no longer fires was removed or weakened in \
+             [workspace.lints] or clippy.toml (docs/standards/rust.md#workspace-configuration)",
+            mismatches.len() + reason_problems.len()
+        ),
+    );
+    Exit::CheckFailed
+}
+
+/// Runs clippy on the fixtures and returns its diagnostics.
+fn run_clippy(root: &Path, out: &mut impl Write) -> Result<Vec<Diagnostic>, String> {
     output::line(
         out,
         &format!(
@@ -94,58 +161,21 @@ pub(crate) fn run(out: &mut impl Write) -> Exit {
         ),
     );
     let clippy = Command::new(tools::cargo_program())
-        .current_dir(&root)
+        .current_dir(root)
         .args(CLIPPY_ARGS)
         .stderr(Stdio::inherit())
-        .output();
-    let clippy = match clippy {
-        Ok(clippy) => clippy,
-        Err(error) => {
-            output::line(out, &format!("error: could not run cargo clippy: {error}"));
-            return Exit::CheckFailed;
-        }
-    };
-    let actual = match parse_diagnostics(&String::from_utf8_lossy(&clippy.stdout)) {
-        Ok(actual) => actual,
-        Err(error) => {
-            output::line(out, &format!("error: {error}"));
-            return Exit::CheckFailed;
-        }
-    };
+        .output()
+        .map_err(|error| format!("could not run cargo clippy: {error}"))?;
+    let diagnostics = parse_diagnostics(&String::from_utf8_lossy(&clippy.stdout))?;
     // A failed exit status is the normal result, since the fixtures trip deny-level
     // lints. It only explains an empty result, for example a stale lock file.
-    if actual.is_empty() && !clippy.status.success() {
-        output::line(
-            out,
-            &format!(
-                "error: cargo clippy reported no diagnostics and exited with {}; see its output above",
-                clippy.status
-            ),
-        );
-        return Exit::CheckFailed;
+    if diagnostics.is_empty() && !clippy.status.success() {
+        return Err(format!(
+            "cargo clippy reported no diagnostics and exited with {}; see its output above",
+            clippy.status
+        ));
     }
-    let mismatches = compare(&expected, &actual);
-    if mismatches.is_empty() {
-        let count: usize = expected.values().map(BTreeSet::len).sum();
-        output::line(
-            out,
-            &format!("lint-canary: ok ({count} annotated lints fired, nothing else)"),
-        );
-        return Exit::Success;
-    }
-    for mismatch in &mismatches {
-        output::line(out, &mismatch.to_string());
-    }
-    output::line(
-        out,
-        &format!(
-            "lint-canary: {} line(s) differ from their annotations. A lint that no longer fires \
-             was removed or weakened in [workspace.lints] or clippy.toml \
-             (docs/standards/rust.md#workspace-configuration)",
-            mismatches.len()
-        ),
-    );
-    Exit::CheckFailed
+    Ok(diagnostics)
 }
 
 /// Reads every `.rs` file under [`CANARY_SRC`] and collects its annotations.
@@ -225,21 +255,22 @@ fn is_lint_name(name: &str) -> bool {
             .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'_')
 }
 
-/// The diagnostics in cargo's `--message-format=json` output, by location. A
-/// diagnostic is named by its lint or error code; one without a location also carries
-/// its message, and one without a code is named by its level and message. Cargo's
-/// closing summary lines (no code and no location) are skipped.
-pub(crate) fn parse_diagnostics(json_lines: &str) -> Result<Lints, String> {
-    let mut lints = Lints::new();
+/// The diagnostics in cargo's `--message-format=json` output, one per primary
+/// location. Cargo's closing summary lines (no code and no location) are skipped.
+pub(crate) fn parse_diagnostics(json_lines: &str) -> Result<Vec<Diagnostic>, String> {
+    let mut diagnostics = Vec::new();
     for line in json_lines.lines().filter(|line| !line.trim().is_empty()) {
-        let message: Value = serde_json::from_str(line)
+        let json: Value = serde_json::from_str(line)
             .map_err(|error| format!("cargo printed a line that is not JSON ({error}): {line}"))?;
-        if message["reason"] != "compiler-message" {
+        if json["reason"] != "compiler-message" {
             continue;
         }
-        let diagnostic = &message["message"];
-        let code = diagnostic["code"]["code"].as_str();
-        let locations: Vec<Location> = diagnostic["spans"]
+        let diagnostic = &json["message"];
+        let message = diagnostic["message"]
+            .as_str()
+            .unwrap_or_default()
+            .to_owned();
+        let mut locations: Vec<Location> = diagnostic["spans"]
             .as_array()
             .into_iter()
             .flatten()
@@ -251,27 +282,49 @@ pub(crate) fn parse_diagnostics(json_lines: &str) -> Result<Lints, String> {
                 )))
             })
             .collect();
-        let text = diagnostic["message"].as_str().unwrap_or_default();
-        let name = match (code, locations.is_empty()) {
+        let name = match (diagnostic["code"]["code"].as_str(), locations.is_empty()) {
             (Some(code), false) => code.to_owned(),
             // Without a location, the message is the only clue (for example, which lint
             // name in `[workspace.lints]` is unknown).
-            (Some(code), true) => format!("{code}: {text}"),
+            (Some(code), true) => format!("{code}: {message}"),
             (None, true) => continue,
             (None, false) => format!(
-                "{}: {text}",
+                "{}: {message}",
                 diagnostic["level"].as_str().unwrap_or("diagnostic")
             ),
         };
+        let notes: Vec<String> = diagnostic["children"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter(|child| child["level"] == "note")
+            .filter_map(|child| child["message"].as_str().map(str::to_owned))
+            .collect();
         if locations.is_empty() {
-            lints.entry(None).or_default().insert(name);
-        } else {
-            for location in locations {
-                lints.entry(location).or_default().insert(name.clone());
-            }
+            locations.push(None);
+        }
+        for location in locations {
+            diagnostics.push(Diagnostic {
+                location,
+                name: name.clone(),
+                message: message.clone(),
+                notes: notes.clone(),
+            });
         }
     }
-    Ok(lints)
+    Ok(diagnostics)
+}
+
+/// The lint names that fired, by location.
+pub(crate) fn by_location(diagnostics: &[Diagnostic]) -> Lints {
+    let mut lints = Lints::new();
+    for diagnostic in diagnostics {
+        lints
+            .entry(diagnostic.location.clone())
+            .or_default()
+            .insert(diagnostic.name.clone());
+    }
+    lints
 }
 
 /// Every location where the expected and actual lints differ, in location order.
@@ -292,17 +345,91 @@ pub(crate) fn compare(expected: &Lints, actual: &Lints) -> Vec<Mismatch> {
         .collect()
 }
 
+/// The `disallowed-methods` and `disallowed-types` entries of clippy.toml. Every entry
+/// must be a table with a `path` and a `reason`.
+pub(crate) fn parse_disallowed(clippy_toml: &str) -> Result<Disallowed, String> {
+    let config: Value = toml::from_str(clippy_toml)
+        .map_err(|error| format!("could not parse clippy.toml: {error}"))?;
+    let mut disallowed = Disallowed::new();
+    for (key, lint) in DISALLOWED_KEYS {
+        for entry in config[key].as_array().into_iter().flatten() {
+            let path = entry["path"]
+                .as_str()
+                .ok_or_else(|| format!("clippy.toml: a `{key}` entry has no `path`: {entry}"))?;
+            let reason = entry["reason"]
+                .as_str()
+                .ok_or_else(|| format!("clippy.toml: `{path}` in `{key}` has no `reason`"))?;
+            disallowed.insert((lint, path.to_owned()), reason.to_owned());
+        }
+    }
+    Ok(disallowed)
+}
+
+/// Checks that each `disallowed_*` diagnostic carries the reason configured for its
+/// path, and that every clippy.toml entry fired at least once.
+pub(crate) fn check_reasons(disallowed: &Disallowed, diagnostics: &[Diagnostic]) -> Vec<String> {
+    let mut problems = Vec::new();
+    let mut fired = BTreeSet::new();
+    for diagnostic in diagnostics {
+        let Some(lint) = DISALLOWED_KEYS
+            .iter()
+            .map(|(_, lint)| *lint)
+            .find(|lint| *lint == diagnostic.name)
+        else {
+            continue;
+        };
+        let at = location_text(&diagnostic.location);
+        // Clippy names the configured path in backticks: "use of a disallowed method `a::b`".
+        let Some(path) = diagnostic.message.split('`').nth(1) else {
+            problems.push(format!("{at}: no path in `{}`", diagnostic.message));
+            continue;
+        };
+        let key = (lint, path.to_owned());
+        match disallowed.get(&key) {
+            None => problems.push(format!(
+                "{at}: {lint} fired for `{path}`, which clippy.toml does not list"
+            )),
+            Some(reason) if !diagnostic.notes.contains(reason) => problems.push(format!(
+                "{at}: `{path}` fired without its configured reason \"{reason}\""
+            )),
+            Some(_) => {}
+        }
+        fired.insert(key);
+    }
+    for (lint, path) in disallowed.keys() {
+        if !fired.contains(&(*lint, path.clone())) {
+            problems.push(format!(
+                "clippy.toml: `{path}` ({lint}) never fired. Add a fixture for it to \
+                 xtask/lint-canary, or remove it if another entry names the same function"
+            ));
+        }
+    }
+    problems
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeSet;
 
-    use super::{Lints, compare, parse_annotations, parse_diagnostics};
+    use super::{
+        Diagnostic, Lints, by_location, check_reasons, compare, parse_annotations,
+        parse_diagnostics, parse_disallowed,
+    };
 
     fn at(file: &str, line: u64, names: &[&str]) -> Lints {
         Lints::from([(
             Some((file.to_owned(), line)),
             names.iter().map(|name| (*name).to_owned()).collect(),
         )])
+    }
+
+    fn disallowed_call(line: u64, path: &str, note: &str) -> Diagnostic {
+        Diagnostic {
+            location: Some(("a.rs".to_owned(), line)),
+            name: "clippy::disallowed_methods".to_owned(),
+            message: format!("use of a disallowed method `{path}`"),
+            notes: vec![note.to_owned()],
+        }
     }
 
     #[test]
@@ -345,10 +472,10 @@ mod tests {
     fn diagnostics_are_keyed_by_primary_span_and_summaries_are_skipped() {
         let json = [
             r#"{"reason":"compiler-artifact","target":{}}"#,
-            r#"{"reason":"compiler-message","message":{"level":"error","message":"used unwrap","code":{"code":"clippy::unwrap_used"},"spans":[{"file_name":"a.rs","line_start":9,"is_primary":false},{"file_name":"a.rs","line_start":2,"is_primary":true}]}}"#,
-            r#"{"reason":"compiler-message","message":{"level":"error","message":"aborting due to 1 previous error","code":null,"spans":[]}}"#,
-            r#"{"reason":"compiler-message","message":{"level":"error","message":"expected `;`","code":null,"spans":[{"file_name":"a.rs","line_start":5,"is_primary":true}]}}"#,
-            r#"{"reason":"compiler-message","message":{"level":"warning","message":"unknown lint: `clippy::todoo`","code":{"code":"unknown_lints"},"spans":[]}}"#,
+            r#"{"reason":"compiler-message","message":{"level":"error","message":"used unwrap","code":{"code":"clippy::unwrap_used"},"spans":[{"file_name":"a.rs","line_start":9,"is_primary":false},{"file_name":"a.rs","line_start":2,"is_primary":true}],"children":[]}}"#,
+            r#"{"reason":"compiler-message","message":{"level":"error","message":"aborting due to 1 previous error","code":null,"spans":[],"children":[]}}"#,
+            r#"{"reason":"compiler-message","message":{"level":"error","message":"expected `;`","code":null,"spans":[{"file_name":"a.rs","line_start":5,"is_primary":true}],"children":[]}}"#,
+            r#"{"reason":"compiler-message","message":{"level":"warning","message":"unknown lint: `clippy::todoo`","code":{"code":"unknown_lints"},"spans":[],"children":[]}}"#,
         ]
         .join("\n");
         let mut expected = at("a.rs", 2, &["clippy::unwrap_used"]);
@@ -357,7 +484,19 @@ mod tests {
             None,
             BTreeSet::from(["unknown_lints: unknown lint: `clippy::todoo`".to_owned()]),
         );
-        assert_eq!(parse_diagnostics(&json), Ok(expected));
+        assert_eq!(
+            parse_diagnostics(&json).map(|d| by_location(&d)),
+            Ok(expected)
+        );
+    }
+
+    #[test]
+    fn notes_are_kept_and_other_children_dropped() {
+        let json = r#"{"reason":"compiler-message","message":{"level":"warning","message":"use of a disallowed method `a::b`","code":{"code":"clippy::disallowed_methods"},"spans":[{"file_name":"a.rs","line_start":3,"is_primary":true}],"children":[{"level":"note","message":"use the Clock"},{"level":"help","message":"see the docs"}]}}"#;
+        assert_eq!(
+            parse_diagnostics(json),
+            Ok(vec![disallowed_call(3, "a::b", "use the Clock")])
+        );
     }
 
     #[test]
@@ -386,6 +525,57 @@ mod tests {
                 "(no source location): expected nothing; clippy reported unknown_lints",
                 "a.rs:2: expected clippy::todo; clippy reported nothing",
                 "a.rs:7: expected nothing; clippy reported clippy::panic",
+            ]
+        );
+    }
+
+    #[test]
+    fn disallowed_entries_need_a_path_and_a_reason() {
+        let config = r#"
+            disallowed-methods = [{ path = "a::b", reason = "use c" }]
+            disallowed-types = [{ path = "a::T", reason = "use U" }]
+        "#;
+        let disallowed = parse_disallowed(config);
+        assert_eq!(
+            disallowed.as_ref().map(std::collections::BTreeMap::len),
+            Ok(2),
+            "{disallowed:?}"
+        );
+        let no_reason = parse_disallowed(r#"disallowed-methods = [{ path = "a::b" }]"#);
+        assert_eq!(
+            no_reason,
+            Err("clippy.toml: `a::b` in `disallowed-methods` has no `reason`".to_owned())
+        );
+        assert!(parse_disallowed(r#"disallowed-methods = ["a::b"]"#).is_err());
+    }
+
+    #[test]
+    fn reasons_must_match_and_every_entry_must_fire() {
+        let config = r#"disallowed-methods = [
+            { path = "a::b", reason = "use c" },
+            { path = "a::d", reason = "use e" },
+        ]"#;
+        let disallowed = parse_disallowed(config).unwrap_or_default();
+        assert_eq!(disallowed.len(), 2);
+        let correct = [
+            disallowed_call(1, "a::b", "use c"),
+            disallowed_call(2, "a::d", "use e"),
+        ];
+        assert_eq!(check_reasons(&disallowed, &correct), Vec::<String>::new());
+        let problems = check_reasons(
+            &disallowed,
+            &[
+                disallowed_call(1, "a::b", "stale reason"),
+                disallowed_call(2, "x::y", "use e"),
+            ],
+        );
+        assert_eq!(
+            problems,
+            [
+                "a.rs:1: `a::b` fired without its configured reason \"use c\"",
+                "a.rs:2: clippy::disallowed_methods fired for `x::y`, which clippy.toml does not list",
+                "clippy.toml: `a::d` (clippy::disallowed_methods) never fired. Add a fixture for it to \
+                 xtask/lint-canary, or remove it if another entry names the same function",
             ]
         );
     }
