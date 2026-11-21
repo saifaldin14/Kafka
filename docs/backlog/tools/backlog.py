@@ -319,9 +319,10 @@ def main():
         if missing:
             errors.append(f"README.md: epics missing from the epic table: {sorted(missing)}")
         if args.epic:
-            mine = tuple(f"{c.lower()}-" for c in args.epic)
+            # An epic's file names contain `-<code>-` (`02-fnd-foundation.md`) and its ids `<CODE>-`.
+            mine = tuple(f"-{c.lower()}-" for c in args.epic)
             ids = tuple(f"{c}-" for c in args.epic)
-            keep = lambda msg: msg.startswith(mine) or any(i in msg for i in ids)
+            keep = lambda msg: any(m in msg for m in mine) or any(i in msg for i in ids)
             errors[:] = [e for e in errors if keep(e)]
             warnings = [w for w in warnings if keep(w)]
         for w in warnings:

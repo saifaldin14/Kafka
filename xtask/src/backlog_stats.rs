@@ -99,6 +99,12 @@ pub(crate) fn stats_text(backlog: &Backlog) -> String {
     lines.join("\n")
 }
 
+/// The text between the README's markers, if both are present.
+pub(crate) fn current_stats(readme: &str) -> Option<&str> {
+    let (_, rest) = readme.split_once(START_MARKER)?;
+    rest.split_once(END_MARKER).map(|(stats, _)| stats)
+}
+
 /// `readme` with the text between the markers replaced by `text`, or `None` if the
 /// markers are missing. Nothing outside the markers changes.
 pub(crate) fn replace_stats(readme: &str, text: &str) -> Option<String> {

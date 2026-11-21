@@ -205,7 +205,7 @@ P1 · M0 · Task · deps: none · labels: docs · ref: docs/backlog/README.md
 Done when: Parsing the real backlog gives the same item count and fields as `backlog.py` (checked by a test that compares against a committed JSON golden produced once by `backlog.py`); malformed headings, metadata lines and missing `Done when` are reported with file:line; unit tests use the README examples.
 Notes: The committed goldens cover fixture backlogs in `xtask/tests/fixtures/backlog/`, because a golden of the real backlog would go stale with every status change. On the real backlog, both parsers gave the same 7,836 items field for field, checked once when the port landed.
 
-### [To Do] FND-0042 `cargo xtask backlog check [--allow-empty-features] [--epic CODE]` with every rule of `backlog.py check`
+### [Done] FND-0042 `cargo xtask backlog check [--allow-empty-features] [--epic CODE]` with every rule of `backlog.py check`
 P1 · M0 · Task · deps: FND-0041 · labels: docs · ref: docs/backlog/README.md
 Done when: Rules: id formats, duplicates, unknown deps, cross-epic deps only on features, no deps on later-milestone tasks, feature milestone = earliest task, feature status derived from tasks, Blocked/Won't Do trailers, cycles, README epic table and totals. For each rule, a fixture backlog triggers exactly the error text that `backlog.py` produces (committed goldens); the real backlog gives identical output from both tools; exit code 1 on any error.
 
@@ -213,10 +213,10 @@ Done when: Rules: id formats, duplicates, unknown deps, cross-epic deps only on 
 P1 · M0 · Task · deps: FND-0041 · labels: docs · ref: docs/backlog/README.md
 Done when: Golden tests on fixture backlogs cover: a blocked task, a feature dependency satisfied only up to the task's milestone, claimed tasks skipped, and working ahead when the current milestone has nothing ready; the output on the real backlog matches `backlog.py next --all`.
 
-### [In Progress] FND-0044 `cargo xtask backlog stats [--write]`: per-epic and per-milestone totals rewritten between the README `backlog-stats` markers
+### [Done] FND-0044 `cargo xtask backlog stats [--write]`: per-epic and per-milestone totals rewritten between the README `backlog-stats` markers
 P2 · M0 · Task · deps: FND-0041 · labels: docs · ref: docs/backlog/README.md
 Done when: The generated table is byte-identical to `backlog.py stats` on the real backlog; `--write` changes only the text between the markers; `check` (without `--allow-empty-features`) fails when the totals are stale.
-Notes: `stats` and `--write` landed first, byte-identical on the real backlog. The stale-totals failure arrives with `check` (FND-0042).
+Notes: `stats` and `--write` landed first, byte-identical on the real backlog. The stale-totals failure arrived with `check` (FND-0042).
 
 ### [To Do] FND-0045 Run `cargo xtask backlog check` as the `backlog` step in the CI `policy` job, delete `docs/backlog/tools/backlog.py`, and point the README, the engineering skill and CONTRIBUTING to `cargo xtask backlog`
 P1 · M0 · Task · deps: FND-0042, FND-0043, FND-0044, FND-0036 · labels: docs · ref: docs/backlog/README.md

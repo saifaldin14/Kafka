@@ -1,0 +1,13 @@
+warning: 02-fff-phi.md:7: FFF-0001 (M0) depends on feature GGG-F01, which has no tasks at or before M0
+error: 01-eee-epsilon.md:3: feature EEE-F01 milestone M1 must equal its earliest task milestone M0
+error: 01-eee-epsilon.md:3: feature EEE-F01 status should be 'In Progress' given its tasks
+error: 01-eee-epsilon.md:7: EEE-0001: unknown dependency EEE-9999
+error: 01-eee-epsilon.md:7: EEE-0001: depends on itself
+error: 01-eee-epsilon.md:11: EEE-0002 (M0) depends on EEE-0003 in later milestone M2
+error: 02-fff-phi.md:3: FFF-F01: cross-epic dependency EEE-0001 must be a feature id
+error: dependency cycle: EEE-0001 -> EEE-0001
+error: dependency cycle: EEE-0003 -> EEE-0004 -> EEE-0003
+error: README.md: epic FFF is #3 but links to 02-fff-phi.md
+error: README.md: epic table links to missing file 04-hhh-missing.md
+error: README.md: epics missing from the epic table: ['GGG']
+10 items (6 tasks), 11 errors, 1 warnings

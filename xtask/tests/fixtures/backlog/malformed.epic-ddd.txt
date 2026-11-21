@@ -1,0 +1,2 @@
+error: 02-wrong-name.md: file name must be '<NN>-ddd-<slug>.md'
+5 items (4 tasks), 1 errors, 0 warnings
