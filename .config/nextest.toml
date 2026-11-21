@@ -1,0 +1,16 @@
+# cargo-nextest profiles. docs/standards/testing.md#rules explains the choices.
+
+[profile.default]
+# Flaky tests are bugs: a test that needs a retry to pass is reported as failing.
+retries = 0
+# Report a test as slow after 60 s and stop it after 5 periods (300 s).
+slow-timeout = { period = "60s", terminate-after = 5 }
+
+# Used by `cargo xtask ci --step test`. Inherits everything above.
+[profile.ci]
+# Run every test so one CI run shows all failures.
+fail-fast = false
+
+[profile.ci.junit]
+# Written to target/nextest/ci/junit.xml for CI to upload.
+path = "junit.xml"

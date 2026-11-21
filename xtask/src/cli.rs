@@ -6,14 +6,37 @@
 use std::ffi::OsString;
 use std::fmt;
 
+use crate::ci;
+
 /// A parsed `xtask` command.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum Command {
     Help,
+    Ci(CiOptions),
+    ToolsInstall,
+}
+
+/// Options for `cargo xtask ci`.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct CiOptions {
+    /// Steps chosen with `--step`; empty means every step.
+    pub(crate) steps: Vec<String>,
+    pub(crate) list: bool,
+    pub(crate) keep_going: bool,
 }
 
 /// Every command with its one-line summary, in the order `help` prints them.
-pub(crate) const COMMANDS: &[(&str, &str)] = &[("help", "Print this list of commands")];
+pub(crate) const COMMANDS: &[(&str, &str)] = &[
+    ("help", "Print this list of commands"),
+    (
+        "ci [--step <name>]... [--keep-going] [--list]",
+        "Run the CI checks; `--list` shows the steps",
+    ),
+    (
+        "tools install",
+        "Install the pinned versions of the external tools the checks use",
+    ),
+];
 
 /// Why the command line could not be parsed. Always exit code 2.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -24,6 +47,17 @@ pub(crate) enum UsageError {
         command: &'static str,
         argument: String,
     },
+    MissingValue {
+        flag: &'static str,
+    },
+    UnknownStep(String),
+    MissingSubcommand {
+        command: &'static str,
+    },
+    UnknownSubcommand {
+        command: &'static str,
+        name: String,
+    },
     NonUtf8Argument(OsString),
 }
 
@@ -33,7 +67,18 @@ impl fmt::Display for UsageError {
             UsageError::MissingCommand => write!(f, "no command given"),
             UsageError::UnknownCommand(name) => write!(f, "unknown command `{name}`"),
             UsageError::UnexpectedArgument { command, argument } => {
-                write!(f, "`{command}` takes no argument `{argument}`")
+                write!(f, "`{command}` does not take the argument `{argument}`")
+            }
+            UsageError::MissingValue { flag } => write!(f, "`{flag}` needs a value"),
+            UsageError::UnknownStep(name) => write!(
+                f,
+                "unknown step `{name}`; `cargo xtask ci --list` shows the steps"
+            ),
+            UsageError::MissingSubcommand { command } => {
+                write!(f, "`{command}` needs a subcommand")
+            }
+            UsageError::UnknownSubcommand { command, name } => {
+                write!(f, "unknown subcommand `{command} {name}`")
             }
             UsageError::NonUtf8Argument(argument) => {
                 write!(f, "argument `{}` is not valid UTF-8", argument.display())
@@ -44,28 +89,80 @@ impl fmt::Display for UsageError {
 
 /// Parses the arguments after the program name.
 pub(crate) fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Command, UsageError> {
-    let mut args = args
+    let args: Vec<String> = args
         .into_iter()
-        .map(|arg| arg.into_string().map_err(UsageError::NonUtf8Argument));
-    let name = args.next().ok_or(UsageError::MissingCommand)??;
-    let command = match name.as_str() {
-        "help" | "--help" | "-h" => Command::Help,
-        _ => return Err(UsageError::UnknownCommand(name)),
-    };
-    if let Some(argument) = args.next() {
-        return Err(UsageError::UnexpectedArgument {
-            command: "help",
-            argument: argument?,
-        });
+        .map(|arg| arg.into_string().map_err(UsageError::NonUtf8Argument))
+        .collect::<Result<_, _>>()?;
+    let (name, rest) = args.split_first().ok_or(UsageError::MissingCommand)?;
+    match name.as_str() {
+        "help" | "--help" | "-h" => no_arguments("help", rest).map(|()| Command::Help),
+        "ci" => parse_ci(rest).map(Command::Ci),
+        "tools" => match rest.split_first() {
+            None => Err(UsageError::MissingSubcommand { command: "tools" }),
+            Some((sub, rest)) if sub == "install" => {
+                no_arguments("tools install", rest).map(|()| Command::ToolsInstall)
+            }
+            Some((sub, _)) => Err(UsageError::UnknownSubcommand {
+                command: "tools",
+                name: sub.clone(),
+            }),
+        },
+        _ => Err(UsageError::UnknownCommand(name.clone())),
     }
-    Ok(command)
+}
+
+fn no_arguments(command: &'static str, rest: &[String]) -> Result<(), UsageError> {
+    match rest.first() {
+        None => Ok(()),
+        Some(argument) => Err(UsageError::UnexpectedArgument {
+            command,
+            argument: argument.clone(),
+        }),
+    }
+}
+
+fn parse_ci(rest: &[String]) -> Result<CiOptions, UsageError> {
+    let mut options = CiOptions::default();
+    let mut args = rest.iter();
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "--list" => options.list = true,
+            "--keep-going" => options.keep_going = true,
+            "--step" => {
+                let name = args
+                    .next()
+                    .ok_or(UsageError::MissingValue { flag: "--step" })?;
+                add_step(&mut options, name)?;
+            }
+            _ => match arg.strip_prefix("--step=") {
+                Some(name) => add_step(&mut options, name)?,
+                None => {
+                    return Err(UsageError::UnexpectedArgument {
+                        command: "ci",
+                        argument: arg.clone(),
+                    });
+                }
+            },
+        }
+    }
+    Ok(options)
+}
+
+fn add_step(options: &mut CiOptions, name: &str) -> Result<(), UsageError> {
+    if !ci::is_step(name) {
+        return Err(UsageError::UnknownStep(name.to_owned()));
+    }
+    if !options.steps.iter().any(|step| step == name) {
+        options.steps.push(name.to_owned());
+    }
+    Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use std::ffi::OsString;
 
-    use super::{Command, UsageError, parse};
+    use super::{CiOptions, Command, UsageError, parse};
 
     fn args(list: &[&str]) -> Vec<OsString> {
         list.iter().map(OsString::from).collect()
@@ -97,12 +194,80 @@ mod tests {
     }
 
     #[test]
-    fn extra_arguments_are_rejected() {
+    fn extra_arguments_to_help_are_rejected() {
         assert_eq!(
             parse(args(&["help", "now"])),
             Err(UsageError::UnexpectedArgument {
                 command: "help",
                 argument: "now".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn ci_without_flags_selects_every_step() {
+        assert_eq!(parse(args(&["ci"])), Ok(Command::Ci(CiOptions::default())));
+    }
+
+    #[test]
+    fn ci_flags_parse_in_both_spellings_and_repeat() {
+        let parsed = parse(args(&[
+            "ci",
+            "--step",
+            "fmt",
+            "--step=test",
+            "--step",
+            "fmt",
+            "--keep-going",
+        ]));
+        assert_eq!(
+            parsed,
+            Ok(Command::Ci(CiOptions {
+                steps: vec!["fmt".to_owned(), "test".to_owned()],
+                list: false,
+                keep_going: true,
+            }))
+        );
+        assert!(matches!(
+            parse(args(&["ci", "--list"])),
+            Ok(Command::Ci(CiOptions { list: true, .. }))
+        ));
+    }
+
+    #[test]
+    fn ci_rejects_unknown_steps_missing_values_and_unknown_flags() {
+        assert_eq!(
+            parse(args(&["ci", "--step", "nope"])),
+            Err(UsageError::UnknownStep("nope".to_owned()))
+        );
+        assert_eq!(
+            parse(args(&["ci", "--step"])),
+            Err(UsageError::MissingValue { flag: "--step" })
+        );
+        assert_eq!(
+            parse(args(&["ci", "--fast"])),
+            Err(UsageError::UnexpectedArgument {
+                command: "ci",
+                argument: "--fast".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn tools_install_parses_and_other_subcommands_do_not() {
+        assert_eq!(
+            parse(args(&["tools", "install"])),
+            Ok(Command::ToolsInstall)
+        );
+        assert_eq!(
+            parse(args(&["tools"])),
+            Err(UsageError::MissingSubcommand { command: "tools" })
+        );
+        assert_eq!(
+            parse(args(&["tools", "remove"])),
+            Err(UsageError::UnknownSubcommand {
+                command: "tools",
+                name: "remove".to_owned()
             })
         );
     }

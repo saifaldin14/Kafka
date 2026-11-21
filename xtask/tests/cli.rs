@@ -40,3 +40,24 @@ fn missing_command_exits_2() -> Result<(), Box<dyn Error>> {
     assert_eq!(xtask(&[])?.status.code(), Some(2));
     Ok(())
 }
+
+#[test]
+fn ci_list_prints_the_steps_in_run_order() -> Result<(), Box<dyn Error>> {
+    let output = xtask(&["ci", "--list"])?;
+    assert_eq!(output.status.code(), Some(0));
+    let stdout = String::from_utf8(output.stdout)?;
+    let names: Vec<&str> = stdout
+        .lines()
+        .filter_map(|line| line.split_whitespace().next())
+        .collect();
+    assert_eq!(names, ["fmt", "clippy", "test"]);
+    Ok(())
+}
+
+#[test]
+fn ci_with_an_unknown_step_exits_2() -> Result<(), Box<dyn Error>> {
+    let output = xtask(&["ci", "--step", "nope"])?;
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8(output.stderr)?.contains("unknown step `nope`"));
+    Ok(())
+}
