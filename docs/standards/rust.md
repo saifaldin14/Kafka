@@ -12,7 +12,7 @@ Above all of them: more code is not better. Every line, item, feature flag, conf
 
 ## Workspace configuration
 
-The root `Cargo.toml` contains exactly this lint table. Every crate has `[lints] workspace = true`. CI runs clippy with `-D warnings`, so `warn` fails CI but doesn't block local iteration. A lint that is misspelled or removed fails silently, so the `lint-canary` step proves the lints fire on fixtures in [`xtask/lint-canary`](../../xtask/lint-canary/src/lib.rs).
+The root `Cargo.toml` contains exactly this lint table, and every crate has `[lints] workspace = true`; the `manifests` step checks both, and checks `clippy.toml` against its block below. CI runs clippy with `-D warnings`, so `warn` fails CI but doesn't block local iteration. A lint that is misspelled or removed fails silently, so the `lint-canary` step proves the lints fire on fixtures in [`xtask/lint-canary`](../../xtask/lint-canary/src/lib.rs).
 
 ```toml
 [workspace.lints.rust]
@@ -183,6 +183,7 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 | `clippy` | `cargo clippy --workspace --all-targets --locked -- -D warnings` |
 | `doc` | `cargo doc --workspace --no-deps --document-private-items --locked` with `RUSTDOCFLAGS="-D warnings"`: docs build with no broken intra-doc links or invalid HTML. Private items are documented too, because most items are `pub(crate)` and their docs must stay correct |
 | `layers` | `cargo xtask check-layers`: crate dependency layering ([architecture §5](../architecture.md#5-layering-rules)); `--print` shows the layer table |
+| `manifests` | `cargo xtask check-manifests`: `[workspace.lints]` and `clippy.toml` equal the blocks in [workspace configuration](#workspace-configuration), compared as parsed TOML, and every member has `[lints] workspace = true` |
 | `lint-canary` | `cargo xtask lint-canary`: clippy on the fixtures in [`xtask/lint-canary`](../../xtask/lint-canary/src/lib.rs) must report exactly the lints their `expect-lint:` comments name, so a removed or weakened lint fails. Every `clippy.toml` entry must fire with its configured reason |
 | `deny` | `cargo deny --locked check`: advisories, licenses, banned and duplicate crates, sources ([`deny.toml`](../../deny.toml)) |
 | `links` | `lychee --offline --include-fragments` over README.md, AGENTS.md, CLAUDE.md, CONTRIBUTING.md, `docs/`, `.agents/` and `.github/`: relative links and `#anchors` resolve. External URLs are not checked here |

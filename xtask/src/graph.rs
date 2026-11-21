@@ -1,11 +1,11 @@
 //! The crate dependency graph, loaded from `cargo metadata`.
 //!
-//! Only the fields the layer checks need are read: workspace members, package names,
-//! and resolved edges with their dependency kinds.
+//! Only the fields the layer and manifest checks need are read: workspace members,
+//! package names and manifest paths, and resolved edges with their dependency kinds.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use serde_json::Value;
@@ -40,6 +40,8 @@ impl Edge {
 pub(crate) struct Graph {
     /// Package id to package name, for every package in the resolve.
     pub(crate) names: BTreeMap<String, String>,
+    /// Package id to the absolute path of its `Cargo.toml`.
+    pub(crate) manifest_paths: BTreeMap<String, PathBuf>,
     /// Package ids of the workspace members.
     pub(crate) members: BTreeSet<String>,
     pub(crate) edges: Vec<Edge>,
@@ -98,10 +100,13 @@ pub(crate) fn parse(json: &[u8]) -> Result<Graph, GraphError> {
     let root: Value = serde_json::from_slice(json).map_err(GraphError::InvalidJson)?;
     let mut graph = Graph::default();
     for package in array(&root, "packages")? {
-        graph.names.insert(
-            string(package, "id")?.to_owned(),
-            string(package, "name")?.to_owned(),
-        );
+        let id = string(package, "id")?;
+        graph
+            .names
+            .insert(id.to_owned(), string(package, "name")?.to_owned());
+        graph
+            .manifest_paths
+            .insert(id.to_owned(), string(package, "manifest_path")?.into());
     }
     for member in array(&root, "workspace_members")? {
         let id = member
@@ -160,6 +165,15 @@ mod tests {
         assert_eq!(
             members,
             ["alluvium-records", "alluvium-testkit", "alluvium-types"]
+        );
+        let types_manifest = graph
+            .members
+            .iter()
+            .find(|id| graph.name(id) == "alluvium-types")
+            .and_then(|id| graph.manifest_paths.get(id));
+        assert_eq!(
+            types_manifest.map(|path| path.to_string_lossy().into_owned()),
+            Some("/ws/types/Cargo.toml".to_owned())
         );
         let edge = |from: &str, to: &str| {
             graph

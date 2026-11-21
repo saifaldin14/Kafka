@@ -1,9 +1,9 @@
 {
   "packages": [
-    { "id": "path+file:///ws/types#alluvium-types@0.0.0", "name": "alluvium-types" },
-    { "id": "path+file:///ws/records#alluvium-records@0.0.0", "name": "alluvium-records" },
-    { "id": "path+file:///ws/testkit#alluvium-testkit@0.0.0", "name": "alluvium-testkit" },
-    { "id": "registry+https://github.com/rust-lang/crates.io-index#cc@1.2.0", "name": "cc" }
+    { "id": "path+file:///ws/types#alluvium-types@0.0.0", "name": "alluvium-types", "manifest_path": "/ws/types/Cargo.toml" },
+    { "id": "path+file:///ws/records#alluvium-records@0.0.0", "name": "alluvium-records", "manifest_path": "/ws/records/Cargo.toml" },
+    { "id": "path+file:///ws/testkit#alluvium-testkit@0.0.0", "name": "alluvium-testkit", "manifest_path": "/ws/testkit/Cargo.toml" },
+    { "id": "registry+https://github.com/rust-lang/crates.io-index#cc@1.2.0", "name": "cc", "manifest_path": "/registry/cc-1.2.0/Cargo.toml" }
   ],
   "workspace_members": [
     "path+file:///ws/types#alluvium-types@0.0.0",
