@@ -1,6 +1,6 @@
 # TYPE: Domain types
 
-> Crates: `alluvium-types` (layer 0) · Kafka counterpart: `common/TopicPartition`, `common/Uuid`, `server/util/Time` · Milestones: M0
+> Crates: `alluvium-types` (layer 0) · Kafka counterpart: `common/TopicPartition`, `common/Uuid`, `server/util/Time` · Milestones: M0-M2
 
 Shared domain vocabulary: identifier newtypes, validated names, time and randomness injection, secrets, and the type-level foundations for namespaces and key ranges.
 
@@ -112,21 +112,22 @@ Done when: Tests assert the display format and that a `BTreeSet` of partitions i
 P0 · M0 · Task · deps: TYPE-0021 · ref: clients/src/main/java/org/apache/kafka/common/TopicIdPartition.java @4.4.0
 Done when: Tests cover the display with and without a name and equality when the name differs; the doc explains when the name is `None` and that resolving it is the metadata image's job (META); strategies are added.
 
-## [To Do] TYPE-F06 Clock injection
+## [In Progress] TYPE-F06 Clock injection
 P0 · M0 · Feature · deps: FND-F02
 Scope: `Clock` trait, `SystemClock` (the one sanctioned `Instant::now`), `ManualClock` for tests, wall vs monotonic time types.
 
-### [To Do] TYPE-0023 Spike: time model and clock injection ADR
+### [Done] TYPE-0023 Spike: time model and clock injection ADR
 P0 · M0 · Spike · deps: none · ref: ADR-0002
 Done when: Scope: the `Clock` trait surface (monotonic and wall readings), the monotonic and wall-clock types, the representation of Kafka's millisecond timestamps, and how drivers wait on timers under `SystemClock` and in simulation without `tokio::time::sleep`. An accepted ADR "Time model and clock injection" decides the trait methods, the types and their units, the sanctioned `#[expect]` call sites, and the timer approach that SRV-F02/SRV-F07 and TEST-F01 will use, citing Kafka's `Time.milliseconds()`/`nanoseconds()` split.
+Notes: Accepted as [ADR-0011](../adr/0011-time-model-and-clock-injection.md). It added TYPE-0048, SRV-0149, TEST-0131, FND-0064 and FND-0065.
 
-### [To Do] TYPE-0024 Time value types from the ADR: a monotonic instant (no relation to wall time, never goes backwards) and a wall-clock time in Unix epoch milliseconds (Kafka record and config timestamps), with checked arithmetic and no implicit conversion between them
-P0 · M0 · Task · deps: TYPE-0023, TYPE-0001 · ref: clients/src/main/java/org/apache/kafka/common/utils/Time.java @4.4.0
+### [To Do] TYPE-0024 Time value types from ADR-0011: `MonotonicInstant` (`u64` nanoseconds since the clock's origin, never goes backwards) and `WallTime` (non-negative `i64` Unix epoch milliseconds) (Kafka record and config timestamps), with checked arithmetic and no implicit conversion between them
+P0 · M0 · Task · deps: TYPE-0023, TYPE-0001 · ref: ADR-0011, clients/src/main/java/org/apache/kafka/common/utils/Time.java @4.4.0
 Done when: Adding a `Duration` to either type is checked and returns an error at overflow; `saturating_duration_since` never panics; there is no `From` conversion between the two types (a compile-fail doc test shows it); `Display` for wall time prints the millisecond value and an RFC 3339 UTC form.
 
 ### [To Do] TYPE-0025 `Clock` trait and `SystemClock`: the only callers of `Instant::now` and `SystemTime::now`, each with one `#[expect(clippy::disallowed_methods, reason = "…")]`
 P0 · M0 · Task · deps: TYPE-0024 · ref: clients/src/main/java/org/apache/kafka/common/utils/SystemTime.java @4.4.0
-Done when: A grep check in the test suite finds no other `#[expect(clippy::disallowed_methods` for time functions in the workspace; a wall clock before the Unix epoch returns a typed error instead of panicking; `Clock` is `Send + Sync + Debug`; the module doc links to the ADR.
+Done when: A grep check in the test suite finds no other `#[expect(clippy::disallowed_methods` for time functions in the workspace except `xtask`'s `Stopwatch` (the dev-tool exception in ADR-0011); `SystemClock` can convert a `MonotonicInstant` back to a `std::time::Instant` (for `TokioTimer`); a wall clock before the Unix epoch returns a typed error instead of panicking; `Clock` is `Send + Sync + Debug`; the module doc links to the ADR.
 
 ### [To Do] TYPE-0026 `ManualClock` for tests and simulation: starts at a given monotonic and wall time, `advance(Duration)` moves both, and `set_wall(…)` makes the wall clock jump forwards or backwards without touching monotonic time
 P0 · M0 · Task · deps: TYPE-0025 · labels: test · ref: clients/src/testFixtures/java/org/apache/kafka/common/utils/MockTime.java @4.4.0
@@ -136,21 +137,26 @@ Done when: Tests show the monotonic reading never decreases under any sequence o
 P0 · M0 · Task · deps: TYPE-0024 · ref: clients/src/main/java/org/apache/kafka/common/utils/Timer.java @4.4.0
 Done when: Tests cover a zero timeout, `Duration::MAX`, an expired deadline, and `remaining` at and after expiry (zero, never negative); `// Parity:` cites `Timer`; the doc ties it to the rule "every network wait has a timeout".
 
-## [To Do] TYPE-F07 Seeded randomness and deterministic collections
+### [To Do] TYPE-0048 `Timer` trait: `sleep_until(MonotonicInstant)` returning a boxed `Send` future, with no async-runtime dependency, the one way layer 3–5 code waits (ADR-0011)
+P0 · M2 · Task · deps: TYPE-0024 · ref: ADR-0011
+Done when: The trait is `Send + Sync + Debug` and object-safe (`Arc<dyn Timer>` compiles); its doc says state machines never wait and links ADR-0011; `alluvium-types` gains no dependency; a unit test polls a hand-written implementation's future to completion without a runtime.
+
+## [In Progress] TYPE-F07 Seeded randomness and deterministic collections
 P0 · M0 · Feature · deps: FND-F02
 Scope: Injected RNG trait, `SeededHashMap`/`SeededHashSet`, process-random seed in production, fixed seed in simulation.
 
-### [To Do] TYPE-0028 Spike: seeded randomness and hashing ADR
+### [Done] TYPE-0028 Spike: seeded randomness and hashing ADR
 P0 · M0 · Spike · deps: none · labels: security · ref: ADR-0003
 Done when: Scope: the PRNG algorithm (stable output across platforms and crate versions), the RNG trait surface, deterministic per-component sub-streams, the keyed hasher for `SeededHashMap` (resistant to hash flooding), and the seed sources in production and simulation. An accepted ADR "Seeded randomness and hashing" names the crates (justified per security.md#dependencies), the single sanctioned OS-entropy call site, and the rule that hash seeds are never logged (DoS protection) while simulation seeds always are.
+Notes: Accepted as [ADR-0012](../adr/0012-seeded-randomness-and-hashing.md). It added the `getrandom` bans to FND-0064.
 
-### [To Do] TYPE-0029 Injected RNG: a deterministic RNG type with `from_seed(u64)` and `fork(label)` for independent sub-streams, plus `ProcessRng::from_os_entropy()` as the only entropy source, with one `#[expect(clippy::disallowed_methods, reason = "…")]`
-P0 · M0 · Task · deps: TYPE-0028, TYPE-0001 · ref: ADR-0003
-Done when: Golden tests commit the first values for fixed seeds and pass on Linux and macOS; `fork` with the same parent seed and label always gives the same stream, and adding a new fork doesn't change existing ones; no other code calls `rand::rng` (the lint canary already proves the lint fires).
+### [To Do] TYPE-0029 Injected RNG: a deterministic RNG type with `from_seed(u64)` and `fork(label)` for independent sub-streams, plus `SeededRng::from_os_entropy()` (`getrandom::fill`) as the only entropy source, with one `#[expect(clippy::disallowed_methods, reason = "…")]`
+P0 · M0 · Task · deps: TYPE-0028, TYPE-0001 · ref: ADR-0012
+Done when: The type is `SeededRng` (ChaCha12 via `chacha20`, with `from_seed`'s SplitMix64 key expansion and `below` as ADR-0012 specifies); `chacha20` and `getrandom` are justified per security.md#dependencies; `Debug` prints no key or position; golden tests commit the first values for fixed seeds and forks and pass on Linux and macOS; `fork` with the same parent seed and label always gives the same stream, and adding a new fork doesn't change existing ones; no other code calls `rand::rng` (the lint canary already proves the lint fires).
 
-### [To Do] TYPE-0030 `alluvium_types::collections::{SeededHashMap, SeededHashSet}` using the ADR's keyed hasher, seeded from the injected RNG through `with_seed`/`with_capacity_and_seed` constructors
-P0 · M0 · Task · deps: TYPE-0029 · labels: security · ref: docs/standards/rust.md#workspace-configuration
-Done when: The same seed gives the same iteration order across runs (test); different seeds give different hashes for the same key (test); the module doc says iteration order must never reach output or decisions (use `BTreeMap` where order is observable); the clippy messages in clippy.toml point to these types, and the names match.
+### [To Do] TYPE-0030 `alluvium_types::collections::{SeededHashMap, SeededHashSet}` using SipHash-1-3 (`siphasher`), keyed by a `HashSeed` drawn from the injected RNG and passed to `with_seed`/`with_capacity_and_seed`
+P0 · M0 · Task · deps: TYPE-0029 · labels: security · ref: ADR-0012
+Done when: `siphasher` is justified per security.md#dependencies; `HashSeed`'s `Debug` prints `HashSeed(***)`; the same seed gives the same iteration order across runs (test); different seeds give different hashes for the same key (test); the module doc says iteration order must never reach output or decisions (use `BTreeMap` where order is observable); the clippy messages in clippy.toml point to these types, and the names match.
 
 ## [To Do] TYPE-F08 Secrets
 P0 · M0 · Feature · deps: FND-F02

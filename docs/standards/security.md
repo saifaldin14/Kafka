@@ -11,7 +11,7 @@ Alluvium stores other people's data and listens on the network. Security is a de
 | Eavesdropping or tampering on the network | TLS via rustls; plaintext only on loopback unless explicitly allowed |
 | Credential theft | SCRAM stored as salted hashes; `Secret<T>`; secrets never in logs, metrics, debug output or command-line arguments |
 | Corrupted or tampered data on disk | CRC32C validation on recovery and replication paths; `verify log`; disk input treated as untrusted |
-| Hash-flooding denial of service | Per-process random hasher seeds (see [rust.md](rust.md#workspace-configuration)) |
+| Hash-flooding denial of service | SipHash-1-3 hash maps keyed per process from OS entropy; the keys are never logged ([ADR-0012](../adr/0012-seeded-randomness-and-hashing.md)) |
 | Malicious or compromised dependency | Minimal dependencies, `cargo deny`, lockfile, review of new crates |
 | Exposed diagnostics | Diagnostics endpoint loopback-only by default; authentication required otherwise |
 
