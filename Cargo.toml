@@ -1,8 +1,8 @@
 [workspace]
 resolver = "3"
-# Listed explicitly: Cargo rejects a `crates/*` glob that matches nothing.
-# The first crate switches this to the glob.
-members = []
+# Product crates will live under `crates/`; add the `crates/*` glob with the
+# first one (Cargo rejects a glob that matches nothing).
+members = ["xtask"]
 
 [workspace.package]
 edition = "2024"
