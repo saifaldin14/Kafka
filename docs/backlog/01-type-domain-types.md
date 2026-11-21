@@ -146,7 +146,7 @@ Done when: Scope: the PRNG algorithm (stable output across platforms and crate v
 
 ### [To Do] TYPE-0029 Injected RNG: a deterministic RNG type with `from_seed(u64)` and `fork(label)` for independent sub-streams, plus `ProcessRng::from_os_entropy()` as the only entropy source, with one `#[expect(clippy::disallowed_methods, reason = "…")]`
 P0 · M0 · Task · deps: TYPE-0028, TYPE-0001 · ref: ADR-0003
-Done when: Golden tests commit the first values for fixed seeds and pass on Linux and macOS; `fork` with the same parent seed and label always gives the same stream, and adding a new fork doesn't change existing ones; no other code calls `rand::rng`/`rand::thread_rng` (the lint canary already proves the lint fires).
+Done when: Golden tests commit the first values for fixed seeds and pass on Linux and macOS; `fork` with the same parent seed and label always gives the same stream, and adding a new fork doesn't change existing ones; no other code calls `rand::rng` (the lint canary already proves the lint fires).
 
 ### [To Do] TYPE-0030 `alluvium_types::collections::{SeededHashMap, SeededHashSet}` using the ADR's keyed hasher, seeded from the injected RNG through `with_seed`/`with_capacity_and_seed` constructors
 P0 · M0 · Task · deps: TYPE-0029 · labels: security · ref: docs/standards/rust.md#workspace-configuration
