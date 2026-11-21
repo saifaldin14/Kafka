@@ -1,5 +1,6 @@
 //! Alluvium's shared domain vocabulary: identifier newtypes that turn a swapped or
-//! out-of-range value into a type error instead of a bug found in production.
+//! out-of-range value into a type error instead of a bug found in production, and
+//! wrappers that keep secrets out of logs.
 //!
 //! Layer: 0 ([ADR-0009](../../../docs/adr/0009-crate-layering-and-dependency-rules.md)).
 //! It depends on no other Alluvium crate, and every crate may depend on it. Like all
@@ -7,7 +8,8 @@
 //!
 //! Kafka counterparts at 4.4.0: the `int` node ids of
 //! `clients/src/main/java/org/apache/kafka/common/Node.java`, including the `-1`
-//! "no node" sentinel of `Node.noNode()`.
+//! "no node" sentinel of `Node.noNode()`, and
+//! `clients/src/main/java/org/apache/kafka/common/config/types/Password.java`.
 //!
 //! # Invariants
 //!
@@ -20,6 +22,7 @@
 //!
 //! - [`NodeId`] and [`BrokerId`]: which process, and which broker.
 //! - [`IdError`]: why a value was rejected.
+//! - [`Secret`]: a value that is never printed and is zeroized on drop.
 //! - `strategies` (feature `proptest-strategies`): proptest strategies for these types,
 //!   for property tests in other crates.
 //!
@@ -27,7 +30,9 @@
 //! came from, so the decoder or handler that rejects it maps it.
 
 mod id;
+mod secret;
 #[cfg(any(test, feature = "proptest-strategies"))]
 pub mod strategies;
 
 pub use id::{BrokerId, IdError, IdKind, NodeId};
+pub use secret::Secret;

@@ -158,11 +158,11 @@ Done when: The type is `SeededRng` (ChaCha12 via `chacha20`, with `from_seed`'s 
 P0 · M0 · Task · deps: TYPE-0029 · labels: security · ref: ADR-0012
 Done when: `siphasher` is justified per security.md#dependencies; `HashSeed`'s `Debug` prints `HashSeed(***)`; the same seed gives the same iteration order across runs (test); different seeds give different hashes for the same key (test); the module doc says iteration order must never reach output or decisions (use `BTreeMap` where order is observable); the clippy messages in clippy.toml point to these types, and the names match.
 
-## [To Do] TYPE-F08 Secrets
+## [In Progress] TYPE-F08 Secrets
 P0 · M0 · Feature · deps: FND-F02
 Scope: `Secret<T>` with redacted `Debug`/`Display`, zeroize on drop, explicit `expose_secret()`.
 
-### [To Do] TYPE-0031 `Secret<T: Zeroize>`: `Debug` and `Display` print `Secret(***)`, the value is reachable only through `expose_secret()`, the value is zeroized on drop, and there is no `Serialize` impl
+### [Done] TYPE-0031 `Secret<T: Zeroize>`: `Debug` and `Display` print `Secret(***)`, the value is reachable only through `expose_secret()`, the value is zeroized on drop, and there is no `Serialize` impl
 P0 · M0 · Task · deps: TYPE-0001 · labels: security · ref: clients/src/main/java/org/apache/kafka/common/config/types/Password.java @4.4.0
 Done when: `zeroize` is added to `[workspace.dependencies]` with the security.md#dependencies justification; `Clone` exists only where `T: Clone + Zeroize`, and both copies zeroize; the doc explains the difference from Kafka's `Password` (`[hidden]`) and the security.md rule that secrets never come from command-line arguments.
 
