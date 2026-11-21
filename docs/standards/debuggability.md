@@ -136,6 +136,7 @@ On-disk formats are documented in `docs/formats/` (created with storage in M2) p
 ## Reproduction
 
 - Every simulation test prints its seed on failure, along with the exact command to replay it: `ALLUVIUM_SIM_SEED=<seed> cargo nextest run <test>`.
+- Production RNG keys and hash seeds are the opposite: never logged, printed, exported or shown on a debug endpoint, since they would let an attacker flood hash maps or predict timeouts. `SeededRng` and `HashSeed` print no state in `Debug` ([ADR-0012](../adr/0012-seeded-randomness-and-hashing.md)).
 - Because core logic is sans-I/O, drivers can **journal the inputs** to a state machine (off by default; metadata only, never payloads). A journal can be replayed locally against the same code to reproduce a production state exactly.
 
 ## Printing values

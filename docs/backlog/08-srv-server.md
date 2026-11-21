@@ -108,6 +108,10 @@ Done when: `assert_no_tasks_left(&supervisor)` fails with the list of remaining 
 P1 · M2 · Task · deps: SRV-0020, SRV-0021 · labels: docs
 Done when: Module docs state the invariants (every task named, owned, cancellable); docs/standards/rust.md describes how to spawn and pick a group; doc build passes.
 
+### [To Do] SRV-0149 `TokioTimer`: the production `Timer`, the only call site of `tokio::time::sleep_until`, converting deadlines through `SystemClock`'s origin (ADR-0011)
+P0 · M2 · Task · deps: none · ref: ADR-0011
+Done when: It carries the one `#[expect(clippy::disallowed_methods, reason = "…")]` for `sleep_until`; a test on a paused current-thread runtime shows a deadline in the past completes at once and a future one completes only after the runtime's time reaches it; the binary injects it next to `SystemClock`.
+
 ## [To Do] SRV-F03 Lifecycle and shutdown
 P0 · M2 · Feature · deps: SRV-F02
 Scope: Signal handling, ordered shutdown with timings, controlled-shutdown handshake with the controller.

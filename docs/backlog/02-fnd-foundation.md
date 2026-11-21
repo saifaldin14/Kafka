@@ -41,6 +41,10 @@ Done when: Covered: a bare `#[allow]` fires `allow_attributes`; `#[expect]` with
 P1 · M0 · Task · deps: FND-0005 · labels: test · ref: docs/standards/rust.md#workspace-configuration
 Done when: Every public function in rand 0.10 (the version in `Cargo.lock`) that draws from the thread-local or OS RNG without a caller-supplied seed is listed, from reading its source (for example `rand::random`, `random_iter`, `random_range`, `random_bool`, `random_ratio`, `fill` and OS-seeded constructors); each is added to clippy.toml and the rust.md block with the reason "use the injected seeded RNG"; each has a lint canary fixture; `cargo xtask lint-canary` passes.
 
+### [To Do] FND-0064 clippy.toml bans the remaining clock, timer and entropy entry points from ADR-0011 and ADR-0012
+P1 · M0 · Task · deps: FND-0004 · labels: test · ref: ADR-0011, ADR-0012
+Done when: `disallowed-methods` gains `std::time::Instant::elapsed`, `std::time::SystemTime::elapsed`, `tokio::time::sleep_until`, `tokio::time::timeout`, `tokio::time::timeout_at`, `tokio::time::interval`, `tokio::time::interval_at`, `getrandom::fill`, `getrandom::fill_uninit`, `getrandom::u32` and `getrandom::u64`, in clippy.toml and the rust.md block together; reasons point to `Clock`, `Timer` and `SeededRng::from_os_entropy`; every new entry has a lint canary fixture; `xtask`'s `Stopwatch` carries the matching `#[expect]`; `cargo xtask ci` passes.
+
 ### [Done] FND-0007 `cargo xtask check-manifests` (first rules): `[workspace.lints]` and `clippy.toml` must equal the TOML blocks in docs/standards/rust.md (parsed and compared semantically), and every workspace member must declare `[lints] workspace = true`
 P0 · M0 · Task · deps: FND-0003, FND-0018 · labels: docs · ref: docs/standards/rust.md#workspace-configuration
 Done when: Unit tests with fixture manifests cover: a changed lint level, an added or removed disallowed method, and a member without `[lints] workspace = true`; each fails with a message naming the file and the differing key; the real repository passes; the command is registered as the `manifests` step of `cargo xtask ci`.
@@ -116,7 +120,7 @@ Done when: `cargo xtask ci` runs the steps in the documented order and exits non
 P0 · M0 · Task · deps: FND-0021 · labels: test · ref: docs/standards/testing.md#rules
 Done when: `cargo nextest run --profile ci` writes the JUnit file; a deliberately slow test (not committed) is reported as slow and then terminated, as shown in the PR; testing.md links to the profile and explains why retries are 0.
 
-## [Done] FND-F05 Crate layer checker
+## [In Progress] FND-F05 Crate layer checker
 P0 · M0 · Feature · deps: FND-F04
 Scope: `cargo xtask check-layers`: layer table, forbidden runtime dependencies for layers 0-2, allow-list with ADR references, sync check with docs/architecture.md.
 
@@ -151,6 +155,10 @@ Done when: Fixtures in `xtask/tests/fixtures/layers/` use path dependencies only
 ### [Done] FND-0030 check-layers sync with docs/architecture.md: parse the §4 code-map table (layer and crate columns) and require the same crate set and layers as the xtask table; register `check-layers` as the `layers` step of `cargo xtask ci`
 P0 · M0 · Task · deps: FND-0023, FND-0021 · labels: docs · ref: ADR-0009
 Done when: Moving a crate to another layer in only one of the two places fails with a diff that lists crates missing on each side and layer mismatches; a test runs against a copy of the real architecture.md; `cargo xtask ci --step layers` runs on the real workspace; architecture §5 and ADR-0009 point to the command.
+
+### [To Do] FND-0065 `check-layers` source rule: no layer 1–2 crate names `SystemClock` or `SeededRng::from_os_entropy` (ADR-0011, ADR-0012)
+P2 · M1 · Task · deps: FND-0030 · ref: ADR-0011
+Done when: The rule scans the `src/` of layer 1–2 workspace crates (layer 0 is `alluvium-types`, which defines them) and reports each use with file:line and the ADR; fixture crates show a use rejected and a doc comment mentioning the names accepted; the real workspace passes.
 
 ## [To Do] FND-F06 CI pipeline
 P0 · M0 · Feature · deps: FND-F02, FND-F03, FND-F04, FND-F05
