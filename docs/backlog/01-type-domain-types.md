@@ -16,7 +16,7 @@ Done when: The crate lives at `crates/alluvium-types` (the workspace switches to
 P0 · M0 · Task · deps: TYPE-0001 · labels: test · ref: docs/standards/testing.md#test-levels
 Done when: docs/standards/testing.md states where shared strategies live (in the owning crate behind `proptest-strategies`, not in `alluvium-testkit`, because a dev-dependency cycle would compile two copies of the types); property tests show `TryFrom<i32>` accepts exactly the non-negative values; the `proptest` justification follows security.md#dependencies; the module is absent without the feature.
 
-### [To Do] TYPE-0003 `PartitionIndex` (non-negative `i32`, `checked_next`) and `CorrelationId` (any `i32`, no validation, as in the request header)
+### [To Do]TYPE-0003 `PartitionIndex` (non-negative `i32`, `checked_next`) and `CorrelationId` (any `i32`, no validation, as in the request header)
 P0 · M0 · Task · deps: TYPE-0002 · ref: clients/src/main/java/org/apache/kafka/common/TopicPartition.java @4.4.0
 Done when: Unit tests cover 0, `i32::MAX` and negatives for `PartitionIndex`, and the overflow of `checked_next` at `i32::MAX`; `CorrelationId` round-trips every `i32`, including negatives; strategies for both are added; `Display` prints the plain number.
 
