@@ -34,6 +34,7 @@ mod clock;
 mod graph;
 mod install;
 mod layers;
+mod lint_canary;
 mod output;
 mod steps;
 mod tools;
@@ -85,6 +86,7 @@ fn run(command: &Command, out: &mut impl std::io::Write) -> Exit {
         Command::Ci(options) => ci::run(options, out),
         Command::ToolsInstall => install::run(out),
         Command::CheckLayers(options) => check_layers::run(options, out),
+        Command::LintCanary => lint_canary::run(out),
     }
 }
 

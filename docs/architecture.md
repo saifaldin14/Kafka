@@ -80,6 +80,7 @@ The workspace is a set of crates under `crates/`. **A crate is created when its 
 | 5 | `alluvium` (binary) | CLI: `server`, `dump log`, `dump index`, `dump metadata`, `verify log`, `check-config` | `kafka-server-start`, `kafka-dump-log` |
 | dev | `alluvium-testkit` | Simulation harness: simulated clock, network and disk; fault injection; seeded runs; cluster builders | test utilities |
 | dev | `xtask` | Codegen, layer checks, CI entry point, compatibility test runner | Gradle tasks |
+| dev | `lint-canary` | Fixtures that break the workspace lints on purpose, proving each one fires (`xtask/lint-canary`) | checkstyle tests |
 
 `fuzz/` holds the cargo-fuzz targets. `tests/compat/` holds the compatibility and differential suites.
 

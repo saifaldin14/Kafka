@@ -96,6 +96,22 @@ pub(crate) const STEPS: &[CiStep] = &[
         requires: &[],
     },
     CiStep {
+        name: "lint-canary",
+        summary: "The workspace lints fire on their fixtures (cargo xtask lint-canary)",
+        program: Program::Cargo,
+        args: &[
+            "run",
+            "--quiet",
+            "--locked",
+            "--package",
+            "xtask",
+            "--",
+            "lint-canary",
+        ],
+        env: &[],
+        requires: &[],
+    },
+    CiStep {
         name: "deny",
         summary: "Dependency policy: advisories, bans, licenses, sources (deny.toml)",
         program: Program::Cargo,
@@ -221,7 +237,16 @@ mod tests {
 
     #[test]
     fn documented_steps_are_registered() {
-        for name in ["fmt", "clippy", "doc", "layers", "deny", "links", "test"] {
+        for name in [
+            "fmt",
+            "clippy",
+            "doc",
+            "layers",
+            "lint-canary",
+            "deny",
+            "links",
+            "test",
+        ] {
             assert!(is_step(name), "{name}");
         }
         assert!(!is_step("nope"));

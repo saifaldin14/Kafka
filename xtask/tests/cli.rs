@@ -52,7 +52,16 @@ fn ci_list_prints_the_steps_in_run_order() -> Result<(), Box<dyn Error>> {
         .collect();
     assert_eq!(
         names,
-        ["fmt", "clippy", "doc", "layers", "deny", "links", "test"]
+        [
+            "fmt",
+            "clippy",
+            "doc",
+            "layers",
+            "lint-canary",
+            "deny",
+            "links",
+            "test"
+        ]
     );
     Ok(())
 }

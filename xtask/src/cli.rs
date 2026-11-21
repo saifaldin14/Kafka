@@ -16,6 +16,7 @@ pub(crate) enum Command {
     Ci(CiOptions),
     ToolsInstall,
     CheckLayers(LayerOptions),
+    LintCanary,
 }
 
 /// Options for `cargo xtask ci`.
@@ -41,6 +42,10 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
     (
         "check-layers [--print] [--manifest-path <path>]",
         "Check the crate layering rules (ADR-0009); `--print` shows the layer table",
+    ),
+    (
+        "lint-canary",
+        "Prove the workspace lints fire on the fixtures in xtask/lint-canary",
     ),
 ];
 
@@ -104,6 +109,7 @@ pub(crate) fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Command,
         "help" | "--help" | "-h" => no_arguments("help", rest).map(|()| Command::Help),
         "ci" => parse_ci(rest).map(Command::Ci),
         "check-layers" => parse_check_layers(rest).map(Command::CheckLayers),
+        "lint-canary" => no_arguments("lint-canary", rest).map(|()| Command::LintCanary),
         "tools" => match rest.split_first() {
             None => Err(UsageError::MissingSubcommand { command: "tools" }),
             Some((sub, rest)) if sub == "install" => {
@@ -320,6 +326,18 @@ mod tests {
             parse(args(&["check-layers", "--manifest-path"])),
             Err(UsageError::MissingValue {
                 flag: "--manifest-path"
+            })
+        );
+    }
+
+    #[test]
+    fn lint_canary_takes_no_arguments() {
+        assert_eq!(parse(args(&["lint-canary"])), Ok(Command::LintCanary));
+        assert_eq!(
+            parse(args(&["lint-canary", "--fix"])),
+            Err(UsageError::UnexpectedArgument {
+                command: "lint-canary",
+                argument: "--fix".to_owned()
             })
         );
     }
