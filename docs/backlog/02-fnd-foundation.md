@@ -193,7 +193,7 @@ P0 · M0 · Task · deps: FND-0033, FND-0034, FND-0035, FND-0036
 Done when: The job fails when any needed job failed, was cancelled or was skipped unexpectedly, and passes only when all succeeded; adding a new required job means adding it to `needs:`, which the workflow comment states; FND-F11's repository settings name `ci-success` as the required check.
 Notes: The repository is private on GitHub's free plan, which refuses branch protection and rulesets (HTTP 403 from the API), so `ci-success` can't be made a required check yet. The job itself is in place; FND-F11's repository settings make it required once the plan or visibility allows.
 
-### [To Do] FND-0038 `cargo xtask check-workflows` (SHA pinning, no `pull_request_target`, timeouts, permissions) and Dependabot for actions
+### [In Review] FND-0038 `cargo xtask check-workflows` (SHA pinning, no `pull_request_target`, timeouts, permissions) and Dependabot for actions
 P1 · M0 · Task · deps: FND-0031, FND-0007 · labels: security · ref: docs/standards/security.md#dependencies
 Done when: Every `uses:` in `.github/workflows/*.yml` must be pinned to a 40-hex SHA with a `# v…` comment; every job sets `timeout-minutes` and explicit `permissions`; Dependabot covers the `github-actions` ecosystem weekly. Fixture workflows (tag-pinned action, missing timeout, missing permissions, `pull_request_target`) are each rejected with file:line; the real workflows pass; registered as the `workflows` step in the `policy` job; Dependabot opens SHA-bump PRs that keep the version comment.
 

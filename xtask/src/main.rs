@@ -33,6 +33,7 @@ mod backlog_next;
 mod backlog_stats;
 mod check_layers;
 mod check_manifests;
+mod check_workflows;
 mod ci;
 mod cli;
 mod clock;
@@ -92,6 +93,7 @@ fn run(command: &Command, out: &mut impl std::io::Write) -> Exit {
         Command::ToolsInstall { steps } => install::run(steps, out),
         Command::CheckLayers(options) => check_layers::run(options, out),
         Command::CheckManifests => check_manifests::run(out),
+        Command::CheckWorkflows => check_workflows::run(out),
         Command::Backlog(BacklogCommand::Next { all, count }) => {
             backlog_next::run_next(*all, *count, out)
         }
