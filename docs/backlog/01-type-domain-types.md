@@ -174,11 +174,11 @@ Done when: For random secret values (a property test), none of the outputs conta
 P0 · M0 · Task · deps: TYPE-0031 · labels: security, test · ref: docs/standards/security.md#secrets
 Done when: The test fails if `Drop` stops calling `zeroize` (shown in the PR by temporarily removing it); no `unsafe` and no memory inspection are used.
 
-## [To Do] TYPE-F09 Payload display
+## [In Progress] TYPE-F09 Payload display
 P1 · M0 · Feature · deps: FND-F02
 Scope: `PayloadSummary` that prints length and CRC32C instead of bytes, for logging payload-bearing types.
 
-### [To Do] TYPE-0034 `PayloadSummary<'a>(&'a [u8])` whose `Debug` and `Display` print `Bytes { len: <n>, crc32c: 0x<8 hex> }`, computing the CRC only when formatted
+### [Done] TYPE-0034 `PayloadSummary<'a>(&'a [u8])` whose `Debug` and `Display` print `Bytes { len: <n>, crc32c: 0x<8 hex> }`, computing the CRC only when formatted
 P1 · M0 · Task · deps: TYPE-0001 · labels: security · ref: docs/standards/debuggability.md#printing-values
 Done when: `crc32c` is added to `[workspace.dependencies]` (it is in rust.md's preferred list); the CRC of `b"123456789"` is `0xe3069283`, checked with a `// Parity:` citation of `clients/src/main/java/org/apache/kafka/common/utils/internals/Crc32C.java`; the empty payload prints `len: 0`; the doc tells engineers to wrap every payload-bearing field in log output with it.
 
