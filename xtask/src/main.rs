@@ -29,6 +29,7 @@
 
 mod backlog;
 mod backlog_next;
+mod backlog_stats;
 mod check_layers;
 mod check_manifests;
 mod ci;
@@ -94,6 +95,7 @@ fn run(command: &Command, out: &mut impl std::io::Write) -> Exit {
             backlog_next::run_next(*all, *count, out)
         }
         Command::Backlog(BacklogCommand::Show { id }) => backlog_next::run_show(id, out),
+        Command::Backlog(BacklogCommand::Stats { write }) => backlog_stats::run(*write, out),
         Command::LintCanary => lint_canary::run(out),
     }
 }

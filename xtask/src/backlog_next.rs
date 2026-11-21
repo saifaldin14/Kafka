@@ -14,18 +14,15 @@
 use std::io::Write;
 
 use crate::Exit;
-use crate::backlog::{self, Backlog, Item, Level, Milestone, Parsed, Status};
+use crate::backlog::{self, Backlog, Item, Level, Milestone, Status};
 use crate::output;
 
 /// The number of tasks `next` shows without `--all` or `-n`.
 pub(crate) const DEFAULT_COUNT: usize = 10;
 
-/// At most this many format errors are printed before refusing to continue.
-const ERRORS_SHOWN: usize = 20;
-
 /// Runs `backlog next`.
 pub(crate) fn run_next(all: bool, count: usize, out: &mut impl Write) -> Exit {
-    with_backlog(out, |backlog, out| {
+    backlog::with_repository_backlog(out, |backlog, out| {
         for line in next_lines(backlog, all, count) {
             output::line(out, &line);
         }
@@ -35,7 +32,7 @@ pub(crate) fn run_next(all: bool, count: usize, out: &mut impl Write) -> Exit {
 
 /// Runs `backlog show <id>`.
 pub(crate) fn run_show(id: &str, out: &mut impl Write) -> Exit {
-    with_backlog(out, |backlog, out| {
+    backlog::with_repository_backlog(out, |backlog, out| {
         let Some(lines) = show_lines(backlog, id) else {
             output::line(out, &format!("error: unknown id {id}"));
             return Exit::CheckFailed;
@@ -45,29 +42,6 @@ pub(crate) fn run_show(id: &str, out: &mut impl Write) -> Exit {
         }
         Exit::Success
     })
-}
-
-/// Loads the repository backlog and runs `command` on it, unless it has format errors.
-fn with_backlog<W: Write>(out: &mut W, command: impl FnOnce(&Backlog, &mut W) -> Exit) -> Exit {
-    let parsed = match backlog::load(&crate::repo_root().join("docs/backlog")) {
-        Ok(parsed) => parsed,
-        Err(error) => {
-            output::line(out, &format!("error: {error}"));
-            return Exit::CheckFailed;
-        }
-    };
-    let Parsed { backlog, errors } = parsed;
-    if errors.is_empty() {
-        return command(&backlog, out);
-    }
-    for error in errors.iter().take(ERRORS_SHOWN) {
-        output::line(out, &format!("error: {error}"));
-    }
-    output::line(
-        out,
-        "backlog has format errors; run `python3 docs/backlog/tools/backlog.py check`",
-    );
-    Exit::CheckFailed
 }
 
 /// The lowest milestone with an open task, and every ready task in selection order.

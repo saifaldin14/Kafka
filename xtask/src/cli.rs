@@ -28,6 +28,8 @@ pub(crate) enum BacklogCommand {
     Next { all: bool, count: usize },
     /// `show <id>`.
     Show { id: String },
+    /// `stats [--write]`.
+    Stats { write: bool },
 }
 
 /// Options for `cargo xtask ci`.
@@ -69,6 +71,10 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
     (
         "backlog show <id>",
         "Show one backlog item, what it waits for and what needs it",
+    ),
+    (
+        "backlog stats [--write]",
+        "Print the backlog totals; `--write` updates them in docs/backlog/README.md",
     ),
 ];
 
@@ -265,6 +271,14 @@ fn parse_backlog(rest: &[String]) -> Result<BacklogCommand, UsageError> {
                 argument: extra.clone(),
             }),
         },
+        "stats" => match rest {
+            [] => Ok(BacklogCommand::Stats { write: false }),
+            [flag] if flag == "--write" => Ok(BacklogCommand::Stats { write: true }),
+            [other, ..] => Err(UsageError::UnexpectedArgument {
+                command: "backlog stats",
+                argument: other.clone(),
+            }),
+        },
         _ => Err(UsageError::UnknownSubcommand {
             command: "backlog",
             name: sub.clone(),
@@ -449,6 +463,10 @@ mod tests {
                 all: true,
                 count: 3
             }))
+        );
+        assert_eq!(
+            parse(args(&["backlog", "stats", "--write"])),
+            Ok(Command::Backlog(BacklogCommand::Stats { write: true }))
         );
         assert_eq!(
             parse(args(&["backlog", "show", "FND-0041"])),
