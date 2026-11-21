@@ -24,7 +24,7 @@ Done when: Both tables match the rust.md block key for key, value for value and 
 P0 · M0 · Task · deps: FND-0002, FND-0018 · labels: nfr · ref: docs/standards/rust.md#workspace-configuration
 Done when: File content equals the rust.md block; `cargo clippy --workspace --all-targets -- -D warnings` passes on the xtask crate with no clippy configuration warnings, even though `tokio` and `rand` are not in the dependency graph; if clippy 1.99 warns about unresolvable paths, the fix (for example `allow-invalid = true` on those entries) is applied to clippy.toml and rust.md together in this PR.
 
-### [To Do] FND-0004 `cargo xtask lint-canary`: annotated fixture crate proving the forbid/deny lints fire
+### [Done] FND-0004 `cargo xtask lint-canary`: annotated fixture crate proving the forbid/deny lints fire
 P0 · M0 · Task · deps: FND-0003 · labels: test · ref: docs/standards/rust.md#workspace-configuration
 Done when: A dev-layer `xtask/lint-canary` crate holds fixture files with `// expect-lint: <lint>` annotations; the command compiles it with clippy JSON output and compares diagnostics with the annotations; the first fixtures cover `unsafe_code`, `unwrap_used`, `todo`, `unimplemented`, `dbg_macro`, `print_stdout`, `print_stderr`, `exit` and `mem_forget`. Fixture code is compiled only with the crate's `canary` feature, so normal workspace builds stay clean; the command fails if an annotated lint does not fire, or if an unannotated diagnostic appears, and prints file:line with the expected and actual lint; removing one lint from `[workspace.lints]` makes the command fail (shown in the PR); `lint-canary` is listed as a dev crate in the layer table.
 

@@ -67,6 +67,7 @@ pub(crate) const LAYERS: &[(&str, Layer)] = &[
     ("alluvium", Layer::Numbered(5)),
     ("alluvium-testkit", Layer::Dev),
     ("xtask", Layer::Dev),
+    ("lint-canary", Layer::Dev),
 ];
 
 /// The layer of `crate_name`, if it is in the table.

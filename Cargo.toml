@@ -2,7 +2,7 @@
 resolver = "3"
 # Product crates will live under `crates/`; add the `crates/*` glob with the
 # first one (Cargo rejects a glob that matches nothing).
-members = ["xtask"]
+members = ["xtask", "xtask/lint-canary"]
 
 [workspace.package]
 edition = "2024"
