@@ -1,8 +1,6 @@
 [workspace]
 resolver = "3"
-# Product crates will live under `crates/`; add the `crates/*` glob with the
-# first one (Cargo rejects a glob that matches nothing).
-members = ["xtask", "xtask/lint-canary"]
+members = ["crates/*", "xtask", "xtask/lint-canary"]
 
 [workspace.package]
 edition = "2024"
@@ -12,6 +10,7 @@ publish = false
 [workspace.dependencies]
 rand = { version = "0.10.4", default-features = false }
 serde_json = { version = "1.0.154", default-features = false, features = ["std"] }
+thiserror = { version = "2.0.21", default-features = false }
 tokio = { version = "1.54.1", default-features = false }
 toml = { version = "1.2.2", default-features = false, features = ["parse", "serde", "std"] }
 

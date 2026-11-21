@@ -104,7 +104,7 @@ Don't start a task whose dependencies aren't `Done`. Don't start work that has n
 
 **Refactoring.** Make no behavior change in the same PR. Tests must pass before and after, unchanged. If tests need changing, it isn't a pure refactor.
 
-**Adding a crate.** Only when its first real code lands, never as an empty placeholder. Register its layer in `xtask` and [docs/architecture.md](../../../docs/architecture.md). It inherits `[workspace.lints]`. Its `lib.rs` starts with a `//!` doc covering responsibility, layer, Kafka counterpart and key invariants. Write its deep dive in [docs/crates/](../../../docs/crates/README.md) from the template.
+**Adding a crate.** Only when its first real code lands, never as an empty placeholder. Register its layer in `xtask` and [docs/architecture.md](../../../docs/architecture.md). It inherits `[workspace.lints]`. Its `lib.rs` starts with a `//!` doc covering responsibility, layer, Kafka counterpart and key invariants. Its deep dive in [docs/crates/](../../../docs/crates/README.md) is written from the template as the crate fills out (each crate has a DOCS-F11 task).
 
 **Adding a dependency.** Add it in `[workspace.dependencies]` with minimal features. `cargo deny check` must pass. Justify it in the PR: what it does, why std or existing dependencies can't, maintenance status, `unsafe` usage, transitive dependency count.
 
