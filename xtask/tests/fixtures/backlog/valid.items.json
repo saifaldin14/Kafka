@@ -1,0 +1,268 @@
+[
+  {
+    "id": "AAA-F01",
+    "level": "feature",
+    "status": "In Progress",
+    "title": "First feature",
+    "priority": "P0",
+    "milestone": "M0",
+    "type": "Feature",
+    "deps": [],
+    "labels": [],
+    "ref": "",
+    "file": "01-aaa-alpha.md",
+    "line": 5,
+    "epic": "AAA",
+    "feature": null,
+    "done_when": null,
+    "trailers": {},
+    "tasks": [
+      "AAA-0001",
+      "AAA-0005"
+    ]
+  },
+  {
+    "id": "AAA-0001",
+    "level": "task",
+    "status": "Done",
+    "title": "A finished task",
+    "priority": "P0",
+    "milestone": "M0",
+    "type": "Task",
+    "deps": [],
+    "labels": [
+      "docs",
+      "test"
+    ],
+    "ref": "ADR-0001",
+    "file": "01-aaa-alpha.md",
+    "line": 9,
+    "epic": "AAA",
+    "feature": "AAA-F01",
+    "done_when": "The task is finished and verified.",
+    "trailers": {
+      "PR": "#1"
+    },
+    "tasks": []
+  },
+  {
+    "id": "AAA-0005",
+    "level": "task",
+    "status": "To Do",
+    "title": "A later-milestone task of the first feature",
+    "priority": "P1",
+    "milestone": "M2",
+    "type": "Task",
+    "deps": [],
+    "labels": [],
+    "ref": "",
+    "file": "01-aaa-alpha.md",
+    "line": 14,
+    "epic": "AAA",
+    "feature": "AAA-F01",
+    "done_when": "It is ready but in a later milestone.",
+    "trailers": {},
+    "tasks": []
+  },
+  {
+    "id": "AAA-F02",
+    "level": "feature",
+    "status": "In Progress",
+    "title": "Second feature",
+    "priority": "P1",
+    "milestone": "M0",
+    "type": "Feature",
+    "deps": [
+      "AAA-F01"
+    ],
+    "labels": [],
+    "ref": "",
+    "file": "01-aaa-alpha.md",
+    "line": 18,
+    "epic": "AAA",
+    "feature": null,
+    "done_when": null,
+    "trailers": {},
+    "tasks": [
+      "AAA-0002",
+      "AAA-0003",
+      "AAA-0004",
+      "AAA-0006"
+    ]
+  },
+  {
+    "id": "AAA-0002",
+    "level": "task",
+    "status": "To Do",
+    "title": "A ready task",
+    "priority": "P1",
+    "milestone": "M0",
+    "type": "Task",
+    "deps": [
+      "AAA-0001"
+    ],
+    "labels": [],
+    "ref": "",
+    "file": "01-aaa-alpha.md",
+    "line": 22,
+    "epic": "AAA",
+    "feature": "AAA-F02",
+    "done_when": "It appears in `next`.",
+    "trailers": {},
+    "tasks": []
+  },
+  {
+    "id": "AAA-0003",
+    "level": "task",
+    "status": "To Do",
+    "title": "A task waiting for a claimed task",
+    "priority": "P0",
+    "milestone": "M0",
+    "type": "Task",
+    "deps": [
+      "AAA-0004"
+    ],
+    "labels": [],
+    "ref": "",
+    "file": "01-aaa-alpha.md",
+    "line": 26,
+    "epic": "AAA",
+    "feature": "AAA-F02",
+    "done_when": "It waits for AAA-0004.",
+    "trailers": {},
+    "tasks": []
+  },
+  {
+    "id": "AAA-0004",
+    "level": "task",
+    "status": "In Progress",
+    "title": "A claimed spike",
+    "priority": "P2",
+    "milestone": "M0",
+    "type": "Spike",
+    "deps": [],
+    "labels": [
+      "research"
+    ],
+    "ref": "KIP-1 · section 3",
+    "file": "01-aaa-alpha.md",
+    "line": 30,
+    "epic": "AAA",
+    "feature": "AAA-F02",
+    "done_when": "An ADR is accepted.",
+    "trailers": {
+      "Owner": "someone",
+      "Notes": "Claimed tasks are skipped by `next`."
+    },
+    "tasks": []
+  },
+  {
+    "id": "AAA-0006",
+    "level": "task",
+    "status": "Blocked",
+    "title": "A blocked bug",
+    "priority": "P3",
+    "milestone": "M1",
+    "type": "Bug",
+    "deps": [],
+    "labels": [
+      "security"
+    ],
+    "ref": "",
+    "file": "01-aaa-alpha.md",
+    "line": 36,
+    "epic": "AAA",
+    "feature": "AAA-F02",
+    "done_when": "The bug is fixed.",
+    "trailers": {
+      "Blocked": "waiting for a decision."
+    },
+    "tasks": []
+  },
+  {
+    "id": "BBB-F01",
+    "level": "feature",
+    "status": "To Do",
+    "title": "Feature depending on another epic",
+    "priority": "P0",
+    "milestone": "M0",
+    "type": "Feature",
+    "deps": [
+      "AAA-F01"
+    ],
+    "labels": [],
+    "ref": "",
+    "file": "02-bbb-beta.md",
+    "line": 3,
+    "epic": "BBB",
+    "feature": null,
+    "done_when": null,
+    "trailers": {},
+    "tasks": [
+      "BBB-0001",
+      "BBB-0002",
+      "BBB-0003"
+    ]
+  },
+  {
+    "id": "BBB-0001",
+    "level": "task",
+    "status": "To Do",
+    "title": "A task whose feature dependency is satisfied up to its milestone",
+    "priority": "P0",
+    "milestone": "M0",
+    "type": "Story",
+    "deps": [],
+    "labels": [],
+    "ref": "",
+    "file": "02-bbb-beta.md",
+    "line": 7,
+    "epic": "BBB",
+    "feature": "BBB-F01",
+    "done_when": "It is ready although AAA-0005 is open.",
+    "trailers": {},
+    "tasks": []
+  },
+  {
+    "id": "BBB-0002",
+    "level": "task",
+    "status": "Won't Do",
+    "title": "A dropped task",
+    "priority": "P1",
+    "milestone": "M2",
+    "type": "Task",
+    "deps": [],
+    "labels": [],
+    "ref": "",
+    "file": "02-bbb-beta.md",
+    "line": 11,
+    "epic": "BBB",
+    "feature": "BBB-F01",
+    "done_when": "Never; it was split instead.",
+    "trailers": {
+      "Won't do": "split into BBB-0003."
+    },
+    "tasks": []
+  },
+  {
+    "id": "BBB-0003",
+    "level": "task",
+    "status": "To Do",
+    "title": "A task waiting for a task in the same epic",
+    "priority": "P1",
+    "milestone": "M2",
+    "type": "Task",
+    "deps": [
+      "BBB-0001"
+    ],
+    "labels": [],
+    "ref": "",
+    "file": "02-bbb-beta.md",
+    "line": 16,
+    "epic": "BBB",
+    "feature": "BBB-F01",
+    "done_when": "It runs after BBB-0001.",
+    "trailers": {},
+    "tasks": []
+  }
+]

@@ -1,0 +1,13 @@
+01-ccc-gamma.md:3: task CCC-0009 appears before any feature
+01-ccc-gamma.md:11: malformed metadata line after Missing: ''
+01-ccc-gamma.md:13: malformed metadata line after CCC-0001: 'P0 - M0 - Task - deps: none'
+01-ccc-gamma.md:17: CCC-0002: missing or empty 'Done when:' line
+01-ccc-gamma.md:20: CCC-0003: unknown status 'Someday'
+01-ccc-gamma.md:20: CCC-0003: unknown priority 'P7'
+01-ccc-gamma.md:20: CCC-0003: unknown milestone 'M99'
+01-ccc-gamma.md:20: CCC-0003: empty dependency entry
+01-ccc-gamma.md:24: CCC-0004: task type must be one of ['Bug', 'Spike', 'Story', 'Task']
+01-ccc-gamma.md:24: CCC-0004: Blocked tasks need a 'Blocked:' line
+01-ccc-gamma.md:28: duplicate id CCC-0002 (also 01-ccc-gamma.md:17)
+02-wrong-name.md: file name must be '<NN>-ddd-<slug>.md'
+03-no-title.md:1: first line must be '# <EPIC>: <title>'

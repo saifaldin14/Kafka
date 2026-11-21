@@ -196,19 +196,20 @@ Done when: A workflow with an invalid expression or an unknown runner label fail
 P0 · M0 · Task · deps: FND-0037, FND-0038, FND-0045 · labels: docs
 Done when: Both runs are linked in the PR; the "Current phase" section of the engineering skill, AGENTS.md ("design phase"), CONTRIBUTING.md ("contract that milestone M0 implements") and the M0 row of docs/parity.md describe the new state; the remaining open M0 tasks (if any) are listed in the PR as non-blocking for starting M1 work.
 
-## [To Do] FND-F07 Backlog tooling
+## [In Progress] FND-F07 Backlog tooling
 P1 · M0 · Feature · deps: FND-F04
 Scope: Port `docs/backlog/tools/backlog.py` (check, next, stats) to `cargo xtask backlog` and run `backlog check` in CI.
 
-### [To Do] FND-0041 `cargo xtask backlog` parser: read `docs/backlog/*.md` into typed items (`Status`, `Priority`, `Milestone`, item type, deps, labels, ref, `Done when`, trailers) following the README item format, with file:line on every parse error
+### [Done] FND-0041 `cargo xtask backlog` parser: read `docs/backlog/*.md` into typed items (`Status`, `Priority`, `Milestone`, item type, deps, labels, ref, `Done when`, trailers) following the README item format, with file:line on every parse error
 P1 · M0 · Task · deps: none · labels: docs · ref: docs/backlog/README.md
 Done when: Parsing the real backlog gives the same item count and fields as `backlog.py` (checked by a test that compares against a committed JSON golden produced once by `backlog.py`); malformed headings, metadata lines and missing `Done when` are reported with file:line; unit tests use the README examples.
+Notes: The committed goldens cover fixture backlogs in `xtask/tests/fixtures/backlog/`, because a golden of the real backlog would go stale with every status change. On the real backlog, both parsers gave the same 7,836 items field for field, checked once when the port landed.
 
 ### [To Do] FND-0042 `cargo xtask backlog check [--allow-empty-features] [--epic CODE]` with every rule of `backlog.py check`
 P1 · M0 · Task · deps: FND-0041 · labels: docs · ref: docs/backlog/README.md
 Done when: Rules: id formats, duplicates, unknown deps, cross-epic deps only on features, no deps on later-milestone tasks, feature milestone = earliest task, feature status derived from tasks, Blocked/Won't Do trailers, cycles, README epic table and totals. For each rule, a fixture backlog triggers exactly the error text that `backlog.py` produces (committed goldens); the real backlog gives identical output from both tools; exit code 1 on any error.
 
-### [To Do] FND-0043 `cargo xtask backlog next [--all] [-n N]` and `show <ID>`: readiness with feature-dependency expansion by milestone, ordered by milestone, priority, epic table order and id
+### [Done] FND-0043 `cargo xtask backlog next [--all] [-n N]` and `show <ID>`: readiness with feature-dependency expansion by milestone, ordered by milestone, priority, epic table order and id
 P1 · M0 · Task · deps: FND-0041 · labels: docs · ref: docs/backlog/README.md
 Done when: Golden tests on fixture backlogs cover: a blocked task, a feature dependency satisfied only up to the task's milestone, claimed tasks skipped, and working ahead when the current milestone has nothing ready; the output on the real backlog matches `backlog.py next --all`.
 
