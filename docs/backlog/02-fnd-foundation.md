@@ -169,10 +169,10 @@ P0 · M0 · Task · deps: FND-0021 · labels: security · ref: docs/standards/se
 Done when: Triggers are `pull_request`, `push` to main and `merge_group`; workflow-level `permissions: {}` and per-job `contents: read`; per-ref concurrency with cancel-in-progress for PRs; `actions/checkout` with `persist-credentials: false`; `timeout-minutes` on every job; the `lint` job runs `cargo xtask ci --step fmt --step clippy` on ubuntu-24.04. All actions are pinned to full commit SHAs with a `# vX.Y.Z` comment; the toolchain comes from `rust-toolchain.toml` through the runner's rustup, with no third-party toolchain action; a PR with a formatting error fails the `lint` job.
 Notes: Verified on GitHub once the repository was made public (the private repository's Actions were blocked by billing). PR #1's run [44934033847](https://github.com/saifaldin14/Kafka/actions/runs/44934033847) passed every job, and a PR with a formatting error ([#3](https://github.com/saifaldin14/Kafka/pull/3), run [44934858823](https://github.com/saifaldin14/Kafka/actions/runs/44934858823)) failed `lint`. actionlint 1.7.12 reports nothing on the workflows.
 
-### [In Review] FND-0032 CI caching: SHA-pinned `Swatinem/rust-cache` keyed on OS, toolchain and `Cargo.lock`, which also caches the tools installed by `cargo xtask tools install`; only pushes to main save the cache, PRs restore only
+### [Done] FND-0032 CI caching: SHA-pinned `Swatinem/rust-cache` keyed on OS, toolchain and `Cargo.lock`, which also caches the tools installed by `cargo xtask tools install`; only pushes to main save the cache, PRs restore only
 P0 · M0 · Task · deps: FND-0031 · labels: perf
 Done when: A second run of an unchanged PR restores the cache and skips tool installation (cold and warm times are in the PR description); PR runs cannot write the cache that main uses (`save-if` on main only), which protects against cache poisoning.
-Notes: Cold times on PR #1, with tools built from source: lint 0.4 min, policy 0.4, deny 2.3, advisories 1.9, docs 3.6, test 6.2 (ubuntu-24.04) and 7.0 (macos-15). Still to do: show a PR restoring the cache that main saves, and record the warm times, after #1 merges.
+Notes: Cold times on PR #1, with tools built from source: lint 0.4 min, policy 0.4, deny 2.3, advisories 1.9, docs 3.6, test 6.2 (ubuntu-24.04) and 7.0 (macos-15). After main's first run saved the cache, PR #10's run [44938949556](https://github.com/saifaldin14/Kafka/actions/runs/44938949556) restored it with a full key match in every job, and "All tools are installed at their pinned versions". Warm times: lint 0.3, policy 0.4, deny 0.4, advisories 0.3, docs 0.4, test 0.4 (ubuntu-24.04) and 0.6 (macos-15). Every cache entry is on `refs/heads/main`; none came from the 11 PR runs (`save-if: false`).
 
 ### [Done] FND-0033 CI `test` job: matrix of ubuntu-24.04 and macos-15 (arm64), `fail-fast: false`, running `cargo xtask ci --step test` and uploading the nextest JUnit report as an artifact
 P0 · M0 · Task · deps: FND-0031, FND-0022 · labels: test · ref: docs/standards/testing.md#rules
@@ -184,10 +184,10 @@ P0 · M0 · Task · deps: FND-0031, FND-0054, FND-0055 · labels: docs
 Done when: An intentionally broken intra-doc link or Markdown anchor in a test PR fails the job; the job runs on Linux only, with a documented reason (rustdoc output does not depend on the platform).
 Notes: A PR with a broken intra-doc link and a broken Markdown anchor ([#5](https://github.com/saifaldin14/Kafka/pull/5), run [44934873977](https://github.com/saifaldin14/Kafka/actions/runs/44934873977)) failed both steps: rustdoc reported "unresolved link to `NoSuchType`" and lychee "Cannot find fragment".
 
-### [In Review] FND-0035 CI dependency jobs: `deny` (bans, licenses, sources) as a required check, plus a separate `advisories` job that runs on PRs without blocking them and on a daily schedule that opens or updates a tracking issue when it fails
+### [Done] FND-0035 CI dependency jobs: `deny` (bans, licenses, sources) as a required check, plus a separate `advisories` job that runs on PRs without blocking them and on a daily schedule that opens or updates a tracking issue when it fails
 P0 · M0 · Task · deps: FND-0031, FND-0014 · labels: security · ref: docs/standards/security.md#dependencies
 Done when: A newly published advisory cannot block unrelated PRs, yet it is surfaced within a day as an issue with the advisory id; the scheduled job has `issues: write` only; a banned crate fails the required `deny` job.
-Notes: `deny` is verified: a banned `openssl-sys` ([#6](https://github.com/saifaldin14/Kafka/pull/6), run [44934876168](https://github.com/saifaldin14/Kafka/actions/runs/44934876168)) failed it with "explicitly banned". `advisories` runs on PRs without failing them. The issue step has been tested both ways: once accidentally against GitHub, opening (since deleted) issue #2 with deduplicated advisory ids, and against a stand-in `gh` for the comment path. Still to do: a scheduled or dispatched run from main, possible only after #1 merges.
+Notes: A banned `openssl-sys` ([#6](https://github.com/saifaldin14/Kafka/pull/6), run [44934876168](https://github.com/saifaldin14/Kafka/actions/runs/44934876168)) failed `deny` with "explicitly banned". `advisories` ran on every PR without failing the run. advisories.yml dispatched from main succeeded (run [44938924572](https://github.com/saifaldin14/Kafka/actions/runs/44938924572); no advisories today). Its issue step ran once accidentally against GitHub, opening issue #2 (since deleted) with deduplicated advisory ids, and was tested against a stand-in `gh` for the comment path.
 
 ### [Done] FND-0036 CI `policy` job: `cargo xtask ci --step layers --step manifests --step lint-canary` (later policy steps such as `backlog` and `workflows` are added to this job when they land)
 P0 · M0 · Task · deps: FND-0031, FND-0030, FND-0007, FND-0004 · ref: ADR-0009
@@ -202,7 +202,7 @@ Notes: `ci-success` failed in all six demonstration PRs ([#3](https://github.com
 ### [In Review] FND-0038 `cargo xtask check-workflows` (SHA pinning, no `pull_request_target`, timeouts, permissions) and Dependabot for actions
 P1 · M0 · Task · deps: FND-0031, FND-0007 · labels: security · ref: docs/standards/security.md#dependencies
 Done when: Every `uses:` in `.github/workflows/*.yml` must be pinned to a 40-hex SHA with a `# v…` comment; every job sets `timeout-minutes` and explicit `permissions`; Dependabot covers the `github-actions` ecosystem weekly. Fixture workflows (tag-pinned action, missing timeout, missing permissions, `pull_request_target`) are each rejected with file:line; the real workflows pass; registered as the `workflows` step in the `policy` job; Dependabot opens SHA-bump PRs that keep the version comment.
-Notes: check-workflows is verified locally and runs in `policy` on every PR. Still to do: show a Dependabot github-actions PR bumping a SHA while keeping the version comment. All actions are at their latest release today, so this waits for the next upstream release.
+Notes: check-workflows is verified locally and runs in `policy` on every PR. Dependabot validated the new `github-actions` entry and ran it from main ([run 44937154825](https://github.com/saifaldin14/Kafka/actions/runs/44937154825), success, no updates). Still to do: show a Dependabot github-actions PR bumping a SHA while keeping the version comment. All actions are at their latest release today, so this waits for the next upstream release.
 
 ### [To Do] FND-0039 Lint workflow files with actionlint (version pinned in the xtask tool table) as part of the `workflows` step
 P2 · M0 · Task · deps: FND-0038
@@ -212,7 +212,7 @@ Done when: A workflow with an invalid expression or an unknown runner label fail
 P0 · M0 · Task · deps: FND-0037, FND-0038, FND-0045 · labels: docs
 Done when: Both runs are linked in the PR; the "Current phase" section of the engineering skill, AGENTS.md ("design phase"), CONTRIBUTING.md ("contract that milestone M0 implements") and the M0 row of docs/parity.md describe the new state; the remaining open M0 tasks (if any) are listed in the PR as non-blocking for starting M1 work.
 
-## [In Progress] FND-F07 Backlog tooling
+## [Done] FND-F07 Backlog tooling
 P1 · M0 · Feature · deps: FND-F04
 Scope: Port `docs/backlog/tools/backlog.py` (check, next, stats) to `cargo xtask backlog` and run `backlog check` in CI.
 
@@ -234,10 +234,10 @@ P2 · M0 · Task · deps: FND-0041 · labels: docs · ref: docs/backlog/README.m
 Done when: The generated table is byte-identical to `backlog.py stats` on the real backlog; `--write` changes only the text between the markers; `check` (without `--allow-empty-features`) fails when the totals are stale.
 Notes: `stats` and `--write` landed first, byte-identical on the real backlog. The stale-totals failure arrived with `check` (FND-0042).
 
-### [In Review] FND-0045 Run `cargo xtask backlog check` as the `backlog` step in the CI `policy` job, delete `docs/backlog/tools/backlog.py`, and point the README, the engineering skill and CONTRIBUTING to `cargo xtask backlog`
+### [Done] FND-0045 Run `cargo xtask backlog check` as the `backlog` step in the CI `policy` job, delete `docs/backlog/tools/backlog.py`, and point the README, the engineering skill and CONTRIBUTING to `cargo xtask backlog`
 P1 · M0 · Task · deps: FND-0042, FND-0043, FND-0044, FND-0036 · labels: docs · ref: docs/backlog/README.md
 Done when: CI fails a PR that breaks the backlog format or a dependency rule; no file references `backlog.py` (grep is clean); the golden tests no longer need Python.
-Notes: `git grep backlog.py` matches only FND-F07's own task descriptions, which record what was ported; every instruction, doc, code comment and error message now points to `cargo xtask backlog`. The goldens are the specification now, so their two Python-specific details changed: Rust string quoting for a malformed metadata line, and the item count for a backlog with invalid items.
+Notes: A PR breaking the backlog format ([#9](https://github.com/saifaldin14/Kafka/pull/9), run [44936714614](https://github.com/saifaldin14/Kafka/actions/runs/44936714614)) failed `policy` at the `backlog` step: "01-type-domain-types.md:19: malformed heading", plus stale totals. `git grep backlog.py` matches only FND-F07's own task descriptions, which record what was ported; every instruction, doc, code comment and error message now points to `cargo xtask backlog`. The goldens are the specification now, so their two Python-specific details changed: Rust string quoting for a malformed metadata line, and the item count for a backlog with invalid items.
 
 ## [To Do] FND-F08 Licensing and attribution
 P1 · M0 · Feature · deps: none
