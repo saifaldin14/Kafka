@@ -14,8 +14,25 @@
 //! The fixtures compile only with the `canary` feature, so normal workspace builds and
 //! `cargo xtask ci --step clippy` stay clean.
 //!
+//! # Sanctioned exceptions
+//!
+//! `fixtures::suppression` also holds the allowed ways around a lint, which must produce
+//! no diagnostics at all:
+//!
+//! - A disallowed method is called only from its one sanctioned wrapper, which carries
+//!   a single `#[expect(clippy::disallowed_methods, reason = "…")]`
+//!   ([rust.md](../../../docs/standards/rust.md#workspace-configuration)).
+//! - An invariant check is `expect("invariant: …")` under
+//!   `#[expect(clippy::expect_used, reason = "…")]`
+//!   ([rust.md](../../../docs/standards/rust.md#panics)).
+//!
+//! A bare `#[allow]`, or an `#[expect]` without a reason, is itself a fixture that must
+//! fire.
+//!
 //! To cover a new rule, add a function that breaks it to the fixture module for its
-//! topic, annotate the line, and run `cargo xtask lint-canary`.
+//! topic, annotate the line, and run `cargo xtask lint-canary`. rustfmt moves a comment
+//! that follows an opening `{` into the block, so keep each offending expression on a
+//! line of its own.
 
 #[cfg(feature = "canary")]
 pub mod fixtures;
