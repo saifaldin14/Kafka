@@ -172,7 +172,7 @@ Done when: Triggers are `pull_request`, `push` to main and `merge_group`; workfl
 P0 · M0 · Task · deps: FND-0031 · labels: perf
 Done when: A second run of an unchanged PR restores the cache and skips tool installation (cold and warm times are in the PR description); PR runs cannot write the cache that main uses (`save-if` on main only), which protects against cache poisoning.
 
-### [To Do] FND-0033 CI `test` job: matrix of ubuntu-24.04 and macos-15 (arm64), `fail-fast: false`, running `cargo xtask ci --step test` and uploading the nextest JUnit report as an artifact
+### [In Review] FND-0033 CI `test` job: matrix of ubuntu-24.04 and macos-15 (arm64), `fail-fast: false`, running `cargo xtask ci --step test` and uploading the nextest JUnit report as an artifact
 P0 · M0 · Task · deps: FND-0031, FND-0022 · labels: test · ref: docs/standards/testing.md#rules
 Done when: Both matrix legs run on every PR; a failing test fails only its leg and the report artifact is downloadable; runner images are pinned by label (not `-latest`), and the labels are recorded in the NFR-F10 portability matrix once it exists.
 
