@@ -41,7 +41,7 @@ jobs:
         run: |
           ids=$(grep -oE 'RUSTSEC-[0-9]{4}-[0-9]{4}' advisories.log | sort -u | paste -sd ' ' -)
           title="Security advisories in dependencies"
-          body=$(printf 'The daily `cargo xtask ci --step advisories` run failed.\n\nAdvisories: %s\n\nRun: %s\n\nFix by upgrading the affected crate, or add an ignore with a reason and an expiry date to deny.toml (docs/standards/security.md#dependencies).' "${ids:-none found in the output; see the run log}" "$RUN_URL")
+          body=$(printf "The daily \`cargo xtask ci --step advisories\` run failed.\n\nAdvisories: %s\n\nRun: %s\n\nFix by upgrading the affected crate, or add an ignore with a reason and an expiry date to deny.toml (docs/standards/security.md#dependencies)." "${ids:-none found in the output; see the run log}" "$RUN_URL")
           number=$(gh issue list --state open --search "in:title \"$title\"" --json number,title \
             --jq "map(select(.title == \"$title\")) | .[0].number // empty")
           if [ -n "$number" ]; then
