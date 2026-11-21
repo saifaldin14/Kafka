@@ -1,0 +1,8 @@
+[package]
+name = "app"
+version = "0.0.0"
+edition = "2024"
+license = "MIT"
+
+[dependencies]
+copyleft = { path = "../vendor/copyleft", version = "0.0.0" }

@@ -182,6 +182,7 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 | `fmt` | `cargo fmt --all --check` (default rustfmt settings) |
 | `clippy` | `cargo clippy --workspace --all-targets --locked -- -D warnings` |
 | `layers` | `cargo xtask check-layers`: crate dependency layering ([architecture §5](../architecture.md#5-layering-rules)); `--print` shows the layer table |
+| `deny` | `cargo deny --locked check`: advisories, licenses, banned and duplicate crates, sources ([`deny.toml`](../../deny.toml)) |
 | `test` | `cargo nextest run --workspace --locked --profile ci` ([`.config/nextest.toml`](../../.config/nextest.toml)) |
 
 Steps and commands still to come, each added by its backlog task:
@@ -189,7 +190,6 @@ Steps and commands still to come, each added by its backlog task:
 | Planned | Does |
 |---|---|
 | `doc` step | `cargo doc --workspace --no-deps` with `RUSTDOCFLAGS="-D warnings"`: docs build, no broken links |
-| `deny` step | `cargo deny check`: advisories, licenses, banned and duplicate crates, sources |
 | `cargo xtask codegen --check` | Generated code is up to date |
 | `cargo xtask compat` | Real-client and differential tests (Docker) |
 | `cargo xtask fuzz <target> [--time 60s]` | Run a fuzz target |

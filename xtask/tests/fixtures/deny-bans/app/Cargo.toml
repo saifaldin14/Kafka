@@ -1,0 +1,9 @@
+[package]
+name = "app"
+version = "0.0.0"
+edition = "2024"
+license = "MIT"
+
+[dependencies]
+openssl-sys = { path = "../vendor/openssl-sys", version = "0.0.0" }
+helper = { path = "../vendor/helper", version = "*" }

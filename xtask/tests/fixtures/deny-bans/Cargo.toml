@@ -1,0 +1,5 @@
+# Offline fixture: deny.toml must reject a banned crate and a wildcard version (FND-0012).
+[workspace]
+resolver = "3"
+members = ["app"]
+exclude = ["vendor"]

@@ -1,0 +1,5 @@
+# Offline fixture: deny.toml must reject a dependency with a license outside the allow-list (FND-0011).
+[workspace]
+resolver = "3"
+members = ["app"]
+exclude = ["vendor"]

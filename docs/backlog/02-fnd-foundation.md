@@ -44,31 +44,32 @@ Done when: Unit tests with fixture manifests cover: a changed lint level, an add
 P2 · M1 · Task · deps: FND-0007 · labels: decoder, security · ref: docs/standards/rust.md#workspace-configuration
 Done when: The rule applies only to crates present in the workspace; fixture tests show a decoder crate without the attribute is rejected, with a message pointing to rust.md; the rule passes once `alluvium-protocol` exists (M1).
 
-## [To Do] FND-F03 Dependency policy
+## [In Progress] FND-F03 Dependency policy
 P0 · M0 · Feature · deps: FND-F01
 Scope: `deny.toml` (advisories, licenses, bans, sources), `cargo deny` wiring, dependency review checklist.
 
-### [To Do] FND-0009 `deny.toml` `[advisories]`: deny vulnerabilities, `unmaintained = "all"`, `yanked = "deny"`, empty `ignore` list; `[graph]` targets limited to the supported platforms
+### [Done] FND-0009 `deny.toml` `[advisories]`: deny vulnerabilities, `unmaintained = "all"`, `yanked = "deny"`, empty `ignore` list; `[graph]` targets limited to the supported platforms
 P0 · M0 · Task · deps: FND-0018 · labels: security · ref: docs/standards/security.md#dependencies
 Done when: `cargo deny check advisories` passes on the workspace; the file header comment links to docs/standards/security.md#dependencies; the `[graph]` targets list x86_64 and aarch64 Linux and aarch64 macOS (the NFR-F10 support matrix replaces it if it differs).
 
 ### [To Do] FND-0010 `check-manifests` rule: every `[advisories] ignore` entry has a `reason` that ends in `(expires YYYY-MM-DD)`, and expired entries fail
 P1 · M0 · Task · deps: FND-0009, FND-0007 · labels: security · ref: docs/standards/security.md#dependencies
 Done when: Fixture tests cover: a missing reason, a missing expiry, a malformed date, and an expired date (evaluated against an injected date, so the test is deterministic); the failure message names the advisory id and the expiry; security.md documents the reason format.
+Notes: cargo-deny 0.22 supports a native `expiry` field on ignore entries and re-reports an advisory once it passes (now documented in security.md). This task may reduce to requiring `reason` and `expiry` on every entry rather than parsing the reason text.
 
-### [To Do] FND-0011 `deny.toml` `[licenses]`: the exact allow-list from security.md (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Unicode-3.0, Zlib), `confidence-threshold = 0.93`, workspace crates ignored as private (`publish = false`), no exceptions
+### [Done] FND-0011 `deny.toml` `[licenses]`: the exact allow-list from security.md (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Unicode-3.0, Zlib), `confidence-threshold = 0.93`, workspace crates ignored as private (`publish = false`), no exceptions
 P0 · M0 · Task · deps: FND-0009 · labels: security · ref: docs/standards/security.md#dependencies
 Done when: `cargo deny check licenses` passes; adding a fixture dependency with a GPL-3.0 license fails with the license named; any exception added later needs a comment with the crate, the license and the reason.
 
-### [To Do] FND-0012 `deny.toml` `[bans]`: `multiple-versions = "warn"`, `wildcards = "deny"`, deny `openssl`, `openssl-sys` and `native-tls` with the reason "TLS is rustls only (ADR-0006)"
+### [Done] FND-0012 `deny.toml` `[bans]`: `multiple-versions = "warn"`, `wildcards = "deny"`, deny `openssl`, `openssl-sys` and `native-tls` with the reason "TLS is rustls only (ADR-0006)"
 P0 · M0 · Task · deps: FND-0009 · labels: security · ref: ADR-0006
 Done when: `cargo deny check bans` passes; an offline fixture workspace under `xtask/tests/fixtures/deny-bans/` with a path crate named `openssl-sys` is rejected by `cargo deny --manifest-path … check bans`, and an xtask test asserts the banned-crate diagnostic; a wildcard version in the fixture is rejected.
 
-### [To Do] FND-0013 `deny.toml` `[sources]`: `unknown-registry = "deny"`, `unknown-git = "deny"`, crates.io as the only allowed registry, no allowed git sources
+### [Done] FND-0013 `deny.toml` `[sources]`: `unknown-registry = "deny"`, `unknown-git = "deny"`, crates.io as the only allowed registry, no allowed git sources
 P0 · M0 · Task · deps: FND-0009 · labels: security · ref: docs/standards/security.md#dependencies
 Done when: `cargo deny check sources` passes; a fixture with a git dependency fails with the source named; security.md's "crates.io only" rule links to this section.
 
-### [To Do] FND-0014 Register `cargo deny check` as the `deny` step of `cargo xtask ci`, using the cargo-deny version pinned in the xtask tool table
+### [Done] FND-0014 Register `cargo deny check` as the `deny` step of `cargo xtask ci`, using the cargo-deny version pinned in the xtask tool table
 P0 · M0 · Task · deps: FND-0012, FND-0011, FND-0013, FND-0020, FND-0021 · labels: security · ref: docs/standards/rust.md#tooling-commands-contract-implemented-in-m0
 Done when: `cargo xtask ci --step deny` runs all four checks and fails with the cargo-deny diagnostics on any violation; a missing or wrong-version cargo-deny gives an error with the install command; the rust.md tooling table is still accurate.
 
