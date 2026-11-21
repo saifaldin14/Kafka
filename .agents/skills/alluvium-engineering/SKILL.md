@@ -82,7 +82,7 @@ These are the habits that make code hard to debug and maintain. Reviewers reject
 **Choosing work.** Follow the backlog's [selection rules](../../../docs/backlog/README.md#choosing-the-next-task):
 - lowest open milestone first;
 - then ready `To Do` tasks;
-- then by priority, epic order and ID.
+- then by priority, epic build order (the number in each epic's file name) and ID.
 
 Don't start a task whose dependencies aren't `Done`. Don't start work that has no backlog task; add the task first. Keep the task's status current: `In Progress`, `In Review`, `Done`.
 

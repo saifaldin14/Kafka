@@ -20,7 +20,7 @@ The tool applies these rules. If it isn't available, apply them by hand:
 2. **Ready only.** A task is ready when its status is `To Do` and every dependency is satisfied (see [Dependencies](#dependencies)).
 3. **Order:**
    - priority (`P0` first);
-   - then epic order (the [epic table](#epics), top to bottom);
+   - then build order (the number in the [epic table](#epics) and in the epic's file name);
    - then ID.
 4. **Skip claimed work.** Tasks `In Progress` or `In Review` belong to someone.
 5. **Work ahead only when blocked.** If no task in the current milestone is ready, take the first ready task from the next milestone, using the same ordering.
@@ -46,7 +46,7 @@ Update the status in the same PR as the work. A **feature's** status follows its
 
 ## Item format
 
-Each epic has one file. Inside, each feature is a `##` heading, and each task is a `###` heading under its feature. Each item has a metadata line, and each task has a `Done when` line:
+Each epic has one file, named `<NN>-<code>-<slug>.md`, where NN is its build-order number. Inside, each feature is a `##` heading, and each task is a `###` heading under its feature. Each item has a metadata line, and each task has a `Done when` line:
 
 ```markdown
 ## [To Do] STOR-F04 Offset index
@@ -140,54 +140,56 @@ Ownership rules that decide where a task goes:
 
 ## Epics
 
-The table order is the tie-breaker when choosing the next task.
+Epics are numbered in the order they should be built. Each epic's file name starts with its number (`01-type-domain-types.md`), so a directory listing shows the build order. The number is also the tie-breaker when choosing the next task.
 
-| Code | Epic | Milestones |
-|---|---|---|
-| FND | [Workspace, tooling and CI](fnd-foundation.md) | M0-M1 |
-| TYPE | [Domain types](type-domain-types.md) | M0 |
-| PROTO | [Kafka protocol and code generation](proto-protocol.md) | M1-M2 |
-| ERR | [Kafka error codes](err-error-codes.md) | M1-M9 |
-| REC | [Record batches and compression](rec-records.md) | M1-M5 |
-| TEST | [Test infrastructure](test-test-infrastructure.md) | M1-M9 |
-| OBS | [Observability](obs-observability.md) | M2-M9 |
-| CFG | [Configuration](cfg-configuration.md) | M2-M9 |
-| NET | [Network layer](net-network.md) | M2-M7 |
-| SRV | [Server runtime and request pipeline](srv-server.md) | M2-M7 |
-| STOR | [Log storage](stor-storage.md) | M2-M7 |
-| RAFT | [KRaft consensus](raft-kraft.md) | M2-M3 |
-| META | [Metadata records and image](meta-metadata.md) | M2-M6 |
-| CTRL | [Controller](ctrl-controller.md) | M2-M7 |
-| REPL | [Replication and partitions](repl-replication.md) | M2-M7 |
-| API | [Kafka API handlers](api-client-apis.md) | M2-M9 |
-| SEC | [Security](sec-security.md) | M2-M9 |
-| QUOTA | [Quotas and throttling](quota-quotas.md) | M4 |
-| GRP | [Group coordinator](grp-group-coordinator.md) | M5-M7 |
-| TXN | [Idempotence and transactions](txn-transactions.md) | M6 |
-| SHARE | [Share groups](share-share-groups.md) | M8-M9 |
-| STRM | [Streams groups](strm-streams-groups.md) | M8 |
-| TELEM | [Client telemetry](telem-client-telemetry.md) | M8 |
-| TIER | [Tiered storage](tier-tiered-storage.md) | M9 |
-| CLI | [CLI and tool compatibility](cli-cli-and-tools.md) | M2-M9 |
-| OPS | [Packaging and operations](ops-operations.md) | M2-M9 |
-| NFR | [Non-functional requirements](nfr-non-functional.md) | M0-M9 |
-| DOCS | [User and operator documentation](docs-documentation.md) | M0-M9 |
-| X-NATIVE | [Native HTTP and gRPC APIs and SDK](x-native-native-apis.md) | M10 |
-| X-SCHEMA | [Built-in schema registry and validation](x-schema-schema-registry.md) | M10 |
-| X-QUEUE | [Queue semantics](x-queue-queues.md) | M11 |
-| X-LARGE | [Large messages](x-large-large-messages.md) | M11 |
-| X-ELASTIC | [Elastic partitions](x-elastic-elastic-partitions.md) | M12 |
-| X-KV | [Key lookups and queryable topics](x-kv-key-lookups.md) | M12-M13 |
-| X-DISKLESS | [Diskless object-storage-native topics](x-diskless-diskless.md) | M13 |
-| X-TENANT | [Multi-tenancy](x-tenant-multi-tenancy.md) | M14 |
-| X-SECX | [Advanced security](x-secx-advanced-security.md) | M14 |
-| X-GEO | [Geo-replication](x-geo-geo-replication.md) | M15 |
-| X-WASM | [Server-side filtering and WASM transforms](x-wasm-transforms.md) | M16 |
-| X-SQL | [Built-in SQL and stream processing](x-sql-sql.md) | M16-M17 |
-| X-AUTO | [Operational autopilot](x-auto-autopilot.md) | M17 |
-| X-OBSX | [Observability extras](x-obsx-observability-extras.md) | M17 |
-| X-LOWLAT | [Low-latency mode](x-lowlat-low-latency.md) | M18 |
-| X-EMBED | [Embedded and lightweight mode](x-embed-embedded-mode.md) | M18 |
+The order comes from a simulated run of the whole backlog: every task scheduled as soon as its dependencies allow (milestone first, then priority), and each epic ranked by when the middle of its work is built. Epics that span many milestones, such as TEST, DOCS and ERR, start early but are mostly built later. Renumber only when the plan changes substantially; `backlog.py check` verifies the numbers match the file names.
+
+| # | Code | Epic | Milestones |
+|---|---|---|---|
+| 1 | TYPE | [Domain types](01-type-domain-types.md) | M0 |
+| 2 | FND | [Workspace, tooling and CI](02-fnd-foundation.md) | M0-M1 |
+| 3 | PROTO | [Kafka protocol and code generation](03-proto-protocol.md) | M1-M2 |
+| 4 | REC | [Record batches and compression](04-rec-records.md) | M1-M5 |
+| 5 | META | [Metadata records and image](05-meta-metadata.md) | M2-M6 |
+| 6 | TEST | [Test infrastructure](06-test-test-infrastructure.md) | M1-M9 |
+| 7 | STOR | [Log storage](07-stor-storage.md) | M2-M7 |
+| 8 | SRV | [Server runtime and request pipeline](08-srv-server.md) | M2-M7 |
+| 9 | NET | [Network layer](09-net-network.md) | M2-M7 |
+| 10 | OBS | [Observability](10-obs-observability.md) | M2-M9 |
+| 11 | CTRL | [Controller](11-ctrl-controller.md) | M2-M7 |
+| 12 | REPL | [Replication and partitions](12-repl-replication.md) | M2-M7 |
+| 13 | NFR | [Non-functional requirements](13-nfr-non-functional.md) | M0-M9 |
+| 14 | RAFT | [KRaft consensus](14-raft-kraft.md) | M2-M3 |
+| 15 | CLI | [CLI and tool compatibility](15-cli-cli-and-tools.md) | M2-M9 |
+| 16 | CFG | [Configuration](16-cfg-configuration.md) | M2-M9 |
+| 17 | SEC | [Security](17-sec-security.md) | M2-M9 |
+| 18 | DOCS | [User and operator documentation](18-docs-documentation.md) | M0-M9 |
+| 19 | QUOTA | [Quotas and throttling](19-quota-quotas.md) | M4 |
+| 20 | API | [Kafka API handlers](20-api-client-apis.md) | M2-M9 |
+| 21 | ERR | [Kafka error codes](21-err-error-codes.md) | M1-M9 |
+| 22 | GRP | [Group coordinator](22-grp-group-coordinator.md) | M5-M7 |
+| 23 | TXN | [Idempotence and transactions](23-txn-transactions.md) | M6 |
+| 24 | OPS | [Packaging and operations](24-ops-operations.md) | M2-M9 |
+| 25 | STRM | [Streams groups](25-strm-streams-groups.md) | M8 |
+| 26 | TELEM | [Client telemetry](26-telem-client-telemetry.md) | M8 |
+| 27 | SHARE | [Share groups](27-share-share-groups.md) | M8-M9 |
+| 28 | TIER | [Tiered storage](28-tier-tiered-storage.md) | M9 |
+| 29 | X-SCHEMA | [Built-in schema registry and validation](29-x-schema-schema-registry.md) | M10 |
+| 30 | X-NATIVE | [Native HTTP and gRPC APIs and SDK](30-x-native-native-apis.md) | M10 |
+| 31 | X-LARGE | [Large messages](31-x-large-large-messages.md) | M11 |
+| 32 | X-QUEUE | [Queue semantics](32-x-queue-queues.md) | M11 |
+| 33 | X-ELASTIC | [Elastic partitions](33-x-elastic-elastic-partitions.md) | M12 |
+| 34 | X-KV | [Key lookups and queryable topics](34-x-kv-key-lookups.md) | M12-M13 |
+| 35 | X-DISKLESS | [Diskless object-storage-native topics](35-x-diskless-diskless.md) | M13 |
+| 36 | X-SECX | [Advanced security](36-x-secx-advanced-security.md) | M14 |
+| 37 | X-TENANT | [Multi-tenancy](37-x-tenant-multi-tenancy.md) | M14 |
+| 38 | X-GEO | [Geo-replication](38-x-geo-geo-replication.md) | M15 |
+| 39 | X-SQL | [Built-in SQL and stream processing](39-x-sql-sql.md) | M16-M17 |
+| 40 | X-WASM | [Server-side filtering and WASM transforms](40-x-wasm-transforms.md) | M16 |
+| 41 | X-AUTO | [Operational autopilot](41-x-auto-autopilot.md) | M17 |
+| 42 | X-OBSX | [Observability extras](42-x-obsx-observability-extras.md) | M17 |
+| 43 | X-LOWLAT | [Low-latency mode](43-x-lowlat-low-latency.md) | M18 |
+| 44 | X-EMBED | [Embedded and lightweight mode](44-x-embed-embedded-mode.md) | M18 |
 
 ## Totals
 
@@ -196,46 +198,46 @@ Generated by `backlog.py stats --write`. Don't edit by hand.
 <!-- backlog-stats:start -->
 | Epic | Features | Tasks | Done | Open | Highest task id |
 |---|---|---|---|---|---|
-| FND | 11 | 62 | 0 | 62 | FND-0062 |
 | TYPE | 12 | 47 | 0 | 47 | TYPE-0047 |
+| FND | 11 | 62 | 0 | 62 | FND-0062 |
 | PROTO | 15 | 156 | 0 | 156 | PROTO-0156 |
-| ERR | 4 | 189 | 0 | 189 | ERR-0189 |
 | REC | 15 | 157 | 0 | 157 | REC-0157 |
-| TEST | 17 | 130 | 0 | 130 | TEST-0130 |
-| OBS | 13 | 154 | 0 | 154 | OBS-0154 |
-| CFG | 12 | 507 | 0 | 507 | CFG-0507 |
-| NET | 15 | 128 | 0 | 128 | NET-0128 |
-| SRV | 16 | 148 | 0 | 148 | SRV-0148 |
-| STOR | 25 | 279 | 0 | 279 | STOR-0279 |
-| RAFT | 15 | 159 | 0 | 159 | RAFT-0159 |
 | META | 9 | 131 | 0 | 131 | META-0131 |
+| TEST | 17 | 130 | 0 | 130 | TEST-0130 |
+| STOR | 25 | 279 | 0 | 279 | STOR-0279 |
+| SRV | 16 | 148 | 0 | 148 | SRV-0148 |
+| NET | 15 | 128 | 0 | 128 | NET-0128 |
+| OBS | 13 | 154 | 0 | 154 | OBS-0154 |
 | CTRL | 23 | 191 | 0 | 191 | CTRL-0191 |
 | REPL | 17 | 136 | 0 | 136 | REPL-0136 |
-| API | 91 | 1136 | 0 | 1136 | API-1136 |
+| NFR | 13 | 67 | 0 | 67 | NFR-0067 |
+| RAFT | 15 | 159 | 0 | 159 | RAFT-0159 |
+| CLI | 7 | 170 | 0 | 170 | CLI-0170 |
+| CFG | 12 | 507 | 0 | 507 | CFG-0507 |
 | SEC | 16 | 141 | 0 | 141 | SEC-0141 |
+| DOCS | 12 | 142 | 0 | 142 | DOCS-0142 |
 | QUOTA | 10 | 66 | 0 | 66 | QUOTA-0066 |
+| API | 91 | 1136 | 0 | 1136 | API-1136 |
+| ERR | 4 | 189 | 0 | 189 | ERR-0189 |
 | GRP | 13 | 182 | 0 | 182 | GRP-0182 |
 | TXN | 16 | 137 | 0 | 137 | TXN-0137 |
-| SHARE | 11 | 110 | 0 | 110 | SHARE-0110 |
+| OPS | 13 | 213 | 0 | 213 | OPS-0213 |
 | STRM | 7 | 65 | 0 | 65 | STRM-0065 |
 | TELEM | 5 | 33 | 0 | 33 | TELEM-0033 |
+| SHARE | 11 | 110 | 0 | 110 | SHARE-0110 |
 | TIER | 10 | 97 | 0 | 97 | TIER-0097 |
-| CLI | 7 | 170 | 0 | 170 | CLI-0170 |
-| OPS | 13 | 213 | 0 | 213 | OPS-0213 |
-| NFR | 13 | 67 | 0 | 67 | NFR-0067 |
-| DOCS | 12 | 142 | 0 | 142 | DOCS-0142 |
-| X-NATIVE | 18 | 207 | 0 | 207 | X-NATIVE-0207 |
 | X-SCHEMA | 16 | 191 | 0 | 191 | X-SCHEMA-0191 |
-| X-QUEUE | 15 | 111 | 0 | 111 | X-QUEUE-0111 |
+| X-NATIVE | 18 | 207 | 0 | 207 | X-NATIVE-0207 |
 | X-LARGE | 10 | 75 | 0 | 75 | X-LARGE-0075 |
+| X-QUEUE | 15 | 111 | 0 | 111 | X-QUEUE-0111 |
 | X-ELASTIC | 16 | 143 | 0 | 143 | X-ELASTIC-0143 |
 | X-KV | 11 | 90 | 0 | 90 | X-KV-0090 |
 | X-DISKLESS | 15 | 139 | 0 | 139 | X-DISKLESS-0139 |
-| X-TENANT | 12 | 97 | 0 | 97 | X-TENANT-0097 |
 | X-SECX | 11 | 173 | 0 | 173 | X-SECX-0173 |
+| X-TENANT | 12 | 97 | 0 | 97 | X-TENANT-0097 |
 | X-GEO | 13 | 123 | 0 | 123 | X-GEO-0123 |
-| X-WASM | 11 | 110 | 0 | 110 | X-WASM-0110 |
 | X-SQL | 11 | 114 | 0 | 114 | X-SQL-0114 |
+| X-WASM | 11 | 110 | 0 | 110 | X-WASM-0110 |
 | X-AUTO | 12 | 162 | 0 | 162 | X-AUTO-0162 |
 | X-OBSX | 11 | 143 | 0 | 143 | X-OBSX-0143 |
 | X-LOWLAT | 10 | 112 | 0 | 112 | X-LOWLAT-0112 |
@@ -271,6 +273,6 @@ Generated by `backlog.py stats --write`. Don't edit by hand.
 grep -rn '^### \[To Do\]' docs/backlog/*.md           # all open tasks
 grep -rn '^### \[In Progress\]' docs/backlog/*.md     # work underway
 grep -rn 'foundation-for:X-ELASTIC' docs/backlog/*.md  # groundwork for an enhancement
-grep -rn ' · M2 · ' docs/backlog/stor-storage.md       # a milestone within an epic
+grep -rn ' · M2 · ' docs/backlog/07-stor-storage.md       # a milestone within an epic
 python3 docs/backlog/tools/backlog.py show STOR-0031   # one item with its dependencies
 ```

@@ -44,10 +44,20 @@ class Item:
 def epic_order():
     order = []
     for line in open(README):
-        m = re.match(r"^\| ([A-Z][A-Z-]*) \| \[", line)
+        m = re.match(r"^\| (\d+) \| ([A-Z][A-Z-]*) \| \[([^\]]*)\]\(([^)]+)\)", line)
         if m:
-            order.append(m.group(1))
+            order.append(m.group(2))
     return order
+
+
+def check_file_numbers(errors):
+    """The NN prefix of each epic file must equal its position in the README epic table."""
+    for line in open(README):
+        m = re.match(r"^\| (\d+) \| ([A-Z][A-Z-]*) \| \[([^\]]*)\]\(([^)]+)\)", line)
+        if m and not m.group(4).startswith(f"{int(m.group(1)):02d}-"):
+            errors.append(f"README.md: epic {m.group(2)} is #{m.group(1)} but links to {m.group(4)}")
+        if m and not os.path.exists(os.path.join(BACKLOG, m.group(4))):
+            errors.append(f"README.md: epic table links to missing file {m.group(4)}")
 
 
 def parse():
@@ -61,8 +71,8 @@ def parse():
             errors.append(f"{name}:1: first line must be '# <EPIC>: <title>'")
             continue
         code = m.group(1)
-        if not name.startswith(code.lower() + "-"):
-            errors.append(f"{name}: file name must start with '{code.lower()}-'")
+        if not re.fullmatch(rf"\d{{2}}-{re.escape(code.lower())}-[a-z0-9-]+\.md", name):
+            errors.append(f"{name}: file name must be '<NN>-{code.lower()}-<slug>.md'")
         feature = None
         i = 0
         while i < len(lines):
@@ -298,6 +308,7 @@ def main():
     items, errors = parse()
     if args.cmd == "check":
         warnings = check(items, errors, args.allow_empty_features)
+        check_file_numbers(errors)
         readme = open(README).read()
         m = STATS_RE.search(readme)
         if not m:
