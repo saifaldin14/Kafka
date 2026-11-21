@@ -160,11 +160,11 @@ Done when: Moving a crate to another layer in only one of the two places fails w
 P2 · M1 · Task · deps: FND-0030 · ref: ADR-0011
 Done when: The rule scans the `src/` of layer 1–2 workspace crates (layer 0 is `alluvium-types`, which defines them) and reports each use with file:line and the ADR; fixture crates show a use rejected and a doc comment mentioning the names accepted; the real workspace passes.
 
-## [To Do] FND-F06 CI pipeline
+## [In Progress] FND-F06 CI pipeline
 P0 · M0 · Feature · deps: FND-F02, FND-F03, FND-F04, FND-F05
 Scope: GitHub Actions running `cargo xtask ci` on Linux and macOS, caching, SHA-pinned actions, required checks.
 
-### [To Do] FND-0031 `.github/workflows/ci.yml` skeleton with least-privilege defaults and the `lint` job
+### [In Review] FND-0031 `.github/workflows/ci.yml` skeleton with least-privilege defaults and the `lint` job
 P0 · M0 · Task · deps: FND-0021 · labels: security · ref: docs/standards/security.md#dependencies
 Done when: Triggers are `pull_request`, `push` to main and `merge_group`; workflow-level `permissions: {}` and per-job `contents: read`; per-ref concurrency with cancel-in-progress for PRs; `actions/checkout` with `persist-credentials: false`; `timeout-minutes` on every job; the `lint` job runs `cargo xtask ci --step fmt --step clippy` on ubuntu-24.04. All actions are pinned to full commit SHAs with a `# vX.Y.Z` comment; the toolchain comes from `rust-toolchain.toml` through the runner's rustup, with no third-party toolchain action; a PR with a formatting error fails the `lint` job.
 

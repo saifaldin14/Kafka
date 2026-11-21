@@ -1,0 +1,35 @@
+# Every check is a step of `cargo xtask ci` (xtask/src/ci.rs); jobs only choose which
+# steps run where. Security defaults (docs/standards/security.md#dependencies):
+# no permissions unless a job asks, actions pinned to full commit SHAs, no persisted
+# checkout credentials, and a timeout on every job.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  lint:
+    name: lint (fmt, clippy)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/xtask-ci
+        with:
+          steps: fmt clippy
