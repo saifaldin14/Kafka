@@ -1,6 +1,7 @@
 //! Fixtures, one module per topic in docs/standards/rust.md.
 
 pub mod api;
+pub mod entropy;
 pub mod locks;
 pub mod memory;
 pub mod output;

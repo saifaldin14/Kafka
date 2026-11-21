@@ -41,7 +41,7 @@ Done when: Covered: a bare `#[allow]` fires `allow_attributes`; `#[expect]` with
 P1 · M0 · Task · deps: FND-0005 · labels: test · ref: docs/standards/rust.md#workspace-configuration
 Done when: Every public function in rand 0.10 (the version in `Cargo.lock`) that draws from the thread-local or OS RNG without a caller-supplied seed is listed, from reading its source (for example `rand::random`, `random_iter`, `random_range`, `random_bool`, `random_ratio`, `fill` and OS-seeded constructors); each is added to clippy.toml and the rust.md block with the reason "use the injected seeded RNG"; each has a lint canary fixture; `cargo xtask lint-canary` passes.
 
-### [To Do] FND-0064 clippy.toml bans the remaining clock, timer and entropy entry points from ADR-0011 and ADR-0012
+### [Done] FND-0064 clippy.toml bans the remaining clock, timer and entropy entry points from ADR-0011 and ADR-0012
 P1 · M0 · Task · deps: FND-0004 · labels: test · ref: ADR-0011, ADR-0012
 Done when: `disallowed-methods` gains `std::time::Instant::elapsed`, `std::time::SystemTime::elapsed`, `tokio::time::sleep_until`, `tokio::time::timeout`, `tokio::time::timeout_at`, `tokio::time::interval`, `tokio::time::interval_at`, `getrandom::fill`, `getrandom::fill_uninit`, `getrandom::u32` and `getrandom::u64`, in clippy.toml and the rust.md block together; reasons point to `Clock`, `Timer` and `SeededRng::from_os_entropy`; every new entry has a lint canary fixture; `xtask`'s `Stopwatch` carries the matching `#[expect]`; `cargo xtask ci` passes.
 
