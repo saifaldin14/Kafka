@@ -64,18 +64,18 @@ disallowed-methods = [
   { path = "std::time::SystemTime::now", reason = "inject time through alluvium_types::Clock" },
   { path = "std::thread::sleep", reason = "use the Clock; never block a thread to wait" },
   { path = "std::thread::spawn", reason = "spawn through the task supervisor" },
-  { path = "tokio::spawn", reason = "spawn through the task supervisor so tasks are named, traced and shut down" },
-  { path = "tokio::time::sleep", reason = "use the Clock so simulation controls time" },
-  { path = "tokio::time::Instant::now", reason = "inject time through alluvium_types::Clock" },
-  { path = "tokio::sync::mpsc::unbounded_channel", reason = "all queues are bounded; use mpsc::channel with a configured capacity" },
-  { path = "rand::rng", reason = "use the injected seeded RNG" },
-  { path = "rand::random", reason = "use the injected seeded RNG" },
-  { path = "rand::random_iter", reason = "use the injected seeded RNG" },
-  { path = "rand::random_range", reason = "use the injected seeded RNG" },
-  { path = "rand::random_bool", reason = "use the injected seeded RNG" },
-  { path = "rand::random_ratio", reason = "use the injected seeded RNG" },
-  { path = "rand::fill", reason = "use the injected seeded RNG" },
-  { path = "rand::make_rng", reason = "use the injected seeded RNG; OS entropy is read only by ProcessRng::from_os_entropy" },
+  { path = "tokio::spawn", reason = "spawn through the task supervisor so tasks are named, traced and shut down", allow-invalid = true },
+  { path = "tokio::time::sleep", reason = "use the Clock so simulation controls time", allow-invalid = true },
+  { path = "tokio::time::Instant::now", reason = "inject time through alluvium_types::Clock", allow-invalid = true },
+  { path = "tokio::sync::mpsc::unbounded_channel", reason = "all queues are bounded; use mpsc::channel with a configured capacity", allow-invalid = true },
+  { path = "rand::rng", reason = "use the injected seeded RNG", allow-invalid = true },
+  { path = "rand::random", reason = "use the injected seeded RNG", allow-invalid = true },
+  { path = "rand::random_iter", reason = "use the injected seeded RNG", allow-invalid = true },
+  { path = "rand::random_range", reason = "use the injected seeded RNG", allow-invalid = true },
+  { path = "rand::random_bool", reason = "use the injected seeded RNG", allow-invalid = true },
+  { path = "rand::random_ratio", reason = "use the injected seeded RNG", allow-invalid = true },
+  { path = "rand::fill", reason = "use the injected seeded RNG", allow-invalid = true },
+  { path = "rand::make_rng", reason = "use the injected seeded RNG; OS entropy is read only by ProcessRng::from_os_entropy", allow-invalid = true },
   { path = "std::collections::HashMap::new", reason = "RandomState breaks deterministic replay; use BTreeMap or alluvium_types::collections::SeededHashMap" },
   { path = "std::collections::HashMap::with_capacity", reason = "RandomState breaks deterministic replay; use BTreeMap or alluvium_types::collections::SeededHashMap" },
   { path = "std::collections::HashSet::new", reason = "RandomState breaks deterministic replay; use BTreeSet or alluvium_types::collections::SeededHashSet" },
@@ -83,15 +83,15 @@ disallowed-methods = [
   { path = "std::process::exit", reason = "only the binary's main may exit; return errors" },
 ]
 disallowed-types = [
-  { path = "rand::rngs::ThreadRng", reason = "use the injected seeded RNG" },
-  { path = "rand::rngs::SysRng", reason = "use the injected seeded RNG; OS entropy is read only by ProcessRng::from_os_entropy" },
+  { path = "rand::rngs::ThreadRng", reason = "use the injected seeded RNG", allow-invalid = true },
+  { path = "rand::rngs::SysRng", reason = "use the injected seeded RNG; OS entropy is read only by ProcessRng::from_os_entropy", allow-invalid = true },
   { path = "std::collections::hash_map::RandomState", reason = "breaks deterministic replay; seed hashers from the injected RNG" },
 ]
 ```
 
 Each disallowed item has exactly one sanctioned wrapper, and the wrapper carries a single `#[expect(clippy::disallowed_methods, reason = "…")]`. For example, `SystemClock` is the one place that calls `Instant::now`. The seeded hash maps take their seed from the injected RNG: random per process in production, so attacker-chosen keys can't cause hash flooding, and fixed in simulation, so runs replay exactly.
 
-Clippy matches functions, not paths, so one entry bans every path to a function: `tokio::spawn` also covers `tokio::task::spawn`. A second entry for the same function would silently replace the first one's reason. Clippy also can't ban a trait method by path (`ThreadRng::default`), so such cases ban the type in `disallowed-types`. Every entry needs a fixture in the lint canary, which also checks that clippy reports the configured reason.
+Clippy matches functions, not paths, so one entry bans every path to a function: `tokio::spawn` also covers `tokio::task::spawn`. A second entry for the same function would silently replace the first one's reason. Clippy also can't ban a trait method by path (`ThreadRng::default`), so such cases ban the type in `disallowed-types`. The `tokio` and `rand` entries carry `allow-invalid = true`: their functions exist only with some of the crates' features (rand's `thread_rng`, tokio's `rt` and `time`), and without it clippy warns in every crate that uses fewer features. A misspelled entry is still caught, because the lint canary compiles them all and requires every entry to fire. Every entry needs a fixture in the lint canary, which also checks that clippy reports the configured reason.
 
 Release profile:
 
