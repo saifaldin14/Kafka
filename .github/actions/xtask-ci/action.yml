@@ -1,0 +1,46 @@
+name: cargo xtask ci
+description: >-
+  Installs the toolchain pinned in rust-toolchain.toml and the tools the given steps
+  need, then runs those `cargo xtask ci` steps. Every CI job runs its checks through
+  this action, so each check is defined once, in xtask/src/ci.rs.
+
+inputs:
+  steps:
+    description: Space-separated `cargo xtask ci` step names (`cargo xtask ci --list` shows them).
+    required: true
+  log:
+    description: If set, a file that also receives the steps' output, for a later step to read.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Install the pinned toolchain
+      shell: bash
+      # With no name, rustup installs the toolchain and components from rust-toolchain.toml.
+      run: rustup toolchain install --profile minimal
+
+    - name: Install the tools the steps need
+      shell: bash
+      env:
+        CI_STEPS: ${{ inputs.steps }}
+      run: |
+        args=()
+        for step in $CI_STEPS; do args+=(--step "$step"); done
+        cargo xtask tools install "${args[@]}"
+
+    - name: Run the steps
+      shell: bash
+      env:
+        CI_STEPS: ${{ inputs.steps }}
+        CI_LOG: ${{ inputs.log }}
+      run: |
+        args=(--keep-going)
+        for step in $CI_STEPS; do args+=(--step "$step"); done
+        if [ -n "$CI_LOG" ]; then
+          set -o pipefail
+          cargo xtask ci "${args[@]}" 2>&1 | tee "$CI_LOG"
+        else
+          cargo xtask ci "${args[@]}"
+        fi

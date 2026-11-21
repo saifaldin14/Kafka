@@ -188,7 +188,7 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 
 ## Tooling commands (contract implemented in M0)
 
-`cargo xtask ci` runs every check CI runs, as named steps in a fixed order. CI jobs pick steps with `--step`, so each check is defined once, in `xtask/src/ci.rs`.
+`cargo xtask ci` runs every check CI runs, as named steps in a fixed order. CI jobs pick steps with `--step`, so each check is defined once, in `xtask/src/ci.rs`. Each job in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) runs its steps through the [`xtask-ci`](../../.github/actions/xtask-ci/action.yml) action, which installs the pinned toolchain and only the tools those steps need, and runs them with `--keep-going` so a job reports every failing step.
 
 | Command | Does |
 |---|---|
