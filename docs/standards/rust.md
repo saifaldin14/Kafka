@@ -196,7 +196,7 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 | `cargo xtask ci --list` | Lists the steps in run order |
 | `cargo xtask ci --step <name>` | Runs only the named steps (repeatable), still in run order |
 | `cargo xtask tools install [--step <name>]...` | Installs the pinned versions of the external tools, or only those the named steps need (`xtask/src/tools.rs` is the only place versions appear) |
-| `cargo xtask backlog check`, `next [--all] [-n N]`, `show <ID>`, `stats [--write]` | The backlog rules, the next ready tasks, one item with its dependencies, and the totals in the backlog README ([backlog rules](../backlog/README.md#choosing-the-next-task)); the same output as `backlog.py`, which FND-0045 retires |
+| `cargo xtask backlog check`, `next [--all] [-n N]`, `show <ID>`, `stats [--write]` | The backlog rules, the next ready tasks, one item with its dependencies, and the totals in the backlog README ([backlog rules](../backlog/README.md#choosing-the-next-task)) |
 
 | Step | Runs |
 |---|---|
@@ -206,6 +206,7 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 | `layers` | `cargo xtask check-layers`: crate dependency layering ([architecture §5](../architecture.md#5-layering-rules)); `--print` shows the layer table |
 | `manifests` | `cargo xtask check-manifests`: `[workspace.lints]` and `clippy.toml` equal the blocks in [workspace configuration](#workspace-configuration), compared as parsed TOML, and every member has `[lints] workspace = true` and inherits every dependency with `{ workspace = true }`; every advisory ignore in `deny.toml` has a `reason` and an `expiry` |
 | `workflows` | `cargo xtask check-workflows`: every `uses:` in `.github/workflows/` and `.github/actions/` is pinned to a commit SHA with a `# v…` comment, no workflow uses `pull_request_target`, and every job sets `timeout-minutes` and `permissions` |
+| `backlog` | `cargo xtask backlog check`: the backlog's format, dependency rules, feature statuses and README totals ([backlog rules](../backlog/README.md)) |
 | `lint-canary` | `cargo xtask lint-canary`: clippy on the fixtures in [`xtask/lint-canary`](../../xtask/lint-canary/src/lib.rs) must report exactly the lints their `expect-lint:` comments name, so a removed or weakened lint fails. Every `clippy.toml` entry must fire with its configured reason |
 | `deny` | `cargo deny --locked check bans licenses sources`: banned and duplicate crates, licenses, sources ([`deny.toml`](../../deny.toml)) |
 | `advisories` | `cargo deny --locked check advisories`: security advisories against `Cargo.lock`. Separate from `deny` because a new advisory depends on the date, not the change, so CI reports it without blocking unrelated PRs |

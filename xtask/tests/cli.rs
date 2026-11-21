@@ -59,6 +59,7 @@ fn ci_list_prints_the_steps_in_run_order() -> Result<(), Box<dyn Error>> {
             "layers",
             "manifests",
             "workflows",
+            "backlog",
             "lint-canary",
             "deny",
             "advisories",

@@ -12,8 +12,7 @@
 //!   listed, and the totals are current (unless `--allow-empty-features`).
 //!
 //! `--epic CODE` (repeatable) keeps only messages about those epics; everything is
-//! still parsed. The output is identical to docs/backlog/tools/backlog.py's, checked by
-//! goldens produced from it.
+//! still parsed. Goldens in `xtask/tests/fixtures/backlog/` specify the output.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::Write;
@@ -203,7 +202,7 @@ fn check_feature(
 }
 
 /// Depth-first search over task dependencies (feature dependencies expanded), visiting
-/// tasks in file order and dependencies in id order, as backlog.py does, so each cycle
+/// tasks in file order and dependencies in id order, so each cycle
 /// is reported once and in the same form.
 fn check_cycles(backlog: &Backlog, errors: &mut Vec<String>) {
     let graph: BTreeMap<&str, Vec<String>> = backlog
@@ -287,7 +286,8 @@ fn check_readme(
             let stale = current.trim() != backlog_stats::stats_text(backlog).trim();
             if !allow_empty_features && backlog.tasks().next().is_some() && stale {
                 errors.push(
-                    "README.md: totals are out of date; run `backlog.py stats --write`".to_owned(),
+                    "README.md: totals are out of date; run `cargo xtask backlog stats --write`"
+                        .to_owned(),
                 );
             }
         }
@@ -343,7 +343,7 @@ mod tests {
     }
 
     #[test]
-    fn every_rule_reports_the_same_text_as_backlog_py() {
+    fn every_rule_reports_its_error() {
         assert_eq!(
             check("check-errors", false, &[]),
             (golden("check-errors.check.txt"), false)
@@ -364,19 +364,10 @@ mod tests {
             check("check-errors", false, &["FFF"]),
             (golden("check-errors.epic-fff.txt"), false)
         );
-        // A file-level error has no item id; it is kept through the file name. The
-        // summary differs by design: backlog.py also counts the two items with unknown
-        // values, which this parser reports and leaves out (see the backlog module).
-        let (lines, passed) = check("malformed", true, &["DDD"]);
-        let expected = golden("malformed.epic-ddd.txt");
+        // A file-level error has no item id; it is kept through the file name.
         assert_eq!(
-            lines.split_last().map(|(_, errors)| errors),
-            expected.split_last().map(|(_, errors)| errors)
+            check("malformed", true, &["DDD"]),
+            (golden("malformed.epic-ddd.txt"), false)
         );
-        assert_eq!(
-            lines.last().map(String::as_str),
-            Some("3 items (2 tasks), 1 errors, 0 warnings")
-        );
-        assert!(!passed);
     }
 }

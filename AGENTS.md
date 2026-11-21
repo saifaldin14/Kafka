@@ -14,7 +14,7 @@ Alluvium is a new streaming platform written in Rust. It is fully compatible wit
 
 ## What to work on
 
-All work is planned in **[docs/backlog/](docs/backlog/README.md)**: epics, features and tasks with Jira-style statuses, dependencies and completion criteria. When asked what to do next, run `python3 docs/backlog/tools/backlog.py next` and follow the [selection rules](docs/backlog/README.md#choosing-the-next-task). Keep each task's status current in the same change as the work.
+All work is planned in **[docs/backlog/](docs/backlog/README.md)**: epics, features and tasks with Jira-style statuses, dependencies and completion criteria. When asked what to do next, run `cargo xtask backlog next` and follow the [selection rules](docs/backlog/README.md#choosing-the-next-task). Keep each task's status current in the same change as the work.
 
 ## Hard rules (summary; the skill is authoritative)
 
@@ -39,7 +39,7 @@ All work is planned in **[docs/backlog/](docs/backlog/README.md)**: epics, featu
 | `docs/guides/` | How to add a Kafka feature, how to debug |
 | `docs/crates/` | Per-crate deep dives: state machines, invariants, tests, debugging |
 | `docs/adr/` | Architecture decision records |
-| `docs/backlog/` | Every planned task with status, dependencies and milestones; `tools/backlog.py next` picks the next task |
+| `docs/backlog/` | Every planned task with status, dependencies and milestones; `cargo xtask backlog next` picks the next task |
 | `docs/parity.md` | Kafka 4.4.0 API scope and version ranges |
 | `docs/glossary.md` | Kafka and Alluvium terms |
 | `CONTRIBUTING.md` | Onboarding, setup, workflow |

@@ -10,6 +10,6 @@ error: dependency cycle: EEE-0001 -> EEE-0001
 error: dependency cycle: EEE-0003 -> EEE-0004 -> EEE-0003
 error: README.md: epic FFF is #3 but links to 02-fff-phi.md
 error: README.md: epic table links to missing file 04-hhh-missing.md
-error: README.md: totals are out of date; run `backlog.py stats --write`
+error: README.md: totals are out of date; run `cargo xtask backlog stats --write`
 error: README.md: epics missing from the epic table: ['GGG']
 10 items (6 tasks), 13 errors, 1 warnings
