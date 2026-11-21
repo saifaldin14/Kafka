@@ -14,7 +14,9 @@ fn deny(fixture: &str, check: &str) -> Result<(Option<i32>, String), Box<dyn Err
     let config = root.join("../deny.toml");
     let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
     let output = Command::new(cargo)
-        .args(["deny", "--frozen", "--manifest-path"])
+        // The assertions match plain text; CI sets CARGO_TERM_COLOR=always, which would
+        // otherwise make cargo-deny wrap its diagnostics in ANSI colour codes.
+        .args(["deny", "--frozen", "--color", "never", "--manifest-path"])
         .arg(manifest)
         .arg("--config")
         .arg(config)
