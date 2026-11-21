@@ -81,9 +81,10 @@ Done when: Fixture tests cover inline versions, inline paths for non-workspace c
 P2 · M1 · Task · deps: FND-0014 · labels: security, docs · ref: docs/standards/security.md#dependencies
 Done when: The command lists added, removed and upgraded crates from the two `Cargo.lock` files with license and transitive count; the PR template's dependency checkbox links to the five questions in security.md#dependencies. The command works offline from the two lockfiles plus `cargo metadata`; a unit test on two fixture lockfiles checks the diff; CI writes the output to the job summary when `Cargo.lock` changes; the questions are linked, not copied.
 
-### [To Do] FND-0017 `.github/dependabot.yml` for the `cargo` ecosystem: weekly, one PR per dependency, lockfile updates labelled `dependencies`
+### [In Progress] FND-0017 `.github/dependabot.yml` for the `cargo` ecosystem: weekly, one PR per dependency, lockfile updates labelled `dependencies`
 P1 · M0 · Task · deps: none · labels: security · ref: docs/standards/security.md#dependencies
 Done when: Dependabot's config validation passes on GitHub; the policy "dependency updates are separate PRs" in security.md is now automated and the doc says so.
+Notes: config committed and parsed locally; GitHub's Dependabot validation can only be confirmed after it is pushed. Set Done once the repository's Dependabot page shows no config errors.
 
 ## [Done] FND-F04 `xtask` framework
 P0 · M0 · Feature · deps: FND-F01
@@ -274,7 +275,7 @@ Done when: The workflow never runs on PRs; a dead link creates an issue listing 
 P2 · M0 · Task · deps: FND-0023, FND-0007, TYPE-F01 · labels: docs · ref: docs/standards/rust.md#modules-and-documentation
 Done when: Fixture crates with a missing doc, a missing line or a wrong layer are rejected; rust.md's "Modules and documentation" section shows the required lines; `alluvium-types` and `xtask` pass.
 
-## [To Do] FND-F11 Repository hygiene
+## [In Progress] FND-F11 Repository hygiene
 P2 · M0 · Feature · deps: none
 Scope: CODEOWNERS, issue templates, labels, branch protection settings documented.
 
@@ -294,6 +295,6 @@ Done when: The sync workflow creates and updates labels and never deletes labels
 P2 · M0 · Task · deps: FND-0037 · labels: docs, security
 Done when: Settings: required check `ci-success`; pull requests with one approval and code-owner review; dismissal of stale approvals; linear history; merge queue; no force pushes or deletions; Actions token read-only by default and approval for fork PRs; Dependabot alerts, secret scanning and push protection on; the ruleset is exported to `.github/rulesets/main.json`. The live settings match the document (screenshots or the `gh api` output are in the PR); the ruleset JSON imports cleanly; CONTRIBUTING links to the page.
 
-### [To Do] FND-0062 `.gitattributes`: `* text=auto eol=lf`, `**/src/generated/** linguist-generated=true`, `schemas/kafka-4.4.0/** linguist-vendored=true`, `Cargo.lock linguist-generated=true`
+### [Done] FND-0062 `.gitattributes`: `* text=auto eol=lf`, `**/src/generated/** linguist-generated=true`, `schemas/kafka-4.4.0/** linguist-vendored=true`, `Cargo.lock linguist-generated=true`
 P2 · M0 · Task · deps: none · ref: ADR-0008
 Done when: Generated code stays diffable (no `-diff`), as ADR-0008 requires, but is collapsed by default in PR views; checking out on a CRLF system produces LF files.
