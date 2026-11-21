@@ -176,7 +176,7 @@ Done when: A second run of an unchanged PR restores the cache and skips tool ins
 P0 · M0 · Task · deps: FND-0031, FND-0022 · labels: test · ref: docs/standards/testing.md#rules
 Done when: Both matrix legs run on every PR; a failing test fails only its leg and the report artifact is downloadable; runner images are pinned by label (not `-latest`), and the labels are recorded in the NFR-F10 portability matrix once it exists.
 
-### [To Do] FND-0034 CI `docs` job running `cargo xtask ci --step doc --step links`
+### [In Review] FND-0034 CI `docs` job running `cargo xtask ci --step doc --step links`
 P0 · M0 · Task · deps: FND-0031, FND-0054, FND-0055 · labels: docs
 Done when: An intentionally broken intra-doc link or Markdown anchor in a test PR fails the job; the job runs on Linux only, with a documented reason (rustdoc output does not depend on the platform).
 
