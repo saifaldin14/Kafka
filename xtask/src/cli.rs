@@ -46,7 +46,7 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
     ),
     (
         "check-manifests",
-        "Check that [workspace.lints], clippy.toml and member manifests match rust.md",
+        "Check [workspace.lints], clippy.toml and member manifests against rust.md, and deny.toml ignores",
     ),
     (
         "lint-canary",

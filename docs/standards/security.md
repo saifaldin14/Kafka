@@ -89,7 +89,7 @@ Before adding a dependency, the PR answers:
 [`deny.toml`](../../deny.toml) policy, checked by the `deny` step of `cargo xtask ci`:
 
 - **Scope:** every dependency on the supported targets, including optional ones (`all-features = true`).
-- **Advisories:** vulnerable, unsound, unmaintained and yanked crates are errors. Each ignore has a reason and an expiry date, written as `{ id = "RUSTSEC-…", reason = "…", expiry = "YYYY-MM-DD" }`; cargo-deny reports the advisory again once the date passes.
+- **Advisories:** vulnerable, unsound, unmaintained and yanked crates are errors. Each ignore has a reason and an expiry date, written as `{ id = "RUSTSEC-…", reason = "…", expiry = "YYYY-MM-DD" }`. The `manifests` step requires both fields; cargo-deny rejects a malformed date and reports the advisory again once the date passes.
 - **Licenses:** an allow-list of permissive licenses (MIT, Apache-2.0, BSD-2/3-Clause, ISC, Unicode-3.0, Zlib). An exception names the crate, the license and the reason.
 - **Bans:** duplicate versions warn and wildcard versions are errors. `openssl`, `openssl-sys` and `native-tls` are denied, to keep TLS on rustls (ADR-0006).
 - **Sources:** crates.io only. No other registries and no git dependencies (the `[sources]` section of `deny.toml`).

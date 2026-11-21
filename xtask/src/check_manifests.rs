@@ -7,6 +7,10 @@
 //! 2. `clippy.toml` equals the clippy.toml block there.
 //! 3. Every workspace member declares `[lints] workspace = true`, so it inherits the
 //!    lints.
+//! 4. Every `[advisories] ignore` entry in deny.toml is a table with an `id`, a
+//!    `reason` and an `expiry` (docs/standards/security.md#dependencies). cargo-deny
+//!    itself rejects a malformed date and reports the advisory again once the date
+//!    passes; it does not require either field.
 //!
 //! Files are parsed and compared as TOML values: comments, formatting, and the order of
 //! keys and of array entries don't matter. Every difference is reported in one run,
@@ -55,8 +59,8 @@ pub(crate) fn run(out: &mut impl Write) -> Exit {
     output::line(
         out,
         &format!(
-            "check-manifests: {} problem(s). Change the standard and the files together \
-             ({RUST_MD}#workspace-configuration)",
+            "check-manifests: {} problem(s). Each names the standard it breaks; to change a \
+             rule, change the standard and the files together",
             problems.len()
         ),
     );
@@ -75,6 +79,10 @@ fn check_repository(root: &Path) -> Result<Vec<String>, String> {
         &parse("clippy.toml", &read("clippy.toml")?)?,
         &standard,
     ));
+    problems.extend(check_advisory_ignores(&parse(
+        "deny.toml",
+        &read("deny.toml")?,
+    )?));
     let graph = graph::load(None).map_err(|error| error.to_string())?;
     let root = root
         .canonicalize()
@@ -182,6 +190,31 @@ pub(crate) fn check_member(file: &str, manifest: &Value) -> Option<String> {
     })
 }
 
+/// Rule 4: every advisory ignore in deny.toml carries a reason and an expiry.
+pub(crate) fn check_advisory_ignores(deny_toml: &Value) -> Vec<String> {
+    let mut problems = Vec::new();
+    for entry in deny_toml["advisories"]["ignore"]
+        .as_array()
+        .into_iter()
+        .flatten()
+    {
+        let id = entry["id"]
+            .as_str()
+            .or_else(|| entry.as_str())
+            .unwrap_or("(no id)");
+        for field in ["reason", "expiry"] {
+            if entry[field].as_str().is_none_or(str::is_empty) {
+                problems.push(format!(
+                    "deny.toml: the ignore for advisory `{id}` has no `{field}`; write \
+                     {{ id = \"{id}\", reason = \"…\", expiry = \"YYYY-MM-DD\" }} \
+                     (docs/standards/security.md#dependencies)"
+                ));
+            }
+        }
+    }
+    problems
+}
+
 /// Appends a line to `problems` for every place where `actual` differs from
 /// `expected`. Tables are compared key by key and arrays as sets of entries.
 fn diff(file: &str, key: &str, actual: &Value, expected: &Value, problems: &mut Vec<String>) {
@@ -240,7 +273,9 @@ fn join(key: &str, name: &str) -> String {
 mod tests {
     use serde_json::Value;
 
-    use super::{Standard, check_clippy, check_lints, check_member, parse, standard};
+    use super::{
+        Standard, check_advisory_ignores, check_clippy, check_lints, check_member, parse, standard,
+    };
 
     const RUST_MD: &str = "# Rust\n\n## Workspace configuration\n\nLints:\n\n```toml\n[workspace.lints.rust]\nunsafe_code = \"forbid\"\n\n[workspace.lints.clippy]\npedantic = { level = \"warn\", priority = -1 }\ntodo = \"deny\"\n```\n\nClippy:\n\n```toml\nallow-unwrap-in-tests = true\ndisallowed-methods = [\n  { path = \"std::process::exit\", reason = \"return errors\" },\n  { path = \"rand::rng\", reason = \"use the seeded RNG\" },\n]\n```\n\nRelease profile:\n\n```toml\n[profile.release]\npanic = \"abort\"\n```\n\n## Errors\n\n```toml\n[workspace.lints.rust]\nignored = \"because it is in another section\"\n```\n";
 
@@ -360,5 +395,42 @@ mod tests {
                 "{manifest}"
             );
         }
+    }
+
+    #[test]
+    fn advisory_ignores_need_a_reason_and_an_expiry() {
+        let complete = "[advisories]\nignore = [\n  { id = \"RUSTSEC-2026-0001\", reason = \"not reachable\", expiry = \"2026-12-31\" },\n]\n";
+        assert_eq!(
+            check_advisory_ignores(&toml(complete)),
+            Vec::<String>::new()
+        );
+        assert_eq!(
+            check_advisory_ignores(&toml("[advisories]\nignore = []\n")),
+            Vec::<String>::new()
+        );
+        let missing_reason = complete.replace("reason = \"not reachable\", ", "");
+        let problems = check_advisory_ignores(&toml(&missing_reason));
+        assert_eq!(problems.len(), 1, "{problems:?}");
+        assert!(
+            problems[0].starts_with(
+                "deny.toml: the ignore for advisory `RUSTSEC-2026-0001` has no `reason`"
+            ),
+            "{problems:?}"
+        );
+        let missing_expiry = complete.replace(", expiry = \"2026-12-31\"", "");
+        let problems = check_advisory_ignores(&toml(&missing_expiry));
+        assert!(
+            problems.len() == 1 && problems[0].contains("`RUSTSEC-2026-0001` has no `expiry`"),
+            "{problems:?}"
+        );
+        let bare_id = "[advisories]\nignore = [\"RUSTSEC-2026-0002\"]\n";
+        let problems = check_advisory_ignores(&toml(bare_id));
+        assert_eq!(problems.len(), 2, "{problems:?}");
+        assert!(
+            problems
+                .iter()
+                .all(|problem| problem.contains("`RUSTSEC-2026-0002`")),
+            "{problems:?}"
+        );
     }
 }
