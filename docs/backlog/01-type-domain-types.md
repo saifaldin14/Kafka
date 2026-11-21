@@ -4,11 +4,11 @@
 
 Shared domain vocabulary: identifier newtypes, validated names, time and randomness injection, secrets, and the type-level foundations for namespaces and key ranges.
 
-## [To Do] TYPE-F01 Identifier newtypes
+## [In Progress] TYPE-F01 Identifier newtypes
 P0 · M0 · Feature · deps: FND-F02
 Scope: `BrokerId`, `NodeId`, `PartitionIndex`, `ProducerId`, `ProducerEpoch`, `Sequence`, `LeaderEpoch`, `BrokerEpoch`, `MemberEpoch`, `GenerationId`, `CorrelationId` with checked construction and `Debug`/`Display`.
 
-### [To Do] TYPE-0001 Create `alluvium-types` (layer 0) with `NodeId` and `BrokerId`: `i32` newtypes, `TryFrom<i32>` rejecting negatives, `get()`, and nullable wire mapping (`-1` → `None`)
+### [Done] TYPE-0001 Create `alluvium-types` (layer 0) with `NodeId` and `BrokerId`: `i32` newtypes, `TryFrom<i32>` rejecting negatives, `get()`, and nullable wire mapping (`-1` → `None`)
 P0 · M0 · Task · deps: none · ref: clients/src/main/java/org/apache/kafka/common/Node.java @4.4.0
 Done when: The crate lives at `crates/alluvium-types` (the workspace switches to `members = ["crates/*", "xtask"]`), inherits `[workspace.lints]`, and its `lib.rs` `//!` doc covers responsibility, layer 0, Kafka counterparts at 4.4.0, invariants and entry-point types; `from_wire_nullable(-1)` is `Ok(None)` and other negatives return `IdError::Negative { kind, value }`; `Debug` prints `NodeId(3)` and `Display` prints `3`; the doc comment explains when to use `BrokerId` and when `NodeId` (glossary terms); `check-layers` passes.
 
