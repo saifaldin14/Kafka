@@ -104,7 +104,7 @@ Don't start a task whose dependencies aren't `Done`. Don't start work that has n
 
 **Refactoring.** Make no behavior change in the same PR. Tests must pass before and after, unchanged. If tests need changing, it isn't a pure refactor.
 
-**Adding a crate.** Only when its first real code lands, never as an empty placeholder. Register its layer in `xtask` and [docs/architecture.md](../../../docs/architecture.md). It inherits `[workspace.lints]`. Its `lib.rs` starts with a `//!` doc covering responsibility, layer, Kafka counterpart and key invariants.
+**Adding a crate.** Only when its first real code lands, never as an empty placeholder. Register its layer in `xtask` and [docs/architecture.md](../../../docs/architecture.md). It inherits `[workspace.lints]`. Its `lib.rs` starts with a `//!` doc covering responsibility, layer, Kafka counterpart and key invariants. Write its deep dive in [docs/crates/](../../../docs/crates/README.md) from the template.
 
 **Adding a dependency.** Add it in `[workspace.dependencies]` with minimal features. `cargo deny check` must pass. Justify it in the PR: what it does, why std or existing dependencies can't, maintenance status, `unsafe` usage, transitive dependency count.
 
@@ -135,6 +135,7 @@ Standards evolve. If a rule is wrong for a case, change the standard (and add an
 | Need | Read |
 |---|---|
 | System design, crates, layers, runtime model, invariants | [docs/architecture.md](../../../docs/architecture.md) |
+| How one crate works inside, and how to debug it | [docs/crates/](../../../docs/crates/README.md) |
 | Rust rules, lint config, async, errors, tooling commands | [docs/standards/rust.md](../../../docs/standards/rust.md) |
 | Logging, tracing fields, metrics, flight recorders, debug tools | [docs/standards/debuggability.md](../../../docs/standards/debuggability.md) |
 | Threat model, input handling, TLS/SASL/ACLs, dependencies | [docs/standards/security.md](../../../docs/standards/security.md) |
