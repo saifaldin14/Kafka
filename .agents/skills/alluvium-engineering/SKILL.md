@@ -28,13 +28,13 @@ The anti-slop rules below are specific cases of this principle. Apply its intent
 
 Do not implement any feature outside M0 until M0 has landed: the workspace, lint config, `xtask` checks, CI and `alluvium-types` (see the [milestones](../../../docs/backlog/README.md#milestones)). If asked to build a feature before then, say so and offer to do M0 first.
 
-To find the next task, run `python3 docs/backlog/tools/backlog.py next`. From M0 onward this moves to `cargo xtask backlog next`.
+To find the next task, run `cargo xtask backlog next`.
 
 Update this section when the phase changes.
 
 ## Before any task
 
-1. **Find the backlog task.** If asked "what's next", or given no specific task, pick one with `backlog.py next` and follow the [selection rules](../../../docs/backlog/README.md#choosing-the-next-task). If you were given work, find its task (`grep` or `backlog.py show <ID>`). If no task exists for it, add one first ([adding work](../../../docs/backlog/README.md#adding-work)). Check that the task's dependencies are `Done`, then set it to `In Progress`.
+1. **Find the backlog task.** If asked "what's next", or given no specific task, pick one with `cargo xtask backlog next` and follow the [selection rules](../../../docs/backlog/README.md#choosing-the-next-task). If you were given work, find its task (`grep` or `cargo xtask backlog show <ID>`). If no task exists for it, add one first ([adding work](../../../docs/backlog/README.md#adding-work)). Check that the task's dependencies are `Done`, then set it to `In Progress`.
 2. Identify the crate(s) and layer you are touching in [docs/architecture.md](../../../docs/architecture.md). If the work doesn't fit the layering rules, stop and propose an ADR. Do not bend the rules.
 3. Read the module docs (`//!`) of the code you are changing. They state its responsibility and invariants.
 4. For Kafka behavior, read the **Kafka 4.4.0 source** (tag `4.4.0` of `apache/kafka`) and the relevant KIP. Never guess Kafka semantics from memory.
@@ -122,7 +122,7 @@ A change is done only when all of these hold:
 - [ ] Errors carry context. New state transitions emit events with a `reason` and are in the flight recorder. New hot paths have metrics.
 - [ ] No new `unsafe`, unbounded queue, untimed network wait, unnamed task, secret in logs, or panic reachable from input.
 - [ ] Kafka-mirroring code has `// Parity:` citations.
-- [ ] The backlog task is updated (`In Review`, then `Done`), and new work found along the way is added as tasks. `backlog.py check` passes.
+- [ ] The backlog task is updated (`In Review`, then `Done`), and new work found along the way is added as tasks. `cargo xtask backlog check` passes.
 - [ ] Docs that describe the changed thing are updated in the same PR: module docs, architecture, standards, glossary, ADR.
 - [ ] A new engineer could understand the change from the code, its docs and the PR description alone.
 

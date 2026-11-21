@@ -8,11 +8,10 @@
 //! The commands load the repository backlog through [`with_repository_backlog`], which
 //! refuses to run on a backlog with format errors.
 //!
-//! This ports the parser of docs/backlog/tools/backlog.py (FND-F07). Until that script
-//! is deleted, error messages match its output exactly: the goldens in
-//! `xtask/tests/fixtures/backlog/` were produced by it. An item with an unknown status,
-//! priority, milestone or type is reported and then left out, where the script kept it
-//! as text; only already-broken backlogs can see the difference.
+//! The goldens in `xtask/tests/fixtures/backlog/` specify the parser's output and error
+//! messages. They were first produced by the Python script this replaced (FND-F07) and
+//! are now maintained with the code. An item with an unknown status, priority, milestone
+//! or type is reported and then left out.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
@@ -242,7 +241,7 @@ impl Backlog {
     }
 
     /// Adds `item`, registering a task with its feature. A duplicate id replaces the
-    /// earlier item in place, as backlog.py does.
+    /// earlier item in place, so the duplicate is reported once and the later one wins.
     fn insert(&mut self, item: Item) {
         let feature = item
             .feature
@@ -472,9 +471,8 @@ fn parse_item(
     let meta_line = file.line(index + 1).unwrap_or_default();
     let Some(meta) = Metadata::parse(meta_line) else {
         parsed.errors.push(format!(
-            "{location}: malformed metadata line after {}: {}",
-            heading.id,
-            python_repr(meta_line)
+            "{location}: malformed metadata line after {}: {:?}",
+            heading.id, meta_line
         ));
         return index + 1;
     };
@@ -831,47 +829,13 @@ fn split_field(text: &str) -> Option<(&str, Option<&str>)> {
     (!value.is_empty()).then_some((value, rest))
 }
 
-/// Python's `repr()` of a string, which backlog.py uses in error messages.
-fn python_repr(text: &str) -> String {
-    let quote = if text.contains('\'') && !text.contains('"') {
-        '"'
-    } else {
-        '\''
-    };
-    let mut repr = String::with_capacity(text.len() + 2);
-    repr.push(quote);
-    for c in text.chars() {
-        match c {
-            '\\' => repr.push_str("\\\\"),
-            '\n' => repr.push_str("\\n"),
-            '\r' => repr.push_str("\\r"),
-            '\t' => repr.push_str("\\t"),
-            c if c == quote => {
-                repr.push('\\');
-                repr.push(c);
-            }
-            c if c.is_control() => {
-                // Control characters are all below U+0100, so two hex digits suffice.
-                let code = u32::from(c);
-                repr.push_str("\\x");
-                for shift in [4, 0] {
-                    repr.push(char::from_digit((code >> shift) & 0xf, 16).unwrap_or('0'));
-                }
-            }
-            c => repr.push(c),
-        }
-    }
-    repr.push(quote);
-    repr
-}
-
 #[cfg(test)]
 mod tests {
     use std::path::Path;
 
     use serde_json::{Value, json};
 
-    use super::{Item, Level, load, parse, python_repr};
+    use super::{Item, Level, load, parse};
 
     fn fixture(name: &str) -> std::path::PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -911,7 +875,7 @@ mod tests {
     }
 
     #[test]
-    fn the_fixture_parses_to_the_same_items_as_backlog_py() {
+    fn the_valid_fixture_parses_to_the_golden_items() {
         let parsed = load(&fixture("valid")).unwrap_or_else(|error| panic!("{error}"));
         assert_eq!(parsed.errors, Vec::<String>::new());
         let expected: Value = serde_json::from_str(&golden("valid.items.json"))
@@ -922,7 +886,7 @@ mod tests {
     }
 
     #[test]
-    fn format_errors_match_backlog_py_with_file_and_line() {
+    fn format_errors_name_file_and_line() {
         let parsed = load(&fixture("malformed")).unwrap_or_else(|error| panic!("{error}"));
         let expected: Vec<String> = golden("malformed.errors.txt")
             .lines()
@@ -963,14 +927,5 @@ mod tests {
             .get("STOR-F04")
             .unwrap_or_else(|| panic!("no feature"));
         assert_eq!(feature.tasks, ["STOR-0031"]);
-    }
-
-    #[test]
-    fn python_repr_picks_quotes_and_escapes_like_python() {
-        assert_eq!(python_repr(""), "''");
-        assert_eq!(python_repr("P0 - M0"), "'P0 - M0'");
-        assert_eq!(python_repr("won't"), "\"won't\"");
-        assert_eq!(python_repr("it's \"x\""), "'it\\'s \"x\"'");
-        assert_eq!(python_repr("a\\b\tc\u{1}·"), "'a\\\\b\\tc\\x01·'");
     }
 }

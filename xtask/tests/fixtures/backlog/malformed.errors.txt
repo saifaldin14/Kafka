@@ -1,6 +1,6 @@
 01-ccc-gamma.md:3: task CCC-0009 appears before any feature
-01-ccc-gamma.md:11: malformed metadata line after Missing: ''
-01-ccc-gamma.md:13: malformed metadata line after CCC-0001: 'P0 - M0 - Task - deps: none'
+01-ccc-gamma.md:11: malformed metadata line after Missing: ""
+01-ccc-gamma.md:13: malformed metadata line after CCC-0001: "P0 - M0 - Task - deps: none"
 01-ccc-gamma.md:17: CCC-0002: missing or empty 'Done when:' line
 01-ccc-gamma.md:20: CCC-0003: unknown status 'Someday'
 01-ccc-gamma.md:20: CCC-0003: unknown priority 'P7'

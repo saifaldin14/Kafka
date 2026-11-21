@@ -35,7 +35,7 @@ jobs:
           steps: fmt clippy
 
   policy:
-    name: policy (layers, manifests, workflows, lint canary)
+    name: policy (layers, manifests, workflows, backlog, lint canary)
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -46,7 +46,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/xtask-ci
         with:
-          steps: layers manifests workflows lint-canary
+          steps: layers manifests workflows backlog lint-canary
 
   docs:
     name: docs (rustdoc, links)

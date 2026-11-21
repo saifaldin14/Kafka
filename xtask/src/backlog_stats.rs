@@ -2,8 +2,7 @@
 //!
 //! The tables are the "Totals" section of docs/backlog/README.md, between the
 //! `backlog-stats` markers. `--write` regenerates that section, and the backlog check
-//! fails when it is stale. The output is byte-identical to
-//! docs/backlog/tools/backlog.py's, checked by a golden produced from it.
+//! fails when it is stale. A golden in `xtask/tests/fixtures/backlog/` specifies the output.
 
 use std::collections::BTreeMap;
 use std::io::Write;
@@ -121,7 +120,7 @@ mod tests {
     use crate::backlog;
 
     #[test]
-    fn the_tables_match_backlog_py() {
+    fn the_tables_count_tasks_per_epic_and_milestone() {
         let fixtures = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/backlog");
         let parsed =
             backlog::load(&fixtures.join("valid")).unwrap_or_else(|error| panic!("{error}"));

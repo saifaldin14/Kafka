@@ -8,8 +8,7 @@
 //! ready tasks of the lowest milestone that still has open tasks, or, when that
 //! milestone has none ready, the first ready tasks of later milestones.
 //!
-//! `next` prints exactly what docs/backlog/tools/backlog.py prints, checked by goldens
-//! produced from it.
+//! Goldens in `xtask/tests/fixtures/backlog/` specify the output.
 
 use std::io::Write;
 
@@ -193,7 +192,7 @@ mod tests {
     }
 
     #[test]
-    fn next_matches_backlog_py() {
+    fn next_lists_ready_tasks_in_selection_order() {
         let backlog = valid();
         assert_eq!(next_lines(&backlog, false, 10), golden("valid.next.txt"));
         assert_eq!(next_lines(&backlog, true, 10), golden("valid.next-all.txt"));
