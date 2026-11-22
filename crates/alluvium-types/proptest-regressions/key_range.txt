@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 7da817a6a684614b9ba325ff910c956766b0b38d7dd14d5dfaf5359908ddcf47 # shrinks to ranges = [KeyRange { start: 0, end: 1 }, KeyRange { start: 1812724619, end: 1812724620 }, KeyRange { start: 1812724620, end: 1812724621 }, KeyRange { start: 3, end: 4 }, KeyRange { start: 2, end: 3 }, KeyRange { start: 1812724622, end: 2147483648 }, KeyRange { start: 1812724621, end: 1812724622 }, KeyRange { start: 1, end: 2 }, KeyRange { start: 5, end: 1812724619 }, KeyRange { start: 4, end: 5 }], pick = Index(10905105682257916166), fraction = Index(15748043345672403638)

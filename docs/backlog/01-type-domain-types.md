@@ -204,7 +204,7 @@ Done when: Property tests over the validation rules pass; `DEFAULT` round-trips 
 P1 · M0 · Task · deps: TYPE-0037 · labels: foundation-for:X-TENANT
 Done when: A property test over all valid `TopicName`, `GroupId` and `TransactionalId` values shows the round-trip is the identity and the display of a default-namespace name equals the plain Kafka name; non-default names can't be converted to a plain Kafka name without an explicit call that returns a typed error.
 
-## [In Progress] TYPE-F11 Key hash space and key ranges
+## [Done] TYPE-F11 Key hash space and key ranges
 P1 · M0 · Feature · deps: FND-F02 · labels: foundation-for:X-ELASTIC
 Scope: `KeyHash`, `KeyRange`, range arithmetic (split/merge/contains), murmur2-compatible hashing for Kafka partitioners.
 
@@ -225,7 +225,7 @@ Notes: Accepted as [ADR-0013](../adr/0013-key-hash-space.md): `KeyHash` is Kafka
 P1 · M0 · Task · deps: TYPE-0041 · labels: foundation-for:X-ELASTIC
 Done when: Property tests show `split_at` followed by `merge` is the identity, that `split_at` rejects split points outside the range or at its ends, that `merge` of non-adjacent ranges returns a typed error, and that exactly one of two split halves contains any hash.
 
-### [To Do] TYPE-0043 Key range coverage validation: check that a set of `KeyRange`s partitions the hash space exactly, and report the first gap or overlap with its bounds
+### [Done] TYPE-0043 Key range coverage validation: check that a set of `KeyRange`s partitions the hash space exactly, and report the first gap or overlap with its bounds
 P1 · M0 · Task · deps: TYPE-0042 · labels: foundation-for:X-ELASTIC
 Done when: Property tests generate valid partitions by random splits (accepted) and then remove, duplicate or shift one range (rejected with the right gap or overlap); META-F08 can call it to validate key-range mapping records.
 

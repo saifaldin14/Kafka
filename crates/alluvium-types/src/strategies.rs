@@ -388,3 +388,28 @@ pub fn key_range() -> impl Strategy<Value = KeyRange> {
             .prop_filter_map("ordered", |(a, b)| KeyRange::new(a.min(b), a.max(b)).ok()),
     ]
 }
+
+/// Sets of up to 17 non-empty [`KeyRange`]s that partition the hash space exactly, in
+/// random order: [`KeyRange::FULL`] split at random interior points.
+pub fn key_space_partition() -> impl Strategy<Value = Vec<KeyRange>> {
+    vec((any::<Index>(), any::<Index>()), 0..16)
+        .prop_map(|splits| {
+            let mut ranges = vec![KeyRange::FULL];
+            for (pick, point) in splits {
+                let index = pick.index(ranges.len());
+                let range = ranges[index];
+                let interior = usize::try_from(range.end() - range.start() - 1).unwrap_or(0);
+                if interior == 0 {
+                    continue;
+                }
+                let offset = u32::try_from(point.index(interior)).unwrap_or(0) + 1;
+                let at = KeyHash::try_from(range.start() + offset);
+                if let Ok((low, high)) = at.and_then(|at| range.split_at(at)) {
+                    ranges[index] = low;
+                    ranges.push(high);
+                }
+            }
+            ranges
+        })
+        .prop_shuffle()
+}
