@@ -216,6 +216,26 @@ pub(crate) const STEPS: &[CiStep] = &[
         requires: &[&tools::DENY],
         on_demand: false,
     },
+    // The fuzz targets are a workspace of their own, with their own lockfile, which
+    // `deny` doesn't see. Its advisories don't matter: nothing it builds ships.
+    CiStep {
+        name: "fuzz-deny",
+        summary: "Dependency policy for the fuzz workspace: bans, licenses, sources",
+        program: Program::Cargo,
+        args: &[
+            "deny",
+            "--manifest-path",
+            "fuzz/Cargo.toml",
+            "--locked",
+            "check",
+            "bans",
+            "licenses",
+            "sources",
+        ],
+        env: &[],
+        requires: &[&tools::DENY],
+        on_demand: false,
+    },
     // Separate from `deny`: a newly published advisory depends on the date, not on the
     // change being tested, so CI reports it without blocking unrelated PRs.
     CiStep {

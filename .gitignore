@@ -7,3 +7,4 @@
 *.profraw
 /fuzz/artifacts/
 /fuzz/corpus/
+/fuzz/target/

@@ -35,7 +35,13 @@ allow = [
 confidence-threshold = 0.93
 # The allow-list is the policy, not a record of what is currently used.
 unused-allowed-license = "allow"
-exceptions = []
+# This file serves the fuzz workspace too (`fuzz-deny`), so an exception for one
+# workspace is unused in the other.
+unused-license-exception = "allow"
+exceptions = [
+    # libFuzzer, from LLVM, which only the fuzz targets link (fuzz/README.md).
+    { crate = "libfuzzer-sys", allow = ["NCSA"] },
+]
 
 [licenses.private]
 # Workspace crates are unpublished and proprietary (ADR-0015): the allow-list above

@@ -1,0 +1,34 @@
+# The cargo-fuzz targets (docs/standards/testing.md), one per decoder. This is its own
+# workspace, which the main one excludes, so that only this one builds libFuzzer and it
+# can use the nightly toolchain pinned in rust-toolchain.toml. Run a target with
+# `cargo xtask fuzz` (README.md).
+[package]
+name = "alluvium-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+license-file = "../LICENSE"
+
+[package.metadata]
+cargo-fuzz = true
+
+[workspace]
+members = ["."]
+
+[dependencies]
+alluvium-types = { path = "../crates/alluvium-types" }
+libfuzzer-sys = "0.4.13"
+
+[[bin]]
+name = "types_topic_name"
+path = "fuzz_targets/types_topic_name.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "types_uuid_parse"
+path = "fuzz_targets/types_uuid_parse.rs"
+test = false
+doc = false
+bench = false
