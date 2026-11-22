@@ -207,6 +207,7 @@ Notes: check-workflows is verified locally and runs in `policy` on every PR. Dep
 ### [Done] FND-0039 Lint workflow files with actionlint (version pinned in the xtask tool table) as part of the `workflows` step
 P2 · M0 · Task · deps: FND-0038
 Done when: A workflow with an invalid expression or an unknown runner label fails the step locally and in CI; shellcheck findings in `run:` blocks are reported (actionlint's integration); the current workflows pass.
+Notes: In CI, a probe workflow with an unknown runner label, a malformed expression and an unquoted `$VAR` ([#16](https://github.com/saifaldin14/Kafka/pull/16), run [45021106188](https://github.com/saifaldin14/Kafka/actions/runs/45021106188)) failed `policy` with exactly those three findings, after `tools install` fetched and verified actionlint and shellcheck on the Linux runner. The current workflows pass.
 
 ### [Done] FND-0066 CI `doctest` step: `cargo test --workspace --doc --locked`, run in the `test` job on both OSes, because nextest does not run doctests
 P0 · M0 · Task · deps: FND-0021, FND-0033
