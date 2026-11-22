@@ -1,0 +1,13 @@
+Copyright (c) 2026 Saif Al-Din Ali. All rights reserved.
+
+Alluvium is proprietary software. No license to use, copy, modify, merge, publish,
+distribute, sublicense or sell it, or any part of it, is granted, except:
+
+- the rights that GitHub's Terms of Service give GitHub users over a public repository
+  (to view it and to fork it on GitHub); and
+- the third-party material listed in the NOTICE file, which remains under its own
+  license, the Apache License 2.0 (LICENSES/Apache-2.0.txt).
+
+Contributions from anyone other than the copyright holder are not accepted.
+
+See docs/adr/0015-project-license-and-contributor-terms.md for the reasons.

@@ -38,7 +38,8 @@ unused-allowed-license = "allow"
 exceptions = []
 
 [licenses.private]
-# Workspace crates have `publish = false` and no license field yet (see FND-0046).
+# Workspace crates are unpublished and proprietary (ADR-0015): the allow-list above
+# governs dependencies, not our own crates.
 ignore = true
 
 [bans]

@@ -6,7 +6,8 @@
 //!    docs/standards/rust.md#workspace-configuration.
 //! 2. `clippy.toml` equals the clippy.toml block there.
 //! 3. Every workspace member declares `[lints] workspace = true`, so it inherits the
-//!    lints.
+//!    lints, and `license-file.workspace = true`, so it carries the repository's
+//!    license ([ADR-0015](../../docs/adr/0015-project-license-and-contributor-terms.md)).
 //! 4. Every member declares each dependency as `{ workspace = true }`, adding only
 //!    `features` or `optional`: versions and sources live once, in the root
 //!    `[workspace.dependencies]` (docs/standards/rust.md#dependencies). Workspace
@@ -256,14 +257,22 @@ pub(crate) fn check_clippy(clippy_toml: &Value, standard: &Standard) -> Vec<Stri
     problems
 }
 
-/// Rule 3: a member manifest declares `[lints] workspace = true`.
-pub(crate) fn check_member(file: &str, manifest: &Value) -> Option<String> {
-    (manifest["lints"]["workspace"] != true).then(|| {
-        format!(
+/// Rule 3: a member manifest inherits the workspace lints and license file.
+pub(crate) fn check_member(file: &str, manifest: &Value) -> Vec<String> {
+    let mut problems = Vec::new();
+    if manifest["lints"]["workspace"] != true {
+        problems.push(format!(
             "{file}: `lints.workspace` must be true, so the crate inherits [workspace.lints] \
              (add `[lints]` with `workspace = true`)"
-        )
-    })
+        ));
+    }
+    if manifest["package"]["license-file"]["workspace"] != true {
+        problems.push(format!(
+            "{file}: the package must declare `license-file.workspace = true`, so it carries \
+             the repository's LICENSE (ADR-0015)"
+        ));
+    }
+    problems
 }
 
 /// The keys Cargo allows next to `workspace = true` in a member's dependency.
@@ -559,17 +568,31 @@ mod tests {
     }
 
     #[test]
-    fn a_member_must_inherit_the_workspace_lints() {
-        let inherits = "[package]\nname = \"a\"\n\n[lints]\nworkspace = true\n";
-        assert_eq!(check_member("a/Cargo.toml", &toml(inherits)), None);
+    fn a_member_must_inherit_the_workspace_lints_and_license() {
+        let license = "license-file.workspace = true\n";
+        let inherits = format!("[package]\nname = \"a\"\n{license}\n[lints]\nworkspace = true\n");
+        assert_eq!(
+            check_member("a/Cargo.toml", &toml(&inherits)),
+            Vec::<String>::new()
+        );
         for manifest in [
-            "[package]\nname = \"a\"\n",
-            "[package]\nname = \"a\"\n\n[lints]\nworkspace = false\n",
+            format!("[package]\nname = \"a\"\n{license}"),
+            format!("[package]\nname = \"a\"\n{license}\n[lints]\nworkspace = false\n"),
         ] {
-            assert!(
-                check_member("a/Cargo.toml", &toml(manifest))
-                    .is_some_and(|problem| problem
-                        .starts_with("a/Cargo.toml: `lints.workspace` must be true")),
+            let problems = check_member("a/Cargo.toml", &toml(&manifest));
+            assert_eq!(problems.len(), 1, "{manifest}");
+            assert!(problems[0].starts_with("a/Cargo.toml: `lints.workspace` must be true"));
+        }
+        for manifest in [
+            "[package]\nname = \"a\"\n\n[lints]\nworkspace = true\n",
+            "[package]\nname = \"a\"\nlicense-file = \"OTHER\"\n\n[lints]\nworkspace = true\n",
+        ] {
+            assert_eq!(
+                check_member("a/Cargo.toml", &toml(manifest)),
+                [
+                    "a/Cargo.toml: the package must declare `license-file.workspace = true`, so it \
+                  carries the repository's LICENSE (ADR-0015)"
+                ],
                 "{manifest}"
             );
         }
