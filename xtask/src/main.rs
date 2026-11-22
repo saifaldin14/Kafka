@@ -39,6 +39,7 @@ mod check_workflows;
 mod ci;
 mod cli;
 mod clock;
+mod doctor;
 mod graph;
 mod install;
 mod layers;
@@ -103,6 +104,7 @@ fn run(command: &Command, out: &mut impl std::io::Write) -> Exit {
         Command::Backlog(BacklogCommand::Stats { write }) => backlog_stats::run(*write, out),
         Command::Backlog(BacklogCommand::Check(options)) => backlog_check::run(options, out),
         Command::LintCanary => lint_canary::run(out),
+        Command::Doctor => doctor::run(out),
     }
 }
 

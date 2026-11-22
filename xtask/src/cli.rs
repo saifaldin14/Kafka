@@ -24,6 +24,7 @@ pub(crate) enum Command {
     CheckWorkflows,
     LintCanary,
     Backlog(BacklogCommand),
+    Doctor,
 }
 
 /// A `cargo xtask backlog` subcommand.
@@ -70,6 +71,10 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
     (
         "check-workflows",
         "Check that GitHub Actions files pin actions by SHA and set timeouts and permissions",
+    ),
+    (
+        "doctor",
+        "Check the local toolchain and tools, and print the fix for each problem",
     ),
     (
         "lint-canary",
@@ -175,6 +180,7 @@ pub(crate) fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Command,
         }
         "backlog" => parse_backlog(rest).map(Command::Backlog),
         "lint-canary" => no_arguments("lint-canary", rest).map(|()| Command::LintCanary),
+        "doctor" => no_arguments("doctor", rest).map(|()| Command::Doctor),
         "tools" => match rest.split_first() {
             None => Err(UsageError::MissingSubcommand { command: "tools" }),
             Some((sub, rest)) if sub == "install" => {
