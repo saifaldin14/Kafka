@@ -201,6 +201,7 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 | `cargo xtask ci --list` | Lists the steps in run order |
 | `cargo xtask ci --step <name>` | Runs only the named steps (repeatable), still in run order |
 | `cargo xtask doctor` | Checks the local setup: rustup's `cargo` first on `PATH`, the pinned toolchain and components, and the pinned tools (required); Docker, nightly and cargo-fuzz (optional). Prints the fix for each problem; exits 1 only when a required check fails |
+| `cargo xtask install-hooks [--uninstall]` | Optional: installs (or removes) a pre-push hook that runs `cargo xtask ci --step fmt --step clippy`. Never installed automatically; a hook xtask didn't write is left alone, with a warning |
 | `cargo xtask tools install [--step <name>]...` | Installs the pinned versions of the external tools, or only those the named steps need (`xtask/src/tools.rs` is the only place versions appear) |
 | `cargo xtask backlog check`, `next [--all] [-n N]`, `show <ID>`, `stats [--write]` | The backlog rules, the next ready tasks, one item with its dependencies, and the totals in the backlog README ([backlog rules](../backlog/README.md#choosing-the-next-task)) |
 

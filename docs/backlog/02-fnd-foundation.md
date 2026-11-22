@@ -276,7 +276,7 @@ Done when: Required checks: `cargo` is rustup's proxy (not Homebrew's or a distr
 P2 · M0 · Task · deps: none · labels: good-first-task
 Done when: `cargo fmt` and the editor settings agree (no reformatting churn on save in a sample edit); no user-specific paths are committed; CONTRIBUTING mentions the files.
 
-### [To Do] FND-0052 Optional git hooks: `cargo xtask install-hooks` writes a pre-push hook that runs `cargo xtask ci --step fmt --step clippy`, and `--uninstall` removes it
+### [Done] FND-0052 Optional git hooks: `cargo xtask install-hooks` writes a pre-push hook that runs `cargo xtask ci --step fmt --step clippy`, and `--uninstall` removes it
 P3 · M0 · Task · deps: FND-0021 · labels: good-first-task
 Done when: Hooks are never installed automatically; installing twice is idempotent; an existing hook that xtask did not write is left alone, with a warning.
 
