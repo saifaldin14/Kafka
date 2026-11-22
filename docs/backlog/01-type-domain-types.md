@@ -52,7 +52,7 @@ Done when: Property tests compare every operation with a naive model over small 
 P0 · M0 · Task · deps: TYPE-0002 · ref: clients/src/main/java/org/apache/kafka/common/requests/ListOffsetsRequest.java @4.4.0
 Done when: A property test over all `i64` shows that decode then encode is the identity for accepted values and that every other negative returns a typed error; `// Parity:` cites the `ListOffsetsRequest` constants; the doc states that which spec each API version may send is checked by the handler (API epic), not here.
 
-## [In Progress] TYPE-F03 Kafka-compatible UUID
+## [Done] TYPE-F03 Kafka-compatible UUID
 P0 · M0 · Feature · deps: FND-F02
 Scope: `Uuid` and `TopicId` with Kafka's base64url display, reserved zero/metadata ids, generation from the injected RNG.
 
@@ -64,7 +64,7 @@ Done when: `Display` is unpadded base64url (22 characters); `FromStr` follows `U
 P0 · M0 · Task · deps: TYPE-0011 · ref: clients/src/main/java/org/apache/kafka/common/Uuid.java RESERVED @4.4.0
 Done when: `TopicId::try_from(Uuid::ZERO)` fails; nullable wire mapping turns `ZERO` into `None`; `TopicId::METADATA` displays as `AAAAAAAAAAAAAAAAAAAAAQ`; `// Parity:` cites `Uuid.RESERVED`.
 
-### [To Do] TYPE-0013 `Uuid::random(&mut rng)` from the injected RNG: version-4/IETF-variant bits like `java.util.UUID.randomUUID`, retrying while the value is reserved or its string form contains `-`, as `Uuid.randomUuid` does
+### [Done] TYPE-0013 `Uuid::random(&mut rng)` from the injected RNG: version-4/IETF-variant bits like `java.util.UUID.randomUUID`, retrying while the value is reserved or its string form contains `-`, as `Uuid.randomUuid` does
 P0 · M0 · Task · deps: TYPE-0012, TYPE-0029 · ref: clients/src/main/java/org/apache/kafka/common/Uuid.java randomUuid @4.4.0
 Done when: A fixed seed always produces the same sequence (golden values are committed); a property test over many seeds never yields a reserved UUID or a string containing `-`, and every value has version 4 and the IETF variant; nothing reads OS entropy.
 

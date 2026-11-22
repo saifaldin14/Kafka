@@ -55,7 +55,8 @@
 //! - [`collections`]: `SeededHashMap` and `SeededHashSet`, hashed under a `HashSeed`
 //!   drawn from a `SeededRng`, replacing `std`'s randomly seeded maps.
 //! - [`Uuid`]: Kafka's 128-bit ids, printed and parsed in Kafka's base64url form
-//!   ([`UuidError`] when a string isn't one), and [`TopicId`], which is never zero.
+//!   ([`UuidError`] when a string isn't one), generated from a [`SeededRng`] with
+//!   [`Uuid::random`]; and [`TopicId`], which is never zero.
 //! - [`IdError`]: why a value was rejected.
 //! - [`Secret`]: a value that is never printed and is zeroized on drop.
 //! - [`PayloadSummary`]: how record payloads are printed (length and CRC32C only).
