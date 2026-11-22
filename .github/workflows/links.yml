@@ -1,0 +1,54 @@
+# Weekly check of the external URLs in the docs (the `links-external` step, which no PR
+# runs: a site going down must not block unrelated changes). Dead links open a tracking
+# issue listing file:line and URL, or comment on the open one.
+name: External links
+
+on:
+  schedule:
+    - cron: "41 5 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: external-links
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: never
+
+jobs:
+  links:
+    name: links-external
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/xtask-ci
+        with:
+          steps: links-external
+      - name: Open or update the tracking issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          report=target/links-external.json
+          if [ -f "$report" ]; then
+            dead=$(jq -r '.error_map | to_entries[] | .key as $file | .value[]
+              | "- `\($file):\(.span.line // "?")` \(.url) (\(.status.text))"' "$report")
+          fi
+          title="Dead external links in the docs"
+          body=$(printf "The weekly \`cargo xtask ci --step links-external\` run found links that don't resolve.\n\n%s\n\nRun: %s\n\nFix each link, or replace it with an archived copy." "${dead:-No report was written; see the run log.}" "$RUN_URL")
+          number=$(gh issue list --state open --search "in:title \"$title\"" --json number,title \
+            --jq "map(select(.title == \"$title\")) | .[0].number // empty")
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body" --label docs
+          fi

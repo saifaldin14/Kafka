@@ -296,7 +296,7 @@ Done when: A broken intra-doc link, in either a public or a `pub(crate)` item, f
 P1 · M0 · Task · deps: FND-0021, FND-0020 · labels: docs
 Done when: A test PR with a broken relative link and a wrong heading anchor fails the step, naming both; all existing broken links are fixed in this PR, so main starts clean; external URLs are excluded from this step.
 
-### [To Do] FND-0056 Weekly scheduled workflow that checks external URLs in the same files (lychee online, with retries) and opens or updates one tracking issue when links are dead
+### [In Review] FND-0056 Weekly scheduled workflow that checks external URLs in the same files (lychee online, with retries) and opens or updates one tracking issue when links are dead
 P2 · M0 · Task · deps: FND-0055, FND-0031 · labels: docs
 Done when: The workflow never runs on PRs; a dead link creates an issue listing file:line and URL; permissions are `contents: read` and `issues: write` only.
 
