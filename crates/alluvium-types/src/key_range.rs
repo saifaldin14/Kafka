@@ -59,6 +59,29 @@ pub enum KeyRangeError {
         /// The rejected split point.
         at: u32,
     },
+    /// Part of the hash space that no range covers: the first such gap.
+    #[error("no key range covers [{start}, {end})")]
+    Gap {
+        /// The gap's start.
+        start: u32,
+        /// The gap's end.
+        end: u32,
+    },
+    /// Part of the hash space that two ranges cover: the first such overlap.
+    #[error("key ranges overlap on [{start}, {end})")]
+    Overlap {
+        /// The overlap's start.
+        start: u32,
+        /// The overlap's end.
+        end: u32,
+    },
+    /// An empty range in a set that should cover the space: it owns no keys, which
+    /// in a mapping means a corrupted or half-applied change.
+    #[error("empty key range at {at}")]
+    EmptyRange {
+        /// Where the empty range is.
+        at: u32,
+    },
     /// Two ranges that don't share a boundary.
     #[error(
         "key ranges [{first_start}, {first_end}) and [{second_start}, {second_end}) are not adjacent"
@@ -200,6 +223,45 @@ impl KeyRange {
     }
 }
 
+/// Checks that `ranges` partition the hash space exactly: every hash in exactly one
+/// range, and no empty range. META-F08 uses it to validate key-range mapping records.
+///
+/// # Errors
+///
+/// The first problem in hash order: [`KeyRangeError::Gap`] or
+/// [`KeyRangeError::Overlap`] with its bounds, or [`KeyRangeError::EmptyRange`].
+pub fn check_coverage(ranges: &[KeyRange]) -> Result<(), KeyRangeError> {
+    let mut sorted = ranges.to_vec();
+    sorted.sort_unstable();
+    // Everything below `covered` is covered exactly once so far.
+    let mut covered = 0;
+    for range in sorted {
+        if range.is_empty() {
+            return Err(KeyRangeError::EmptyRange { at: range.start });
+        }
+        if range.start > covered {
+            return Err(KeyRangeError::Gap {
+                start: covered,
+                end: range.start,
+            });
+        }
+        if range.start < covered {
+            return Err(KeyRangeError::Overlap {
+                start: range.start,
+                end: covered.min(range.end),
+            });
+        }
+        covered = range.end;
+    }
+    if covered < SPACE_END {
+        return Err(KeyRangeError::Gap {
+            start: covered,
+            end: SPACE_END,
+        });
+    }
+    Ok(())
+}
+
 impl fmt::Display for KeyHash {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
@@ -217,9 +279,11 @@ impl fmt::Display for KeyRange {
 mod tests {
     use proptest::prelude::{prop_assert, prop_assert_eq, proptest};
 
-    use super::{KeyHash, KeyRange, KeyRangeError, SPACE_END};
+    use proptest::sample::Index;
+
+    use super::{KeyHash, KeyRange, KeyRangeError, SPACE_END, check_coverage};
     use crate::partition_for_key;
-    use crate::strategies::{key_hash, key_range};
+    use crate::strategies::{key_hash, key_range, key_space_partition};
 
     fn hash(value: u32) -> KeyHash {
         KeyHash::try_from(value).unwrap()
@@ -303,7 +367,113 @@ mod tests {
         );
     }
 
+    fn range(start: u32, end: u32) -> KeyRange {
+        KeyRange::new(start, end).unwrap()
+    }
+
+    #[test]
+    fn coverage_reports_the_first_problem_with_its_bounds() {
+        assert_eq!(check_coverage(&[KeyRange::FULL]), Ok(()));
+        assert_eq!(
+            check_coverage(&[range(10, SPACE_END), range(0, 10)]),
+            Ok(())
+        );
+        assert_eq!(
+            check_coverage(&[]),
+            Err(KeyRangeError::Gap {
+                start: 0,
+                end: SPACE_END
+            })
+        );
+        assert_eq!(
+            check_coverage(&[range(0, 10), range(12, SPACE_END)]),
+            Err(KeyRangeError::Gap { start: 10, end: 12 })
+        );
+        assert_eq!(
+            check_coverage(&[range(0, 10), range(8, SPACE_END)]),
+            Err(KeyRangeError::Overlap { start: 8, end: 10 })
+        );
+        assert_eq!(
+            check_coverage(&[range(0, 10), range(10, 10), range(10, SPACE_END)]),
+            Err(KeyRangeError::EmptyRange { at: 10 })
+        );
+        assert_eq!(
+            check_coverage(&[range(0, 10)]),
+            Err(KeyRangeError::Gap {
+                start: 10,
+                end: SPACE_END
+            })
+        );
+    }
+
     proptest! {
+        #[test]
+        fn random_splits_of_the_space_are_accepted(ranges in key_space_partition()) {
+            prop_assert_eq!(check_coverage(&ranges), Ok(()));
+        }
+
+        #[test]
+        fn removing_a_range_leaves_exactly_its_gap(ranges in key_space_partition(), pick in proptest::prelude::any::<Index>()) {
+            let mut ranges = ranges;
+            let removed = ranges.remove(pick.index(ranges.len()));
+            prop_assert_eq!(
+                check_coverage(&ranges),
+                Err(KeyRangeError::Gap { start: removed.start(), end: removed.end() })
+            );
+        }
+
+        #[test]
+        fn duplicating_a_range_overlaps_exactly_on_it(ranges in key_space_partition(), pick in proptest::prelude::any::<Index>()) {
+            let mut ranges = ranges;
+            let copy = ranges[pick.index(ranges.len())];
+            ranges.push(copy);
+            prop_assert_eq!(
+                check_coverage(&ranges),
+                Err(KeyRangeError::Overlap { start: copy.start(), end: copy.end() })
+            );
+        }
+
+        #[test]
+        fn shifting_a_range_reports_the_gap_or_overlap_it_opens(
+            ranges in key_space_partition(),
+            pick in proptest::prelude::any::<Index>(),
+            fraction in proptest::prelude::any::<Index>(),
+        ) {
+            let mut sorted = ranges;
+            sorted.sort_unstable();
+            if sorted.len() >= 2 {
+                let i = pick.index(sorted.len());
+                let shifted = sorted[i];
+                let length = shifted.end() - shifted.start();
+                if i + 1 < sorted.len() {
+                    // Right by less than its length (and within the space): the start
+                    // it leaves is a gap.
+                    let room = (length - 1).min(SPACE_END - shifted.end());
+                    if room >= 1 {
+                        let delta = 1 + u32::try_from(fraction.index(usize::try_from(room).unwrap())).unwrap();
+                        sorted[i] = range(shifted.start() + delta, shifted.end() + delta);
+                        prop_assert_eq!(
+                            check_coverage(&sorted),
+                            Err(KeyRangeError::Gap { start: shifted.start(), end: shifted.start() + delta })
+                        );
+                    }
+                } else {
+                    // The last range, left by less than its own and its neighbour's
+                    // length: the part it moves into is an overlap.
+                    let previous = sorted[i - 1];
+                    let room = (length - 1).min(previous.end() - previous.start() - 1);
+                    if room >= 1 {
+                        let delta = 1 + u32::try_from(fraction.index(usize::try_from(room).unwrap())).unwrap();
+                        sorted[i] = range(shifted.start() - delta, shifted.end() - delta);
+                        prop_assert_eq!(
+                            check_coverage(&sorted),
+                            Err(KeyRangeError::Overlap { start: shifted.start() - delta, end: shifted.start() })
+                        );
+                    }
+                }
+            }
+        }
+
         #[test]
         fn split_then_merge_is_the_identity(range in key_range(), at in key_hash()) {
             match range.split_at(at) {
