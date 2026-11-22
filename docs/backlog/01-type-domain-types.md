@@ -160,7 +160,7 @@ P0 · M0 · Task · deps: TYPE-0029 · labels: security · ref: ADR-0012
 Done when: `siphasher` is justified per security.md#dependencies; `HashSeed`'s `Debug` prints `HashSeed(***)`; the same seed gives the same iteration order across runs (test); different seeds give different hashes for the same key (test); the module doc says iteration order must never reach output or decisions (use `BTreeMap` where order is observable); the clippy messages in clippy.toml point to these types, and the names match.
 Notes: Built with std's `with_hasher(seed)` and `with_capacity_and_hasher(capacity, seed)`, because `HashSeed` is itself the `BuildHasher`: no wrapper type or extension trait is needed for `with_seed` names, and `HashSeed` has no `Default`, so an unseeded `default()` or `collect()` doesn't compile.
 
-## [In Progress] TYPE-F08 Secrets
+## [Done] TYPE-F08 Secrets
 P0 · M0 · Feature · deps: FND-F02
 Scope: `Secret<T>` with redacted `Debug`/`Display`, zeroize on drop, explicit `expose_secret()`.
 
@@ -168,11 +168,11 @@ Scope: `Secret<T>` with redacted `Debug`/`Display`, zeroize on drop, explicit `e
 P0 · M0 · Task · deps: TYPE-0001 · labels: security · ref: clients/src/main/java/org/apache/kafka/common/config/types/Password.java @4.4.0
 Done when: `zeroize` is added to `[workspace.dependencies]` with the security.md#dependencies justification; `Clone` exists only where `T: Clone + Zeroize`, and both copies zeroize; the doc explains the difference from Kafka's `Password` (`[hidden]`) and the security.md rule that secrets never come from command-line arguments.
 
-### [To Do] TYPE-0032 Redaction tests for `Secret<T>`: `{:?}`, `{:#?}`, `{}`, a derived `Debug` of a struct containing a secret, and capture by a `tracing` test subscriber of `?secret` and `%secret` fields
+### [Done] TYPE-0032 Redaction tests for `Secret<T>`: `{:?}`, `{:#?}`, `{}`, a derived `Debug` of a struct containing a secret, and capture by a `tracing` test subscriber of `?secret` and `%secret` fields
 P0 · M0 · Task · deps: TYPE-0031 · labels: security, test · ref: docs/standards/security.md#secrets
 Done when: For random secret values (a property test), none of the outputs contains the secret or any substring of 4 or more of its characters; `tracing` is a dev-dependency only; the test is named in debuggability.md "Printing values".
 
-### [To Do] TYPE-0033 Zeroize-on-drop test for `Secret<T>` without `unsafe`: a test type whose `Zeroize` impl records the call proves drop zeroizes, including after `Clone` and when the secret sits inside a dropped container
+### [Done] TYPE-0033 Zeroize-on-drop test for `Secret<T>` without `unsafe`: a test type whose `Zeroize` impl records the call proves drop zeroizes, including after `Clone` and when the secret sits inside a dropped container
 P0 · M0 · Task · deps: TYPE-0031 · labels: security, test · ref: docs/standards/security.md#secrets
 Done when: The test fails if `Drop` stops calling `zeroize` (shown in the PR by temporarily removing it); no `unsafe` and no memory inspection are used.
 
