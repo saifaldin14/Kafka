@@ -16,9 +16,9 @@ use proptest::sample::{Index, select};
 
 use crate::{
     BrokerEpoch, BrokerId, ClientId, CorrelationId, GenerationId, GroupId, GroupInstanceId,
-    LeaderEpoch, MemberEpoch, MonotonicInstant, NodeId, Offset, OffsetRange, OffsetSpec,
-    PartitionIndex, ProducerEpoch, ProducerId, Sequence, TopicId, TopicIdPartition, TopicName,
-    TopicPartition, TransactionalId, Uuid, WallTime,
+    KeyHash, KeyRange, LeaderEpoch, MemberEpoch, MonotonicInstant, NodeId, Offset, OffsetRange,
+    OffsetSpec, PartitionIndex, ProducerEpoch, ProducerId, Sequence, TopicId, TopicIdPartition,
+    TopicName, TopicPartition, TransactionalId, Uuid, WallTime,
 };
 
 /// Non-negative `i32` values, with extra weight on 0, 1 and `i32::MAX`.
@@ -358,5 +358,33 @@ pub fn acks_wire_value() -> impl Strategy<Value = i16> {
         1 => Just(i16::MIN),
         1 => Just(i16::MAX),
         2 => any::<i16>(),
+    ]
+}
+
+/// Boundary values of the key hash space, `[0, 2^31]`, biased towards both ends.
+fn key_space_point() -> impl Strategy<Value = u32> {
+    prop_oneof![
+        1 => Just(0_u32),
+        1 => Just(1),
+        1 => Just((1 << 31) - 1),
+        1 => Just(1 << 31),
+        6 => 0..=(1_u32 << 31),
+    ]
+}
+
+/// [`KeyHash`]es over the whole space, biased towards 0, 1 and `2^31 - 1`.
+pub fn key_hash() -> impl Strategy<Value = KeyHash> {
+    key_space_point().prop_filter_map("inside the space", |value| KeyHash::try_from(value).ok())
+}
+
+/// [`KeyRange`]s: empty, small, large and the full space.
+pub fn key_range() -> impl Strategy<Value = KeyRange> {
+    prop_oneof![
+        1 => Just(KeyRange::FULL),
+        2 => (0..(1_u32 << 31), 0..64_u32).prop_filter_map("inside the space", |(start, length)| {
+            KeyRange::new(start, start.checked_add(length)?).ok()
+        }),
+        7 => (key_space_point(), key_space_point())
+            .prop_filter_map("ordered", |(a, b)| KeyRange::new(a.min(b), a.max(b)).ok()),
     ]
 }
