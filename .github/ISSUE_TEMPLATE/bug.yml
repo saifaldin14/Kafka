@@ -1,0 +1,42 @@
+name: Bug
+description: Alluvium behaves differently from its documentation or from Apache Kafka 4.4.0.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Never paste record keys, values or headers, credentials, tokens or other secrets**, here or in logs you attach ([debuggability standard](https://github.com/saifaldin14/Kafka/blob/main/docs/standards/debuggability.md#printing-values)). Alluvium's logs leave them out; check anything else before pasting.
+  - type: input
+    id: version
+    attributes:
+      label: Alluvium version
+      description: The release, or the commit SHA you built.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: |
+        The smallest steps, commands or test that show the bug. For a simulation failure, give the seed and the replay command it printed: `ALLUVIUM_SIM_SEED=<seed> cargo nextest run <test>`.
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: kafka
+    attributes:
+      label: What Kafka 4.4.0 does
+      description: The same steps against Apache Kafka 4.4.0, or the Kafka source (path at tag `4.4.0`) that defines the expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (redacted)
+      description: Relevant log lines, flight recorder output or `alluvium debug-bundle` contents.
+      render: text

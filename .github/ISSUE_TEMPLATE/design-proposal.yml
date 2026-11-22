@@ -1,0 +1,32 @@
+name: Design proposal
+description: Propose a decision that needs an ADR (docs/adr/README.md explains when).
+labels: [docs]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: The force that makes a decision necessary, and what Kafka 4.4.0 does here, if anything.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: The decision, stated so that someone can check whether code follows it.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Including changing or removing existing code, and doing nothing.
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Effect on Kafka compatibility
+      description: Kafka clients must not notice an enhancement unless an operator opts in (ADR-0010).
+    validations:
+      required: true
