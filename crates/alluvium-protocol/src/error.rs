@@ -1,4 +1,4 @@
-//! Why bytes could not be decoded.
+//! Why bytes could not be decoded, or a value could not be encoded.
 
 use std::fmt;
 
@@ -50,6 +50,35 @@ pub enum DecodeErrorKind {
     /// A varlong whose 10th byte has its continuation bit set.
     #[error("varlong is too long: the 10th byte has its continuation bit set")]
     VarlongTooLong,
+    /// A field that can't be null in this version has a null (negative) length.
+    #[error("a non-nullable field was serialized as null")]
+    UnexpectedNull,
+    /// An array declares more elements than there are bytes left, so it can't be real.
+    #[error("an array of {length} element(s) can't fit in the {remaining} byte(s) remaining")]
+    ArrayLongerThanInput {
+        /// The declared element count.
+        length: usize,
+        /// The bytes left in the input.
+        remaining: usize,
+    },
+}
+
+/// Why a value can't be encoded.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
+pub enum EncodeError {
+    /// A string longer than Kafka's 32767-byte limit.
+    #[error("a string of {length} bytes is longer than the 32767 bytes Kafka allows")]
+    StringTooLong {
+        /// The string's length in UTF-8 bytes.
+        length: usize,
+    },
+    /// A byte array, records or array too long for its length prefix.
+    #[error("a length of {length} doesn't fit in the length prefix")]
+    LengthTooLong {
+        /// The length.
+        length: usize,
+    },
 }
 
 /// Formats a field path as ` in A.B.C`, or nothing when empty.

@@ -22,11 +22,13 @@
 #![deny(clippy::indexing_slicing, clippy::arithmetic_side_effects)]
 
 mod error;
+mod framed;
 mod reader;
 mod varint;
 mod writer;
 
-pub use error::{DecodeError, DecodeErrorKind};
+pub use error::{DecodeError, DecodeErrorKind, EncodeError};
+pub use framed::Framing;
 pub use reader::Reader;
 pub use varint::{size_of_unsigned_varint, size_of_varint, size_of_varlong};
 pub use writer::Writer;

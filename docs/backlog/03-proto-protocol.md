@@ -170,47 +170,47 @@ Done when: i32::MIN, −1, 0 and i32::MAX round-trip; property round-trip; size_
 P0 · M1 · Task · deps: PROTO-0025 · labels: decoder · ref: clients/src/main/java/org/apache/kafka/common/utils/internals/ByteUtils.java readVarlong/writeVarlong/sizeOfVarlong @4.4.0
 Done when: a continuation bit on the 10th byte is `DecodeError::VarlongTooLong`; i64 extremes round-trip; property round-trip; size_of matches; ByteUtilsTest vectors ported.
 
-### [To Do] PROTO-0038 string codec (int16 length + UTF-8)
+### [Done] PROTO-0038 string codec (int16 length + UTF-8)
 P0 · M1 · Task · deps: PROTO-0027 · labels: decoder · ref: clients/src/main/java/org/apache/kafka/common/protocol/Readable.java readString @4.4.0
 Done when: negative length is `UnexpectedNull` for the non-nullable reader; length beyond remaining is Truncated; invalid UTF-8 decodes with U+FFFD replacement exactly like Java's `new String(bytes, UTF_8)` (vectors in PROTO-F10); encoding a string over 32767 bytes is `EncodeError::StringTooLong`.
 
-### [To Do] PROTO-0039 nullable string codec
+### [Done] PROTO-0039 nullable string codec
 P0 · M1 · Task · deps: PROTO-0038 · labels: decoder · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateVariableLengthReader @4.4.0
 Done when: any negative length decodes as None (Kafka treats every negative length as null); None encodes as −1; property round-trip.
 
-### [To Do] PROTO-0040 compact string codec (unsigned varint length + 1)
+### [Done] PROTO-0040 compact string codec (unsigned varint length + 1)
 P0 · M1 · Task · deps: PROTO-0035, PROTO-0038 · labels: decoder · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateVariableLengthReader @4.4.0
 Done when: the length is computed with Java int semantics (u32 reinterpreted as i32, minus 1, wrapping): 0 and 0x80000001–0xFFFFFFFF mean null and fail for the non-nullable reader, 0x80000000 becomes i32::MAX and fails as Truncated; property round-trip.
 
-### [To Do] PROTO-0041 compact nullable string codec
+### [Done] PROTO-0041 compact nullable string codec
 P0 · M1 · Task · deps: PROTO-0040 · labels: decoder · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateVariableLengthReader @4.4.0
 Done when: null encodes as length 0; every value Kafka reads as null decodes as None; property round-trip.
 
-### [To Do] PROTO-0042 bytes codec (int32 length) decoding to a zero-copy `Bytes` slice
+### [Done] PROTO-0042 bytes codec (int32 length) decoding to a zero-copy `Bytes` slice
 P0 · M1 · Task · deps: PROTO-0028 · labels: decoder · ref: clients/src/main/java/org/apache/kafka/common/protocol/Readable.java readArray/readByteBuffer @4.4.0
 Done when: negative length is `UnexpectedNull`; length beyond remaining is Truncated; the decoded slice shares the input allocation (pointer-range test); property round-trip.
 
-### [To Do] PROTO-0043 nullable bytes codec
+### [Done] PROTO-0043 nullable bytes codec
 P0 · M1 · Task · deps: PROTO-0042 · labels: decoder · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateVariableLengthReader @4.4.0
 Done when: any negative length decodes as None; None encodes as −1; property round-trip.
 
-### [To Do] PROTO-0044 compact bytes codec (unsigned varint length + 1)
+### [Done] PROTO-0044 compact bytes codec (unsigned varint length + 1)
 P0 · M1 · Task · deps: PROTO-0035, PROTO-0042 · labels: decoder · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateVariableLengthReader @4.4.0
 Done when: same Java int length semantics as compact strings; zero-copy slice; property round-trip.
 
-### [To Do] PROTO-0045 compact nullable bytes codec
+### [Done] PROTO-0045 compact nullable bytes codec
 P0 · M1 · Task · deps: PROTO-0044 · labels: decoder · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateVariableLengthReader @4.4.0
 Done when: null encodes as length 0; property round-trip including empty vs null.
 
-### [To Do] PROTO-0046 records field framing: int32 or compact length, null, raw `Bytes` slice
+### [Done] PROTO-0046 records field framing: int32 or compact length, null, raw `Bytes` slice
 P0 · M1 · Task · deps: PROTO-0043, PROTO-0045 · labels: decoder · ref: clients/src/main/java/org/apache/kafka/common/protocol/Readable.java readRecords; Writable.java writeRecords @4.4.0
 Done when: classic and compact framings decode to a slice of the frame without parsing it; negative length is null as in Kafka's readRecords; property round-trip.
 
-### [To Do] PROTO-0047 Array length prefix (int32, −1 = null) with element count checked against remaining bytes before allocation
+### [Done] PROTO-0047 Array length prefix (int32, −1 = null) with element count checked against remaining bytes before allocation
 P0 · M1 · Task · deps: PROTO-0028 · labels: decoder, security · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateVariableLengthReader @4.4.0
 Done when: a length greater than the remaining bytes fails before any allocation (Kafka's "Tried to allocate a collection of size" check); null handling per nullability; property round-trip of the prefix.
 
-### [To Do] PROTO-0048 Compact array length prefix (unsigned varint − 1) with the same remaining-bytes check
+### [Done] PROTO-0048 Compact array length prefix (unsigned varint − 1) with the same remaining-bytes check
 P0 · M1 · Task · deps: PROTO-0035, PROTO-0047 · labels: decoder, security · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateVariableLengthReader @4.4.0
 Done when: Java int wrapping semantics as for compact strings; zero means null; property round-trip.
 

@@ -16,6 +16,11 @@ impl Writer {
         self.buf.put_u8(byte);
     }
 
+    /// Appends bytes as they are.
+    pub(crate) fn put_slice(&mut self, bytes: &[u8]) {
+        self.buf.put_slice(bytes);
+    }
+
     /// An empty writer.
     pub fn new() -> Writer {
         Writer::default()
