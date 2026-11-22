@@ -125,7 +125,7 @@ Notes: Accepted as [ADR-0011](../adr/0011-time-model-and-clock-injection.md). It
 P0 · M0 · Task · deps: TYPE-0023, TYPE-0001 · ref: ADR-0011, clients/src/main/java/org/apache/kafka/common/utils/Time.java @4.4.0
 Done when: Adding a `Duration` to either type is checked and returns an error at overflow; `saturating_duration_since` never panics; there is no `From` conversion between the two types (a compile-fail doc test shows it); `Display` for wall time prints the millisecond value and an RFC 3339 UTC form.
 
-### [To Do] TYPE-0025 `Clock` trait and `SystemClock`: the only callers of `Instant::now` and `SystemTime::now`, each with one `#[expect(clippy::disallowed_methods, reason = "…")]`
+### [Done] TYPE-0025 `Clock` trait and `SystemClock`: the only callers of `Instant::now` and `SystemTime::now`, each with one `#[expect(clippy::disallowed_methods, reason = "…")]`
 P0 · M0 · Task · deps: TYPE-0024 · ref: clients/src/main/java/org/apache/kafka/common/utils/SystemTime.java @4.4.0
 Done when: A grep check in the test suite finds no other `#[expect(clippy::disallowed_methods` for time functions in the workspace except `xtask`'s `Stopwatch` (the dev-tool exception in ADR-0011); `SystemClock` can convert a `MonotonicInstant` back to a `std::time::Instant` (for `TokioTimer`); a wall clock before the Unix epoch returns a typed error instead of panicking; `Clock` is `Send + Sync + Debug`; the module doc links to the ADR.
 

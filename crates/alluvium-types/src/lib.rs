@@ -4,7 +4,9 @@
 //!
 //! Layer: 0 ([ADR-0009](../../../docs/adr/0009-crate-layering-and-dependency-rules.md)).
 //! It depends on no other Alluvium crate, and every crate may depend on it. Like all
-//! layer 0 crates it does no I/O, reads no clock and uses no randomness.
+//! layer 0 crates it does no I/O and uses no randomness. It defines [`SystemClock`], the
+//! one reader of the operating system's clocks, but never constructs it: only layer 3–5
+//! code does ([ADR-0011](../../../docs/adr/0011-time-model-and-clock-injection.md)).
 //!
 //! Kafka counterparts at 4.4.0, each cited with `// Parity:` where it is mirrored:
 //!
@@ -16,7 +18,8 @@
 //!   `JoinGroupRequest.java` (member epoch and generation sentinels);
 //! - `clients/.../common/requests/OffsetFetchResponse.java` and `ListOffsetsRequest.java`
 //!   (offset sentinels and `ListOffsets` special timestamps);
-//! - `clients/.../common/utils/Time.java` (wall-clock and monotonic readings);
+//! - `clients/.../common/utils/Time.java` and `SystemTime.java` (wall-clock and monotonic
+//!   readings);
 //! - `clients/.../common/config/types/Password.java` and
 //!   `clients/.../common/utils/internals/Crc32C.java`.
 //!
@@ -40,6 +43,8 @@
 //!   them, and what `ListOffsets` asks for.
 //! - [`MonotonicInstant`] and [`WallTime`]: points in time for deadlines and for
 //!   timestamps, never converted into each other ([`TimeError`] when out of range).
+//! - [`Clock`]: reads both, passed as `Arc<dyn Clock>`. [`SystemClock`] reads the
+//!   operating system ([`WallClockError`] when its wall clock is out of range).
 //! - [`IdError`]: why a value was rejected.
 //! - [`Secret`]: a value that is never printed and is zeroized on drop.
 //! - [`PayloadSummary`]: how record payloads are printed (length and CRC32C only).
@@ -49,6 +54,7 @@
 //! Errors here carry no Kafka error code: the Kafka error depends on where the value
 //! came from, so the decoder or handler that rejects it maps it.
 
+mod clock;
 mod epoch;
 mod id;
 mod offset;
@@ -59,6 +65,7 @@ mod secret;
 pub mod strategies;
 mod time;
 
+pub use clock::{Clock, SystemClock, WallClockError};
 pub use epoch::{BrokerEpoch, GenerationId, LeaderEpoch, MemberEpoch, PositiveEpoch};
 pub use id::{BrokerId, CorrelationId, IdError, IdKind, NodeId, PartitionIndex};
 pub use offset::{Offset, OffsetError, OffsetRange, OffsetSpec};
