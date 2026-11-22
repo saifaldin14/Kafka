@@ -1,3 +1,8 @@
+// Portions of this file are ported from Apache Kafka 4.4.0 and modified by Alluvium;
+// each is marked `// Ported from:`. Apache Kafka is Copyright The Apache Software
+// Foundation and licensed under the Apache License 2.0 (LICENSES/Apache-2.0.txt).
+// See NOTICE.
+
 //! `cargo xtask codegen`: Rust types from Kafka's message schemas and error codes,
 //! committed under each crate's `src/generated/`
 //! ([ADR-0008](../../docs/adr/0008-protocol-code-generated-from-kafka-schemas.md)).
@@ -47,6 +52,8 @@ pub(crate) struct Filter {
     pub(crate) error_codes: Option<ErrorCodes>,
     /// The directory of the overlay files (`overlays`) applied to the messages, if any.
     pub(crate) overlays: Option<PathBuf>,
+    /// The doc comment of the output directory's `mod.rs`: what the directory holds.
+    pub(crate) doc: String,
 }
 
 /// The inputs and outputs of `ErrorCode`.
@@ -81,6 +88,30 @@ fn protocol() -> (Vec<PathBuf>, PathBuf, Filter) {
                 page: root.join("docs/errors.md"),
             }),
             overlays: Some(root.join("xtask/codegen")),
+            doc: "Types generated from Kafka's sources: one module per message schema, and \
+                  `error_code` from `Errors.java` \
+                  ([ADR-0008](../../../../docs/adr/0008-protocol-code-generated-from-kafka-schemas.md))."
+                .to_owned(),
+        },
+    )
+}
+
+/// The protocol crate's test types: Kafka's generator test schemas, each combining many
+/// schema features in one small message. Compiled only for tests.
+fn test_messages() -> (Vec<PathBuf>, PathBuf, Filter) {
+    let root = crate::repo_root();
+    (
+        vec![root.join(VENDORED).join("clients-test")],
+        root.join("crates/alluvium-protocol/src/test_messages"),
+        Filter {
+            kinds: vec![MessageKind::Header],
+            runtime: "crate".to_owned(),
+            error_codes: None,
+            overlays: None,
+            doc: "Message types generated from the schemas Kafka's own generator tests use \
+                  (`schemas/kafka-4.4.0/clients-test/`). They exercise every schema feature in \
+                  small messages, for the tests of the generated code; nothing else uses them."
+                .to_owned(),
         },
     )
 }
@@ -100,65 +131,78 @@ pub(crate) struct Report {
 const SHOWN_PROBLEMS: usize = 10;
 
 pub(crate) fn run(check_only: bool, out: &mut impl Write) -> Exit {
-    let (inputs, out_dir, filter) = protocol();
-    let result = verify_vendored().and_then(|()| {
-        if check_only {
+    if let Err(error) = verify_vendored() {
+        output::line(out, &format!("error: {error}"));
+        return Exit::CheckFailed;
+    }
+    let mut problems = Vec::new();
+    for (inputs, out_dir, filter) in [protocol(), test_messages()] {
+        let result = if check_only {
             check(&inputs, &out_dir, &filter)
         } else {
             generate(&inputs, &out_dir, &filter).map(|report| (report, Vec::new()))
-        }
-    });
-    match result {
-        Ok((report, problems)) if problems.is_empty() => {
-            let deepest = report.deepest.map_or_else(String::new, |(name, depth)| {
-                format!(
-                    "; deepest {name} ({depth} levels, limit {})",
-                    structs::MAX_NESTING_DEPTH
-                )
-            });
-            let verb = if check_only {
-                "up to date"
-            } else {
-                "generated"
-            };
-            output::line(
-                out,
-                &format!(
-                    "codegen: {verb}: {} message modules and {} error codes in {}{deepest}",
-                    report.modules,
-                    report.error_codes,
-                    shown_path(&out_dir)
-                ),
-            );
-            Exit::Success
-        }
-        Ok((_, problems)) => {
-            for problem in problems.iter().take(SHOWN_PROBLEMS) {
-                output::line(out, problem);
+        };
+        match result {
+            Ok((report, found)) if found.is_empty() => {
+                output::line(out, &summary(&report, &out_dir, check_only));
             }
-            if let Some(more) = problems
-                .len()
-                .checked_sub(SHOWN_PROBLEMS)
-                .filter(|n| *n > 0)
-            {
-                output::line(out, &format!("... and {more} more"));
+            Ok((_, found)) => problems.extend(found),
+            Err(error) => {
+                output::line(out, &format!("error: {error}"));
+                return Exit::CheckFailed;
             }
-            output::line(
-                out,
-                &format!(
-                    "codegen --check: {} file(s) differ from the generated output; run `cargo \
-                     xtask codegen` and commit the result (generated files are never edited \
-                     by hand)",
-                    problems.len()
-                ),
-            );
-            Exit::CheckFailed
-        }
-        Err(error) => {
-            output::line(out, &format!("error: {error}"));
-            Exit::CheckFailed
         }
     }
+    if problems.is_empty() {
+        return Exit::Success;
+    }
+    for problem in problems.iter().take(SHOWN_PROBLEMS) {
+        output::line(out, problem);
+    }
+    if let Some(more) = problems
+        .len()
+        .checked_sub(SHOWN_PROBLEMS)
+        .filter(|n| *n > 0)
+    {
+        output::line(out, &format!("... and {more} more"));
+    }
+    output::line(
+        out,
+        &format!(
+            "codegen --check: {} file(s) differ from the generated output; run `cargo xtask \
+             codegen` and commit the result (generated files are never edited by hand)",
+            problems.len()
+        ),
+    );
+    Exit::CheckFailed
+}
+
+/// The line `run` prints for one output directory.
+fn summary(report: &Report, out_dir: &Path, check_only: bool) -> String {
+    let verb = if check_only {
+        "up to date"
+    } else {
+        "generated"
+    };
+    let error_codes = if report.error_codes == 0 {
+        String::new()
+    } else {
+        format!(" and {} error codes", report.error_codes)
+    };
+    let deepest = report
+        .deepest
+        .as_ref()
+        .map_or_else(String::new, |(name, depth)| {
+            format!(
+                "; deepest {name} ({depth} levels, limit {})",
+                structs::MAX_NESTING_DEPTH
+            )
+        });
+    format!(
+        "codegen: {verb}: {} message modules{error_codes} in {}{deepest}",
+        report.modules,
+        shown_path(out_dir)
+    )
 }
 
 /// Checks the vendored Kafka directory against its manifest.
@@ -345,7 +389,7 @@ fn render(inputs: &[PathBuf], filter: &Filter) -> Result<Rendered, String> {
         pages.insert(error_codes.page.clone(), errors::page(&entries, &source));
         report.error_codes = entries.len();
     }
-    let mut files = mod_files(&modules);
+    let mut files = mod_files(&modules, &filter.doc);
     files.extend(modules);
     let mut formatted = BTreeMap::new();
     for (file, source) in files {
@@ -425,7 +469,7 @@ fn module_doc(message: &message_spec::MessageSpec) -> String {
 
 /// The `mod.rs` of the output directory and of each subdirectory, declaring the modules
 /// in them.
-fn mod_files(modules: &BTreeMap<PathBuf, String>) -> BTreeMap<PathBuf, String> {
+fn mod_files(modules: &BTreeMap<PathBuf, String>, root_doc: &str) -> BTreeMap<PathBuf, String> {
     let mut declared: BTreeMap<PathBuf, Vec<String>> = BTreeMap::new();
     for file in modules.keys() {
         let directory = file.parent().map(Path::to_path_buf).unwrap_or_default();
@@ -448,9 +492,7 @@ fn mod_files(modules: &BTreeMap<PathBuf, String>) -> BTreeMap<PathBuf, String> {
             names.sort();
             names.dedup();
             let doc = if directory.as_os_str().is_empty() {
-                "Types generated from Kafka's sources: one module per message schema, and \
-                 `error_code` from `Errors.java` \
-                 ([ADR-0008](../../../../docs/adr/0008-protocol-code-generated-from-kafka-schemas.md))."
+                root_doc
             } else {
                 "Data types generated from Kafka's schemas: payloads that travel inside records \
                  and other messages rather than as requests."
@@ -463,7 +505,11 @@ fn mod_files(modules: &BTreeMap<PathBuf, String>) -> BTreeMap<PathBuf, String> {
             });
             (
                 directory.join("mod.rs"),
-                format!("{}\n{}\n{declarations}", header(""), docs::wrap(doc, "//! ")),
+                format!(
+                    "{}\n{}\n{declarations}",
+                    header(""),
+                    docs::wrap(doc, "//! ")
+                ),
             )
         })
         .collect()
@@ -552,7 +598,10 @@ mod tests {
 
     use alluvium_types::Uuid;
 
-    use super::{Filter, check, existing_files, generate, names, protocol, schema_files};
+    use super::{
+        Filter, VENDORED, check, existing_files, generate, names, protocol, render, schema_files,
+        test_messages,
+    };
     use crate::message_spec::{
         self, FieldDefault, FieldSpec, FieldType, MessageKind, MessageSpec, StructRegistry,
         Versions,
@@ -601,6 +650,7 @@ mod tests {
             runtime: "alluvium_protocol".to_owned(),
             error_codes: None,
             overlays: None,
+            doc: "Test records.".to_owned(),
         };
 
         let report = generate(std::slice::from_ref(&inputs), &out_dir, &filter).unwrap();
@@ -639,6 +689,59 @@ mod tests {
         assert!(problems[1].ends_with("extra.rs: no longer generated, so codegen would remove it"));
         std::fs::remove_dir_all(inputs).unwrap();
         std::fs::remove_dir_all(out_dir).unwrap();
+    }
+
+    // Ported from: generator/src/test/java/org/apache/kafka/message/MessageGeneratorTest.java@4.4.0
+    // (testToSnakeCase, testGenerateAndWriteMessageClasses).
+    #[test]
+    fn names_become_snake_case_as_in_kafka() {
+        assert_eq!(names::snake_case(""), "");
+        assert_eq!(names::snake_case("FooBarBaz"), "foo_bar_baz");
+        assert_eq!(names::snake_case("fooBarBaz"), "foo_bar_baz");
+        assert_eq!(names::snake_case("FORTRAN"), "fortran");
+    }
+
+    #[test]
+    fn a_message_without_valid_versions_generates_nothing() {
+        let schema = |kind: &str, valid: &str| {
+            let (name, listeners) = if kind == "request" {
+                ("Request", r#""listeners": ["broker"],"#)
+            } else {
+                ("Response", "")
+            };
+            format!(
+                r#"{{ "apiKey": 0, "type": "{kind}", {listeners} "name": "FooBar{name}",
+                     "validVersions": "{valid}", "flexibleVersions": "none",
+                     "fields": [ {{ "name": "field1", "type": "int32", "versions": "0+" }} ] }}"#
+            )
+        };
+        let filter = Filter {
+            kinds: vec![MessageKind::Request, MessageKind::Response],
+            runtime: "crate".to_owned(),
+            error_codes: None,
+            overlays: None,
+            doc: "Test messages.".to_owned(),
+        };
+        for (valid, expected) in [
+            ("none", Vec::<&str>::new()),
+            (
+                "0-2",
+                vec!["foo_bar_request.rs", "foo_bar_response.rs", "mod.rs"],
+            ),
+        ] {
+            let inputs = scratch("no-versions");
+            let out_dir = scratch("no-versions-out");
+            for kind in ["request", "response"] {
+                std::fs::write(inputs.join(format!("{kind}.json")), schema(kind, valid)).unwrap();
+            }
+            let report = generate(std::slice::from_ref(&inputs), &out_dir, &filter).unwrap();
+            let files = contents(&out_dir);
+            let names: Vec<&str> = files.keys().filter_map(|path| path.to_str()).collect();
+            assert_eq!(names, expected, "{valid}");
+            assert_eq!(report.modules, expected.len().saturating_sub(1), "{valid}");
+            std::fs::remove_dir_all(inputs).unwrap();
+            std::fs::remove_dir_all(out_dir).unwrap();
+        }
     }
 
     /// The committed generated module of `message`.
@@ -737,9 +840,18 @@ mod tests {
             FieldDefault::Float64(expected) => value
                 .parse::<f64>()
                 .is_ok_and(|parsed| parsed.to_bits() == expected.to_bits()),
-            FieldDefault::Uuid(expected) => {
-                *expected == Uuid::ZERO && value == "alluvium_types::Uuid::ZERO"
+            FieldDefault::Uuid(expected) if *expected == Uuid::ZERO => {
+                value == "alluvium_types::Uuid::ZERO"
             }
+            FieldDefault::Uuid(expected) => value
+                .strip_prefix("alluvium_types::Uuid::from_bits(")
+                .and_then(|rest| rest.strip_suffix(",)").or_else(|| rest.strip_suffix(')')))
+                .and_then(|bits| bits.split_once(','))
+                .is_some_and(|(most, least)| {
+                    let parse = |text: &str| text.trim().replace('_', "").parse::<i64>().ok();
+                    parse(most) == Some(expected.most_significant_bits())
+                        && parse(least) == Some(expected.least_significant_bits())
+                }),
             FieldDefault::String(expected) if expected.is_empty() => value == "String::new()",
             FieldDefault::String(expected) => value == format!("String::from({expected:?})"),
             FieldDefault::Empty => match &field.field_type {
@@ -796,11 +908,21 @@ mod tests {
             .0;
         for field in fields {
             let prefix = format!("            {}: ", names::identifier(&field.name));
-            let expression = block
-                .lines()
+            let mut lines = block.lines();
+            let mut expression = lines
                 .find_map(|line| line.strip_prefix(&prefix))
-                .and_then(|rest| rest.strip_suffix(','))
-                .unwrap_or_else(|| panic!("{name}.{} is not in Default", field.name));
+                .unwrap_or_else(|| panic!("{name}.{} is not in Default", field.name))
+                .to_owned();
+            // rustfmt splits a long expression; its last line closes at the field's indent.
+            if !expression.ends_with(',') {
+                for line in lines.by_ref() {
+                    expression.push_str(line.trim());
+                    if line.len() - line.trim_start().len() == 12 {
+                        break;
+                    }
+                }
+            }
+            let expression = expression.strip_suffix(',').unwrap();
             assert!(
                 is_schema_default(field, expression),
                 "{name}.{}: {expression}",
@@ -835,37 +957,58 @@ mod tests {
 
     #[test]
     fn committed_modules_match_the_schema_model() {
-        let (inputs, out_dir, filter) = protocol();
-        let mut checked = 0;
-        for path in schema_files(&inputs).unwrap() {
-            let text = std::fs::read_to_string(&path).unwrap();
-            let message = message_spec::load(&path.display().to_string(), &text).unwrap();
-            if !filter.kinds.contains(&message.kind) || message.valid_versions.is_empty() {
-                continue;
+        for ((inputs, out_dir, filter), expected) in [(protocol(), 195), (test_messages(), 6)] {
+            let mut checked = 0;
+            for path in schema_files(&inputs).unwrap() {
+                let text = std::fs::read_to_string(&path).unwrap();
+                let message = message_spec::load(&path.display().to_string(), &text).unwrap();
+                if !filter.kinds.contains(&message.kind) || message.valid_versions.is_empty() {
+                    continue;
+                }
+                let source = committed(&out_dir, &message);
+                check_constants(&message, &source);
+                let flexible = !message
+                    .valid_versions
+                    .intersect(message.flexible_versions)
+                    .is_empty();
+                check_struct(&source, &message.name, &message.fields, flexible);
+                let registry = StructRegistry::new(&message).unwrap();
+                check_structs(
+                    &source,
+                    &registry,
+                    &message.fields,
+                    message.flexible_versions,
+                );
+                checked += 1;
             }
-            let source = committed(&out_dir, &message);
-            check_constants(&message, &source);
-            let flexible = !message
-                .valid_versions
-                .intersect(message.flexible_versions)
-                .is_empty();
-            check_struct(&source, &message.name, &message.fields, flexible);
-            let registry = StructRegistry::new(&message).unwrap();
-            check_structs(
-                &source,
-                &registry,
-                &message.fields,
-                message.flexible_versions,
-            );
-            checked += 1;
+            assert_eq!(checked, expected, "{}", out_dir.display());
         }
-        assert_eq!(checked, 195);
+    }
+
+    #[test]
+    fn output_is_independent_of_input_order_and_names_no_absolute_path() {
+        let (mut inputs, _, filter) = test_messages();
+        // Adds RequestHeader and ResponseHeader, so the inputs interleave when sorted.
+        inputs.push(crate::repo_root().join(VENDORED).join("clients"));
+        let first = render(&inputs, &filter).unwrap();
+        inputs.reverse();
+        let second = render(&inputs, &filter).unwrap();
+        assert_eq!(first.files, second.files);
+        assert_eq!(first.files.len(), 9, "8 headers and mod.rs");
+        let root = crate::repo_root().display().to_string();
+        for (file, source) in &first.files {
+            for absolute in [root.as_str(), "/Users/", "/home/", ":\\"] {
+                assert!(!source.contains(absolute), "{}: {absolute}", file.display());
+            }
+        }
     }
 
     #[test]
     fn generated_code_suppresses_no_lint() {
-        let (_, out_dir, _) = protocol();
-        for file in existing_files(&out_dir).unwrap() {
+        let files = [protocol(), test_messages()]
+            .into_iter()
+            .flat_map(|(_, out_dir, _)| existing_files(&out_dir).unwrap());
+        for file in files {
             let source = std::fs::read_to_string(&file).unwrap();
             for suppression in ["#[allow", "#![allow", "#[expect", "#![expect"] {
                 assert!(
