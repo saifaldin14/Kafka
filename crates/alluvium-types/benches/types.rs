@@ -1,4 +1,5 @@
-//! Benchmarks for `alluvium-types`: `cargo bench -p alluvium-types`.
+//! Wall-time benchmarks for `alluvium-types`: `cargo bench -p alluvium-types --bench types`.
+//! The gated instruction counts of the same work are in `types_instructions.rs`.
 //!
 //! Conventions are in docs/standards/testing.md#benchmarks: names are
 //! `<area>/<operation>/<size>`, inputs are deterministic, and every benchmark declares
@@ -6,17 +7,15 @@
 
 use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 
-use alluvium_types::{PayloadSummary, SeededRng, murmur2};
+use alluvium_types::{PayloadSummary, murmur2};
 
-/// Kafka keys are usually short, but nothing stops a client sending a large one.
+mod inputs;
+
+use inputs::input;
+
+/// Kafka keys are usually short, but nothing stops a client sending a large one. The
+/// gated benchmarks in `types_instructions.rs` use the same sizes.
 const KEY_SIZES: [usize; 4] = [16, 256, 4 * 1024, 64 * 1024];
-
-/// Bytes from a fixed seed, so every run measures the same inputs.
-fn input(size: usize) -> Vec<u8> {
-    let mut bytes = vec![0; size];
-    SeededRng::from_seed(0x6d75_726d_7572_3200).fill_bytes(&mut bytes);
-    bytes
-}
 
 fn key_hash(c: &mut Criterion) {
     let mut group = c.benchmark_group("types/murmur2");

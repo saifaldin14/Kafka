@@ -20,6 +20,11 @@ const SANCTIONED: &[(&str, usize, &str)] = &[
         "SystemClock: Instant::now and SystemTime::now (ADR-0011)",
     ),
     (
+        "crates/alluvium-types/benches/types_instructions.rs",
+        1,
+        "gungraun's main! is the benchmark binary's main and calls process::exit (ADR-0019)",
+    ),
+    (
         "crates/alluvium-types/src/rng.rs",
         1,
         "SeededRng::from_os_entropy: getrandom::fill (ADR-0012)",

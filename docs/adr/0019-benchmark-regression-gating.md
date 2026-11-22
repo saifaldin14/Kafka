@@ -34,6 +34,9 @@ Every one of the 20 instruction counts for each size was identical: 166, 676, 8,
    - `gungraun-runner`, at the same version, is pinned in xtask's tool table.
    - valgrind comes from the runner's Ubuntu packages.
    - Valgrind runs only on Linux: on macOS the gated benchmarks run in the devcontainer.
+6. **The lints gungraun's macros trip are expected at the top of each gated file**, with this ADR as the reason:
+   - the expansion uses fully qualified paths and leaves its items undocumented;
+   - its `main!` calls `std::process::exit`. That call is the benchmark binary's own `main`, which is the one place `clippy.toml` allows a process to exit.
 
 ## Consequences
 

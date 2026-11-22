@@ -33,6 +33,7 @@ mod backlog;
 mod backlog_check;
 mod backlog_next;
 mod backlog_stats;
+mod bench;
 mod check_layers;
 mod check_manifests;
 mod check_workflows;
@@ -120,6 +121,7 @@ fn run(command: &Command, out: &mut impl std::io::Write) -> Exit {
         Command::Doctor => doctor::run(out),
         Command::InstallHooks { uninstall } => hooks::run(*uninstall, out),
         Command::Fuzz(command) => fuzz::run(command, out),
+        Command::Bench { base } => bench::run(base.as_deref(), out),
     }
 }
 

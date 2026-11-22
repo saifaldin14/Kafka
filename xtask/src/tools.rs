@@ -67,7 +67,15 @@ pub(crate) enum VersionOutput {
 }
 
 /// Every pinned tool.
-pub(crate) const TOOLS: &[Tool] = &[NEXTEST, DENY, LYCHEE, ACTIONLINT, SHELLCHECK, CARGO_FUZZ];
+pub(crate) const TOOLS: &[Tool] = &[
+    NEXTEST,
+    DENY,
+    LYCHEE,
+    ACTIONLINT,
+    SHELLCHECK,
+    CARGO_FUZZ,
+    GUNGRAUN_RUNNER,
+];
 
 /// The tools some CI step needs. These are required; the others, used only by commands
 /// such as `cargo xtask fuzz`, are installed on request with `--tool`.
@@ -111,6 +119,16 @@ pub(crate) const CARGO_FUZZ: Tool = Tool {
     name: "cargo-fuzz",
     version: "0.13.2",
     invocation: Invocation::CargoSubcommand("fuzz"),
+    source: Source::Crate,
+    version_output: VersionOutput::NameThenVersion,
+};
+
+/// Runs the gated benchmarks for `cargo xtask bench` under valgrind (ADR-0019). Its
+/// version must equal the `gungraun` dev-dependency's.
+pub(crate) const GUNGRAUN_RUNNER: Tool = Tool {
+    name: "gungraun-runner",
+    version: "0.20.0",
+    invocation: Invocation::Binary("gungraun-runner"),
     source: Source::Crate,
     version_output: VersionOutput::NameThenVersion,
 };
