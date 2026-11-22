@@ -258,9 +258,10 @@ Notes: Accepted as [ADR-0015](../adr/0015-project-license-and-contributor-terms.
 P1 · M0 · Task · deps: FND-0046, FND-0001 · labels: docs
 Done when: `cargo metadata` shows the license on every member; `cargo deny check licenses` passes; if the ADR requires SPDX headers, a `check-manifests` rule enforces them, with a fixture test.
 
-### [To Do] FND-0048 Root `NOTICE` file stating that Alluvium includes material from Apache Kafka (Copyright The Apache Software Foundation, Apache-2.0), with the content Apache-2.0 §4(d) requires carried over from Kafka 4.4.0's `NOTICE`
+### [Done] FND-0048 Root `NOTICE` file stating that Alluvium includes material from Apache Kafka (Copyright The Apache Software Foundation, Apache-2.0), with the content Apache-2.0 §4(d) requires carried over from Kafka 4.4.0's `NOTICE`
 P1 · M0 · Task · deps: FND-0046 · labels: docs · ref: ADR-0008
 Done when: NOTICE names the included material (vendored schemas under `schemas/kafka-4.4.0/`, closely ported tests and code); its text is compared with Kafka 4.4.0's `NOTICE` at tag 4.4.0 in the PR; ADR-0008 links to it.
+Notes: Compared with Kafka 4.4.0's `NOTICE` at tag 4.4.0: its first two notices (Apache Kafka copyright 2026; software developed at the ASF) are carried over verbatim; the jersey, streams-scala and Hive Murmur3 notices concern parts of Kafka that Alluvium doesn't include, so §4(d) excludes them (NOTICE says so). `LICENSES/Apache-2.0.txt` is apache.org's text (SHA-256 cfc7749b…3d30), and its terms equal the copy in Kafka 4.4.0's `LICENSE`. No schemas are vendored yet; FND-0049's procedure adds `schemas/kafka-4.4.0/` to NOTICE when PROTO vendors them.
 
 ### [To Do] FND-0049 Attribution procedure in CONTRIBUTING.md: the exact header for closely ported code or tests (source path at 4.4.0, copyright, Apache-2.0, "modified by Alluvium") and the `// Ported from:` test comment from testing.md
 P1 · M0 · Task · deps: FND-0046 · labels: docs · ref: ADR-0008
