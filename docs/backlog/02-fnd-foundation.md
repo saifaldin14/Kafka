@@ -245,13 +245,14 @@ P1 · M0 · Task · deps: FND-0042, FND-0043, FND-0044, FND-0036 · labels: docs
 Done when: CI fails a PR that breaks the backlog format or a dependency rule; no file references `backlog.py` (grep is clean); the golden tests no longer need Python.
 Notes: A PR breaking the backlog format ([#9](https://github.com/saifaldin14/Kafka/pull/9), run [44936714614](https://github.com/saifaldin14/Kafka/actions/runs/44936714614)) failed `policy` at the `backlog` step: "01-type-domain-types.md:19: malformed heading", plus stale totals. `git grep backlog.py` matches only FND-F07's own task descriptions, which record what was ported; every instruction, doc, code comment and error message now points to `cargo xtask backlog`. The goldens are the specification now, so their two Python-specific details changed: Rust string quoting for a malformed metadata line, and the item count for a backlog with invalid items.
 
-## [To Do] FND-F08 Licensing and attribution
+## [In Progress] FND-F08 Licensing and attribution
 P1 · M0 · Feature · deps: none
 Scope: Project license decision, `NOTICE` file, Apache-2.0 attribution for vendored Kafka material.
 
-### [To Do] FND-0046 Spike: choose the project license and contributor terms (Apache-2.0, MIT OR Apache-2.0, a copyleft or source-available license, or staying proprietary; DCO or CLA), with compatibility with included Apache Kafka material as a constraint
+### [Done] FND-0046 Spike: choose the project license and contributor terms (Apache-2.0, MIT OR Apache-2.0, a copyleft or source-available license, or staying proprietary; DCO or CLA), with compatibility with included Apache Kafka material as a constraint
 P1 · M0 · Spike · deps: none · labels: docs · ref: ADR-0008
 Done when: An accepted ADR "Project license and contributor terms" records the license, the contributor terms, whether files carry SPDX headers, and the consequences for ADR-0008's attribution rules; README.md's license statement matches it.
+Notes: Accepted as [ADR-0015](../adr/0015-project-license-and-contributor-terms.md): proprietary, all rights reserved; Kafka material keeps Apache-2.0 with `LICENSES/Apache-2.0.txt`, `NOTICE` and per-file headers; owner-only contributions, so no DCO or CLA; no SPDX headers. ADR-0008's attribution rules stand unchanged and now have a license to sit beside.
 
 ### [To Do] FND-0047 Apply the license decision: `LICENSE` file, the `license` field in `[workspace.package]`, and the `[licenses]` private-crate handling in `deny.toml` adjusted if the ADR requires it
 P1 · M0 · Task · deps: FND-0046, FND-0001 · labels: docs
