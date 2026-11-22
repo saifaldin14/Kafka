@@ -1,0 +1,280 @@
+//! Topic names, validated by Kafka's rules.
+
+use std::borrow::Cow;
+use std::fmt;
+
+/// A valid topic name: 1 to 249 characters from `[a-zA-Z0-9._-]`, and not `.` or `..`.
+///
+/// Every valid name is ASCII, so ordering by bytes is the same as Kafka's ordering of
+/// Java strings, and the name prints as is: it can't contain anything that would need
+/// escaping in a log line.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct TopicName(Cow<'static, str>);
+
+/// Why a string is not a valid topic name. Each variant is one of Kafka's rules, and a
+/// name that breaks several is reported with the first, in Kafka's order.
+///
+/// The name itself is not included: it is client-supplied and may be up to 32 KiB. The
+/// request handler, which has the name, maps this to `INVALID_TOPIC_EXCEPTION` with
+/// Kafka's message.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+pub enum TopicNameError {
+    /// The empty string.
+    #[error("the empty string is not allowed")]
+    Empty,
+    /// The name `.`.
+    #[error("'.' is not allowed")]
+    Dot,
+    /// The name `..`.
+    #[error("'..' is not allowed")]
+    DotDot,
+    /// More than 249 characters, counted as Kafka counts them, in UTF-16 code units.
+    #[error("the name is {length} characters long, longer than the maximum {MAX_LENGTH}")]
+    TooLong {
+        /// The length in UTF-16 code units.
+        length: usize,
+    },
+    /// A character outside the ASCII alphanumerics, `.`, `_` and `-`.
+    #[error(
+        "character {character:?} at position {position} is not an ASCII alphanumeric, '.', '_' or '-'"
+    )]
+    IllegalCharacter {
+        /// The first illegal character.
+        character: char,
+        /// Its position, counted in characters from 0.
+        position: usize,
+    },
+}
+
+/// Kafka's `MAX_NAME_LENGTH`.
+pub(crate) const MAX_LENGTH: usize = 249;
+
+impl TopicName {
+    /// The name.
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+// Parity: clients/src/main/java/org/apache/kafka/common/internals/Topic.java@4.4.0 Topic.detectInvalidTopic, Topic.containsValidPattern
+fn validate(name: &str) -> Result<(), TopicNameError> {
+    if name.is_empty() {
+        return Err(TopicNameError::Empty);
+    }
+    if name == "." {
+        return Err(TopicNameError::Dot);
+    }
+    if name == ".." {
+        return Err(TopicNameError::DotDot);
+    }
+    // Kafka checks the length in UTF-16 code units before checking characters, so a
+    // name of 200 non-ASCII characters is reported as an illegal character, not as too
+    // long. There are never more code units than bytes, so count only when the bytes
+    // exceed the limit.
+    if name.len() > MAX_LENGTH {
+        let length = name.encode_utf16().count();
+        if length > MAX_LENGTH {
+            return Err(TopicNameError::TooLong { length });
+        }
+    }
+    match name
+        .chars()
+        .enumerate()
+        .find(|(_, character)| !is_legal(*character))
+    {
+        Some((position, character)) => Err(TopicNameError::IllegalCharacter {
+            character,
+            position,
+        }),
+        None => Ok(()),
+    }
+}
+
+fn is_legal(character: char) -> bool {
+    character.is_ascii_alphanumeric() || matches!(character, '.' | '_' | '-')
+}
+
+impl TryFrom<&str> for TopicName {
+    type Error = TopicNameError;
+
+    fn try_from(name: &str) -> Result<TopicName, TopicNameError> {
+        validate(name)?;
+        Ok(TopicName(Cow::Owned(name.to_owned())))
+    }
+}
+
+impl TryFrom<String> for TopicName {
+    type Error = TopicNameError;
+
+    fn try_from(name: String) -> Result<TopicName, TopicNameError> {
+        validate(&name)?;
+        Ok(TopicName(Cow::Owned(name)))
+    }
+}
+
+impl fmt::Display for TopicName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use proptest::prelude::{any, prop_assert, prop_assert_eq, proptest};
+
+    use super::{MAX_LENGTH, TopicName, TopicNameError};
+    use crate::strategies::{invalid_topic_name, topic_name};
+
+    fn reject(name: &str) -> TopicNameError {
+        TopicName::try_from(name).unwrap_err()
+    }
+
+    // Ported from clients/src/test/java/org/apache/kafka/common/internals/TopicTest.java@4.4.0
+    // (Apache License 2.0). The collision tests are ported with TYPE-0016.
+
+    #[test]
+    fn should_accept_valid_topic_names() {
+        let max_length = "x".repeat(249);
+        for name in [
+            "valid",
+            "TOPIC",
+            "nAmEs",
+            "ar6",
+            "VaL1d",
+            "_0-9_.",
+            "...",
+            max_length.as_str(),
+        ] {
+            assert_eq!(TopicName::try_from(name).unwrap().as_str(), name);
+        }
+    }
+
+    #[test]
+    fn should_throw_on_invalid_topic_names() {
+        let too_long = "a".repeat(250);
+        for name in [
+            "",
+            "foo bar",
+            "..",
+            "foo:bar",
+            "foo=bar",
+            ".",
+            too_long.as_str(),
+        ] {
+            assert!(TopicName::try_from(name).is_err(), "{name:?}");
+        }
+    }
+
+    #[test]
+    fn should_recognize_invalid_characters_in_topic_names() {
+        for character in [
+            '/', '\\', ',', '\u{0}', ':', '"', '\'', ';', '*', '?', ' ', '\t', '\r', '\n', '=',
+        ] {
+            // Kafka's test puts the character after "Is ", so the space at position 2
+            // is the first illegal character; this checks the character alone too.
+            assert!(TopicName::try_from(format!("Is {character}illegal")).is_err());
+            assert_eq!(
+                reject(&format!("ok{character}")),
+                TopicNameError::IllegalCharacter {
+                    character,
+                    position: 2
+                }
+            );
+        }
+    }
+
+    // End of the ported cases.
+
+    #[test]
+    fn each_rule_in_kafkas_order() {
+        assert_eq!(reject(""), TopicNameError::Empty);
+        assert_eq!(reject("."), TopicNameError::Dot);
+        assert_eq!(reject(".."), TopicNameError::DotDot);
+        // Too long and illegal: too long is checked first.
+        assert_eq!(
+            reject(&" ".repeat(250)),
+            TopicNameError::TooLong { length: 250 }
+        );
+    }
+
+    #[test]
+    fn length_is_counted_in_utf16_code_units_like_java() {
+        // 200 two-byte characters: 400 bytes but 200 code units, so the illegal
+        // character is reported, as Kafka does.
+        assert_eq!(
+            reject(&"é".repeat(200)),
+            TopicNameError::IllegalCharacter {
+                character: 'é',
+                position: 0
+            }
+        );
+        // An emoji is two UTF-16 code units: 125 of them are 250 units.
+        assert_eq!(
+            reject(&"😀".repeat(125)),
+            TopicNameError::TooLong { length: 250 }
+        );
+        assert!(matches!(
+            reject(&"😀".repeat(124)),
+            TopicNameError::IllegalCharacter { .. }
+        ));
+    }
+
+    #[test]
+    fn errors_print_the_rule_without_the_name() {
+        assert_eq!(
+            reject("a\nb").to_string(),
+            r"character '\n' at position 1 is not an ASCII alphanumeric, '.', '_' or '-'"
+        );
+        assert_eq!(
+            reject(&"a".repeat(300)).to_string(),
+            "the name is 300 characters long, longer than the maximum 249"
+        );
+    }
+
+    /// Kafka's `detectInvalidTopic`, written out again as an independent check.
+    fn kafka_rule(name: &str) -> Option<TopicNameError> {
+        let utf16_length = name.encode_utf16().count();
+        if name.is_empty() {
+            Some(TopicNameError::Empty)
+        } else if name == "." {
+            Some(TopicNameError::Dot)
+        } else if name == ".." {
+            Some(TopicNameError::DotDot)
+        } else if utf16_length > 249 {
+            Some(TopicNameError::TooLong {
+                length: utf16_length,
+            })
+        } else {
+            name.chars()
+                .position(|c| !(c.is_ascii_alphanumeric() || "._-".contains(c)))
+                .and_then(|position| {
+                    Some(TopicNameError::IllegalCharacter {
+                        character: name.chars().nth(position)?,
+                        position,
+                    })
+                })
+        }
+    }
+
+    proptest! {
+        #[test]
+        fn names_over_the_legal_alphabet_are_accepted(name in topic_name()) {
+            let text = name.as_str().to_owned();
+            prop_assert!((1..=MAX_LENGTH).contains(&text.len()));
+            prop_assert_eq!(TopicName::try_from(text.as_str()), Ok(name.clone()));
+            prop_assert_eq!(TopicName::try_from(text), Ok(name));
+        }
+
+        #[test]
+        fn invalid_names_fail_the_rule_kafka_reports_first(name in invalid_topic_name()) {
+            let expected = kafka_rule(&name);
+            prop_assert!(expected.is_some(), "{:?} is valid", name);
+            prop_assert_eq!(TopicName::try_from(name.as_str()).err(), expected);
+        }
+
+        #[test]
+        fn any_string_gets_kafkas_verdict(name in any::<String>()) {
+            prop_assert_eq!(TopicName::try_from(name.as_str()).err(), kafka_rule(&name));
+        }
+    }
+}

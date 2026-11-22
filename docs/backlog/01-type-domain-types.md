@@ -72,7 +72,7 @@ Done when: A fixed seed always produces the same sequence (golden values are com
 P0 · M0 · Feature · deps: TYPE-F01
 Scope: `TopicName`, `GroupId`, `TransactionalId`, `ClientId`, `ListenerName` with Kafka's validation rules, internal-topic detection and `.`/`_` collision detection.
 
-### [To Do] TYPE-0014 `TopicName` validated by `TryFrom<&str>`/`TryFrom<String>` with Kafka's rules in Kafka's order: empty, `.`, `..`, longer than 249, characters outside `[a-zA-Z0-9._-]`; `TopicNameError` has one variant per rule
+### [Done] TYPE-0014 `TopicName` validated by `TryFrom<&str>`/`TryFrom<String>` with Kafka's rules in Kafka's order: empty, `.`, `..`, longer than 249, characters outside `[a-zA-Z0-9._-]`; `TopicNameError` has one variant per rule
 P0 · M0 · Task · deps: none · labels: decoder, security · ref: clients/src/main/java/org/apache/kafka/common/internals/Topic.java detectInvalidTopic @4.4.0
 Done when: Ported `TopicTest` cases pass; property tests show all strings over the legal alphabet with length 1-249 (except `.` and `..`) are accepted, and any string containing an illegal character or of length 250+ is rejected with the same rule Kafka reports first; strategies for valid names, invalid names per rule, and the 249/250 boundary are added; `// Parity:` cites `Topic.detectInvalidTopic`; mapping to `INVALID_TOPIC_EXCEPTION` is left to the handlers.
 
