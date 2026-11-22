@@ -14,6 +14,8 @@
 //!
 //! - `clients/.../common/Node.java` (node ids and the `-1` "no node" sentinel);
 //! - `clients/.../common/Uuid.java` (base64 form, signed ordering, reserved ids);
+//! - `clients/.../common/IsolationLevel.java` and `core/.../server/ReplicaManager.scala`
+//!   (isolation level and `acks` wire values);
 //! - `clients/.../common/internals/Topic.java` (topic name rules, also applied to group
 //!   instance ids by `JoinGroupRequest.java`);
 //! - `clients/.../common/record/internal/RecordBatch.java` and `DefaultRecordBatch.java`
@@ -66,6 +68,8 @@
 //! - [`GroupId`], [`GroupInstanceId`], [`TransactionalId`] and [`ClientId`]: ids
 //!   clients choose, printed with [`LogSafe`].
 //! - [`ListenerName`]: a listener's name, upper-cased as Kafka normalises it.
+//! - [`Acks`] and [`IsolationLevel`]: what a write waits for and what a read may see
+//!   ([`DeliveryError`] for other wire values).
 //! - [`TopicPartition`] and [`TopicIdPartition`]: a partition named by topic name, or by
 //!   topic id with the name when known.
 //! - [`IdError`]: why a value was rejected.
@@ -83,6 +87,7 @@ mod client_ids;
 mod clock;
 pub mod collections;
 mod deadline;
+mod delivery;
 mod epoch;
 mod id;
 mod listener;
@@ -102,6 +107,7 @@ mod uuid;
 pub use client_ids::{ClientId, GroupId, GroupInstanceId, TransactionalId};
 pub use clock::{Clock, ManualClock, SystemClock, WallClockError};
 pub use deadline::Deadline;
+pub use delivery::{Acks, DeliveryError, IsolationLevel};
 pub use epoch::{BrokerEpoch, GenerationId, LeaderEpoch, MemberEpoch, PositiveEpoch};
 pub use id::{BrokerId, CorrelationId, IdError, IdKind, NodeId, PartitionIndex};
 pub use listener::{BlankListenerName, ListenerName};

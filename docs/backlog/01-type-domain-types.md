@@ -228,11 +228,11 @@ Done when: Property tests show `split_at` followed by `merge` is the identity, t
 P1 · M0 · Task · deps: TYPE-0042 · labels: foundation-for:X-ELASTIC
 Done when: Property tests generate valid partitions by random splits (accepted) and then remove, duplicate or shift one range (rejected with the right gap or overlap); META-F08 can call it to validate key-range mapping records.
 
-## [To Do] TYPE-F12 Small domain enums and size types
+## [In Progress] TYPE-F12 Small domain enums and size types
 P1 · M0 · Feature · deps: FND-F02
 Scope: `IsolationLevel`, `Acks`, `TimestampType`, `CompressionType`, `CleanupPolicy`, `ByteSize`, with Kafka wire values.
 
-### [To Do] TYPE-0044 `IsolationLevel` (`ReadUncommitted` = 0, `ReadCommitted` = 1, wire `i8`) and `Acks` (`None` = 0, `Leader` = 1, `All` = -1, wire `i16`)
+### [Done] TYPE-0044 `IsolationLevel` (`ReadUncommitted` = 0, `ReadCommitted` = 1, wire `i8`) and `Acks` (`None` = 0, `Leader` = 1, `All` = -1, wire `i16`)
 P1 · M0 · Task · deps: TYPE-0002 · ref: core/src/main/scala/kafka/server/ReplicaManager.scala isValidRequiredAcks @4.4.0
 Done when: Tests over every `i8`/`i16` value show only the listed values decode and all others return typed errors (the produce handler maps an invalid `acks` to `INVALID_REQUIRED_ACKS`, citing `ReplicaManager.isValidRequiredAcks`); `// Parity:` cites `IsolationLevel.forId`; strategies include the invalid values.
 
