@@ -34,6 +34,8 @@ mod error_code;
 mod framed;
 #[rustfmt::skip]
 pub mod generated;
+#[cfg(test)]
+mod kafka_message_tests;
 mod limits;
 mod message;
 mod reader;
