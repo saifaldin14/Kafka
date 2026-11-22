@@ -41,6 +41,21 @@ impl Writer {
         }
     }
 
+    /// Appends what `write` puts in the buffer, or, when counting, adds `size()`: for a
+    /// value written a byte at a time, so the mode is checked once per value rather than
+    /// once per byte.
+    pub(crate) fn put_with(
+        &mut self,
+        size: impl FnOnce() -> usize,
+        write: impl FnOnce(&mut BytesMut),
+    ) {
+        if self.counting {
+            self.counted = self.counted.saturating_add(size());
+        } else {
+            write(&mut self.buf);
+        }
+    }
+
     /// Appends `bytes`, a value a frame can share rather than copy.
     pub(crate) fn put_shared(&mut self, bytes: &[u8]) {
         self.zero_copy = self.zero_copy.saturating_add(bytes.len());

@@ -10,6 +10,8 @@
 //! decoder would reject: an overlong encoding such as `0x80 0x00` is read, and the bits
 //! of an unsigned varint's 5th byte above bit 3 are dropped. Encoding is canonical.
 
+use bytes::BufMut;
+
 use crate::error::{DecodeError, DecodeErrorKind};
 use crate::reader::Reader;
 use crate::writer::Writer;
@@ -82,14 +84,19 @@ impl Writer {
     /// An unsigned varint, in the fewest bytes.
     // Parity: clients/src/main/java/org/apache/kafka/common/utils/internals/ByteUtils.java@4.4.0 ByteUtils.writeUnsignedVarint
     pub fn write_unsigned_varint(&mut self, value: u32) {
-        let mut rest = value;
-        while rest >= 0x80 {
-            let [low, ..] = rest.to_le_bytes();
-            self.put_u8(low | 0x80);
-            rest = rest.wrapping_shr(7);
-        }
-        let [low, ..] = rest.to_le_bytes();
-        self.put_u8(low);
+        self.put_with(
+            || size_of_unsigned_varint(value),
+            |buf| {
+                let mut rest = value;
+                while rest >= 0x80 {
+                    let [low, ..] = rest.to_le_bytes();
+                    buf.put_u8(low | 0x80);
+                    rest = rest.wrapping_shr(7);
+                }
+                let [low, ..] = rest.to_le_bytes();
+                buf.put_u8(low);
+            },
+        );
     }
 
     /// A zigzag-encoded `i32`.
@@ -101,14 +108,19 @@ impl Writer {
     /// A zigzag-encoded `i64`, in the fewest bytes.
     // Parity: clients/src/main/java/org/apache/kafka/common/utils/internals/ByteUtils.java@4.4.0 ByteUtils.writeVarlong
     pub fn write_varlong(&mut self, value: i64) {
-        let mut rest = zigzag64(value);
-        while rest >= 0x80 {
-            let [low, ..] = rest.to_le_bytes();
-            self.put_u8(low | 0x80);
-            rest = rest.wrapping_shr(7);
-        }
-        let [low, ..] = rest.to_le_bytes();
-        self.put_u8(low);
+        self.put_with(
+            || size_of_varlong(value),
+            |buf| {
+                let mut rest = zigzag64(value);
+                while rest >= 0x80 {
+                    let [low, ..] = rest.to_le_bytes();
+                    buf.put_u8(low | 0x80);
+                    rest = rest.wrapping_shr(7);
+                }
+                let [low, ..] = rest.to_le_bytes();
+                buf.put_u8(low);
+            },
+        );
     }
 }
 
