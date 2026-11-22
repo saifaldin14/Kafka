@@ -204,7 +204,7 @@ P1 · M0 · Task · deps: FND-0031, FND-0007 · labels: security · ref: docs/st
 Done when: Every `uses:` in `.github/workflows/*.yml` must be pinned to a 40-hex SHA with a `# v…` comment; every job sets `timeout-minutes` and explicit `permissions`; Dependabot covers the `github-actions` ecosystem weekly. Fixture workflows (tag-pinned action, missing timeout, missing permissions, `pull_request_target`) are each rejected with file:line; the real workflows pass; registered as the `workflows` step in the `policy` job; Dependabot opens SHA-bump PRs that keep the version comment.
 Notes: check-workflows is verified locally and runs in `policy` on every PR. Dependabot validated the new `github-actions` entry and ran it from main ([run 44937154825](https://github.com/saifaldin14/Kafka/actions/runs/44937154825), success, no updates). Closed at the user's request: the last criterion, a Dependabot PR that bumps a SHA and keeps the version comment, can only be observed after an action publishes a new release, since all of them are at their latest release today. Check the first such PR when it arrives.
 
-### [To Do] FND-0039 Lint workflow files with actionlint (version pinned in the xtask tool table) as part of the `workflows` step
+### [Done] FND-0039 Lint workflow files with actionlint (version pinned in the xtask tool table) as part of the `workflows` step
 P2 · M0 · Task · deps: FND-0038
 Done when: A workflow with an invalid expression or an unknown runner label fails the step locally and in CI; shellcheck findings in `run:` blocks are reported (actionlint's integration); the current workflows pass.
 

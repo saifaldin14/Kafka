@@ -15,14 +15,20 @@
 //! The files are read line by line rather than parsed as YAML, so every problem has an
 //! exact `file:line`. That relies on the style the workflows use: block YAML, indented
 //! two spaces per level, with jobs at two spaces under a top-level `jobs:`. A workflow in
-//! another style fails with "no jobs found" rather than passing unchecked; actionlint
-//! (FND-0039) checks the full syntax.
+//! another style fails with "no jobs found" rather than passing unchecked.
+//!
+//! Then the pinned actionlint checks the workflows' full syntax: expressions, contexts,
+//! runner labels, action inputs, and, through the pinned shellcheck, every `run:` script.
+//! actionlint skips shell checks silently when shellcheck is missing, so both tools are
+//! checked first.
 
 use std::io::Write;
 use std::path::Path;
+use std::process::Command;
 
 use crate::Exit;
 use crate::output;
+use crate::tools::{self, ACTIONLINT, SHELLCHECK};
 
 /// Runs the command on the repository's workflow and action files.
 pub(crate) fn run(out: &mut impl Write) -> Exit {
@@ -33,6 +39,8 @@ pub(crate) fn run(out: &mut impl Write) -> Exit {
             return Exit::CheckFailed;
         }
     };
+    let mut problems = problems;
+    problems.extend(actionlint(&crate::repo_root()));
     if problems.is_empty() {
         output::line(out, "check-workflows: ok");
         return Exit::Success;
@@ -48,6 +56,36 @@ pub(crate) fn run(out: &mut impl Write) -> Exit {
         ),
     );
     Exit::CheckFailed
+}
+
+/// Runs the pinned actionlint, with the pinned shellcheck, and returns its findings.
+fn actionlint(root: &Path) -> Vec<String> {
+    let missing: Vec<String> = [&ACTIONLINT, &SHELLCHECK]
+        .into_iter()
+        .filter_map(|tool| tools::check(tool).err())
+        .map(|problem| problem.to_string())
+        .collect();
+    if !missing.is_empty() {
+        return missing;
+    }
+    match Command::new(ACTIONLINT.name)
+        .args(["-no-color", "-oneline", "-shellcheck", SHELLCHECK.name])
+        .current_dir(root)
+        .output()
+    {
+        Err(error) => vec![format!("could not run actionlint: {error}")],
+        Ok(output) if output.status.success() => Vec::new(),
+        Ok(output) => {
+            let findings = String::from_utf8_lossy(&output.stdout);
+            let errors = String::from_utf8_lossy(&output.stderr);
+            findings
+                .lines()
+                .chain(errors.lines())
+                .filter(|line| !line.trim().is_empty())
+                .map(|line| format!("actionlint: {line}"))
+                .collect()
+        }
+    }
 }
 
 fn check_repository(root: &Path) -> Result<Vec<String>, String> {
