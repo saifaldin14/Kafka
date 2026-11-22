@@ -35,6 +35,17 @@ Decisions are in [ADR-0003](../adr/0003-deterministic-simulation-testing.md).
 
 Proptest strategies for a crate's types live in that crate, in a `strategies` module behind its `proptest-strategies` feature. Other crates enable the feature on their dev-dependency: `alluvium-types = { workspace = true, features = ["proptest-strategies"] }`. They don't live in `alluvium-testkit`, because testkit depends on those crates: a dev-dependency back to testkit would compile two copies of the types, and values from one copy wouldn't type-check against the other. Strategies produce valid values only and favour boundaries (0, 1, the maximum, and the wire sentinels where those are valid).
 
+Every strategy for a plain wire value is built from the boundary-bias helpers in `alluvium_types::strategies`, so a boundary bug in any field is found the same way:
+
+| Helper | Values |
+|---|---|
+| `boundary_i8`, `boundary_i16`, `boundary_i32`, `boundary_i64` | Any value, half the time -1 (Kafka's usual "none" sentinel), 0, 1 or an extreme (and `i32::MAX` for `i64`) |
+| `boundary_u16`, `boundary_u32` | Any value, half the time 0, 1, the signed maximum or the maximum |
+| `non_negative_i32`, `non_negative_i64` | Values a count or id can hold, biased towards 0, 1, `i32::MAX` and the maximum |
+| `string_up_to(max_bytes)`, `bytes_up_to(max_len)` | Empty, exactly the maximum length (for strings once ending in a multi-byte character), and anything in between |
+
+Generated message strategies come from the code generator (PROTO-0081) and record batch strategies from REC-F14. Both are built from these helpers rather than from `any::<T>()`.
+
 ## Simulation harness (`alluvium-testkit`)
 
 - Drives real layer 1–2 state machines (and, where needed, real drivers) with a simulated clock, network and disk, all controlled by one seeded RNG.
