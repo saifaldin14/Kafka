@@ -13,9 +13,9 @@
 //! already relies on, so no hashing crate is needed. Then every `.json` file is loaded
 //! as a schema (`message_spec`), so a file the code generator couldn't read fails here.
 //!
-//! `vendor` sparse-clones the tag into `target/`, copies [`SOURCES`] and Kafka's
-//! `LICENSE` and `NOTICE` into a staging directory, and compares it with the vendored
-//! one. `--dry-run` stops there and prints what would change; otherwise it replaces the
+//! `vendor` sparse-clones the tag into `target/`, copies [`SOURCES`],
+//! [`SOURCE_FILES`] and Kafka's `LICENSE` and `NOTICE` into a staging directory, and
+//! compares it with the vendored one. `--dry-run` stops there and prints what would change; otherwise it replaces the
 //! directory's files, keeping its README.md, and writes the manifest. It needs the
 //! network, so it never runs in CI.
 
@@ -56,6 +56,28 @@ pub(crate) const SOURCES: &[(&str, &str)] = &[
         "share-coordinator/src/main/resources/common/message",
     ),
     ("raft", "raft/src/main/resources/common/message"),
+    (
+        "errors",
+        "clients/src/main/java/org/apache/kafka/common/errors",
+    ),
+];
+
+/// Single Kafka files vendored, where each goes and its path in apache/kafka: the error
+/// code registry `ErrorCode` is generated from, and the two exception classes outside
+/// `common/errors` that its exceptions extend.
+pub(crate) const SOURCE_FILES: &[(&str, &str)] = &[
+    (
+        "errors/Errors.java",
+        "clients/src/main/java/org/apache/kafka/common/protocol/Errors.java",
+    ),
+    (
+        "errors/InvalidRecordException.java",
+        "clients/src/main/java/org/apache/kafka/common/InvalidRecordException.java",
+    ),
+    (
+        "errors/KafkaException.java",
+        "clients/src/main/java/org/apache/kafka/common/KafkaException.java",
+    ),
 ];
 
 /// Kafka's files copied to the top of each vendored directory.
@@ -400,6 +422,7 @@ fn vendor(root: &Path, tag: &str, dry_run: bool) -> Result<Vec<String>, String> 
         .iter()
         .map(|file| format!("/{file}"))
         .chain(SOURCES.iter().map(|(_, source)| format!("/{source}/")))
+        .chain(SOURCE_FILES.iter().map(|(_, source)| format!("/{source}")))
         .collect();
     sparse.extend(patterns.iter().map(String::as_str));
     git(&clone, &sparse)?;
@@ -420,6 +443,14 @@ fn vendor(root: &Path, tag: &str, dry_run: bool) -> Result<Vec<String>, String> 
                 )?;
             }
         }
+    }
+    for (file, source) in SOURCE_FILES {
+        if staging.join(file).exists() {
+            return Err(format!(
+                "{source} would overwrite {file}, copied from a directory"
+            ));
+        }
+        copy_file(&clone.join(source), &staging.join(file))?;
     }
     let manifest = Manifest {
         tag: tag.to_owned(),

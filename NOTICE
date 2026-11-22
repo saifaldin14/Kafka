@@ -43,5 +43,6 @@ header naming the schema it was generated from; its doc comments carry the schem
 
 Apache Kafka files copied unmodified, with Kafka's own LICENSE and NOTICE beside them:
 
-- schemas/kafka-4.4.0/: the message schemas of Apache Kafka 4.4.0 (see its README.md
-  for the source directory of each subdirectory).
+- schemas/kafka-4.4.0/: the message schemas of Apache Kafka 4.4.0, and the Java sources
+  of its error codes and exception classes (see its README.md for the source directory
+  of each subdirectory).

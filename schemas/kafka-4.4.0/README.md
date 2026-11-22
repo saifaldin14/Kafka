@@ -1,4 +1,4 @@
-# Apache Kafka 4.4.0 schemas, vendored
+# Apache Kafka 4.4.0 schemas and error sources, vendored
 
 The files under this directory are copied unmodified from Apache Kafka at tag `4.4.0`, commit `1156b2752aaa28eafc0b4c4d387e63356793268d`. `cargo xtask codegen` generates Alluvium's protocol code from them ([ADR-0008](../../docs/adr/0008-protocol-code-generated-from-kafka-schemas.md)).
 
@@ -16,5 +16,6 @@ They are Apache Kafka material under the Apache License 2.0. [`LICENSE`](LICENSE
 | `transaction-coordinator/` | `transaction-coordinator/src/main/resources/common/message/`: the transaction coordinator's records in `__transaction_state` |
 | `share-coordinator/` | `share-coordinator/src/main/resources/common/message/`: the share coordinator's records in `__share_group_state` |
 | `raft/` | `raft/src/main/resources/common/message/`: `QuorumStateData.json`, the `quorum-state` file a KRaft voter keeps on disk |
+| `errors/` | `clients/src/main/java/org/apache/kafka/common/errors/`: the exception classes, plus three single files: `common/protocol/Errors.java`, the error code registry, and `common/InvalidRecordException.java` and `common/KafkaException.java`, which those exceptions extend. `cargo xtask codegen` generates `ErrorCode` from them |
 
 One schema directory is deliberately not vendored: `streams/src/main/resources/common/message/` holds only `SubscriptionInfoData.json`, which Kafka Streams clients exchange inside consumer group subscription metadata. A broker passes those bytes through without reading them, so Alluvium never decodes them.

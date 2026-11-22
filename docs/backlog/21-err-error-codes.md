@@ -4,11 +4,11 @@
 
 All Kafka 4.4.0 error codes, the conventions for mapping typed errors to codes, and per-code verification that Alluvium returns each code in exactly the conditions Kafka does.
 
-## [To Do] ERR-F01 ErrorCode registry
+## [In Progress] ERR-F01 ErrorCode registry
 P0 · M1 · Feature · deps: FND-F04
 Scope: Generate `ErrorCode` from Errors.java: every code, name, retriable flag and default message; docs/errors.md table.
 
-### [To Do] ERR-0001 Vendor Kafka 4.4.0 Errors.java and the common/errors exception classes with a checksum manifest
+### [In Progress] ERR-0001 Vendor Kafka 4.4.0 Errors.java and the common/errors exception classes with a checksum manifest
 P0 · M1 · Task · deps: PROTO-F01, FND-F08 · labels: foundation-for:ERR · ref: clients/src/main/java/org/apache/kafka/common/protocol/Errors.java @4.4.0
 Done when: Errors.java and every class under clients/…/common/errors are vendored next to the message schemas with tag 4.4.0 and SHA-256 per file in a manifest; NOTICE carries the Apache-2.0 attribution; `cargo xtask codegen --check` fails if a vendored file changes without its manifest entry.
 
