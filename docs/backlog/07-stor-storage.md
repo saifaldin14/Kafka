@@ -135,6 +135,7 @@ Scope: Sparse offset index (relative offset, position): lookup, append, truncati
 ### [To Do] STOR-0029 Offset index entry codec: 8 bytes, big-endian relative offset (i32) and physical position (i32)
 P0 · M2 · Task · deps: none · labels: decoder · ref: storage/src/main/java/org/apache/kafka/storage/internals/log/OffsetIndex.java parseEntry, relativeOffset, physical @4.4.0
 Done when: Round-trip property test; decoding rejects negative positions and relative offsets with a typed error; fuzz target `offset_index` decodes arbitrary bytes without panic.
+Notes: The module that decodes these entries is added to `DECODER_FILES` in xtask/src/check_manifests.rs and starts with `#![deny(clippy::indexing_slicing, clippy::arithmetic_side_effects)]` (rust.md, FND-0008).
 
 ### [To Do] STOR-0030 Open an offset index through `Fs` into an in-memory entry cache: new files preallocated to `segment.index.bytes`, existing files loaded with entries = length / 8
 P0 · M2 · Task · deps: STOR-0029 · ref: storage/src/main/java/org/apache/kafka/storage/internals/log/AbstractIndex.java AbstractIndex, createMappedBuffer, roundDownToExactMultiple @4.4.0
@@ -195,6 +196,7 @@ Scope: Sparse timestamp index, lookup by timestamp, monotonic append rules.
 ### [To Do] STOR-0043 Time index entry codec: 12 bytes, big-endian timestamp (i64) and relative offset (i32)
 P0 · M2 · Task · deps: none · labels: decoder · ref: storage/src/main/java/org/apache/kafka/storage/internals/log/TimeIndex.java parseEntry, timestamp, relativeOffset @4.4.0
 Done when: Round-trip property test; fuzz target `time_index` decodes arbitrary bytes without panic.
+Notes: The module that decodes these entries is added to `DECODER_FILES` in xtask/src/check_manifests.rs and starts with `#![deny(clippy::indexing_slicing, clippy::arithmetic_side_effects)]` (rust.md, FND-0008).
 
 ### [To Do] STOR-0044 Open a time index through `Fs` into the in-memory cache and recover the last entry from the file
 P0 · M2 · Task · deps: STOR-0043 · ref: storage/src/main/java/org/apache/kafka/storage/internals/log/TimeIndex.java TimeIndex, lastEntryFromIndexFile @4.4.0
