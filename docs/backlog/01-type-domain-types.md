@@ -101,15 +101,15 @@ Done when: Tests cover null, empty and non-empty transactional ids, with a `// P
 P0 · M0 · Task · deps: TYPE-0001 · ref: clients/src/main/java/org/apache/kafka/common/network/ListenerName.java normalised @4.4.0
 Done when: Tests cover `plaintext` → `PLAINTEXT`, the empty string, whitespace-only input, and a non-ASCII case documented against Java's behavior; `// Parity:` cites `ListenerName.normalised`.
 
-## [To Do] TYPE-F05 Partition identities
+## [Done] TYPE-F05 Partition identities
 P0 · M0 · Feature · deps: TYPE-F03, TYPE-F04
 Scope: `TopicPartition`, `TopicIdPartition`, ordering and display conventions.
 
-### [To Do] TYPE-0021 `TopicPartition { topic: TopicName, partition: PartitionIndex }`: `Display` as `<topic>-<partition>` (Kafka's `toString`), `Ord` by topic then partition, and the `__cluster_metadata-0` constant (`Topic.CLUSTER_METADATA_TOPIC_PARTITION`)
+### [Done] TYPE-0021 `TopicPartition { topic: TopicName, partition: PartitionIndex }`: `Display` as `<topic>-<partition>` (Kafka's `toString`), `Ord` by topic then partition, and the `__cluster_metadata-0` constant (`Topic.CLUSTER_METADATA_TOPIC_PARTITION`)
 P0 · M0 · Task · deps: none · ref: clients/src/main/java/org/apache/kafka/common/TopicPartition.java toString @4.4.0
 Done when: Tests assert the display format and that a `BTreeSet` of partitions iterates in (topic, partition) order; strategies generate sets of partitions over few topics, for collisions; `// Parity:` cites `TopicPartition.toString`.
 
-### [To Do] TYPE-0022 `TopicIdPartition { topic_id: TopicId, partition: PartitionIndex, topic: Option<TopicName> }` for contexts where only the id is known (Fetch v13+); `Display` as `<topic_id>:<topic or null>-<partition>`; equality over all fields as in Kafka
+### [Done] TYPE-0022 `TopicIdPartition { topic_id: TopicId, partition: PartitionIndex, topic: Option<TopicName> }` for contexts where only the id is known (Fetch v13+); `Display` as `<topic_id>:<topic or null>-<partition>`; equality over all fields as in Kafka
 P0 · M0 · Task · deps: TYPE-0021 · ref: clients/src/main/java/org/apache/kafka/common/TopicIdPartition.java @4.4.0
 Done when: Tests cover the display with and without a name and equality when the name differs; the doc explains when the name is `None` and that resolving it is the metadata image's job (META); strategies are added.
 
