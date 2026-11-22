@@ -1,11 +1,13 @@
+// Portions of this file are ported from Apache Kafka 4.4.0 and modified by Alluvium;
+// each is marked `// Ported from:`. Apache Kafka is Copyright The Apache Software
+// Foundation and licensed under the Apache License 2.0 (LICENSES/Apache-2.0.txt).
+// See NOTICE.
+
 //! Kafka's key partitioning: the `murmur2` hash of a record's key, and the partition
 //! a producer chooses from it.
 //!
-//! [`murmur2`] is a close port of `Utils.murmur2` from Apache Kafka 4.4.0
-//! (`clients/src/main/java/org/apache/kafka/common/utils/Utils.java`), licensed under
-//! the Apache License 2.0, and modified: rewritten in Rust with unsigned wrapping
-//! arithmetic in place of Java's `int` overflow. Its golden test data was produced by
-//! running that Kafka code (`tests/golden/generate.sh`).
+//! [`murmur2`] is a close port of Kafka's `Utils.murmur2`. Its golden test data was
+//! produced by running that Kafka code (`tests/golden/generate.sh`).
 
 use std::num::NonZeroU32;
 
@@ -15,7 +17,8 @@ use crate::PartitionIndex;
 ///
 /// Java's `int` arithmetic wraps, so this computes on `u32` with wrapping operations
 /// and returns the bits as `i32`, exactly as Kafka returns them.
-// Parity: clients/src/main/java/org/apache/kafka/common/utils/Utils.java@4.4.0 Utils.murmur2
+// Ported from: clients/src/main/java/org/apache/kafka/common/utils/Utils.java@4.4.0
+// Utils.murmur2, with unsigned wrapping arithmetic in place of Java's `int` overflow.
 pub fn murmur2(data: &[u8]) -> i32 {
     const SEED: u32 = 0x9747_b28c;
     // Mixing constants from the original MurmurHash2.
@@ -109,8 +112,8 @@ pub(crate) mod tests {
         file.lines().filter(|line| !line.starts_with('#'))
     }
 
-    // Ported from clients/src/test/java/org/apache/kafka/common/utils/UtilsTest.java@4.4.0
-    // (Apache License 2.0), testMurmur2, unchanged apart from the language.
+    // Ported from: clients/src/test/java/org/apache/kafka/common/utils/UtilsTest.java@4.4.0
+    // UtilsTest.testMurmur2, unchanged apart from the language.
     #[test]
     fn kafka_test_vectors() {
         let cases: [(&[u8], i32); 6] = [

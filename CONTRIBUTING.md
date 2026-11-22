@@ -47,6 +47,34 @@ cargo run -- server --config config/dev.toml   # local single-node broker
 6. **Run `cargo xtask ci`** before pushing.
 7. **Fill in the PR template.** For bug fixes, the root cause and "why it escaped" are required.
 
+### Attributing Kafka material
+
+Most code reimplements Kafka behavior after reading Kafka's source. That needs only a `// Parity: <path>@4.4.0 <Class.method>` citation ([rust.md](docs/standards/rust.md#modules-and-documentation)), not attribution.
+
+Code or a test is **closely ported** when it follows Kafka's code statement by statement, or copies Kafka's test cases or test vectors. Kafka's Apache License 2.0 then applies to that part ([ADR-0015](docs/adr/0015-project-license-and-contributor-terms.md)), and section 4 requires three things:
+
+1. **The file header.** The file starts with exactly these lines, before its `//!` doc:
+
+   ```rust
+   // Portions of this file are ported from Apache Kafka 4.4.0 and modified by Alluvium;
+   // each is marked `// Ported from:`. Apache Kafka is Copyright The Apache Software
+   // Foundation and licensed under the Apache License 2.0 (LICENSES/Apache-2.0.txt).
+   // See NOTICE.
+   ```
+
+2. **A `// Ported from:` comment** on each ported item (a function, or a test or group of tests) naming its source, followed by anything left out or changed:
+
+   ```rust
+   // Ported from: clients/src/test/java/org/apache/kafka/common/UuidTest.java@4.4.0.
+   // testHashCode is not ported: Java's hashCode has no counterpart here.
+   ```
+
+   Ported code uses this comment in place of `// Parity:`.
+
+3. **An entry in [`NOTICE`](NOTICE)** listing the file and its Kafka sources.
+
+Vendored Kafka files, such as the schemas in `schemas/kafka-4.4.0/` ([ADR-0008](docs/adr/0008-protocol-code-generated-from-kafka-schemas.md)), stay unmodified with their own license headers; add their directory to `NOTICE`. The PR template asks whether a change ports Kafka code.
+
 ### Commit messages
 
 ```

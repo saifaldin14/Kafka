@@ -14,7 +14,8 @@ from Apache Kafka 4.4.0's NOTICE file, as section 4(d) of that license requires:
 Kafka's other notices (the jersey binary dependency, the streams-scala module and the
 Murmur3 code from Apache Hive) concern parts of Kafka that Alluvium doesn't include.
 
-Files containing Apache Kafka material, each marked in the file with its source:
+Files containing Apache Kafka material. Each starts with an attribution header stating
+that it was modified, and marks every ported part `// Ported from:` with its source:
 
 - crates/alluvium-types/src/partitioner.rs: murmur2, ported from
   clients/src/main/java/org/apache/kafka/common/utils/Utils.java; and the test vectors

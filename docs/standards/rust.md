@@ -155,6 +155,7 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 - **Default to `pub(crate)`.** A crate's `pub` items are its contract, documented with `missing_docs`.
 - Comments explain *why*. Use these standard tags:
   - `// Parity: <kafka path>@4.4.0 <Class.method> (KIP-n)` for code mirroring Kafka behavior.
+  - `// Ported from: <kafka path>@4.4.0 <Class.method>` in its place for code or tests closely ported from Kafka, which also need the [attribution header](../../CONTRIBUTING.md#attributing-kafka-material).
   - `// Deviation: ADR-NNNN` where behavior intentionally differs.
   - `// INVARIANT: …` for a property the surrounding code relies on.
   - `// SAFETY: …` for any approved `unsafe`.
