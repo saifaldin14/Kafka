@@ -6,8 +6,14 @@
 //! here to testkit would compile two copies of these types
 //! ([testing standard](../../../docs/standards/testing.md#shared-strategies)).
 //!
-//! Each strategy produces valid values only, and favours the boundaries where bugs
+//! Each type strategy produces valid values only, and favours the boundaries where bugs
 //! cluster: 0, 1 and the maximum.
+//!
+//! The boundary-bias helpers at the top are the building blocks every crate's
+//! strategies use for plain wire values: integers biased towards Kafka's -1 sentinel, 0,
+//! 1 and both extremes, and strings and byte arrays biased towards empty and the
+//! maximum length. Generated message strategies (codegen) and record batch strategies
+//! are built from them, so a boundary bug in any field is found the same way.
 
 use proptest::collection::{btree_set, vec};
 use proptest::option;
@@ -21,13 +27,109 @@ use crate::{
     TopicIdPartition, TopicName, TopicPartition, TransactionalId, Uuid, WallTime,
 };
 
-/// Non-negative `i32` values, with extra weight on 0, 1 and `i32::MAX`.
-pub(crate) fn non_negative_i32() -> impl Strategy<Value = i32> {
+/// A strategy for any value of an integer type, with extra weight on the listed
+/// boundary values.
+macro_rules! boundary_strategy {
+    ($(#[$doc:meta])* $name:ident, $int:ty, [$($boundary:expr),+]) => {
+        $(#[$doc])*
+        pub fn $name() -> impl Strategy<Value = $int> {
+            prop_oneof![
+                1 => select(vec![$($boundary),+]),
+                1 => any::<$int>(),
+            ]
+        }
+    };
+}
+
+boundary_strategy!(
+    /// Any `i8`, half the time one of -1, 0, 1, `i8::MIN` and `i8::MAX`.
+    boundary_i8,
+    i8,
+    [-1, 0, 1, i8::MIN, i8::MAX]
+);
+boundary_strategy!(
+    /// Any `i16`, half the time one of -1, 0, 1, `i16::MIN` and `i16::MAX`.
+    boundary_i16,
+    i16,
+    [-1, 0, 1, i16::MIN, i16::MAX]
+);
+boundary_strategy!(
+    /// Any `i32`, half the time one of -1, 0, 1, `i32::MIN` and `i32::MAX`.
+    boundary_i32,
+    i32,
+    [-1, 0, 1, i32::MIN, i32::MAX]
+);
+boundary_strategy!(
+    /// Any `i64`, half the time one of -1, 0, 1, `i32::MAX`, `i64::MIN` and `i64::MAX`.
+    boundary_i64,
+    i64,
+    [-1, 0, 1, i64::from(i32::MAX), i64::MIN, i64::MAX]
+);
+boundary_strategy!(
+    /// Any `u16`, half the time one of 0, 1, `i16::MAX` and `u16::MAX`.
+    boundary_u16,
+    u16,
+    [0, 1, i16::MAX.cast_unsigned(), u16::MAX]
+);
+boundary_strategy!(
+    /// Any `u32`, half the time one of 0, 1, `i32::MAX` and `u32::MAX`.
+    boundary_u32,
+    u32,
+    [0, 1, i32::MAX.cast_unsigned(), u32::MAX]
+);
+
+/// Non-negative `i32` values, biased towards 0, 1 and `i32::MAX`.
+pub fn non_negative_i32() -> impl Strategy<Value = i32> {
     prop_oneof![
         1 => Just(0),
         1 => Just(1),
         1 => Just(i32::MAX),
         7 => 0..=i32::MAX,
+    ]
+}
+
+/// Non-negative `i64` values, biased towards 0, 1, `i32::MAX` (where 32-bit fields
+/// overflow) and `i64::MAX`.
+pub fn non_negative_i64() -> impl Strategy<Value = i64> {
+    prop_oneof![
+        1 => Just(0),
+        1 => Just(1),
+        1 => Just(i64::from(i32::MAX)),
+        1 => Just(i64::MAX),
+        6 => 0..=i64::MAX,
+    ]
+}
+
+/// Strings of at most `max_bytes` UTF-8 bytes, biased towards empty and exactly
+/// `max_bytes` (once all ASCII, once ending in a two-byte character), with any
+/// characters in between.
+pub fn string_up_to(max_bytes: usize) -> impl Strategy<Value = String> {
+    let ending_multibyte = max_bytes
+        .checked_sub(2)
+        .map_or_else(String::new, |ascii| "x".repeat(ascii) + "é");
+    prop_oneof![
+        1 => Just(String::new()),
+        1 => Just("x".repeat(max_bytes)),
+        1 => Just(ending_multibyte),
+        7 => vec(any::<char>(), 0..=max_bytes.min(32)).prop_map(move |characters| {
+            let mut text = String::new();
+            for character in characters {
+                if text.len() + character.len_utf8() > max_bytes {
+                    break;
+                }
+                text.push(character);
+            }
+            text
+        }),
+    ]
+}
+
+/// Byte arrays of at most `max_len` bytes, biased towards empty and exactly `max_len`.
+pub fn bytes_up_to(max_len: usize) -> impl Strategy<Value = Vec<u8>> {
+    prop_oneof![
+        1 => Just(Vec::new()),
+        1 => Just(vec![0xff; max_len]),
+        8 => vec(any::<u8>(), 0..=max_len.min(64)),
     ]
 }
 
@@ -50,19 +152,12 @@ pub fn partition_index() -> impl Strategy<Value = PartitionIndex> {
 
 /// Any [`CorrelationId`], including negative ones.
 pub fn correlation_id() -> impl Strategy<Value = CorrelationId> {
-    any::<i32>().prop_map(CorrelationId::from)
+    boundary_i32().prop_map(CorrelationId::from)
 }
 
 /// Valid [`ProducerId`]s, biased towards 0, 1, `i32::MAX` and `i64::MAX`.
 pub fn producer_id() -> impl Strategy<Value = ProducerId> {
-    prop_oneof![
-        1 => Just(0),
-        1 => Just(1),
-        1 => Just(i64::from(i32::MAX)),
-        1 => Just(i64::MAX),
-        6 => 0..=i64::MAX,
-    ]
-    .prop_filter_map("non-negative", |value| ProducerId::try_from(value).ok())
+    non_negative_i64().prop_filter_map("non-negative", |value| ProducerId::try_from(value).ok())
 }
 
 /// Valid [`ProducerEpoch`]s, biased towards 0, 1 and the exhaustion boundary
@@ -87,15 +182,9 @@ pub fn leader_epoch() -> impl Strategy<Value = LeaderEpoch> {
     non_negative_i32().prop_filter_map("non-negative", |value| LeaderEpoch::try_from(value).ok())
 }
 
-/// Valid [`BrokerEpoch`]s, biased towards 0, 1 and `i64::MAX`.
+/// Valid [`BrokerEpoch`]s, biased towards 0, 1, `i32::MAX` and `i64::MAX`.
 pub fn broker_epoch() -> impl Strategy<Value = BrokerEpoch> {
-    prop_oneof![
-        1 => Just(0),
-        1 => Just(1),
-        1 => Just(i64::MAX),
-        7 => 0..=i64::MAX,
-    ]
-    .prop_filter_map("non-negative", |value| BrokerEpoch::try_from(value).ok())
+    non_negative_i64().prop_filter_map("non-negative", |value| BrokerEpoch::try_from(value).ok())
 }
 
 /// Every [`MemberEpoch`] sentinel, and positive epochs biased towards 1 and `i32::MAX`.
@@ -120,14 +209,7 @@ pub fn generation_id() -> impl Strategy<Value = GenerationId> {
 
 /// Valid [`Offset`]s, biased towards 0, 1, `i32::MAX` and `i64::MAX`.
 pub fn offset() -> impl Strategy<Value = Offset> {
-    prop_oneof![
-        1 => Just(0),
-        1 => Just(1),
-        1 => Just(i64::from(i32::MAX)),
-        1 => Just(i64::MAX),
-        6 => 0..=i64::MAX,
-    ]
-    .prop_filter_map("non-negative", |value| Offset::try_from(value).ok())
+    non_negative_i64().prop_filter_map("non-negative", |value| Offset::try_from(value).ok())
 }
 
 /// Valid [`OffsetRange`]s, including empty ones.
@@ -161,15 +243,9 @@ pub fn monotonic_instant() -> impl Strategy<Value = MonotonicInstant> {
     .prop_map(MonotonicInstant::from_nanos)
 }
 
-/// Valid [`WallTime`]s, biased towards the epoch, 1 ms and `i64::MAX`.
+/// Valid [`WallTime`]s, biased towards the epoch, 1 ms, `i32::MAX` and `i64::MAX`.
 pub fn wall_time() -> impl Strategy<Value = WallTime> {
-    prop_oneof![
-        1 => Just(0),
-        1 => Just(1),
-        1 => Just(i64::MAX),
-        7 => 0..=i64::MAX,
-    ]
-    .prop_filter_map("non-negative", |value| WallTime::try_from(value).ok())
+    non_negative_i64().prop_filter_map("non-negative", |value| WallTime::try_from(value).ok())
 }
 
 /// [`Uuid`]s over all 128 bits, biased towards zero, one and the signed extremes.
@@ -340,11 +416,8 @@ pub fn topic_id_partition() -> impl Strategy<Value = TopicIdPartition> {
 pub fn isolation_level_wire_value() -> impl Strategy<Value = i8> {
     prop_oneof![
         4 => 0..=1_i8,
-        1 => Just(-1),
         1 => Just(2),
-        1 => Just(i8::MIN),
-        1 => Just(i8::MAX),
-        2 => any::<i8>(),
+        5 => boundary_i8(),
     ]
 }
 
@@ -355,9 +428,7 @@ pub fn acks_wire_value() -> impl Strategy<Value = i16> {
         4 => -1..=1_i16,
         1 => Just(-2),
         1 => Just(2),
-        1 => Just(i16::MIN),
-        1 => Just(i16::MAX),
-        2 => any::<i16>(),
+        4 => boundary_i16(),
     ]
 }
 
@@ -424,4 +495,40 @@ pub fn namespace_id() -> impl Strategy<Value = NamespaceId> {
         6 => "[a-z]([a-z0-9-]{0,61}[a-z0-9])?",
     ]
     .prop_filter_map("valid", |id| id.parse().ok())
+}
+
+#[cfg(test)]
+mod tests {
+    use proptest::prelude::{Just, Strategy, prop_assert, proptest};
+    use proptest::strategy::ValueTree;
+    use proptest::test_runner::TestRunner;
+
+    use super::{bytes_up_to, string_up_to};
+
+    proptest! {
+        #[test]
+        fn strings_and_bytes_never_exceed_their_maximum(
+            (max, text, bytes) in (0..=40_usize)
+                .prop_flat_map(|max| (Just(max), string_up_to(max), bytes_up_to(max)))
+        ) {
+            prop_assert!(text.len() <= max, "{} bytes over {max}", text.len());
+            prop_assert!(bytes.len() <= max, "{} bytes over {max}", bytes.len());
+        }
+    }
+
+    #[test]
+    fn the_maximum_length_is_reached() {
+        let mut runner = TestRunner::deterministic();
+        let lengths: Vec<usize> = (0..200)
+            .map(|_| {
+                string_up_to(32_767)
+                    .new_tree(&mut runner)
+                    .unwrap()
+                    .current()
+                    .len()
+            })
+            .collect();
+        assert!(lengths.contains(&0), "{lengths:?}");
+        assert!(lengths.contains(&32_767), "{lengths:?}");
+    }
 }
