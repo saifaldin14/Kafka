@@ -187,6 +187,7 @@ Done when: `crc32c` is added to `[workspace.dependencies]` (it is in rust.md's p
 ### [To Do] TYPE-0035 Payload non-disclosure tests: for random payloads, the summary output never contains the payload bytes as text, hex or base64, and formatting a 1 MiB payload stays within a time budget set by a criterion benchmark
 P1 · M0 · Task · deps: TYPE-0034 · labels: security, test · ref: docs/standards/debuggability.md#printing-values
 Done when: The property test covers ASCII, UTF-8 and binary payloads; the benchmark result is in the PR; debuggability.md links to `PayloadSummary` instead of describing the format a second time.
+Notes: The benchmark uses the criterion setup and conventions from TEST-0094 (pulled into M0 for this task), which lands first; the backlog can't express a task-level dependency across epics.
 
 ## [To Do] TYPE-F10 Namespace identity
 P1 · M0 · Feature · deps: TYPE-F04 · labels: foundation-for:X-TENANT
