@@ -166,7 +166,7 @@ Done when: Two routers (broker, controller) match every `ApiKey` without a `_ =>
 
 ### [To Do] SRV-0036 Decode request bodies with DecodeLimits; decode failures close the connection
 P0 · M2 · Task · deps: SRV-0035 · labels: security, decoder · ref: clients/src/main/java/org/apache/kafka/common/requests/RequestContext.java parseRequest @4.4.0
-Done when: Body decode at the header version uses PROTO-F09 limits; a malformed body closes the connection after logging once at debug, as Kafka does when request parsing fails; tests with truncated bodies.
+Done when: Body decode at the header version uses PROTO-F09 limits, with the allocation budget set to the listener's `socket.request.max.bytes` (ADR-0017); a malformed body closes the connection after logging once at debug, as Kafka does when request parsing fails; tests with truncated bodies.
 
 ### [To Do] SRV-0037 Error responses: handler errors become the API's error response or close the connection
 P0 · M2 · Task · deps: SRV-0035 · ref: core/src/main/scala/kafka/server/RequestHandlerHelper.scala handleError, sendErrorOrCloseConnection @4.4.0

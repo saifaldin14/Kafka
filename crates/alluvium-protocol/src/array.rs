@@ -2,11 +2,12 @@
 //!
 //! A declared count can lie, so it is checked before anything is allocated: it must
 //! fit in the bytes left (each element takes at least one) and be within
-//! [`DecodeLimits::max_array_length`](crate::DecodeLimits::max_array_length). Even
-//! then, at most `MAX_PREALLOCATED_ARRAY_CAPACITY` elements are allocated up front,
-//! and the rest only as they decode. Generated decoders read every array through
-//! [`Reader::read_array`] or [`Reader::read_nullable_array`], so none of them
-//! allocates from a declared count on its own.
+//! [`DecodeLimits::max_array_length`](crate::DecodeLimits::max_array_length), and the
+//! whole array is charged to the allocation budget. Even then, at most
+//! `MAX_PREALLOCATED_ARRAY_CAPACITY` elements are allocated up front, and the rest only
+//! once that many have decoded. Generated decoders read every array through [`Reader::read_array`]
+//! or [`Reader::read_nullable_array`], so none of them allocates from a declared count
+//! on its own.
 
 use crate::error::{DecodeError, DecodeErrorKind};
 use crate::framed::{Framing, Width};
@@ -20,7 +21,8 @@ impl Reader {
     ///
     /// [`DecodeErrorKind::UnexpectedNull`] for a null count,
     /// [`DecodeErrorKind::ArrayLongerThanInput`] or [`DecodeErrorKind::LimitExceeded`]
-    /// for a count that can't be real, and any error from `read_element`.
+    /// for a count that can't be real or would exceed the allocation budget, and any
+    /// error from `read_element`.
     pub fn read_array<T>(
         &mut self,
         framing: Framing,
@@ -28,6 +30,7 @@ impl Reader {
     ) -> Result<Vec<T>, DecodeError> {
         let start = self.offset();
         let length = self.read_present_length(framing, Width::Int)?;
+        self.check_array_length(start, length)?;
         self.read_elements(start, length, read_element)
     }
 
@@ -43,19 +46,17 @@ impl Reader {
     ) -> Result<Option<Vec<T>>, DecodeError> {
         let start = self.offset();
         match self.read_nullable_length(framing, Width::Int)? {
-            Some(length) => self.read_elements(start, length, read_element).map(Some),
+            Some(length) => {
+                self.check_array_length(start, length)?;
+                self.read_elements(start, length, read_element).map(Some)
+            }
             None => Ok(None),
         }
     }
 
-    /// `length` elements, after checking that the count can be real.
+    /// Checks that an array's declared count can be real.
     // Parity: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java@4.4.0 MessageDataGenerator.generateVariableLengthReader
-    fn read_elements<T>(
-        &mut self,
-        start: usize,
-        length: usize,
-        mut read_element: impl FnMut(&mut Reader) -> Result<T, DecodeError>,
-    ) -> Result<Vec<T>, DecodeError> {
+    fn check_array_length(&self, start: usize, length: usize) -> Result<(), DecodeError> {
         if length > self.remaining() {
             return Err(Reader::error_at(
                 start,
@@ -75,12 +76,29 @@ impl Reader {
                 },
             ));
         }
-        let mut elements = Vec::with_capacity(length.min(MAX_PREALLOCATED_ARRAY_CAPACITY));
-        while elements.len() < length {
+        Ok(())
+    }
+
+    /// `count` elements, whose count started at `start` and has been checked.
+    ///
+    /// This is the crate's only way to allocate a collection from a declared count. The
+    /// whole collection is charged to the budget first, at least a byte per element so
+    /// that zero-sized elements still bound the work. At most
+    /// `MAX_PREALLOCATED_ARRAY_CAPACITY` elements are allocated until that many have
+    /// decoded; then the rest of the charged count is allocated at once. The capacity
+    /// never exceeds `count`, and the only moment a decode holds more than it was
+    /// charged is that one copy of the first elements.
+    pub(crate) fn read_elements<T>(
+        &mut self,
+        start: usize,
+        count: usize,
+        mut read_element: impl FnMut(&mut Reader) -> Result<T, DecodeError>,
+    ) -> Result<Vec<T>, DecodeError> {
+        self.charge(start, count.saturating_mul(size_of::<T>().max(1)))?;
+        let mut elements = Vec::with_capacity(count.min(MAX_PREALLOCATED_ARRAY_CAPACITY));
+        while elements.len() < count {
             if elements.len() == elements.capacity() {
-                // Double, as `push` would, but never past the declared count.
-                let left = length.saturating_sub(elements.len());
-                elements.reserve_exact(elements.len().min(left));
+                elements.reserve_exact(count.saturating_sub(elements.len()));
             }
             elements.push(read_element(self)?);
         }
@@ -206,6 +224,42 @@ mod tests {
                 "{length}"
             );
         }
+    }
+
+    #[test]
+    fn the_whole_array_is_charged_to_the_budget_before_it_is_read() {
+        let budget = |allocation_budget| DecodeLimits {
+            allocation_budget,
+            ..DecodeLimits::default()
+        };
+        let input = || Bytes::from_static(&[0, 0, 0, 2, 0, 0, 0, 7, 0, 0, 0, 8]);
+        let mut exact = Reader::with_limits(input(), budget(8));
+        assert_eq!(exact.read_array(Classic, Reader::read_i32), Ok(vec![7, 8]));
+        let never = |_: &mut Reader| -> Result<i32, DecodeError> { unreachable!() };
+        assert_eq!(
+            Reader::with_limits(input(), budget(7)).read_array(Classic, never),
+            Err(error(
+                0,
+                DecodeErrorKind::LimitExceeded {
+                    limit: Limit::AllocationBudget,
+                    requested: 8,
+                    allowed: 7
+                }
+            ))
+        );
+        // Zero-sized elements cost a byte each, so the budget bounds their work too.
+        let mut units = Reader::with_limits(int8_array(Compact, 3), budget(2));
+        assert_eq!(
+            units.read_array(Compact, |element| element.read_i8().map(drop)),
+            Err(error(
+                0,
+                DecodeErrorKind::LimitExceeded {
+                    limit: Limit::AllocationBudget,
+                    requested: 3,
+                    allowed: 2
+                }
+            ))
+        );
     }
 
     #[test]

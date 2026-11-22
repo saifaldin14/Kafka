@@ -29,7 +29,8 @@ impl Reader {
     ///
     /// [`DecodeErrorKind::NegativeTaggedFieldCount`],
     /// [`DecodeErrorKind::TaggedFieldCountExceedsInput`] or
-    /// [`DecodeErrorKind::LimitExceeded`] for a count that can't be real,
+    /// [`DecodeErrorKind::LimitExceeded`] for a count that can't be real or would exceed
+    /// the allocation budget,
     /// [`DecodeErrorKind::NegativeTaggedFieldSize`] for an impossible size, and
     /// [`DecodeErrorKind::Truncated`] if the input ends inside the section.
     // Parity: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java@4.4.0 MessageDataGenerator.generateClassReader
@@ -58,23 +59,21 @@ impl Reader {
                 },
             ));
         }
-        let mut fields = Vec::new();
-        for _ in 0..count {
-            let field_start = self.offset();
-            let tag = self.read_unsigned_varint()?;
-            let size = self.read_unsigned_varint()?.cast_signed();
+        self.read_elements(start, count, |reader| {
+            let field_start = reader.offset();
+            let tag = reader.read_unsigned_varint()?;
+            let size = reader.read_unsigned_varint()?.cast_signed();
             let size = usize::try_from(size).map_err(|_| {
                 Reader::error_at(
                     field_start,
                     DecodeErrorKind::NegativeTaggedFieldSize { tag, size },
                 )
             })?;
-            fields.push(RawTaggedField {
+            Ok(RawTaggedField {
                 tag,
-                data: self.take(size)?,
-            });
-        }
-        Ok(fields)
+                data: reader.take(size)?,
+            })
+        })
     }
 }
 
@@ -231,6 +230,26 @@ mod tests {
                     limit: Limit::TaggedFieldCount,
                     requested: 2,
                     allowed: 1
+                }
+            ))
+        );
+    }
+
+    #[test]
+    fn a_section_is_charged_to_the_budget_before_it_is_read() {
+        let needed = 2 * size_of::<RawTaggedField>();
+        let limits = DecodeLimits {
+            allocation_budget: needed - 1,
+            ..DecodeLimits::default()
+        };
+        assert_eq!(
+            Reader::with_limits(Bytes::from_static(&[2, 0, 0, 1, 0]), limits).read_tagged_fields(),
+            Err(DecodeError::new(
+                0,
+                DecodeErrorKind::LimitExceeded {
+                    limit: Limit::AllocationBudget,
+                    requested: needed,
+                    allowed: needed - 1
                 }
             ))
         );

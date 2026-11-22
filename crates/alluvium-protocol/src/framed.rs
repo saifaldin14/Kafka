@@ -9,6 +9,8 @@
 //! arithmetic: any negative length is null, and a compact prefix of `0x80000000` wraps to
 //! `i32::MAX`, which then fails as too long for a string or as truncated otherwise.
 
+use std::str::Utf8Chunk;
+
 use bytes::Bytes;
 
 use crate::error::{DecodeError, DecodeErrorKind, EncodeError};
@@ -33,6 +35,9 @@ pub(crate) enum Width {
     /// `int32`, for byte arrays, records and arrays.
     Int,
 }
+
+/// The UTF-8 length of U+FFFD, which replaces each invalid sequence in a string.
+const REPLACEMENT_LENGTH: usize = char::REPLACEMENT_CHARACTER.len_utf8();
 
 /// The longest string Kafka encodes or decodes, in UTF-8 bytes. A classic `int16`
 /// prefix can't exceed it; a compact one can, and is rejected before it is read.
@@ -83,7 +88,29 @@ impl Reader {
                 },
             ));
         }
-        Ok(String::from_utf8_lossy(&self.take(length)?).into_owned())
+        let bytes = self.take(length)?;
+        // Each invalid sequence becomes one U+FFFD, as in `String::from_utf8_lossy`. The
+        // text is built here so the exact length can be charged before it is allocated.
+        let replaced = |chunk: &Utf8Chunk<'_>| !chunk.invalid().is_empty();
+        let decoded_length = bytes.utf8_chunks().fold(0_usize, |total, chunk| {
+            let replacement = if replaced(&chunk) {
+                REPLACEMENT_LENGTH
+            } else {
+                0
+            };
+            total
+                .saturating_add(chunk.valid().len())
+                .saturating_add(replacement)
+        });
+        self.charge(start, decoded_length)?;
+        let mut text = String::with_capacity(decoded_length);
+        for chunk in bytes.utf8_chunks() {
+            text.push_str(chunk.valid());
+            if replaced(&chunk) {
+                text.push(char::REPLACEMENT_CHARACTER);
+            }
+        }
+        Ok(text)
     }
 
     /// A `string`.
@@ -289,7 +316,7 @@ mod tests {
 
     use super::Framing::{self, Classic, Compact};
     use crate::error::{DecodeError, DecodeErrorKind, EncodeError};
-    use crate::limits::Limit;
+    use crate::limits::{DecodeLimits, Limit};
     use crate::reader::Reader;
     use crate::writer::Writer;
 
@@ -434,6 +461,43 @@ mod tests {
     }
 
     #[test]
+    fn a_string_is_charged_its_decoded_length() {
+        let budget = |allocation_budget| DecodeLimits {
+            allocation_budget,
+            ..DecodeLimits::default()
+        };
+        // One invalid byte decodes to U+FFFD, three bytes.
+        let input = || Bytes::from_static(&[2, 0xff]);
+        let mut exact = Reader::with_limits(input(), budget(3));
+        assert_eq!(exact.read_string(Compact), Ok("\u{fffd}".to_owned()));
+        assert_eq!(
+            Reader::with_limits(input(), budget(2)).read_string(Compact),
+            Err(error(
+                0,
+                DecodeErrorKind::LimitExceeded {
+                    limit: Limit::AllocationBudget,
+                    requested: 3,
+                    allowed: 2
+                }
+            ))
+        );
+        // The budget is shared by every read.
+        let mut two = Reader::with_limits(Bytes::from_static(&[3, b'a', b'b', 2, b'c']), budget(2));
+        assert_eq!(two.read_string(Compact), Ok("ab".to_owned()));
+        assert_eq!(
+            two.read_string(Compact),
+            Err(error(
+                3,
+                DecodeErrorKind::LimitExceeded {
+                    limit: Limit::AllocationBudget,
+                    requested: 1,
+                    allowed: 0
+                }
+            ))
+        );
+    }
+
+    #[test]
     fn strings_over_32767_bytes_are_not_encoded() {
         let long = "x".repeat(0x8000);
         for framing in [Classic, Compact] {
@@ -496,6 +560,15 @@ mod tests {
     }
 
     proptest! {
+        #[test]
+        fn strings_decode_as_from_utf8_lossy_does(bytes in proptest::collection::vec(any::<u8>(), 0..40)) {
+            let mut input = Writer::new();
+            input.write_bytes(Compact, &bytes).unwrap();
+            let expected = String::from_utf8_lossy(&bytes).into_owned();
+            let decoded = Reader::new(input.into_bytes()).read_string(Compact).unwrap();
+            prop_assert_eq!((decoded.capacity(), decoded), (expected.len(), expected));
+        }
+
         #[test]
         fn strings_round_trip(framing in framing(), value in ".{0,40}", nullable in option::of(".{0,40}")) {
             let bytes = written(|w| {
