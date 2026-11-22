@@ -212,7 +212,7 @@ Scope: `KeyHash`, `KeyRange`, range arithmetic (split/merge/contains), murmur2-c
 P1 · M0 · Task · deps: TYPE-0001 · labels: foundation-for:X-ELASTIC · ref: clients/src/main/java/org/apache/kafka/common/utils/Utils.java murmur2 @4.4.0
 Done when: The `UtilsTest.testMurmur2` vectors pass (`"21"` → -973932308, `"foobar"` → -790332482, `"a-little-bit-long-string"` → -985981536, `"a-little-bit-longer-string"` → -1486304829, `"lkjh234lh9fiuh90y23oiuhsafujhadof229phr9h19h89h8"` → -58897971, `[a,b,c]` → 479470107); a golden file of 10,000 random inputs of length 0-1024 hashed by Kafka 4.4.0 matches, and its generator script (JShell against `kafka-clients` 4.4.0 in a digest-pinned image) is committed; no panic on any input; the file header carries the attribution required for a close port.
 
-### [To Do] TYPE-0040 `partition_for_key(key, num_partitions: NonZeroU32) -> PartitionIndex` = `toPositive(murmur2(key)) % num_partitions`, where `toPositive(x) = x & 0x7fffffff` (`Utils.toPositive`)
+### [Done] TYPE-0040 `partition_for_key(key, num_partitions: NonZeroU32) -> PartitionIndex` = `toPositive(murmur2(key)) % num_partitions`, where `toPositive(x) = x & 0x7fffffff` (`Utils.toPositive`)
 P1 · M0 · Task · deps: TYPE-0039 · labels: foundation-for:X-ELASTIC · ref: clients/src/main/java/org/apache/kafka/clients/producer/internals/BuiltInPartitioner.java partitionForKey @4.4.0
 Done when: A golden file of 10,000 (key, partition count 1-64) pairs computed by Kafka 4.4.0's `BuiltInPartitioner.partitionForKey` matches; tests cover the empty key and `i32::MIN` hashes; the doc says keyless records use the client's sticky partitioner and are never hashed; `// Parity:` cites both Kafka methods.
 
