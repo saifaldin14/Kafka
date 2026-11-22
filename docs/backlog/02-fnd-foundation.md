@@ -264,7 +264,7 @@ Done when: NOTICE names the included material (vendored schemas under `schemas/k
 P1 · M0 · Task · deps: FND-0046 · labels: docs · ref: ADR-0008
 Done when: The header template appears once (CONTRIBUTING) and is linked from ADR-0008 and docs/standards/testing.md rule 10; it states when attribution is required (close port) and when not (`// Parity:` references); the PR template's Kafka-reference section asks whether code was closely ported.
 
-## [To Do] FND-F09 Developer environment
+## [In Progress] FND-F09 Developer environment
 P2 · M0 · Feature · deps: FND-F04
 Scope: `cargo xtask doctor` (toolchain, rustup and tool checks), editor settings, optional git hooks, devcontainer.
 
@@ -272,7 +272,7 @@ Scope: `cargo xtask doctor` (toolchain, rustup and tool checks), editor settings
 P2 · M0 · Task · deps: FND-0020 · labels: good-first-task
 Done when: Required checks: `cargo` is rustup's proxy (not Homebrew's or a distribution's), the active toolchain matches `rust-toolchain.toml` with rustfmt and clippy, and every tool in the xtask tool table is installed at its pinned version; optional checks: Docker (compat tests), a nightly toolchain and cargo-fuzz (fuzzing). Each check prints `ok` or `missing` with the exact fix command; the exit code is 1 only when a required check fails; a unit test feeds fake `rustup which cargo` and version outputs for the Homebrew-cargo case and the wrong-toolchain case; CONTRIBUTING §2 tells new engineers to run it.
 
-### [To Do] FND-0051 Editor settings: `.editorconfig` (UTF-8, LF, final newline, 4-space Rust, 2-space YAML/TOML/JSON) and shared `.vscode/settings.json` and `extensions.json` (rust-analyzer with clippy as the check command)
+### [Done] FND-0051 Editor settings: `.editorconfig` (UTF-8, LF, final newline, 4-space Rust, 2-space YAML/TOML/JSON) and shared `.vscode/settings.json` and `extensions.json` (rust-analyzer with clippy as the check command)
 P2 · M0 · Task · deps: none · labels: good-first-task
 Done when: `cargo fmt` and the editor settings agree (no reformatting churn on save in a sample edit); no user-specific paths are committed; CONTRIBUTING mentions the files.
 

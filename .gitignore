@@ -1,5 +1,9 @@
 /target
 .DS_Store
+# Only the shared editor settings are committed; launch configs and the like are personal.
+/.vscode/*
+!/.vscode/settings.json
+!/.vscode/extensions.json
 *.profraw
 /fuzz/artifacts/
 /fuzz/corpus/
