@@ -1,7 +1,7 @@
 //! [`Reader`]: decodes Kafka's primitive types from a buffer of untrusted bytes.
 
 use alluvium_types::Uuid;
-use bytes::Bytes;
+use bytes::{Buf, Bytes};
 
 use crate::error::{DecodeError, DecodeErrorKind};
 use crate::limits::{DecodeLimits, Limit};
@@ -88,11 +88,24 @@ impl Reader {
         Ok(self.buf.split_to(len))
     }
 
-    /// The next `N` bytes as an array.
+    /// The next `N` bytes as an array, copied out of the input. Unlike [`Reader::take`],
+    /// this makes no new handle on the input, so it costs no reference-count update.
     pub(crate) fn array<const N: usize>(&mut self) -> Result<[u8; N], DecodeError> {
-        let bytes = self.take(N)?;
-        let mut array = [0; N];
-        array.copy_from_slice(&bytes);
+        let array: [u8; N] = self
+            .buf
+            .get(..N)
+            .and_then(|bytes| bytes.try_into().ok())
+            .ok_or_else(|| {
+                Self::error_at(
+                    self.offset(),
+                    DecodeErrorKind::Truncated {
+                        needed: N,
+                        remaining: self.buf.len(),
+                    },
+                )
+            })?;
+        // At least `N` bytes remain: `get` just returned them.
+        self.buf.advance(N);
         Ok(array)
     }
 
