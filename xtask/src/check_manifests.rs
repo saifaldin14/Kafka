@@ -21,6 +21,12 @@
 //!    crate) starts with a `//!` doc that has a `Layer:` line naming the crate's layer
 //!    from the layer table, and a `Kafka counterpart:` line
 //!    (docs/standards/rust.md#modules-and-documentation).
+//! 7. Every file in [`DECODER_FILES`] whose crate is a workspace member denies
+//!    `clippy::indexing_slicing` and `clippy::arithmetic_side_effects` with an inner
+//!    attribute, because it decodes untrusted bytes
+//!    (docs/standards/rust.md#workspace-configuration). Cargo can't add lints to a
+//!    crate that inherits `[workspace.lints]`, so the attribute is the only way, and
+//!    nothing else would notice it missing. A crate that doesn't exist yet is skipped.
 //!
 //! Files are parsed and compared as TOML values: comments, formatting, and the order of
 //! keys and of array entries don't matter. Every difference is reported in one run,
@@ -50,6 +56,20 @@ pub(crate) struct Standard {
     /// The whole clippy.toml block.
     pub(crate) clippy: Value,
 }
+
+/// The files that decode untrusted bytes, by crate and path within the crate. Each must
+/// deny the lints in [`DECODER_LINTS`]. A storage module that decodes segments or
+/// indexes is added here in the change that creates it.
+pub(crate) const DECODER_FILES: &[(&str, &str)] = &[
+    ("alluvium-protocol", "src/lib.rs"),
+    ("alluvium-records", "src/lib.rs"),
+];
+
+/// The lints a decoder file must deny.
+const DECODER_LINTS: [&str; 2] = [
+    "clippy::indexing_slicing",
+    "clippy::arithmetic_side_effects",
+];
 
 /// Runs the command.
 pub(crate) fn run(out: &mut impl Write) -> Exit {
@@ -126,8 +146,52 @@ fn check_repository(root: &Path) -> Result<Vec<String>, String> {
         let text = std::fs::read_to_string(&crate_root)
             .map_err(|error| format!("could not read {doc_file}: {error}"))?;
         problems.extend(check_crate_doc(&doc_file, graph.name(id), &text));
+        let crate_dir = path.parent().unwrap_or(&root);
+        for (_, relative) in DECODER_FILES
+            .iter()
+            .filter(|(name, _)| *name == graph.name(id))
+        {
+            let decoder = crate_dir.join(relative);
+            let decoder_file = decoder
+                .strip_prefix(&root)
+                .unwrap_or(&decoder)
+                .to_string_lossy()
+                .into_owned();
+            let text = std::fs::read_to_string(&decoder)
+                .map_err(|error| format!("could not read {decoder_file}: {error}"))?;
+            problems.extend(check_decoder_lints(&decoder_file, &text));
+        }
     }
     Ok(problems)
+}
+
+/// Rule 7: `text` has an inner `#![deny(…)]` or `#![forbid(…)]` attribute naming every
+/// lint in [`DECODER_LINTS`].
+pub(crate) fn check_decoder_lints(file: &str, text: &str) -> Vec<String> {
+    let denied: Vec<&str> = text
+        .lines()
+        .map(str::trim)
+        .filter_map(|line| {
+            line.strip_prefix("#![deny(")
+                .or_else(|| line.strip_prefix("#![forbid("))
+        })
+        .filter_map(|rest| rest.strip_suffix(")]"))
+        .flat_map(|lints| lints.split(','))
+        .map(str::trim)
+        .collect();
+    let missing: Vec<&str> = DECODER_LINTS
+        .into_iter()
+        .filter(|lint| !denied.contains(lint))
+        .collect();
+    if missing.is_empty() {
+        return Vec::new();
+    }
+    vec![format!(
+        "{file}: decodes untrusted bytes, so it must start with `#![deny({})]`; missing {} \
+         (docs/standards/rust.md#workspace-configuration)",
+        DECODER_LINTS.join(", "),
+        missing.join(", ")
+    )]
 }
 
 /// Rule 6: the crate root's leading `//!` doc names the crate's layer and its Kafka
@@ -400,8 +464,8 @@ mod tests {
     use serde_json::Value;
 
     use super::{
-        Standard, check_advisory_ignores, check_clippy, check_crate_doc, check_lints, check_member,
-        check_member_dependencies, parse, standard,
+        Standard, check_advisory_ignores, check_clippy, check_crate_doc, check_decoder_lints,
+        check_lints, check_member, check_member_dependencies, parse, standard,
     };
 
     const RUST_MD: &str = "# Rust\n\n## Workspace configuration\n\nLints:\n\n```toml\n[workspace.lints.rust]\nunsafe_code = \"forbid\"\n\n[workspace.lints.clippy]\npedantic = { level = \"warn\", priority = -1 }\ntodo = \"deny\"\n```\n\nClippy:\n\n```toml\nallow-unwrap-in-tests = true\ndisallowed-methods = [\n  { path = \"std::process::exit\", reason = \"return errors\" },\n  { path = \"rand::rng\", reason = \"use the seeded RNG\" },\n]\n```\n\nRelease profile:\n\n```toml\n[profile.release]\npanic = \"abort\"\n```\n\n## Errors\n\n```toml\n[workspace.lints.rust]\nignored = \"because it is in another section\"\n```\n";
@@ -663,5 +727,40 @@ mod tests {
                 "a/Cargo.toml: `[target.cfg(unix).build-dependencies]` dependency `cc` sets the version \"1\"",
             ]
         );
+    }
+
+    #[test]
+    fn a_decoder_file_without_the_attribute_is_rejected() {
+        let lib = "//! Kafka's wire primitives.\n\nmod varint;\n";
+        assert_eq!(
+            check_decoder_lints("crates/alluvium-protocol/src/lib.rs", lib),
+            [
+                "crates/alluvium-protocol/src/lib.rs: decodes untrusted bytes, so it must start \
+                 with `#![deny(clippy::indexing_slicing, clippy::arithmetic_side_effects)]`; \
+                 missing clippy::indexing_slicing, clippy::arithmetic_side_effects \
+                 (docs/standards/rust.md#workspace-configuration)"
+            ]
+        );
+        let partial = "//! Records.\n#![deny(clippy::indexing_slicing)]\n";
+        let problems = check_decoder_lints("lib.rs", partial);
+        assert!(
+            problems[0].contains("missing clippy::arithmetic_side_effects ("),
+            "{problems:?}"
+        );
+    }
+
+    #[test]
+    fn the_attribute_passes_in_either_order_as_deny_or_forbid() {
+        for lib in [
+            "//! Doc.\n\n#![deny(clippy::indexing_slicing, clippy::arithmetic_side_effects)]\n",
+            "//! Doc.\n#![forbid(clippy::arithmetic_side_effects,clippy::indexing_slicing)]\n",
+            "#![deny(clippy::indexing_slicing)]\n#![deny(clippy::arithmetic_side_effects)]\n",
+        ] {
+            assert_eq!(
+                check_decoder_lints("lib.rs", lib),
+                Vec::<String>::new(),
+                "{lib}"
+            );
+        }
     }
 }
