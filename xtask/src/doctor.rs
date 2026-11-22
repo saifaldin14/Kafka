@@ -6,10 +6,11 @@
 //! - the `cargo` first on `PATH` is rustup's proxy, so it honours `rust-toolchain.toml`
 //!   (Homebrew's or a distribution's `cargo` doesn't);
 //! - the active toolchain is the one `rust-toolchain.toml` pins, with its components;
-//! - every tool in the xtask tool table is installed at its pinned version.
+//! - every tool a CI step needs is installed at its pinned version.
 //!
-//! Optional checks (reported, never failing): Docker for compatibility tests, and a
-//! nightly toolchain with cargo-fuzz for fuzzing.
+//! Optional checks (reported, never failing): Docker for compatibility tests, and the
+//! nightly toolchain `fuzz/rust-toolchain.toml` pins, with the pinned cargo-fuzz, for
+//! fuzzing.
 //!
 //! Facts are gathered by running commands, then judged by [`evaluate`], a pure function
 //! the tests feed with fake command output.
@@ -21,7 +22,7 @@ use serde_json::Value;
 
 use crate::Exit;
 use crate::output;
-use crate::tools::{self, TOOLS};
+use crate::tools::{self, CARGO_FUZZ};
 
 /// What the machine reports, gathered by [`gather`].
 #[derive(Debug, Clone, Default)]
@@ -34,11 +35,13 @@ pub(crate) struct Facts {
     pub(crate) rustup_cargo_version: Option<String>,
     /// `rustup component list --installed` for the active toolchain.
     pub(crate) installed_components: Option<String>,
-    /// Each pinned tool, and the problem with it if any.
+    /// Each pinned tool a CI step needs, and the problem with it if any.
     pub(crate) tools: Vec<(&'static str, Option<String>)>,
     pub(crate) docker: bool,
-    pub(crate) nightly: bool,
-    pub(crate) cargo_fuzz: bool,
+    /// The problem with fuzzing's pinned nightly, if any.
+    pub(crate) nightly: Option<String>,
+    /// The problem with cargo-fuzz, if any.
+    pub(crate) cargo_fuzz: Option<String>,
 }
 
 /// The toolchain `rust-toolchain.toml` pins.
@@ -95,7 +98,7 @@ fn read_pinned() -> Result<Pinned, String> {
     parse_pinned(&text).ok_or_else(|| format!("{file} has no [toolchain] channel"))
 }
 
-fn parse_pinned(text: &str) -> Option<Pinned> {
+pub(crate) fn parse_pinned(text: &str) -> Option<Pinned> {
     let value: Value = toml::from_str(text).ok()?;
     let toolchain = value.get("toolchain")?;
     Some(Pinned {
@@ -134,8 +137,7 @@ fn gather() -> Facts {
         rustup_cargo_path,
         rustup_cargo_version,
         installed_components: stdout_of("rustup", &["component", "list", "--installed"]),
-        tools: TOOLS
-            .iter()
+        tools: tools::required_by_steps()
             .map(|tool| {
                 (
                     tool.name,
@@ -144,9 +146,11 @@ fn gather() -> Facts {
             })
             .collect(),
         docker: stdout_of("docker", &["--version"]).is_some(),
-        nightly: stdout_of("rustup", &["toolchain", "list"])
-            .is_some_and(|list| list.lines().any(|line| line.starts_with("nightly"))),
-        cargo_fuzz: stdout_of("cargo", &["fuzz", "--version"]).is_some(),
+        nightly: crate::fuzz::nightly_channel(&crate::repo_root())
+            .map_or_else(Some, |channel| crate::fuzz::nightly_problem(&channel)),
+        cargo_fuzz: tools::check(&CARGO_FUZZ)
+            .err()
+            .map(|problem| problem.to_string()),
     }
 }
 
@@ -229,12 +233,12 @@ pub(crate) fn evaluate(facts: &Facts, pinned: &Pinned) -> Vec<Check> {
     push(
         "nightly toolchain, for fuzzing".to_owned(),
         false,
-        (!facts.nightly).then(|| "rustup toolchain install nightly".to_owned()),
+        facts.nightly.clone(),
     );
     push(
         "cargo-fuzz, for fuzzing".to_owned(),
         false,
-        (!facts.cargo_fuzz).then(|| "cargo install --locked cargo-fuzz".to_owned()),
+        facts.cargo_fuzz.clone(),
     );
     checks
 }
@@ -264,8 +268,8 @@ mod tests {
             ),
             tools: vec![("cargo-nextest", None), ("cargo-deny", None)],
             docker: true,
-            nightly: true,
-            cargo_fuzz: true,
+            nightly: None,
+            cargo_fuzz: None,
         }
     }
 
@@ -370,8 +374,8 @@ mod tests {
     fn optional_tools_never_fail_the_run() {
         let facts = Facts {
             docker: false,
-            nightly: false,
-            cargo_fuzz: false,
+            nightly: Some("rustup toolchain install nightly-2026-11-20".to_owned()),
+            cargo_fuzz: Some("cargo-fuzz 0.13.2 is required".to_owned()),
             ..healthy()
         };
         let checks = evaluate(&facts, &pinned());

@@ -67,7 +67,17 @@ pub(crate) enum VersionOutput {
 }
 
 /// Every pinned tool.
-pub(crate) const TOOLS: &[Tool] = &[NEXTEST, DENY, LYCHEE, ACTIONLINT, SHELLCHECK];
+pub(crate) const TOOLS: &[Tool] = &[NEXTEST, DENY, LYCHEE, ACTIONLINT, SHELLCHECK, CARGO_FUZZ];
+
+/// The tools some CI step needs. These are required; the others, used only by commands
+/// such as `cargo xtask fuzz`, are installed on request with `--tool`.
+pub(crate) fn required_by_steps() -> impl Iterator<Item = &'static Tool> {
+    TOOLS.iter().filter(|tool| {
+        crate::ci::STEPS
+            .iter()
+            .any(|step| step.requires.iter().any(|needed| needed.name == tool.name))
+    })
+}
 
 /// Test runner used by the `test` step.
 pub(crate) const NEXTEST: Tool = Tool {
@@ -92,6 +102,15 @@ pub(crate) const LYCHEE: Tool = Tool {
     name: "lychee",
     version: "0.24.2",
     invocation: Invocation::Binary("lychee"),
+    source: Source::Crate,
+    version_output: VersionOutput::NameThenVersion,
+};
+
+/// The fuzzing driver `cargo xtask fuzz` builds targets with (fuzz/README.md).
+pub(crate) const CARGO_FUZZ: Tool = Tool {
+    name: "cargo-fuzz",
+    version: "0.13.2",
+    invocation: Invocation::CargoSubcommand("fuzz"),
     source: Source::Crate,
     version_output: VersionOutput::NameThenVersion,
 };
@@ -222,7 +241,7 @@ impl fmt::Display for ToolProblem {
                 install,
             } => write!(
                 f,
-                "{tool} {version} is required but not installed; run `cargo xtask tools install` or `{install}`"
+                "{tool} {version} is required but not installed; run `cargo xtask tools install --tool {tool}` or `{install}`"
             ),
             ToolProblem::WrongVersion {
                 tool,
@@ -231,7 +250,7 @@ impl fmt::Display for ToolProblem {
                 install,
             } => write!(
                 f,
-                "{tool} {version} is required but {installed} is installed; run `cargo xtask tools install` or `{install}`"
+                "{tool} {version} is required but {installed} is installed; run `cargo xtask tools install --tool {tool}` or `{install}`"
             ),
         }
     }

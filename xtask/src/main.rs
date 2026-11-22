@@ -42,6 +42,7 @@ mod clock;
 mod crate_docs;
 mod deps_diff;
 mod doctor;
+mod fuzz;
 mod graph;
 mod hooks;
 mod install;
@@ -98,7 +99,7 @@ fn run(command: &Command, out: &mut impl std::io::Write) -> Exit {
             Exit::Success
         }
         Command::Ci(options) => ci::run(options, out),
-        Command::ToolsInstall { steps } => install::run(steps, out),
+        Command::ToolsInstall { steps, tools } => install::run(steps, tools, out),
         Command::CheckLayers(options) => check_layers::run(options, out),
         Command::CheckManifests => check_manifests::run(out),
         Command::CheckWorkflows => check_workflows::run(out),
@@ -118,6 +119,7 @@ fn run(command: &Command, out: &mut impl std::io::Write) -> Exit {
         Command::LintCanary => lint_canary::run(out),
         Command::Doctor => doctor::run(out),
         Command::InstallHooks { uninstall } => hooks::run(*uninstall, out),
+        Command::Fuzz(command) => fuzz::run(command, out),
     }
 }
 

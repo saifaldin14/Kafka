@@ -15,9 +15,11 @@ use crate::ci;
 pub(crate) enum Command {
     Help,
     Ci(CiOptions),
-    /// `tools install [--step <name>]...`: only the tools those CI steps need, or all.
+    /// `tools install [--step <name>]... [--tool <name>]...`: the tools those CI steps
+    /// need and the tools named, or every tool a step needs.
     ToolsInstall {
         steps: Vec<String>,
+        tools: Vec<String>,
     },
     CheckLayers(LayerOptions),
     CheckManifests,
@@ -35,7 +37,22 @@ pub(crate) enum Command {
     InstallHooks {
         uninstall: bool,
     },
+    Fuzz(FuzzCommand),
 }
+
+/// A `cargo xtask fuzz` command.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum FuzzCommand {
+    /// `--list`.
+    List,
+    /// `<target> [--time <duration>]`: fuzz for that long.
+    Run { target: String, seconds: u64 },
+    /// `<target> <input>`: run one input, such as a crash artifact.
+    Reproduce { target: String, input: String },
+}
+
+/// How long `cargo xtask fuzz <target>` runs without `--time`.
+pub(crate) const DEFAULT_FUZZ_SECONDS: u64 = 60;
 
 /// A `cargo xtask backlog` subcommand.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -85,9 +102,18 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
         "Run the CI checks; `--list` shows the steps",
     ),
     (
-        "tools install [--step <name>]...",
-        "Install the pinned external tools, or only those the named CI steps need",
+        "tools install [--step <name>]... [--tool <name>]...",
+        "Install the pinned tools the CI steps need, or only those the named steps need and the named tools",
     ),
+    (
+        "fuzz <target> [--time <duration>]",
+        "Fuzz a target with the standard limits, 60s unless `--time` says otherwise (`90s`, `5m`, `1h`)",
+    ),
+    (
+        "fuzz <target> <input>",
+        "Run one input through a target with the standard limits, such as a crash artifact",
+    ),
+    ("fuzz --list", "List the fuzz targets"),
     (
         "check-layers [--print] [--manifest-path <path>]",
         "Check the crate layering rules (ADR-0009); `--print` shows the layer table",
@@ -171,6 +197,7 @@ pub(crate) enum UsageError {
         name: &'static str,
     },
     UnknownStep(String),
+    UnknownTool(String),
     MissingSubcommand {
         command: &'static str,
     },
@@ -199,6 +226,10 @@ impl fmt::Display for UsageError {
             UsageError::UnknownStep(name) => write!(
                 f,
                 "unknown step `{name}`; `cargo xtask ci --list` shows the steps"
+            ),
+            UsageError::UnknownTool(name) => write!(
+                f,
+                "unknown tool `{name}`; the tools are listed in xtask/src/tools.rs"
             ),
             UsageError::MissingSubcommand { command } => {
                 write!(f, "`{command}` needs a subcommand")
@@ -262,14 +293,14 @@ pub(crate) fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Command,
         },
         "tools" => match rest.split_first() {
             None => Err(UsageError::MissingSubcommand { command: "tools" }),
-            Some((sub, rest)) if sub == "install" => {
-                parse_tools_install(rest).map(|steps| Command::ToolsInstall { steps })
-            }
+            Some((sub, rest)) if sub == "install" => parse_tools_install(rest)
+                .map(|(steps, tools)| Command::ToolsInstall { steps, tools }),
             Some((sub, _)) => Err(UsageError::UnknownSubcommand {
                 command: "tools",
                 name: sub.clone(),
             }),
         },
+        "fuzz" => parse_fuzz(rest).map(Command::Fuzz),
         _ => Err(UsageError::UnknownCommand(name.clone())),
     }
 }
@@ -334,22 +365,88 @@ fn parse_check_layers(rest: &[String]) -> Result<LayerOptions, UsageError> {
     Ok(options)
 }
 
-fn parse_tools_install(rest: &[String]) -> Result<Vec<String>, UsageError> {
+fn parse_tools_install(rest: &[String]) -> Result<(Vec<String>, Vec<String>), UsageError> {
     let mut options = CiOptions::default();
+    let mut tools = Vec::new();
     let mut args = rest.iter();
     while let Some(arg) = args.next() {
-        if arg != "--step" {
-            return Err(UsageError::UnexpectedArgument {
-                command: "tools install",
-                argument: arg.clone(),
-            });
+        match arg.as_str() {
+            "--step" => {
+                let name = args
+                    .next()
+                    .ok_or(UsageError::MissingValue { flag: "--step" })?;
+                add_step(&mut options, name)?;
+            }
+            "--tool" => {
+                let name = args
+                    .next()
+                    .ok_or(UsageError::MissingValue { flag: "--tool" })?;
+                if !crate::tools::TOOLS.iter().any(|tool| tool.name == name) {
+                    return Err(UsageError::UnknownTool(name.clone()));
+                }
+                if !tools.contains(name) {
+                    tools.push(name.clone());
+                }
+            }
+            _ => {
+                return Err(UsageError::UnexpectedArgument {
+                    command: "tools install",
+                    argument: arg.clone(),
+                });
+            }
         }
-        let name = args
-            .next()
-            .ok_or(UsageError::MissingValue { flag: "--step" })?;
-        add_step(&mut options, name)?;
     }
-    Ok(options.steps)
+    Ok((options.steps, tools))
+}
+
+fn parse_fuzz(rest: &[String]) -> Result<FuzzCommand, UsageError> {
+    let unexpected = |argument: &String| UsageError::UnexpectedArgument {
+        command: "fuzz",
+        argument: argument.clone(),
+    };
+    match rest {
+        [] => Err(UsageError::MissingArgument {
+            command: "fuzz",
+            name: "a target, or `--list`",
+        }),
+        [flag] if flag == "--list" => Ok(FuzzCommand::List),
+        [flag, extra, ..] if flag == "--list" => Err(unexpected(extra)),
+        [target] => Ok(FuzzCommand::Run {
+            target: target.clone(),
+            seconds: DEFAULT_FUZZ_SECONDS,
+        }),
+        [target, flag] if flag == "--time" => Err(UsageError::MissingValue { flag: "--time" }),
+        [target, flag, duration] if flag == "--time" => Ok(FuzzCommand::Run {
+            target: target.clone(),
+            seconds: parse_duration(duration).ok_or_else(|| UsageError::InvalidNumber {
+                flag: "--time",
+                value: duration.clone(),
+            })?,
+        }),
+        [_, flag, _, extra, ..] if flag == "--time" => Err(unexpected(extra)),
+        [_, input, ..] if input.starts_with('-') => Err(unexpected(input)),
+        [target, input] => Ok(FuzzCommand::Reproduce {
+            target: target.clone(),
+            input: input.clone(),
+        }),
+        [_, _, extra, ..] => Err(unexpected(extra)),
+    }
+}
+
+/// Seconds from `90`, `90s`, `5m` or `1h`. Zero is rejected: libFuzzer reads it as
+/// "no limit".
+fn parse_duration(text: &str) -> Option<u64> {
+    let (number, unit) = match text.char_indices().last()? {
+        (index, 's') => (text.get(..index)?, 1),
+        (index, 'm') => (text.get(..index)?, 60),
+        (index, 'h') => (text.get(..index)?, 3600),
+        _ => (text, 1),
+    };
+    number
+        .parse::<u64>()
+        .ok()?
+        .checked_mul(unit)
+        .filter(|&seconds| seconds > 0)
 }
 
 fn parse_backlog(rest: &[String]) -> Result<BacklogCommand, UsageError> {
@@ -511,7 +608,8 @@ mod tests {
     use std::ffi::OsString;
 
     use super::{
-        BacklogCommand, CiOptions, Command, DocsCommand, SchemasCommand, UsageError, parse,
+        BacklogCommand, CiOptions, Command, DocsCommand, FuzzCommand, SchemasCommand, UsageError,
+        parse,
     };
 
     fn args(list: &[&str]) -> Vec<OsString> {
@@ -607,19 +705,34 @@ mod tests {
     fn tools_install_parses_and_other_subcommands_do_not() {
         assert_eq!(
             parse(args(&["tools", "install"])),
-            Ok(Command::ToolsInstall { steps: Vec::new() })
+            Ok(Command::ToolsInstall {
+                steps: Vec::new(),
+                tools: Vec::new()
+            })
         );
         assert_eq!(
             parse(args(&[
                 "tools", "install", "--step", "test", "--step", "links"
             ])),
             Ok(Command::ToolsInstall {
-                steps: vec!["test".to_owned(), "links".to_owned()]
+                steps: vec!["test".to_owned(), "links".to_owned()],
+                tools: Vec::new()
             })
         );
         assert_eq!(
             parse(args(&["tools", "install", "--step", "nope"])),
             Err(UsageError::UnknownStep("nope".to_owned()))
+        );
+        assert_eq!(
+            parse(args(&["tools", "install", "--tool", "cargo-fuzz"])),
+            Ok(Command::ToolsInstall {
+                steps: Vec::new(),
+                tools: vec!["cargo-fuzz".to_owned()]
+            })
+        );
+        assert_eq!(
+            parse(args(&["tools", "install", "--tool", "nope"])),
+            Err(UsageError::UnknownTool("nope".to_owned()))
         );
         assert_eq!(
             parse(args(&["tools"])),
@@ -630,6 +743,60 @@ mod tests {
             Err(UsageError::UnknownSubcommand {
                 command: "tools",
                 name: "remove".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn fuzz_commands_parse() {
+        let run = |target: &str, seconds| {
+            Ok(Command::Fuzz(FuzzCommand::Run {
+                target: target.to_owned(),
+                seconds,
+            }))
+        };
+        assert_eq!(
+            parse(args(&["fuzz", "--list"])),
+            Ok(Command::Fuzz(FuzzCommand::List))
+        );
+        assert_eq!(parse(args(&["fuzz", "t"])), run("t", 60));
+        assert_eq!(parse(args(&["fuzz", "t", "--time", "90"])), run("t", 90));
+        assert_eq!(parse(args(&["fuzz", "t", "--time", "90s"])), run("t", 90));
+        assert_eq!(parse(args(&["fuzz", "t", "--time", "5m"])), run("t", 300));
+        assert_eq!(parse(args(&["fuzz", "t", "--time", "1h"])), run("t", 3600));
+        assert_eq!(
+            parse(args(&["fuzz", "t", "crash-1"])),
+            Ok(Command::Fuzz(FuzzCommand::Reproduce {
+                target: "t".to_owned(),
+                input: "crash-1".to_owned()
+            }))
+        );
+        for bad in ["0", "0s", "s", "1d", "-1", ""] {
+            assert_eq!(
+                parse(args(&["fuzz", "t", "--time", bad])),
+                Err(UsageError::InvalidNumber {
+                    flag: "--time",
+                    value: bad.to_owned()
+                }),
+                "{bad}"
+            );
+        }
+        assert_eq!(
+            parse(args(&["fuzz", "t", "--time"])),
+            Err(UsageError::MissingValue { flag: "--time" })
+        );
+        assert_eq!(
+            parse(args(&["fuzz", "t", "--fast"])),
+            Err(UsageError::UnexpectedArgument {
+                command: "fuzz",
+                argument: "--fast".to_owned()
+            })
+        );
+        assert_eq!(
+            parse(args(&["fuzz"])),
+            Err(UsageError::MissingArgument {
+                command: "fuzz",
+                name: "a target, or `--list`"
             })
         );
     }

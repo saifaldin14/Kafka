@@ -7,10 +7,27 @@ This directory is its own Cargo workspace, which the main workspace excludes. Th
 ## Running a target
 
 ```sh
-rustup toolchain install nightly-2026-11-20   # the date in rust-toolchain.toml
-cargo install --locked cargo-fuzz
-cargo +nightly-2026-11-20 fuzz run --fuzz-dir fuzz --debug-assertions types_uuid_parse -- -max_total_time=60
+cargo xtask tools install --tool cargo-fuzz             # the pinned cargo-fuzz
+rustup toolchain install nightly-2026-11-20 --profile minimal   # the date in rust-toolchain.toml
+cargo xtask fuzz --list                                 # the targets
+cargo xtask fuzz types_uuid_parse --time 5m             # fuzz for 5 minutes (default 60s)
+cargo xtask fuzz types_uuid_parse fuzz/artifacts/types_uuid_parse/crash-…   # rerun one input
 ```
+
+`cargo xtask fuzz` builds the target with `cargo fuzz build` and debug assertions, so integer overflow is a crash. Then it runs the target's binary itself, with the limits below, so that every run uses them. cargo-fuzz's own `run` reruns a crashing input without them.
+
+A run reads the corpus in `corpus/<target>/` and the committed seeds in `seeds/<target>/`, and adds new inputs to the corpus only. A crash leaves its input in `artifacts/<target>/`. All three directories but `seeds/` are ignored by git.
+
+## Limits
+
+Every run uses these libFuzzer limits, from `LIMITS` in [`xtask/src/fuzz.rs`](../xtask/src/fuzz.rs); a test keeps this table equal to it. Exceeding one is reported as a crash, so a hang or a runaway allocation fails a run like a panic does.
+
+| Flag | Value | Why |
+|---|---|---|
+| `-max_len` | 65536 | The largest input, in bytes. Big enough for a request with thousands of array elements; larger inputs slow every run without reaching new code. |
+| `-timeout` | 10 | Seconds for one input. Decoding 64 KiB takes microseconds even under the address sanitizer, so 10 s on a slow shared runner is a hang, not slowness. |
+| `-malloc_limit_mb` | 64 | The largest single allocation, in MiB. From a 64 KiB input a correct decoder allocates at most the input times a small constant (each declared element is backed by input bytes and charged to the decode budget). An allocation sized from an unchecked length, up to 2³¹ elements, fails here at once. |
+| `-rss_limit_mb` | 2048 | The process's memory, in MiB: libFuzzer's default. It catches memory that accumulates across inputs, such as a leak, and stays well under a CI runner's memory. |
 
 ## Writing a target
 
