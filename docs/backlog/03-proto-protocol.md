@@ -458,19 +458,19 @@ Done when: the encoder accepts `RecordsField::Deferred { len, token }` and accou
 P2 · M1 · Task · deps: PROTO-0101 · labels: nfr
 Done when: the value equals the frame length when any records slice is held and zero otherwise; documented for NET memory accounting.
 
-## [To Do] PROTO-F09 Decode limits
+## [In Progress] PROTO-F09 Decode limits
 P0 · M1 · Feature · deps: none
 Scope: `DecodeLimits` bounding array lengths, string lengths, nesting depth and total allocation before allocating.
 
-### [To Do] PROTO-0105 `DecodeLimits` and a per-decode budget with `DecodeError::LimitExceeded { limit, requested, path }`
+### [Done] PROTO-0105 `DecodeLimits` and a per-decode budget with `DecodeError::LimitExceeded { limit, requested, path }`
 P0 · M1 · Task · deps: PROTO-0025 · labels: security · ref: clients/src/main/java/org/apache/kafka/common/protocol/MessageUtil.java MAX_ARRAY_LENGTH/MAX_TAGGED_FIELD_COUNT/MAX_PREALLOCATED_ARRAY_CAPACITY @4.4.0
 Done when: defaults equal Kafka's constants where Kafka has one; limits are plain values chosen by the caller (no config parsing in layer 0); unit tests.
 
-### [To Do] PROTO-0106 Rule: array length ≤ 1,000,000 elements, checked before allocation
+### [Done] PROTO-0106 Rule: array length ≤ 1,000,000 elements, checked before allocation
 P0 · M1 · Task · deps: PROTO-0105, PROTO-0047, PROTO-0048 · labels: security · ref: clients/src/main/java/org/apache/kafka/common/protocol/MessageUtil.java MAX_ARRAY_LENGTH @4.4.0
 Done when: a declared length above the limit fails with Kafka's "exceeds the maximum allowed size" semantics before any allocation (test with an 8-byte input).
 
-### [To Do] PROTO-0107 Rule: preallocate at most 1000 elements and grow as elements decode
+### [Done] PROTO-0107 Rule: preallocate at most 1000 elements and grow as elements decode
 P0 · M1 · Task · deps: PROTO-0105 · labels: security · ref: clients/src/main/java/org/apache/kafka/common/protocol/MessageUtil.java MAX_PREALLOCATED_ARRAY_CAPACITY @4.4.0
 Done when: a valid array of 5000 elements decodes; `Vec::with_capacity` never exceeds 1000 for a declared length (test).
 

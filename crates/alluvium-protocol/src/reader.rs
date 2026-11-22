@@ -4,25 +4,34 @@ use alluvium_types::Uuid;
 use bytes::Bytes;
 
 use crate::error::{DecodeError, DecodeErrorKind};
+use crate::limits::DecodeLimits;
 
 /// Reads Kafka primitives from the front of a [`Bytes`] buffer.
 ///
 /// Every read checks the bytes remaining before taking any, so a short input is a
 /// [`DecodeErrorKind::Truncated`] at the offset where the value started, never a panic.
-/// Values sliced out of the input, such as byte arrays, share its allocation.
+/// Values sliced out of the input, such as byte arrays, share its allocation. Declared
+/// sizes are checked against the reader's [`DecodeLimits`] before anything is
+/// allocated for them.
 // Parity: clients/src/main/java/org/apache/kafka/common/protocol/ByteBufferAccessor.java@4.4.0 ByteBufferAccessor
 #[derive(Debug, Clone)]
 pub struct Reader {
     buf: Bytes,
     /// The input's length, to report offsets from its start.
     total: usize,
+    pub(crate) limits: DecodeLimits,
 }
 
 impl Reader {
-    /// A reader over all of `buf`.
+    /// A reader over all of `buf`, with Kafka's limits.
     pub fn new(buf: Bytes) -> Reader {
+        Reader::with_limits(buf, DecodeLimits::default())
+    }
+
+    /// A reader over all of `buf`, with the caller's limits.
+    pub fn with_limits(buf: Bytes, limits: DecodeLimits) -> Reader {
         let total = buf.len();
-        Reader { buf, total }
+        Reader { buf, total, limits }
     }
 
     /// The offset of the next byte to read, from the start of the input.

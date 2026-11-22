@@ -26,6 +26,7 @@ version = "0.0.0"
 dependencies = [
  "alluvium-types",
  "bytes",
+ "peak_alloc",
  "proptest",
  "thiserror",
 ]
@@ -346,6 +347,12 @@ dependencies = [
  "libc",
  "winapi",
 ]
+
+[[package]]
+name = "peak_alloc"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ccc90935a8dd139fdf341762773687a1e361d3f54b396a55d9dd1f7001e484bb"
 
 [[package]]
 name = "pin-project-lite"

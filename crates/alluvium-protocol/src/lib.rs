@@ -14,6 +14,8 @@
 //!
 //! - Decoding never panics and never reads past its input: every read checks the
 //!   remaining bytes first and returns a [`DecodeError`] naming the byte offset.
+//! - A declared size is checked against the bytes remaining and the caller's
+//!   [`DecodeLimits`] before anything is allocated for it.
 //! - This crate denies `clippy::indexing_slicing` and `clippy::arithmetic_side_effects`,
 //!   so input-derived indexes and arithmetic are checked (docs/standards/security.md).
 //!
@@ -21,8 +23,10 @@
 //! parse, and the network layer decides that.
 #![deny(clippy::indexing_slicing, clippy::arithmetic_side_effects)]
 
+mod array;
 mod error;
 mod framed;
+mod limits;
 mod reader;
 mod tagged_fields;
 mod varint;
@@ -30,6 +34,7 @@ mod writer;
 
 pub use error::{DecodeError, DecodeErrorKind, EncodeError};
 pub use framed::Framing;
+pub use limits::{DecodeLimits, Limit};
 pub use reader::Reader;
 pub use tagged_fields::RawTaggedField;
 pub use varint::{size_of_unsigned_varint, size_of_varint, size_of_varlong};
