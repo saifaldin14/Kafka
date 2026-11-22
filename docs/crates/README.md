@@ -9,7 +9,7 @@ Crates, in code-map order:
 | Crate | Deep dive |
 |---|---|
 | `alluvium-types` | [alluvium-types.md](alluvium-types.md) |
-| `alluvium-protocol` | Not written yet |
+| `alluvium-protocol` | [Stub](alluvium-protocol.md), to fill in DOCS-0124 |
 | `alluvium-records` | Not written yet |
 | `alluvium-storage` | Not written yet |
 | `alluvium-raft` | Not written yet |
