@@ -1,0 +1,5 @@
+# cargo-fuzz needs nightly for its sanitizer flags. Pinned by date so that a fuzz crash
+# reproduces with the compiler that found it. The main workspace stays on the stable
+# toolchain in ../rust-toolchain.toml.
+[toolchain]
+channel = "nightly-2026-11-20"

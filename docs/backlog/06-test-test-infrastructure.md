@@ -220,11 +220,11 @@ Done when: The example in the guide is a real test that runs in CI (the guide li
 P1 · M3 · Task · deps: TEST-0045 · labels: test, perf
 Done when: The criterion benchmark result is recorded in the PR; the nightly seed count is derived from it so the nightly job fits its time budget (stated in the nightly workflow comment).
 
-## [To Do] TEST-F07 Fuzzing infrastructure
+## [In Progress] TEST-F07 Fuzzing infrastructure
 P0 · M1 · Feature · deps: FND-F06
 Scope: cargo-fuzz layout, corpus management, short CI runs per PR, nightly long runs, crash triage workflow.
 
-### [To Do] TEST-0048 cargo-fuzz layout in `fuzz/` (its own workspace, nightly toolchain pinned by date in `fuzz/rust-toolchain.toml`) with the first targets `types_uuid_parse` and `types_topic_name`
+### [Done] TEST-0048 cargo-fuzz layout in `fuzz/` (its own workspace, nightly toolchain pinned by date in `fuzz/rust-toolchain.toml`) with the first targets `types_uuid_parse` and `types_topic_name`
 P0 · M1 · Task · deps: TYPE-F03, TYPE-F04 · labels: test, security, decoder · ref: docs/standards/security.md#untrusted-input
 Done when: `cargo +nightly fuzz run types_uuid_parse -- -max_total_time=60` runs clean; each target asserts no panic and, when parsing succeeds, that display then parse round-trips; target naming (`<crate>_<decoder>`) and the assertion pattern are documented in `fuzz/README.md`; the main workspace excludes `fuzz/`.
 

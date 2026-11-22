@@ -75,7 +75,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/xtask-ci
         with:
-          steps: deny
+          steps: deny fuzz-deny
       # A reviewer aid, not a check (FND-0016): lists the crates a PR adds, removes or
       # upgrades, with license and transitive count, in this job's summary.
       - name: Dependency changes
