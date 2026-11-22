@@ -474,7 +474,7 @@ Done when: a declared length above the limit fails with Kafka's "exceeds the max
 P0 · M1 · Task · deps: PROTO-0105 · labels: security · ref: clients/src/main/java/org/apache/kafka/common/protocol/MessageUtil.java MAX_PREALLOCATED_ARRAY_CAPACITY @4.4.0
 Done when: a valid array of 5000 elements decodes; `Vec::with_capacity` never exceeds 1000 for a declared length (test).
 
-### [To Do] PROTO-0108 Rule: string length ≤ 32767 bytes for classic and compact strings
+### [Done] PROTO-0108 Rule: string length ≤ 32767 bytes for classic and compact strings
 P0 · M1 · Task · deps: PROTO-0105, PROTO-0040 · labels: security · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateVariableLengthReader @4.4.0
 Done when: a compact string declaring 40000 bytes fails with "string field had invalid length" semantics before allocation.
 

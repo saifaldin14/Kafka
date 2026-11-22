@@ -63,8 +63,9 @@ pub enum DecodeErrorKind {
         /// The bytes left in the input.
         remaining: usize,
     },
-    /// A declared size above one of the caller's [`DecodeLimits`](crate::DecodeLimits),
-    /// found before anything was allocated for it.
+    /// A declared size above a [`Limit`]: one of the caller's
+    /// [`DecodeLimits`](crate::DecodeLimits) or a fixed rule of the format. It is found
+    /// before anything is allocated for it.
     #[error("{limit} {requested} exceeds the limit {allowed}")]
     LimitExceeded {
         /// The limit exceeded.
