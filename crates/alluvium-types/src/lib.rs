@@ -12,6 +12,8 @@
 //! - `clients/.../common/record/internal/RecordBatch.java` and `DefaultRecordBatch.java`
 //!   (producer id, epoch and sequence sentinels and arithmetic);
 //! - `transaction-coordinator/.../TransactionMetadata.java` (epoch exhaustion);
+//! - `clients/.../common/requests/ConsumerGroupHeartbeatRequest.java` and
+//!   `JoinGroupRequest.java` (member epoch and generation sentinels);
 //! - `clients/.../common/config/types/Password.java` and
 //!   `clients/.../common/utils/internals/Crc32C.java`.
 //!
@@ -29,6 +31,8 @@
 //!   request a response answers.
 //! - [`ProducerId`], [`ProducerEpoch`] and [`Sequence`]: idempotent and transactional
 //!   producers.
+//! - [`LeaderEpoch`], [`BrokerEpoch`], [`MemberEpoch`] and [`GenerationId`]: fencing
+//!   counters for leaders, brokers and group members.
 //! - [`IdError`]: why a value was rejected.
 //! - [`Secret`]: a value that is never printed and is zeroized on drop.
 //! - [`PayloadSummary`]: how record payloads are printed (length and CRC32C only).
@@ -38,6 +42,7 @@
 //! Errors here carry no Kafka error code: the Kafka error depends on where the value
 //! came from, so the decoder or handler that rejects it maps it.
 
+mod epoch;
 mod id;
 mod payload;
 mod producer;
@@ -45,6 +50,7 @@ mod secret;
 #[cfg(any(test, feature = "proptest-strategies"))]
 pub mod strategies;
 
+pub use epoch::{BrokerEpoch, GenerationId, LeaderEpoch, MemberEpoch, PositiveEpoch};
 pub use id::{BrokerId, CorrelationId, IdError, IdKind, NodeId, PartitionIndex};
 pub use payload::PayloadSummary;
 pub use producer::{ProducerEpoch, ProducerId, Sequence};

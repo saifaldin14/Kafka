@@ -4,7 +4,7 @@
 
 Shared domain vocabulary: identifier newtypes, validated names, time and randomness injection, secrets, and the type-level foundations for namespaces and key ranges.
 
-## [In Progress] TYPE-F01 Identifier newtypes
+## [Done] TYPE-F01 Identifier newtypes
 P0 · M0 · Feature · deps: FND-F02
 Scope: `BrokerId`, `NodeId`, `PartitionIndex`, `ProducerId`, `ProducerEpoch`, `Sequence`, `LeaderEpoch`, `BrokerEpoch`, `MemberEpoch`, `GenerationId`, `CorrelationId` with checked construction and `Debug`/`Display`.
 
@@ -28,11 +28,11 @@ Done when: `// Parity:` cites `TransactionMetadata.isEpochExhausted` and `Record
 P0 · M0 · Task · deps: TYPE-0002 · ref: clients/src/main/java/org/apache/kafka/common/record/internal/DefaultRecordBatch.java incrementSequence @4.4.0
 Done when: Ported cases cover wrap-around at `i32::MAX`; a property test shows `wrapping_sub(wrapping_add(s, n), n) == s` for all valid `s` and `n`; `// Parity:` cites both Kafka methods.
 
-### [To Do] TYPE-0006 `LeaderEpoch` (non-negative `i32`, `NO_PARTITION_LEADER_EPOCH = -1` → `None`, total order) and `BrokerEpoch` (non-negative `i64`, `-1` → `None`)
+### [Done] TYPE-0006 `LeaderEpoch` (non-negative `i32`, `NO_PARTITION_LEADER_EPOCH = -1` → `None`, total order) and `BrokerEpoch` (non-negative `i64`, `-1` → `None`)
 P0 · M0 · Task · deps: TYPE-0002 · ref: clients/src/main/java/org/apache/kafka/common/record/internal/RecordBatch.java NO_PARTITION_LEADER_EPOCH @4.4.0
 Done when: Comparisons are by numeric value (the rule "a replica rejects a stale epoch" relies on them); unit tests cover the sentinels, the boundaries and other negatives; strategies are added.
 
-### [To Do] TYPE-0007 `MemberEpoch` with the KIP-848 sentinels as an enum (`Join` = 0, `Leave` = -1, `LeaveStatic` = -2, `Epoch(n)` for n > 0) and `GenerationId` (`UNKNOWN_GENERATION_ID = -1` → `None`)
+### [Done] TYPE-0007 `MemberEpoch` with the KIP-848 sentinels as an enum (`Join` = 0, `Leave` = -1, `LeaveStatic` = -2, `Epoch(n)` for n > 0) and `GenerationId` (`UNKNOWN_GENERATION_ID = -1` → `None`)
 P0 · M0 · Task · deps: TYPE-0002 · ref: clients/src/main/java/org/apache/kafka/common/requests/ConsumerGroupHeartbeatRequest.java @4.4.0
 Done when: Wire conversion round-trips every `i32` that Kafka accepts, and other negative values return a typed error; `// Parity:` cites `ConsumerGroupHeartbeatRequest` (`JOIN_GROUP_MEMBER_EPOCH`, `LEAVE_GROUP_MEMBER_EPOCH`, `LEAVE_GROUP_STATIC_MEMBER_EPOCH`) and `JoinGroupRequest.UNKNOWN_GENERATION_ID`; strategies cover every sentinel.
 
