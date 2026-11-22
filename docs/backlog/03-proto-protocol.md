@@ -17,7 +17,7 @@ Notes: The directory at the tag holds 204 files: 203 JSON schemas and Kafka's RE
 P0 · M1 · Task · deps: none · ref: metadata/src/main/resources/common/metadata @4.4.0
 Done when: metadata (27), group-coordinator (44), transaction-coordinator (2), share-coordinator (4) and raft `QuorumStateData.json` copied unmodified under paths mirroring Kafka's modules; `streams/…/SubscriptionInfoData.json` is deliberately not vendored (client-side only) and the README says why.
 
-### [To Do] PROTO-0003 Schema manifest `schemas/kafka-4.4.0/MANIFEST.sha256` and `cargo xtask schemas verify` step in `cargo xtask ci`
+### [Done] PROTO-0003 Schema manifest `schemas/kafka-4.4.0/MANIFEST.sha256` and `cargo xtask schemas verify` step in `cargo xtask ci`
 P0 · M1 · Task · deps: PROTO-0001, PROTO-0002 · labels: security · ref: ADR-0008
 Done when: the manifest lists every vendored file with its SHA-256 and the tag commit; `verify` fails naming the file on any added, removed or modified schema (tested with a tampered fixture directory); the step runs in CI.
 
