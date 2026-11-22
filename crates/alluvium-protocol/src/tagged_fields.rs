@@ -23,7 +23,12 @@ pub struct RawTaggedField {
 }
 
 impl Reader {
-    /// A whole tagged-field section, every field kept raw.
+    /// A whole tagged-field section, every field kept raw, in the order read.
+    ///
+    /// The order isn't checked: like Kafka's `Readable.readUnknownTaggedField`, this
+    /// accepts tags out of order or repeated. [`Writer::write_tagged_fields`] writes only
+    /// ascending tags, as Kafka's `RawTaggedFieldWriter` does, so such a section can be
+    /// read but not written back.
     ///
     /// # Errors
     ///
@@ -252,6 +257,14 @@ mod tests {
                     allowed: needed - 1
                 }
             ))
+        );
+    }
+
+    #[test]
+    fn tags_are_read_in_any_order_as_kafka_reads_them() {
+        assert_eq!(
+            reader(&[3, 5, 0, 1, 0, 1, 0]).read_tagged_fields(),
+            Ok(vec![field(5, &[]), field(1, &[]), field(1, &[])])
         );
     }
 

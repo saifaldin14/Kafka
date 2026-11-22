@@ -150,6 +150,7 @@ jobs:
             fi
             echo
             echo "Reproduce it: save the input, then run \`cargo xtask fuzz $TARGET <input>\`."
+            echo "Triage it as docs/guides/debugging.md#fuzz-crashes says: a failing unit test in the owning crate, the fix, and the input in fuzz/seeds/$TARGET/."
           } > "report/$TARGET.md"
       - name: Upload the crash report
         if: ${{ steps.fuzz.outcome == 'failure' }}
