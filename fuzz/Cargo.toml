@@ -16,8 +16,17 @@ cargo-fuzz = true
 members = ["."]
 
 [dependencies]
+alluvium-protocol = { path = "../crates/alluvium-protocol" }
 alluvium-types = { path = "../crates/alluvium-types" }
+bytes = { version = "1.12.2", default-features = false, features = ["std"] }
 libfuzzer-sys = "0.4.13"
+
+[[bin]]
+name = "protocol_wire_primitives"
+path = "fuzz_targets/protocol_wire_primitives.rs"
+test = false
+doc = false
+bench = false
 
 [[bin]]
 name = "types_topic_name"

@@ -6,8 +6,19 @@ version = 4
 name = "alluvium-fuzz"
 version = "0.0.0"
 dependencies = [
+ "alluvium-protocol",
  "alluvium-types",
+ "bytes",
  "libfuzzer-sys",
+]
+
+[[package]]
+name = "alluvium-protocol"
+version = "0.0.0"
+dependencies = [
+ "alluvium-types",
+ "bytes",
+ "thiserror",
 ]
 
 [[package]]
@@ -27,6 +38,12 @@ name = "arbitrary"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3bc62ac97cc33321f50863d514c3bc38a453947a8f9e781137e47c7401020aed"
+
+[[package]]
+name = "bytes"
+version = "1.12.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "776dfebd015e2d8732c684a2c71003674ccb49457b539b9e82151ba38e96dd7c"
 
 [[package]]
 name = "cc"

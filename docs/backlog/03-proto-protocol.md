@@ -218,7 +218,7 @@ Done when: Java int wrapping semantics as for compact strings; zero means null; 
 P0 · M1 · Task · deps: PROTO-0035, PROTO-0042 · labels: decoder · ref: clients/src/main/java/org/apache/kafka/common/protocol/types/RawTaggedField.java, types/RawTaggedFieldWriter.java @4.4.0
 Done when: a count that is negative as a Java int or exceeds the remaining bytes is an error; each size is bounded by the remaining bytes; the writer emits entries in ascending tag order and rejects unsorted or duplicate raw tags (RawTaggedFieldWriter's "Invalid raw tag field list"); size computation matches output (property).
 
-### [To Do] PROTO-0050 Fuzz target `wire_primitives`: fuzzer-chosen sequences of primitive reads
+### [Done] PROTO-0050 Fuzz target `wire_primitives`: fuzzer-chosen sequences of primitive reads
 P0 · M1 · Task · deps: PROTO-0032, PROTO-0033, PROTO-0034, PROTO-0036, PROTO-0037, PROTO-0039, PROTO-0041, PROTO-0046, PROTO-0048, PROTO-0049, PROTO-0026, PROTO-0029, PROTO-0030, PROTO-0031, TEST-F07 · labels: test, security, decoder
 Done when: the target exercises every primitive reader, runs clean for the CI fuzz budget and never allocates more than the input length times a constant.
 
