@@ -22,6 +22,8 @@
 //! # Entry points
 //!
 //! - [`NodeId`] and [`BrokerId`]: which process, and which broker.
+//! - [`PartitionIndex`] and [`CorrelationId`]: which partition of a topic, and which
+//!   request a response answers.
 //! - [`IdError`]: why a value was rejected.
 //! - [`Secret`]: a value that is never printed and is zeroized on drop.
 //! - [`PayloadSummary`]: how record payloads are printed (length and CRC32C only).
@@ -37,6 +39,6 @@ mod secret;
 #[cfg(any(test, feature = "proptest-strategies"))]
 pub mod strategies;
 
-pub use id::{BrokerId, IdError, IdKind, NodeId};
+pub use id::{BrokerId, CorrelationId, IdError, IdKind, NodeId, PartitionIndex};
 pub use payload::PayloadSummary;
 pub use secret::Secret;
