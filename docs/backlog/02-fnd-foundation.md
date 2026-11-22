@@ -305,7 +305,7 @@ P2 · M0 · Task · deps: FND-0023, FND-0007, TYPE-F01 · labels: docs · ref: d
 Done when: Fixture crates with a missing doc, a missing line or a wrong layer are rejected; rust.md's "Modules and documentation" section shows the required lines; `alluvium-types` and `xtask` pass.
 Notes: The rule reads only the crate root's text, so its fixtures are inline `lib.rs` texts in the unit test (missing doc, missing `Layer:`, wrong layer, missing or empty `Kafka counterpart:`, lines outside the leading doc, unknown crate) rather than fixture crates. Binary-only crates are checked through `src/main.rs`, which is how `xtask` passes. Also proved on the real workspace by changing `alluvium-types`' doc.
 
-## [In Progress] FND-F11 Repository hygiene
+## [Done] FND-F11 Repository hygiene
 P2 · M0 · Feature · deps: none
 Scope: CODEOWNERS, issue templates, labels, branch protection settings documented.
 
@@ -323,9 +323,10 @@ P3 · M0 · Task · deps: none · labels: docs
 Done when: The sync workflow creates and updates labels and never deletes labels it doesn't manage; its permissions are `issues: write` only; the backlog README's label list and labels.yml agree.
 Notes: The backlog README now links to `.github/labels.yml` instead of keeping its own list, so the two can't disagree; every label used in the backlog is in the file (two `debuggability` labels became `observability`, and the README example's `storage` label was dropped). The sync loop was run once locally with the same `gh label create --force` commands: it added 12 labels, updated `bug`, and removed none.
 
-### [To Do] FND-0061 Document repository settings in `docs/guides/repository-settings.md` and commit the main-branch ruleset export
+### [Done] FND-0061 Document repository settings in `docs/guides/repository-settings.md` and commit the main-branch ruleset export
 P2 · M0 · Task · deps: FND-0037 · labels: docs, security
 Done when: Settings: required check `ci-success`; pull requests with one approval and code-owner review; dismissal of stale approvals; linear history; merge queue; no force pushes or deletions; Actions token read-only by default and approval for fork PRs; Dependabot alerts, secret scanning and push protection on; the ruleset is exported to `.github/rulesets/main.json`. The live settings match the document (screenshots or the `gh api` output are in the PR); the ruleset JSON imports cleanly; CONTRIBUTING links to the page.
+Notes: Applied with the solo-maintainer ruleset agreed for M0: `ci-success` required (GitHub Actions app only, branch up to date), PRs required with 0 approvals, stale-approval dismissal and resolved threads, linear history (rebase or squash merges), no force pushes or deletions, no bypass. One approval and code-owner review would block every PR with one maintainer, and merge queues need an organization-owned repository; the guide records both deviations and how to lift them. The live ruleset was created from `.github/rulesets/main.json` with `gh api -X POST … --input`, and a field-by-field comparison of `gh api …/rulesets/27839590` with the file found no differences. Token read-only, Actions can't approve PRs, fork-PR approval for all outside contributors, Dependabot alerts, secret scanning and push protection are on (`gh api` output in the PR).
 
 ### [Done] FND-0062 `.gitattributes`: `* text=auto eol=lf`, `**/src/generated/** linguist-generated=true`, `schemas/kafka-4.4.0/** linguist-vendored=true`, `Cargo.lock linguist-generated=true`
 P2 · M0 · Task · deps: none · ref: ADR-0008
