@@ -236,7 +236,7 @@ Scope: `IsolationLevel`, `Acks`, `TimestampType`, `CompressionType`, `CleanupPol
 P1 · M0 · Task · deps: TYPE-0002 · ref: core/src/main/scala/kafka/server/ReplicaManager.scala isValidRequiredAcks @4.4.0
 Done when: Tests over every `i8`/`i16` value show only the listed values decode and all others return typed errors (the produce handler maps an invalid `acks` to `INVALID_REQUIRED_ACKS`, citing `ReplicaManager.isValidRequiredAcks`); `// Parity:` cites `IsolationLevel.forId`; strategies include the invalid values.
 
-### [To Do] TYPE-0045 `TimestampType` (`CreateTime` = 0, `LogAppendTime` = 1, with Kafka's names `CreateTime`/`LogAppendTime`) and `CompressionType` (`None` = 0, `Gzip` = 1, `Snappy` = 2, `Lz4` = 3, `Zstd` = 4, with the names `none`, `gzip`, `snappy`, `lz4`, `zstd`)
+### [Done] TYPE-0045 `TimestampType` (`CreateTime` = 0, `LogAppendTime` = 1, with Kafka's names `CreateTime`/`LogAppendTime`) and `CompressionType` (`None` = 0, `Gzip` = 1, `Snappy` = 2, `Lz4` = 3, `Zstd` = 4, with the names `none`, `gzip`, `snappy`, `lz4`, `zstd`)
 P1 · M0 · Task · deps: TYPE-0002 · ref: clients/src/main/java/org/apache/kafka/common/record/internal/CompressionType.java forId/forName @4.4.0
 Done when: Id and name round-trips are tested for every variant; unknown ids and names return typed errors; the doc states that Kafka's `NO_TIMESTAMP_TYPE` (message formats v0/v1, not supported) is `Option::None` where it can appear, and that the topic-level `producer` compression value belongs to CFG; `// Parity:` cites `TimestampType` and `CompressionType`.
 

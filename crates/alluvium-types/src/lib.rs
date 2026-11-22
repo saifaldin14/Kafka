@@ -14,6 +14,8 @@
 //!
 //! - `clients/.../common/Node.java` (node ids and the `-1` "no node" sentinel);
 //! - `clients/.../common/Uuid.java` (base64 form, signed ordering, reserved ids);
+//! - `clients/.../common/record/TimestampType.java` and
+//!   `clients/.../common/record/internal/CompressionType.java` (ids and names);
 //! - `clients/.../common/IsolationLevel.java` and `core/.../server/ReplicaManager.scala`
 //!   (isolation level and `acks` wire values);
 //! - `clients/.../common/internals/Topic.java` (topic name rules, also applied to group
@@ -68,6 +70,8 @@
 //! - [`GroupId`], [`GroupInstanceId`], [`TransactionalId`] and [`ClientId`]: ids
 //!   clients choose, printed with [`LogSafe`].
 //! - [`ListenerName`]: a listener's name, upper-cased as Kafka normalises it.
+//! - [`TimestampType`] and [`CompressionType`]: record batch attributes, by Kafka id
+//!   and name ([`AttributeError`] for others).
 //! - [`Acks`] and [`IsolationLevel`]: what a write waits for and what a read may see
 //!   ([`DeliveryError`] for other wire values).
 //! - [`TopicPartition`] and [`TopicIdPartition`]: a partition named by topic name, or by
@@ -96,6 +100,7 @@ mod offset;
 mod partition;
 mod payload;
 mod producer;
+mod record_attributes;
 mod rng;
 mod secret;
 #[cfg(any(test, feature = "proptest-strategies"))]
@@ -116,6 +121,7 @@ pub use offset::{Offset, OffsetError, OffsetRange, OffsetSpec};
 pub use partition::{TopicIdPartition, TopicPartition};
 pub use payload::PayloadSummary;
 pub use producer::{ProducerEpoch, ProducerId, Sequence};
+pub use record_attributes::{AttributeError, CompressionType, TimestampType};
 pub use rng::{EntropyError, SeededRng};
 pub use secret::Secret;
 pub use time::{MonotonicInstant, TimeError, WallTime};
