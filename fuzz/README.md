@@ -43,6 +43,10 @@ Every run uses these libFuzzer limits, from `LIMITS` in [`xtask/src/fuzz.rs`](..
 | `-malloc_limit_mb` | 64 | The largest single allocation, in MiB. From a 64 KiB input a correct decoder allocates at most the input times a small constant (each declared element is backed by input bytes and charged to the decode budget). An allocation sized from an unchecked length, up to 2³¹ elements, fails here at once. |
 | `-rss_limit_mb` | 2048 | The process's memory, in MiB: libFuzzer's default. It catches memory that accumulates across inputs, such as a leak, and stays well under a CI runner's memory. |
 
+## In CI
+
+Every pull request fuzzes each target for 60 s, one job per target, in [ci.yml](../.github/workflows/ci.yml). Each job starts from the corpus the nightly run grew. A crash fails the PR and uploads its input as the artifact `fuzz-crash-<target>`, kept 14 days. To reproduce it, download it and run `cargo xtask fuzz <target> <input>`.
+
 ## Writing a target
 
 A target is named `<crate>_<decoder>`, after the crate without its `alluvium-` prefix and the decoder it feeds, such as `types_uuid_parse` or `protocol_wire_primitives`. Its file is `fuzz_targets/<name>.rs`, with a `[[bin]]` entry of the same name in `Cargo.toml`.
