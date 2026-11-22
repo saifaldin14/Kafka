@@ -370,7 +370,7 @@ Done when: tricky cases (tagged defaults, nullable structs, unknown tags, versio
 P2 · M1 · Task · deps: PROTO-0082, TEST-F11 · labels: perf
 Done when: benchmarks run in the benchmark CI job with recorded baselines.
 
-### [To Do] PROTO-0085 Document encode/decode semantics in docs/protocol/codegen.md: version checks, nullability, tagged and unknown fields, ignorable fields and error types
+### [Done] PROTO-0085 Document encode/decode semantics in docs/protocol/codegen.md: version checks, nullability, tagged and unknown fields, ignorable fields and error types
 P1 · M1 · Task · deps: PROTO-0082, PROTO-0067 · labels: docs
 Done when: each DecodeError and EncodeError variant is listed with its Kafka equivalent message.
 
