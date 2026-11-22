@@ -61,8 +61,8 @@
 //!   [`Uuid::random`]; and [`TopicId`], which is never zero.
 //! - [`TopicName`]: a name that passes Kafka's rules ([`TopicNameError`] names the
 //!   rule a string breaks).
-//! - [`GroupId`] and [`GroupInstanceId`]: ids clients choose, printed with
-//!   [`LogSafe`].
+//! - [`GroupId`], [`GroupInstanceId`], [`TransactionalId`] and [`ClientId`]: ids
+//!   clients choose, printed with [`LogSafe`].
 //! - [`IdError`]: why a value was rejected.
 //! - [`Secret`]: a value that is never printed and is zeroized on drop.
 //! - [`PayloadSummary`]: how record payloads are printed (length and CRC32C only).
@@ -92,7 +92,7 @@ mod time;
 mod topic;
 mod uuid;
 
-pub use client_ids::{GroupId, GroupInstanceId};
+pub use client_ids::{ClientId, GroupId, GroupInstanceId, TransactionalId};
 pub use clock::{Clock, ManualClock, SystemClock, WallClockError};
 pub use deadline::Deadline;
 pub use epoch::{BrokerEpoch, GenerationId, LeaderEpoch, MemberEpoch, PositiveEpoch};

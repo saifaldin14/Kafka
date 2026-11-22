@@ -92,7 +92,7 @@ Done when: A property test shows the output never contains `\n`, `\r` or other c
 P0 · M0 · Task · deps: TYPE-0014, TYPE-0017 · ref: clients/src/main/java/org/apache/kafka/common/requests/JoinGroupRequest.java validateGroupInstanceId @4.4.0
 Done when: An empty `GroupId` can be built (the rejection belongs to the group coordinator, citing `GroupCoordinatorService.isGroupIdNotEmpty`); `GroupInstanceId` rejects exactly what `TopicName` rejects; both use the log-safe display; strategies are added.
 
-### [To Do] TYPE-0019 `TransactionalId` (non-empty: the nullable wire value maps `null` to `None`, and an empty string is a typed error the handler maps to Kafka's response) and `ClientId` (any string, including empty)
+### [Done] TYPE-0019 `TransactionalId` (non-empty: the nullable wire value maps `null` to `None`, and an empty string is a typed error the handler maps to Kafka's response) and `ClientId` (any string, including empty)
 P0 · M0 · Task · deps: TYPE-0017 · ref: core/src/main/scala/kafka/coordinator/transaction/TransactionCoordinator.scala handleInitProducerId @4.4.0
 Done when: Tests cover null, empty and non-empty transactional ids, with a `// Parity:` citation of the `TransactionCoordinator` null/empty branches; `ClientId` accepts every string, including control characters, and displays them escaped; strategies are added.
 
