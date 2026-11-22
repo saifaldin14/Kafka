@@ -40,6 +40,7 @@ mod ci;
 mod cli;
 mod clock;
 mod crate_docs;
+mod deps_diff;
 mod doctor;
 mod graph;
 mod hooks;
@@ -107,6 +108,7 @@ fn run(command: &Command, out: &mut impl std::io::Write) -> Exit {
         Command::Backlog(BacklogCommand::Check(options)) => backlog_check::run(options, out),
         Command::Docs(DocsCommand::CheckCrates) => crate_docs::run_check(out),
         Command::Docs(DocsCommand::NewCrateDoc { name }) => crate_docs::run_new(name, out),
+        Command::DepsDiff { base_ref } => deps_diff::run(base_ref, out),
         Command::LintCanary => lint_canary::run(out),
         Command::Doctor => doctor::run(out),
         Command::InstallHooks { uninstall } => hooks::run(*uninstall, out),

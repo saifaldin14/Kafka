@@ -76,6 +76,19 @@ jobs:
       - uses: ./.github/actions/xtask-ci
         with:
           steps: deny
+      # A reviewer aid, not a check (FND-0016): lists the crates a PR adds, removes or
+      # upgrades, with license and transitive count, in this job's summary.
+      - name: Dependency changes
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASE_REF:refs/remotes/origin/$BASE_REF"
+          if git diff --quiet "origin/$BASE_REF" HEAD -- Cargo.lock; then
+            echo "Cargo.lock is unchanged."
+          else
+            cargo xtask deps-diff "origin/$BASE_REF" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
 
   advisories:
     name: advisories (non-blocking)

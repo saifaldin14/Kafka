@@ -78,7 +78,7 @@ Alluvium stores other people's data and listens on the network. Security is a de
 
 ## Dependencies
 
-Before adding a dependency, the PR answers:
+Before adding a dependency, the PR answers these questions. `cargo xtask deps-diff <base-ref>` lists the crates a change adds, removes or upgrades in `Cargo.lock`, with each one's license and transitive count, and CI writes that list to the `deny` job's summary when a PR changes `Cargo.lock`.
 
 1. What does it do, and why can't std or an existing dependency do it in reasonable code?
 2. Is it maintained (recent releases, responsive maintainers) and widely used?

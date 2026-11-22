@@ -58,7 +58,7 @@ Done when: Unit tests with fixture manifests cover: a changed lint level, an add
 P2 · M1 · Task · deps: FND-0007 · labels: decoder, security · ref: docs/standards/rust.md#workspace-configuration
 Done when: The rule applies only to crates present in the workspace; fixture tests show a decoder crate without the attribute is rejected, with a message pointing to rust.md; the rule passes once `alluvium-protocol` exists (M1).
 
-## [In Progress] FND-F03 Dependency policy
+## [Done] FND-F03 Dependency policy
 P0 · M0 · Feature · deps: FND-F01
 Scope: `deny.toml` (advisories, licenses, bans, sources), `cargo deny` wiring, dependency review checklist.
 
@@ -91,9 +91,10 @@ Done when: `cargo xtask ci --step deny` runs all four checks and fails with the 
 P1 · M0 · Task · deps: FND-0007 · labels: security · ref: docs/standards/rust.md#dependencies
 Done when: Fixture tests cover inline versions, inline paths for non-workspace crates, and git sources, each rejected with the crate and dependency named; workspace-internal path dependencies are declared in `[workspace.dependencies]` too, so the rule has no exceptions.
 
-### [To Do] FND-0016 Dependency review aid: `cargo xtask deps-diff <base-ref>` and a PR template link to the review questions
+### [Done] FND-0016 Dependency review aid: `cargo xtask deps-diff <base-ref>` and a PR template link to the review questions
 P2 · M1 · Task · deps: FND-0014 · labels: security, docs · ref: docs/standards/security.md#dependencies
 Done when: The command lists added, removed and upgraded crates from the two `Cargo.lock` files with license and transitive count; the PR template's dependency checkbox links to the five questions in security.md#dependencies. The command works offline from the two lockfiles plus `cargo metadata`; a unit test on two fixture lockfiles checks the diff; CI writes the output to the job summary when `Cargo.lock` changes; the questions are linked, not copied.
+Notes: Run with the network off (`CARGO_NET_OFFLINE=true`) against 574e0ec, before criterion and tracing were added, it listed the 40 added crates with licenses and transitive counts (criterion: 51). The transitive count is read from the head lockfile, so it covers normal and build dependencies on every platform; security.md's question 4 still names `cargo tree -e normal` for the precise view. The CI step in the `deny` job runs on PRs only and skips the table when `Cargo.lock` is unchanged.
 
 ### [Done] FND-0017 `.github/dependabot.yml` for the `cargo` ecosystem: weekly, one PR per dependency, lockfile updates labelled `dependencies`
 P1 · M0 · Task · deps: none · labels: security · ref: docs/standards/security.md#dependencies
