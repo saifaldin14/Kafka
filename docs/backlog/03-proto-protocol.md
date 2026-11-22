@@ -226,6 +226,10 @@ Done when: the target exercises every primitive reader, runs clean for the CI fu
 P2 · M1 · Task · deps: PROTO-0036, PROTO-0037, PROTO-0040, PROTO-0044, TEST-F11 · labels: perf
 Done when: benchmarks run in the benchmark CI job with baselines recorded.
 
+### [Done] PROTO-0157 Fixed-width reads without a new handle on the input, and one validation pass for valid strings
+P1 · M1 · Task · deps: PROTO-0051 · labels: perf
+Done when: the PROTO-0051 gated benchmarks show fewer instructions for varint and string reads, and none more elsewhere; the decode tests pass unchanged.
+
 ## [To Do] PROTO-F04 Generator: message types
 P0 · M1 · Feature · deps: PROTO-F02
 Scope: Generate structs, nested structs, enums for known values, defaults and version metadata.

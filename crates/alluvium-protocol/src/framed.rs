@@ -89,6 +89,11 @@ impl Reader {
             ));
         }
         let bytes = self.take(length)?;
+        // Valid text, the usual case, is checked once and copied once.
+        if let Ok(text) = std::str::from_utf8(&bytes) {
+            self.charge(start, length)?;
+            return Ok(text.to_owned());
+        }
         // Each invalid sequence becomes one U+FFFD, as in `String::from_utf8_lossy`. The
         // text is built here so the exact length can be charged before it is allocated.
         let replaced = |chunk: &Utf8Chunk<'_>| !chunk.invalid().is_empty();
