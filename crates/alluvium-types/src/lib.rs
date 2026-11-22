@@ -14,6 +14,8 @@
 //! - `transaction-coordinator/.../TransactionMetadata.java` (epoch exhaustion);
 //! - `clients/.../common/requests/ConsumerGroupHeartbeatRequest.java` and
 //!   `JoinGroupRequest.java` (member epoch and generation sentinels);
+//! - `clients/.../common/requests/OffsetFetchResponse.java` and `ListOffsetsRequest.java`
+//!   (offset sentinels and `ListOffsets` special timestamps);
 //! - `clients/.../common/config/types/Password.java` and
 //!   `clients/.../common/utils/internals/Crc32C.java`.
 //!
@@ -33,6 +35,8 @@
 //!   producers.
 //! - [`LeaderEpoch`], [`BrokerEpoch`], [`MemberEpoch`] and [`GenerationId`]: fencing
 //!   counters for leaders, brokers and group members.
+//! - [`Offset`], [`OffsetRange`] and [`OffsetSpec`]: log positions, half-open ranges of
+//!   them, and what `ListOffsets` asks for.
 //! - [`IdError`]: why a value was rejected.
 //! - [`Secret`]: a value that is never printed and is zeroized on drop.
 //! - [`PayloadSummary`]: how record payloads are printed (length and CRC32C only).
@@ -44,6 +48,7 @@
 
 mod epoch;
 mod id;
+mod offset;
 mod payload;
 mod producer;
 mod secret;
@@ -52,6 +57,7 @@ pub mod strategies;
 
 pub use epoch::{BrokerEpoch, GenerationId, LeaderEpoch, MemberEpoch, PositiveEpoch};
 pub use id::{BrokerId, CorrelationId, IdError, IdKind, NodeId, PartitionIndex};
+pub use offset::{Offset, OffsetError, OffsetRange, OffsetSpec};
 pub use payload::PayloadSummary;
 pub use producer::{ProducerEpoch, ProducerId, Sequence};
 pub use secret::Secret;

@@ -36,19 +36,19 @@ Done when: Comparisons are by numeric value (the rule "a replica rejects a stale
 P0 · M0 · Task · deps: TYPE-0002 · ref: clients/src/main/java/org/apache/kafka/common/requests/ConsumerGroupHeartbeatRequest.java @4.4.0
 Done when: Wire conversion round-trips every `i32` that Kafka accepts, and other negative values return a typed error; `// Parity:` cites `ConsumerGroupHeartbeatRequest` (`JOIN_GROUP_MEMBER_EPOCH`, `LEAVE_GROUP_MEMBER_EPOCH`, `LEAVE_GROUP_STATIC_MEMBER_EPOCH`) and `JoinGroupRequest.UNKNOWN_GENERATION_ID`; strategies cover every sentinel.
 
-## [To Do] TYPE-F02 Offsets and positions
+## [Done] TYPE-F02 Offsets and positions
 P0 · M0 · Feature · deps: FND-F02
 Scope: `Offset`, offset ranges, checked offset arithmetic, sentinel values (latest/earliest) as explicit enums.
 
-### [To Do] TYPE-0008 `Offset` (non-negative `i64`) with `checked_add`/`checked_sub` returning `OffsetError::Overflow { offset, delta }`, `next()`, and nullable wire mapping (`-1` → `None`, as in `OffsetFetchResponse.INVALID_OFFSET`)
+### [Done] TYPE-0008 `Offset` (non-negative `i64`) with `checked_add`/`checked_sub` returning `OffsetError::Overflow { offset, delta }`, `next()`, and nullable wire mapping (`-1` → `None`, as in `OffsetFetchResponse.INVALID_OFFSET`)
 P0 · M0 · Task · deps: TYPE-0002 · ref: clients/src/main/java/org/apache/kafka/common/requests/OffsetFetchResponse.java INVALID_OFFSET @4.4.0
 Done when: Property tests show that checked arithmetic never panics and agrees with `i128` reference arithmetic over the whole `i64` range; `next()` at `i64::MAX` returns an error; `Display` prints the plain number; strategies are biased to 0, 1, `i32::MAX` and `i64::MAX`.
 
-### [To Do] TYPE-0009 `OffsetRange`: half-open `[start, end)` with `contains`, `len() -> u64`, `is_empty`, `split_at(offset)` and `intersect`, rejecting `start > end` at construction
+### [Done] TYPE-0009 `OffsetRange`: half-open `[start, end)` with `contains`, `len() -> u64`, `is_empty`, `split_at(offset)` and `intersect`, rejecting `start > end` at construction
 P0 · M0 · Task · deps: TYPE-0008
 Done when: Property tests compare every operation with a naive model over small ranges and check that `split_at` gives two adjacent ranges whose union is the original; the `//!` doc states that ranges are half-open and why (no `end + 1` overflow).
 
-### [To Do] TYPE-0010 `OffsetSpec` enum for ListOffsets timestamps, with wire mapping: `Latest` (-1), `Earliest` (-2), `MaxTimestamp` (-3), `EarliestLocal` (-4), `LatestTiered` (-5), `EarliestPendingUpload` (-6), `Timestamp(ms)` (≥ 0)
+### [Done] TYPE-0010 `OffsetSpec` enum for ListOffsets timestamps, with wire mapping: `Latest` (-1), `Earliest` (-2), `MaxTimestamp` (-3), `EarliestLocal` (-4), `LatestTiered` (-5), `EarliestPendingUpload` (-6), `Timestamp(ms)` (≥ 0)
 P0 · M0 · Task · deps: TYPE-0002 · ref: clients/src/main/java/org/apache/kafka/common/requests/ListOffsetsRequest.java @4.4.0
 Done when: A property test over all `i64` shows that decode then encode is the identity for accepted values and that every other negative returns a typed error; `// Parity:` cites the `ListOffsetsRequest` constants; the doc states that which spec each API version may send is checked by the handler (API epic), not here.
 
