@@ -25,6 +25,7 @@
 //!   (offset sentinels and `ListOffsets` special timestamps);
 //! - `clients/.../common/utils/Time.java`, `SystemTime.java` and `Timer.java` (wall-clock
 //!   and monotonic readings, saturating deadlines);
+//! - `clients/.../common/network/ListenerName.java` (listener name normalisation);
 //! - `clients/.../common/config/types/Password.java` and
 //!   `clients/.../common/utils/internals/Crc32C.java`.
 //!
@@ -63,6 +64,7 @@
 //!   rule a string breaks).
 //! - [`GroupId`], [`GroupInstanceId`], [`TransactionalId`] and [`ClientId`]: ids
 //!   clients choose, printed with [`LogSafe`].
+//! - [`ListenerName`]: a listener's name, upper-cased as Kafka normalises it.
 //! - [`IdError`]: why a value was rejected.
 //! - [`Secret`]: a value that is never printed and is zeroized on drop.
 //! - [`PayloadSummary`]: how record payloads are printed (length and CRC32C only).
@@ -80,6 +82,7 @@ pub mod collections;
 mod deadline;
 mod epoch;
 mod id;
+mod listener;
 mod log_safe;
 mod offset;
 mod payload;
@@ -97,6 +100,7 @@ pub use clock::{Clock, ManualClock, SystemClock, WallClockError};
 pub use deadline::Deadline;
 pub use epoch::{BrokerEpoch, GenerationId, LeaderEpoch, MemberEpoch, PositiveEpoch};
 pub use id::{BrokerId, CorrelationId, IdError, IdKind, NodeId, PartitionIndex};
+pub use listener::{BlankListenerName, ListenerName};
 pub use log_safe::LogSafe;
 pub use offset::{Offset, OffsetError, OffsetRange, OffsetSpec};
 pub use payload::PayloadSummary;

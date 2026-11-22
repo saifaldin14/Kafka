@@ -59,6 +59,7 @@ Scope: `Uuid` and `TopicId` with Kafka's base64url display, reserved zero/metada
 ### [Done] TYPE-0011 `Uuid`: Kafka's base64url `Display`, `FromStr` and signed ordering
 P0 · M0 · Task · deps: TYPE-0002 · labels: decoder, security · ref: clients/src/main/java/org/apache/kafka/common/Uuid.java toString/fromString/compareTo @4.4.0
 Done when: `Display` is unpadded base64url (22 characters); `FromStr` follows `Uuid.fromString` (rejects input over 24 characters before decoding, accepts optional padding, requires exactly 16 bytes); `Ord` matches Kafka's signed `compareTo`. Ported `UuidTest` cases pass; property tests show string round-trips for all values and that ordering equals signed comparison of the most significant then least significant bits; errors are a typed `UuidError` that echoes at most the first 24 characters of the input; no panic on any input; no new dependency unless justified per security.md#dependencies.
+Notes: Every decoder edge case was checked against JDK 17's `Base64.getUrlDecoder()` in JShell (`eclipse-temurin:17-jdk`): `…AB` and `…==` decode to 16 bytes, `…AAA=` to 17, `AAAAAA` to 4 and the empty string to 0; `…AA=` and `…AA=A` are a wrong ending unit, `…A=` a dangling unit, `…==A` an incorrect ending byte at 20, `+` an illegal character, and `A` too short. Each matches the `Base64Problem` or `WrongLength` the Rust decoder returns.
 
 ### [Done] TYPE-0012 Reserved UUIDs and `TopicId`: `Uuid::ZERO` (null/unset, `ZERO_UUID`), `Uuid::ONE` (`ONE_UUID`), and a `TopicId` newtype with `TopicId::METADATA` (`METADATA_TOPIC_ID`) that cannot hold `ZERO`
 P0 · M0 · Task · deps: TYPE-0011 · ref: clients/src/main/java/org/apache/kafka/common/Uuid.java RESERVED @4.4.0
@@ -68,7 +69,7 @@ Done when: `TopicId::try_from(Uuid::ZERO)` fails; nullable wire mapping turns `Z
 P0 · M0 · Task · deps: TYPE-0012, TYPE-0029 · ref: clients/src/main/java/org/apache/kafka/common/Uuid.java randomUuid @4.4.0
 Done when: A fixed seed always produces the same sequence (golden values are committed); a property test over many seeds never yields a reserved UUID or a string containing `-`, and every value has version 4 and the IETF variant; nothing reads OS entropy.
 
-## [In Progress] TYPE-F04 Validated names
+## [Done] TYPE-F04 Validated names
 P0 · M0 · Feature · deps: TYPE-F01
 Scope: `TopicName`, `GroupId`, `TransactionalId`, `ClientId`, `ListenerName` with Kafka's validation rules, internal-topic detection and `.`/`_` collision detection.
 
@@ -96,7 +97,7 @@ Done when: An empty `GroupId` can be built (the rejection belongs to the group c
 P0 · M0 · Task · deps: TYPE-0017 · ref: core/src/main/scala/kafka/coordinator/transaction/TransactionCoordinator.scala handleInitProducerId @4.4.0
 Done when: Tests cover null, empty and non-empty transactional ids, with a `// Parity:` citation of the `TransactionCoordinator` null/empty branches; `ClientId` accepts every string, including control characters, and displays them escaped; strategies are added.
 
-### [To Do] TYPE-0020 `ListenerName::normalised(&str)`: rejects blank values (Kafka's `Utils.isBlank`) and converts to uppercase as `toUpperCase(Locale.ROOT)` does; equality is case-sensitive after normalization
+### [Done] TYPE-0020 `ListenerName::normalised(&str)`: rejects blank values (Kafka's `Utils.isBlank`) and converts to uppercase as `toUpperCase(Locale.ROOT)` does; equality is case-sensitive after normalization
 P0 · M0 · Task · deps: TYPE-0001 · ref: clients/src/main/java/org/apache/kafka/common/network/ListenerName.java normalised @4.4.0
 Done when: Tests cover `plaintext` → `PLAINTEXT`, the empty string, whitespace-only input, and a non-ASCII case documented against Java's behavior; `// Parity:` cites `ListenerName.normalised`.
 
