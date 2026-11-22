@@ -98,7 +98,7 @@ fn step(op: i8, framing: Framing, reader: &mut Reader) -> Result<(), DecodeError
         16 => round_trip(
             reader.read_records(framing)?,
             |w, value| {
-                w.write_records(framing, value.as_deref())
+                w.write_records(framing, value.as_ref())
                     .expect("decoded records encode")
             },
             |r| r.read_records(framing),
