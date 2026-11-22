@@ -11,8 +11,3 @@ default_percent = 3.0
 # benchmark = "types/murmur2/size_16"
 # percent = 5.0
 # reason = "..."
-
-[[override]]
-benchmark = "protocol/write_unsigned_varint/width_1"
-percent = 3.5
-reason = "the Writer checks its counting mode once per varint, so encoded_size equals the encoded length by construction (PROTO-0078): about one instruction on a write of about 34. Remove once the base includes the check."

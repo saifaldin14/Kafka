@@ -88,7 +88,7 @@ We don't use `proptest-state-machine`. Its state-dependent generation would let 
 
 ## Benchmarks
 
-Benchmarks come in two kinds ([ADR-0019](../adr/0019-benchmark-regression-gating.md)). Both measure the same inputs, from a shared `benches/inputs/` module in the crate:
+Benchmarks come in two kinds ([ADR-0019](../adr/0019-benchmark-regression-gating.md)). Both measure the same inputs, from a module the area's two targets share: `benches/inputs/`, or `benches/<area>_inputs/` in a crate with more than one area.
 
 - **Gated benchmarks** count instructions under valgrind's callgrind, with gungraun.
   - They are each crate's `benches/<area>_instructions.rs`, and they cover hot paths.
@@ -104,6 +104,7 @@ Conventions for both:
 - A gated benchmark function contains no loop: it calls one `#[inline(never)]` function that does the work. callgrind counts from each entry to the benchmark function, and takes a loop that jumps back to a function's first instruction for a recursive call. So a loop compiled into the benchmark function itself turns counting off and on, and most of the work goes uncounted.
 - Benchmark ids are `<area>/<operation>/<case>`, such as `types/murmur2/size_4096`. In criterion: one group per operation, with the input size as the parameter. In gungraun: the group is the area, the function the operation, and the `#[bench::…]` id the case. A group name is unique across the workspace.
 - Inputs are deterministic, drawn from `SeededRng::from_seed` with a fixed seed, so two runs measure the same work.
+- Code that changes often, such as generated messages, gets an area of its own. Each target is one thin-LTO unit, so linking new code into a target can change how the code already there is inlined, and its counts, without any change to that code. Adding the generated message codecs to `protocol_instructions` moved `protocol/read_compact_string/length_16` by 3%.
 - Every criterion group declares its throughput (`Throughput::Bytes` or `Throughput::Elements`), so results compare across sizes and machines.
 - A PR that claims a performance change includes the before and after numbers and the CPU they ran on.
 - `criterion` is built without its default features: no plotting and no rayon, only `cargo bench` support.

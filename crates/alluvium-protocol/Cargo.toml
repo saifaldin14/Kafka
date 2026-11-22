@@ -26,5 +26,13 @@ harness = false
 name = "protocol_instructions"
 harness = false
 
+[[bench]]
+name = "messages"
+harness = false
+
+[[bench]]
+name = "messages_instructions"
+harness = false
+
 [lints]
 workspace = true
