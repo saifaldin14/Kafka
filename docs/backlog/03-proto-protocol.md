@@ -114,47 +114,47 @@ P0 · M1 · Task · deps: PROTO-0015, PROTO-0016, PROTO-0017, PROTO-0018, PROTO-
 Done when: a test loads all vendored files with zero errors and asserts the number of request schemas, unique API keys, matching request/response pairs per API key, and the valid-version ranges of Produce (3-13) and Fetch (4-18).
 Notes: 281 schemas load (the 282 vendored files minus Kafka's README). There are 95 request schemas; 91 have valid versions, and four ZooKeeper-era APIs keep their key with `none`. That gives 91 request and 91 response APIs with no unpaired key, and 76 keyed struct arrays. An independent script over the JSON gave the same numbers. `schemas verify` prints this inventory and fails on an unpaired API key.
 
-## [To Do] PROTO-F03 Primitive codecs
+## [In Progress] PROTO-F03 Primitive codecs
 P0 · M1 · Feature · deps: TYPE-F01, TYPE-F03
 Scope: All wire primitives: fixed ints, (u)varint/varlong, float64, bool, uuid, (compact/nullable) strings and bytes, (compact) arrays, tagged-field sections, records fields.
 
-### [To Do] PROTO-0025 Wire reader and writer over `Bytes`/`BytesMut` with `DecodeError` carrying byte offset, field path and kind
+### [Done] PROTO-0025 Wire reader and writer over `Bytes`/`BytesMut` with `DecodeError` carrying byte offset, field path and kind
 P0 · M1 · Task · deps: none · labels: decoder · ref: clients/src/main/java/org/apache/kafka/common/protocol/ByteBufferAccessor.java, Readable.java, Writable.java @4.4.0
 Done when: reads never panic and return `DecodeError::Truncated { offset, needed, remaining }` on underflow; the module compiles under `deny(clippy::indexing_slicing, clippy::arithmetic_side_effects)`; module docs cite ByteBufferAccessor.
 
-### [To Do] PROTO-0026 int8 codec (i8)
+### [Done] PROTO-0026 int8 codec (i8)
 P0 · M1 · Task · deps: PROTO-0025 · labels: decoder · ref: clients/src/main/java/org/apache/kafka/common/protocol/Readable.java, Writable.java @4.4.0
 Done when: all 256 values round-trip; truncated input yields DecodeError at the right offset.
 
-### [To Do] PROTO-0027 int16 codec (i16 big-endian)
+### [Done] PROTO-0027 int16 codec (i16 big-endian)
 P0 · M1 · Task · deps: PROTO-0025 · labels: decoder · ref: clients/src/main/java/org/apache/kafka/common/protocol/Readable.java, Writable.java @4.4.0
 Done when: property round-trip; byte order checked against a fixed vector; truncated input yields DecodeError at the right offset.
 
-### [To Do] PROTO-0028 int32 codec (i32 big-endian)
+### [Done] PROTO-0028 int32 codec (i32 big-endian)
 P0 · M1 · Task · deps: PROTO-0025 · labels: decoder · ref: clients/src/main/java/org/apache/kafka/common/protocol/Readable.java, Writable.java @4.4.0
 Done when: property round-trip; byte order checked against a fixed vector; truncated input yields DecodeError at the right offset.
 
-### [To Do] PROTO-0029 int64 codec (i64 big-endian)
+### [Done] PROTO-0029 int64 codec (i64 big-endian)
 P0 · M1 · Task · deps: PROTO-0025 · labels: decoder · ref: clients/src/main/java/org/apache/kafka/common/protocol/Readable.java, Writable.java @4.4.0
 Done when: property round-trip; byte order checked against a fixed vector; truncated input yields DecodeError at the right offset.
 
-### [To Do] PROTO-0030 uint16 codec (u16 big-endian)
+### [Done] PROTO-0030 uint16 codec (u16 big-endian)
 P0 · M1 · Task · deps: PROTO-0025 · labels: decoder · ref: clients/src/main/java/org/apache/kafka/common/protocol/Readable.java, Writable.java @4.4.0
 Done when: 0..=65535 round-trip; the schema type maps to u16 so Kafka's writeUnsignedShort range check is enforced by the type; truncated input yields DecodeError at the right offset.
 
-### [To Do] PROTO-0031 uint32 codec (u32 big-endian)
+### [Done] PROTO-0031 uint32 codec (u32 big-endian)
 P0 · M1 · Task · deps: PROTO-0025 · labels: decoder · ref: clients/src/main/java/org/apache/kafka/common/protocol/Readable.java, Writable.java @4.4.0
 Done when: property round-trip over u32 including values above i32::MAX; truncated input yields DecodeError at the right offset.
 
-### [To Do] PROTO-0032 float64 codec: IEEE 754 big-endian, bit-exact
+### [Done] PROTO-0032 float64 codec: IEEE 754 big-endian, bit-exact
 P0 · M1 · Task · deps: PROTO-0025 · labels: decoder · ref: clients/src/main/java/org/apache/kafka/common/utils/internals/ByteUtils.java readDouble/writeDouble @4.4.0
 Done when: property round-trip compares `to_bits` including NaN payloads, ±0.0, ±infinity and subnormals.
 
-### [To Do] PROTO-0033 boolean codec: any non-zero byte decodes as true; encode writes 0x00 or 0x01
+### [Done] PROTO-0033 boolean codec: any non-zero byte decodes as true; encode writes 0x00 or 0x01
 P0 · M1 · Task · deps: PROTO-0025 · labels: decoder · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java primitiveReadExpression @4.4.0
 Done when: decoding 0x02 and 0xFF yields true as in Kafka's generated `readByte() != 0`; re-encoding normalizes to 0x01 (documented, tested).
 
-### [To Do] PROTO-0034 uuid codec: 16 bytes, most significant 64 bits first, using TYPE-F03 `Uuid`
+### [Done] PROTO-0034 uuid codec: 16 bytes, most significant 64 bits first, using TYPE-F03 `Uuid`
 P0 · M1 · Task · deps: PROTO-0025, TYPE-F03 · labels: decoder · ref: clients/src/main/java/org/apache/kafka/common/protocol/Readable.java readUuid @4.4.0
 Done when: round-trip property test; zero uuid encodes as 16 zero bytes; byte order checked against a vector produced by Kafka's `Uuid.fromString`.
 
