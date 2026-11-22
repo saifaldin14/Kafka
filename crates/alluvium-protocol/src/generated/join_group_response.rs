@@ -153,6 +153,56 @@ impl JoinGroupResponse {
     }
 }
 
+#[cfg(test)]
+impl JoinGroupResponse {
+    /// Values of `JoinGroupResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<JoinGroupResponse> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            present(version >= 2, boundary_i32(), 0).boxed(),
+            boundary_i16().boxed(),
+            boundary_i32().boxed(),
+            present(version >= 7, nullable(true, string()), None).boxed(),
+            nullable(version >= 7, string()).boxed(),
+            string().boxed(),
+            present(version == 9, any::<bool>(), false).boxed(),
+            string().boxed(),
+            array(JoinGroupResponseMember::arbitrary(version)).boxed(),
+            present(version >= 6, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(
+                |((
+                    value_0,
+                    value_1,
+                    value_2,
+                    value_3,
+                    value_4,
+                    value_5,
+                    value_6,
+                    value_7,
+                    value_8,
+                    value_9,
+                ),)| JoinGroupResponse {
+                    throttle_time_ms: value_0,
+                    error_code: value_1,
+                    generation_id: value_2,
+                    protocol_type: value_3,
+                    protocol_name: value_4,
+                    leader: value_5,
+                    skip_assignment: value_6,
+                    member_id: value_7,
+                    members: value_8,
+                    unknown_tagged_fields: value_9,
+                },
+            )
+            .boxed()
+    }
+}
+
 impl JoinGroupResponse {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -295,6 +345,31 @@ impl JoinGroupResponseMember {
     }
 }
 
+#[cfg(test)]
+impl JoinGroupResponseMember {
+    /// Values of `JoinGroupResponseMember` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<JoinGroupResponseMember> {
+        use crate::test_strategies::{bytes, nullable, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            present(version >= 5, nullable(true, string()), None).boxed(),
+            bytes().boxed(),
+            present(version >= 6, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| JoinGroupResponseMember {
+                member_id: value_0,
+                group_instance_id: value_1,
+                metadata: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl JoinGroupResponseMember {
     fn write_fields(
         &self,
@@ -357,4 +432,13 @@ impl crate::Message for JoinGroupResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        JoinGroupResponse::arbitrary,
+        JoinGroupResponse::VERSIONS,
+    );
 }

@@ -45,6 +45,24 @@ impl WriteTxnMarkersRequest {
     }
 }
 
+#[cfg(test)]
+impl WriteTxnMarkersRequest {
+    /// Values of `WriteTxnMarkersRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<WriteTxnMarkersRequest> {
+        use crate::test_strategies::{array, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((array(WritableTxnMarker::arbitrary(version)).boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1),)| WriteTxnMarkersRequest {
+                markers: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl WriteTxnMarkersRequest {
     fn write_fields(
         &self,
@@ -131,6 +149,40 @@ impl WritableTxnMarker {
     }
 }
 
+#[cfg(test)]
+impl WritableTxnMarker {
+    /// Values of `WritableTxnMarker` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<WritableTxnMarker> {
+        use crate::test_strategies::{
+            array, boundary_i8, boundary_i16, boundary_i32, boundary_i64, present,
+            unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i64().boxed(),
+            boundary_i16().boxed(),
+            any::<bool>().boxed(),
+            array(WritableTxnMarkerTopic::arbitrary(version)).boxed(),
+            boundary_i32().boxed(),
+            present(version == 2, boundary_i8(), 0).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5, value_6),)| {
+                WritableTxnMarker {
+                    producer_id: value_0,
+                    producer_epoch: value_1,
+                    transaction_result: value_2,
+                    topics: value_3,
+                    coordinator_epoch: value_4,
+                    transaction_version: value_5,
+                    unknown_tagged_fields: value_6,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl WritableTxnMarker {
     fn write_fields(
         &self,
@@ -198,6 +250,25 @@ impl WritableTxnMarkerTopic {
     }
 }
 
+#[cfg(test)]
+impl WritableTxnMarkerTopic {
+    /// Values of `WritableTxnMarkerTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<WritableTxnMarkerTopic> {
+        use crate::test_strategies::{array, boundary_i32, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((string().boxed(), array(boundary_i32()).boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| WritableTxnMarkerTopic {
+                name: value_0,
+                partition_indexes: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl WritableTxnMarkerTopic {
     fn write_fields(
         &self,
@@ -249,4 +320,13 @@ impl crate::Message for WriteTxnMarkersRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        WriteTxnMarkersRequest::arbitrary,
+        WriteTxnMarkersRequest::VERSIONS,
+    );
 }

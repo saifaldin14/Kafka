@@ -57,6 +57,29 @@ impl IncrementalAlterConfigsResponse {
     }
 }
 
+#[cfg(test)]
+impl IncrementalAlterConfigsResponse {
+    /// Values of `IncrementalAlterConfigsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<IncrementalAlterConfigsResponse> {
+        use crate::test_strategies::{array, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            array(AlterConfigsResourceResponse::arbitrary(version)).boxed(),
+            present(version == 1, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| IncrementalAlterConfigsResponse {
+                throttle_time_ms: value_0,
+                responses: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl IncrementalAlterConfigsResponse {
     fn write_fields(
         &self,
@@ -172,6 +195,37 @@ impl AlterConfigsResourceResponse {
     }
 }
 
+#[cfg(test)]
+impl AlterConfigsResourceResponse {
+    /// Values of `AlterConfigsResourceResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterConfigsResourceResponse> {
+        use crate::test_strategies::{
+            boundary_i8, boundary_i16, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            boundary_i8().boxed(),
+            string().boxed(),
+            present(version == 1, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| {
+                AlterConfigsResourceResponse {
+                    error_code: value_0,
+                    error_message: value_1,
+                    resource_type: value_2,
+                    resource_name: value_3,
+                    unknown_tagged_fields: value_4,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl AlterConfigsResourceResponse {
     fn write_fields(
         &self,
@@ -230,4 +284,13 @@ impl crate::Message for IncrementalAlterConfigsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        IncrementalAlterConfigsResponse::arbitrary,
+        IncrementalAlterConfigsResponse::VERSIONS,
+    );
 }

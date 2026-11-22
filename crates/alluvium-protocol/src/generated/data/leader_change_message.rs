@@ -61,6 +61,33 @@ impl LeaderChangeMessage {
     }
 }
 
+#[cfg(test)]
+impl LeaderChangeMessage {
+    /// Values of `LeaderChangeMessage` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<LeaderChangeMessage> {
+        use crate::test_strategies::{array, boundary_i16, boundary_i32, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            boundary_i32().boxed(),
+            array(Voter::arbitrary(version)).boxed(),
+            array(Voter::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| LeaderChangeMessage {
+                version: value_0,
+                leader_id: value_1,
+                voters: value_2,
+                granting_voters: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl LeaderChangeMessage {
     fn write_fields(
         &self,
@@ -134,6 +161,27 @@ impl Voter {
     }
 }
 
+#[cfg(test)]
+impl Voter {
+    /// Values of `Voter` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<Voter> {
+        use crate::test_strategies::{boundary_i32, present, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            present(version >= 1, uuid(), alluvium_types::Uuid::ZERO).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| Voter {
+                voter_id: value_0,
+                voter_directory_id: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl Voter {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -194,4 +242,13 @@ impl crate::Message for LeaderChangeMessage {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        LeaderChangeMessage::arbitrary,
+        LeaderChangeMessage::VERSIONS,
+    );
 }

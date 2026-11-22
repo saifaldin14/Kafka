@@ -44,6 +44,24 @@ impl OffsetDeleteRequest {
     }
 }
 
+#[cfg(test)]
+impl OffsetDeleteRequest {
+    /// Values of `OffsetDeleteRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<OffsetDeleteRequest> {
+        use crate::test_strategies::{array, string};
+        use proptest::prelude::*;
+        ((string().boxed(), array(OffsetDeleteRequestTopic::arbitrary(version)).boxed()),)
+            .prop_map(|((value_0, value_1),)| OffsetDeleteRequest {
+                group_id: value_0,
+                topics: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl OffsetDeleteRequest {
     fn write_fields(
         &self,
@@ -115,6 +133,24 @@ impl OffsetDeleteRequestTopic {
     }
 }
 
+#[cfg(test)]
+impl OffsetDeleteRequestTopic {
+    /// Values of `OffsetDeleteRequestTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<OffsetDeleteRequestTopic> {
+        use crate::test_strategies::{array, string};
+        use proptest::prelude::*;
+        ((string().boxed(), array(OffsetDeleteRequestPartition::arbitrary(version)).boxed()),)
+            .prop_map(|((value_0, value_1),)| OffsetDeleteRequestTopic {
+                name: value_0,
+                partitions: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl OffsetDeleteRequestTopic {
     fn write_fields(
         &self,
@@ -159,6 +195,21 @@ impl OffsetDeleteRequestPartition {
     }
 }
 
+#[cfg(test)]
+impl OffsetDeleteRequestPartition {
+    /// Values of `OffsetDeleteRequestPartition` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<OffsetDeleteRequestPartition> {
+        use crate::test_strategies::boundary_i32;
+        use proptest::prelude::*;
+        ((boundary_i32().boxed(),),)
+            .prop_map(|((value_0,),)| OffsetDeleteRequestPartition { partition_index: value_0 })
+            .boxed()
+    }
+}
+
 impl OffsetDeleteRequestPartition {
     fn write_fields(&self, writer: &mut crate::Writer, _version: i16) {
         writer.write_i32(self.partition_index);
@@ -198,4 +249,13 @@ impl crate::Message for OffsetDeleteRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        OffsetDeleteRequest::arbitrary,
+        OffsetDeleteRequest::VERSIONS,
+    );
 }

@@ -49,6 +49,25 @@ impl CreateAclsRequest {
     }
 }
 
+#[cfg(test)]
+impl CreateAclsRequest {
+    /// Values of `CreateAclsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<CreateAclsRequest> {
+        use crate::test_strategies::{array, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(AclCreation::arbitrary(version)).boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1),)| CreateAclsRequest {
+                creations: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl CreateAclsRequest {
     fn write_fields(
         &self,
@@ -172,6 +191,41 @@ impl AclCreation {
     }
 }
 
+#[cfg(test)]
+impl AclCreation {
+    /// Values of `AclCreation` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<AclCreation> {
+        use crate::test_strategies::{boundary_i8, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i8().boxed(),
+            string().boxed(),
+            boundary_i8().boxed(),
+            string().boxed(),
+            string().boxed(),
+            boundary_i8().boxed(),
+            boundary_i8().boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(
+                |((value_0, value_1, value_2, value_3, value_4, value_5, value_6, value_7),)| {
+                    AclCreation {
+                        resource_type: value_0,
+                        resource_name: value_1,
+                        resource_pattern_type: value_2,
+                        principal: value_3,
+                        host: value_4,
+                        operation: value_5,
+                        permission_type: value_6,
+                        unknown_tagged_fields: value_7,
+                    }
+                },
+            )
+            .boxed()
+    }
+}
+
 impl AclCreation {
     fn write_fields(
         &self,
@@ -239,4 +293,13 @@ impl crate::Message for CreateAclsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        CreateAclsRequest::arbitrary,
+        CreateAclsRequest::VERSIONS,
+    );
 }

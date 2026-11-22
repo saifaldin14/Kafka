@@ -69,6 +69,31 @@ impl ListConfigResourcesResponse {
     }
 }
 
+#[cfg(test)]
+impl ListConfigResourcesResponse {
+    /// Values of `ListConfigResourcesResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ListConfigResourcesResponse> {
+        use crate::test_strategies::{array, boundary_i16, boundary_i32, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            array(ConfigResource::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| ListConfigResourcesResponse {
+                throttle_time_ms: value_0,
+                error_code: value_1,
+                config_resources: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl ListConfigResourcesResponse {
     fn write_fields(
         &self,
@@ -141,6 +166,27 @@ impl ConfigResource {
     }
 }
 
+#[cfg(test)]
+impl ConfigResource {
+    /// Values of `ConfigResource` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<ConfigResource> {
+        use crate::test_strategies::{boundary_i8, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            present(version == 1, boundary_i8(), 16).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| ConfigResource {
+                resource_name: value_0,
+                resource_type: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl ConfigResource {
     fn write_fields(
         &self,
@@ -188,4 +234,13 @@ impl crate::Message for ListConfigResourcesResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ListConfigResourcesResponse::arbitrary,
+        ListConfigResourcesResponse::VERSIONS,
+    );
 }

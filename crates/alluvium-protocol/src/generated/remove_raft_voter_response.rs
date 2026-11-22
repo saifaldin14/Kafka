@@ -78,6 +78,33 @@ impl RemoveRaftVoterResponse {
     }
 }
 
+#[cfg(test)]
+impl RemoveRaftVoterResponse {
+    /// Values of `RemoveRaftVoterResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<RemoveRaftVoterResponse> {
+        use crate::test_strategies::{
+            boundary_i16, boundary_i32, nullable, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| RemoveRaftVoterResponse {
+                throttle_time_ms: value_0,
+                error_code: value_1,
+                error_message: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl RemoveRaftVoterResponse {
     fn write_fields(
         &self,
@@ -124,4 +151,13 @@ impl crate::Message for RemoveRaftVoterResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        RemoveRaftVoterResponse::arbitrary,
+        RemoveRaftVoterResponse::VERSIONS,
+    );
 }

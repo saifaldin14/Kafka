@@ -72,6 +72,37 @@ impl AllocateProducerIdsResponse {
     }
 }
 
+#[cfg(test)]
+impl AllocateProducerIdsResponse {
+    /// Values of `AllocateProducerIdsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AllocateProducerIdsResponse> {
+        use crate::test_strategies::{
+            boundary_i16, boundary_i32, boundary_i64, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            boundary_i64().boxed(),
+            boundary_i32().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| {
+                AllocateProducerIdsResponse {
+                    throttle_time_ms: value_0,
+                    error_code: value_1,
+                    producer_id_start: value_2,
+                    producer_id_len: value_3,
+                    unknown_tagged_fields: value_4,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl AllocateProducerIdsResponse {
     fn write_fields(
         &self,
@@ -119,4 +150,13 @@ impl crate::Message for AllocateProducerIdsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        AllocateProducerIdsResponse::arbitrary,
+        AllocateProducerIdsResponse::VERSIONS,
+    );
 }

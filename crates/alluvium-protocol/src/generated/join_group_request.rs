@@ -132,6 +132,53 @@ impl JoinGroupRequest {
     }
 }
 
+#[cfg(test)]
+impl JoinGroupRequest {
+    /// Values of `JoinGroupRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<JoinGroupRequest> {
+        use crate::test_strategies::{
+            array, boundary_i32, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            boundary_i32().boxed(),
+            present(version >= 1, boundary_i32(), -1).boxed(),
+            string().boxed(),
+            present(version >= 5, nullable(true, string()), None).boxed(),
+            string().boxed(),
+            array(JoinGroupRequestProtocol::arbitrary(version)).boxed(),
+            present(version >= 8, nullable(true, string()), None).boxed(),
+            present(version >= 6, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(
+                |((
+                    value_0,
+                    value_1,
+                    value_2,
+                    value_3,
+                    value_4,
+                    value_5,
+                    value_6,
+                    value_7,
+                    value_8,
+                ),)| JoinGroupRequest {
+                    group_id: value_0,
+                    session_timeout_ms: value_1,
+                    rebalance_timeout_ms: value_2,
+                    member_id: value_3,
+                    group_instance_id: value_4,
+                    protocol_type: value_5,
+                    protocols: value_6,
+                    reason: value_7,
+                    unknown_tagged_fields: value_8,
+                },
+            )
+            .boxed()
+    }
+}
+
 impl JoinGroupRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -270,6 +317,29 @@ impl JoinGroupRequestProtocol {
     }
 }
 
+#[cfg(test)]
+impl JoinGroupRequestProtocol {
+    /// Values of `JoinGroupRequestProtocol` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<JoinGroupRequestProtocol> {
+        use crate::test_strategies::{bytes, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            bytes().boxed(),
+            present(version >= 6, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| JoinGroupRequestProtocol {
+                name: value_0,
+                metadata: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl JoinGroupRequestProtocol {
     fn write_fields(
         &self,
@@ -329,4 +399,13 @@ impl crate::Message for JoinGroupRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        JoinGroupRequest::arbitrary,
+        JoinGroupRequest::VERSIONS,
+    );
 }

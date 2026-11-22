@@ -51,6 +51,29 @@ impl DescribeProducersResponse {
     }
 }
 
+#[cfg(test)]
+impl DescribeProducersResponse {
+    /// Values of `DescribeProducersResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeProducersResponse> {
+        use crate::test_strategies::{array, boundary_i32, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            array(TopicResponse::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| DescribeProducersResponse {
+                throttle_time_ms: value_0,
+                topics: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeProducersResponse {
     fn write_fields(
         &self,
@@ -106,6 +129,27 @@ impl TopicResponse {
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl TopicResponse {
+    /// Values of `TopicResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<TopicResponse> {
+        use crate::test_strategies::{array, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(PartitionResponse::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| TopicResponse {
+                name: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
     }
 }
 
@@ -191,6 +235,33 @@ impl PartitionResponse {
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl PartitionResponse {
+    /// Values of `PartitionResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<PartitionResponse> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, nullable, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            array(ProducerState::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| PartitionResponse {
+                partition_index: value_0,
+                error_code: value_1,
+                error_message: value_2,
+                active_producers: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
     }
 }
 
@@ -286,6 +357,37 @@ impl ProducerState {
     }
 }
 
+#[cfg(test)]
+impl ProducerState {
+    /// Values of `ProducerState` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<ProducerState> {
+        use crate::test_strategies::{boundary_i32, boundary_i64, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i64().boxed(),
+            boundary_i32().boxed(),
+            boundary_i32().boxed(),
+            boundary_i64().boxed(),
+            boundary_i32().boxed(),
+            boundary_i64().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5, value_6),)| {
+                ProducerState {
+                    producer_id: value_0,
+                    producer_epoch: value_1,
+                    last_sequence: value_2,
+                    last_timestamp: value_3,
+                    coordinator_epoch: value_4,
+                    current_txn_start_offset: value_5,
+                    unknown_tagged_fields: value_6,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl ProducerState {
     fn write_fields(
         &self,
@@ -335,4 +437,13 @@ impl crate::Message for DescribeProducersResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeProducersResponse::arbitrary,
+        DescribeProducersResponse::VERSIONS,
+    );
 }

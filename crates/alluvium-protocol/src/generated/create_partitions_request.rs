@@ -61,6 +61,31 @@ impl CreatePartitionsRequest {
     }
 }
 
+#[cfg(test)]
+impl CreatePartitionsRequest {
+    /// Values of `CreatePartitionsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<CreatePartitionsRequest> {
+        use crate::test_strategies::{array, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(CreatePartitionsTopic::arbitrary(version)).boxed(),
+            boundary_i32().boxed(),
+            any::<bool>().boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| CreatePartitionsRequest {
+                topics: value_0,
+                timeout_ms: value_1,
+                validate_only: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl CreatePartitionsRequest {
     fn write_fields(
         &self,
@@ -176,6 +201,33 @@ impl CreatePartitionsTopic {
     }
 }
 
+#[cfg(test)]
+impl CreatePartitionsTopic {
+    /// Values of `CreatePartitionsTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<CreatePartitionsTopic> {
+        use crate::test_strategies::{
+            array, boundary_i32, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            boundary_i32().boxed(),
+            nullable(true, array(CreatePartitionsAssignment::arbitrary(version))).boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| CreatePartitionsTopic {
+                name: value_0,
+                count: value_1,
+                assignments: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl CreatePartitionsTopic {
     fn write_fields(
         &self,
@@ -251,6 +303,27 @@ impl CreatePartitionsAssignment {
     }
 }
 
+#[cfg(test)]
+impl CreatePartitionsAssignment {
+    /// Values of `CreatePartitionsAssignment` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<CreatePartitionsAssignment> {
+        use crate::test_strategies::{array, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(boundary_i32()).boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1),)| CreatePartitionsAssignment {
+                broker_ids: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl CreatePartitionsAssignment {
     fn write_fields(
         &self,
@@ -309,4 +382,13 @@ impl crate::Message for CreatePartitionsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        CreatePartitionsRequest::arbitrary,
+        CreatePartitionsRequest::VERSIONS,
+    );
 }

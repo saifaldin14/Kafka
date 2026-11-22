@@ -90,6 +90,33 @@ impl ListOffsetsRequest {
     }
 }
 
+#[cfg(test)]
+impl ListOffsetsRequest {
+    /// Values of `ListOffsetsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<ListOffsetsRequest> {
+        use crate::test_strategies::{
+            array, boundary_i8, boundary_i32, present, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            present(version >= 2, boundary_i8(), 0).boxed(),
+            array(ListOffsetsTopic::arbitrary(version)).boxed(),
+            present(version >= 10, boundary_i32(), 0).boxed(),
+            present(version >= 6, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| ListOffsetsRequest {
+                replica_id: value_0,
+                isolation_level: value_1,
+                topics: value_2,
+                timeout_ms: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl ListOffsetsRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -191,6 +218,27 @@ impl ListOffsetsTopic {
     }
 }
 
+#[cfg(test)]
+impl ListOffsetsTopic {
+    /// Values of `ListOffsetsTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<ListOffsetsTopic> {
+        use crate::test_strategies::{array, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(ListOffsetsPartition::arbitrary(version)).boxed(),
+            present(version >= 6, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| ListOffsetsTopic {
+                name: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl ListOffsetsTopic {
     fn write_fields(
         &self,
@@ -281,6 +329,31 @@ impl ListOffsetsPartition {
     }
 }
 
+#[cfg(test)]
+impl ListOffsetsPartition {
+    /// Values of `ListOffsetsPartition` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ListOffsetsPartition> {
+        use crate::test_strategies::{boundary_i32, boundary_i64, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            present(version >= 4, boundary_i32(), -1).boxed(),
+            boundary_i64().boxed(),
+            present(version >= 6, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| ListOffsetsPartition {
+                partition_index: value_0,
+                current_leader_epoch: value_1,
+                timestamp: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl ListOffsetsPartition {
     fn write_fields(
         &self,
@@ -337,4 +410,13 @@ impl crate::Message for ListOffsetsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ListOffsetsRequest::arbitrary,
+        ListOffsetsRequest::VERSIONS,
+    );
 }

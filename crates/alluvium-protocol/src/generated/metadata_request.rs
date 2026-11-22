@@ -93,6 +93,31 @@ impl MetadataRequest {
     }
 }
 
+#[cfg(test)]
+impl MetadataRequest {
+    /// Values of `MetadataRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<MetadataRequest> {
+        use crate::test_strategies::{array, nullable, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            nullable(version >= 1, array(MetadataRequestTopic::arbitrary(version))).boxed(),
+            present(version >= 4, any::<bool>(), true).boxed(),
+            present((8..=10).contains(&version), any::<bool>(), false).boxed(),
+            present(version >= 8, any::<bool>(), false).boxed(),
+            present(version >= 9, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| MetadataRequest {
+                topics: value_0,
+                allow_auto_topic_creation: value_1,
+                include_cluster_authorized_operations: value_2,
+                include_topic_authorized_operations: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl MetadataRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -237,6 +262,29 @@ impl MetadataRequestTopic {
     }
 }
 
+#[cfg(test)]
+impl MetadataRequestTopic {
+    /// Values of `MetadataRequestTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<MetadataRequestTopic> {
+        use crate::test_strategies::{nullable, present, string, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((
+            present(version >= 10, uuid(), alluvium_types::Uuid::ZERO).boxed(),
+            nullable(version >= 10, string()).boxed(),
+            present(version >= 9, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| MetadataRequestTopic {
+                topic_id: value_0,
+                name: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl MetadataRequestTopic {
     fn write_fields(
         &self,
@@ -306,4 +354,13 @@ impl crate::Message for MetadataRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        MetadataRequest::arbitrary,
+        MetadataRequest::VERSIONS,
+    );
 }

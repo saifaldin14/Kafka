@@ -56,6 +56,29 @@ impl DescribeConfigsResponse {
     }
 }
 
+#[cfg(test)]
+impl DescribeConfigsResponse {
+    /// Values of `DescribeConfigsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeConfigsResponse> {
+        use crate::test_strategies::{array, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            array(DescribeConfigsResult::arbitrary(version)).boxed(),
+            present(version == 4, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| DescribeConfigsResponse {
+                throttle_time_ms: value_0,
+                results: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeConfigsResponse {
     fn write_fields(
         &self,
@@ -180,6 +203,39 @@ impl DescribeConfigsResult {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl DescribeConfigsResult {
+    /// Values of `DescribeConfigsResult` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeConfigsResult> {
+        use crate::test_strategies::{
+            array, boundary_i8, boundary_i16, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            boundary_i8().boxed(),
+            string().boxed(),
+            array(DescribeConfigsResourceResult::arbitrary(version)).boxed(),
+            present(version == 4, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5),)| {
+                DescribeConfigsResult {
+                    error_code: value_0,
+                    error_message: value_1,
+                    resource_type: value_2,
+                    resource_name: value_3,
+                    configs: value_4,
+                    unknown_tagged_fields: value_5,
+                }
+            })
+            .boxed()
     }
 }
 
@@ -333,6 +389,55 @@ impl DescribeConfigsResourceResult {
     }
 }
 
+#[cfg(test)]
+impl DescribeConfigsResourceResult {
+    /// Values of `DescribeConfigsResourceResult` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeConfigsResourceResult> {
+        use crate::test_strategies::{
+            array, boundary_i8, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            nullable(true, string()).boxed(),
+            any::<bool>().boxed(),
+            boundary_i8().boxed(),
+            any::<bool>().boxed(),
+            array(DescribeConfigsSynonym::arbitrary(version)).boxed(),
+            present(version >= 3, boundary_i8(), 0).boxed(),
+            present(version >= 3, nullable(true, string()), Some(String::new())).boxed(),
+            present(version == 4, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(
+                |((
+                    value_0,
+                    value_1,
+                    value_2,
+                    value_3,
+                    value_4,
+                    value_5,
+                    value_6,
+                    value_7,
+                    value_8,
+                ),)| DescribeConfigsResourceResult {
+                    name: value_0,
+                    value: value_1,
+                    read_only: value_2,
+                    config_source: value_3,
+                    is_sensitive: value_4,
+                    synonyms: value_5,
+                    config_type: value_6,
+                    documentation: value_7,
+                    unknown_tagged_fields: value_8,
+                },
+            )
+            .boxed()
+    }
+}
+
 impl DescribeConfigsResourceResult {
     fn write_fields(
         &self,
@@ -447,6 +552,33 @@ impl DescribeConfigsSynonym {
     }
 }
 
+#[cfg(test)]
+impl DescribeConfigsSynonym {
+    /// Values of `DescribeConfigsSynonym` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeConfigsSynonym> {
+        use crate::test_strategies::{
+            boundary_i8, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            nullable(true, string()).boxed(),
+            boundary_i8().boxed(),
+            present(version == 4, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| DescribeConfigsSynonym {
+                name: value_0,
+                value: value_1,
+                source: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeConfigsSynonym {
     fn write_fields(
         &self,
@@ -504,4 +636,13 @@ impl crate::Message for DescribeConfigsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeConfigsResponse::arbitrary,
+        DescribeConfigsResponse::VERSIONS,
+    );
 }

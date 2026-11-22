@@ -78,6 +78,35 @@ impl ListTransactionsResponse {
     }
 }
 
+#[cfg(test)]
+impl ListTransactionsResponse {
+    /// Values of `ListTransactionsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ListTransactionsResponse> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            array(string()).boxed(),
+            array(TransactionState::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| ListTransactionsResponse {
+                throttle_time_ms: value_0,
+                error_code: value_1,
+                unknown_state_filters: value_2,
+                transaction_states: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl ListTransactionsResponse {
     fn write_fields(
         &self,
@@ -149,6 +178,29 @@ impl TransactionState {
     }
 }
 
+#[cfg(test)]
+impl TransactionState {
+    /// Values of `TransactionState` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<TransactionState> {
+        use crate::test_strategies::{boundary_i64, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            boundary_i64().boxed(),
+            string().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| TransactionState {
+                transactional_id: value_0,
+                producer_id: value_1,
+                transaction_state: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl TransactionState {
     fn write_fields(
         &self,
@@ -195,4 +247,13 @@ impl crate::Message for ListTransactionsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ListTransactionsResponse::arbitrary,
+        ListTransactionsResponse::VERSIONS,
+    );
 }

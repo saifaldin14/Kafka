@@ -49,6 +49,25 @@ impl DeleteAclsRequest {
     }
 }
 
+#[cfg(test)]
+impl DeleteAclsRequest {
+    /// Values of `DeleteAclsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<DeleteAclsRequest> {
+        use crate::test_strategies::{array, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(DeleteAclsFilter::arbitrary(version)).boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1),)| DeleteAclsRequest {
+                filters: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl DeleteAclsRequest {
     fn write_fields(
         &self,
@@ -175,6 +194,43 @@ impl DeleteAclsFilter {
     }
 }
 
+#[cfg(test)]
+impl DeleteAclsFilter {
+    /// Values of `DeleteAclsFilter` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<DeleteAclsFilter> {
+        use crate::test_strategies::{
+            boundary_i8, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i8().boxed(),
+            nullable(true, string()).boxed(),
+            boundary_i8().boxed(),
+            nullable(true, string()).boxed(),
+            nullable(true, string()).boxed(),
+            boundary_i8().boxed(),
+            boundary_i8().boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(
+                |((value_0, value_1, value_2, value_3, value_4, value_5, value_6, value_7),)| {
+                    DeleteAclsFilter {
+                        resource_type_filter: value_0,
+                        resource_name_filter: value_1,
+                        pattern_type_filter: value_2,
+                        principal_filter: value_3,
+                        host_filter: value_4,
+                        operation: value_5,
+                        permission_type: value_6,
+                        unknown_tagged_fields: value_7,
+                    }
+                },
+            )
+            .boxed()
+    }
+}
+
 impl DeleteAclsFilter {
     fn write_fields(
         &self,
@@ -242,4 +298,13 @@ impl crate::Message for DeleteAclsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DeleteAclsRequest::arbitrary,
+        DeleteAclsRequest::VERSIONS,
+    );
 }

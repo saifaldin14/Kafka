@@ -80,6 +80,33 @@ impl ApiVersionsRequest {
     }
 }
 
+#[cfg(test)]
+impl ApiVersionsRequest {
+    /// Values of `ApiVersionsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<ApiVersionsRequest> {
+        use crate::test_strategies::{
+            boundary_i32, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            present(version >= 3, string(), String::new()).boxed(),
+            present(version >= 3, string(), String::new()).boxed(),
+            present(version == 5, nullable(true, string()), None).boxed(),
+            present(version == 5, boundary_i32(), -1).boxed(),
+            present(version >= 3, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| ApiVersionsRequest {
+                client_software_name: value_0,
+                client_software_version: value_1,
+                cluster_id: value_2,
+                node_id: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl ApiVersionsRequest {
     fn write_fields(
         &self,
@@ -139,4 +166,13 @@ impl crate::Message for ApiVersionsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ApiVersionsRequest::arbitrary,
+        ApiVersionsRequest::VERSIONS,
+    );
 }

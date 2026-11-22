@@ -87,6 +87,37 @@ impl CreateDelegationTokenRequest {
     }
 }
 
+#[cfg(test)]
+impl CreateDelegationTokenRequest {
+    /// Values of `CreateDelegationTokenRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<CreateDelegationTokenRequest> {
+        use crate::test_strategies::{
+            array, boundary_i64, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            present(version == 3, nullable(true, string()), Some(String::new())).boxed(),
+            present(version == 3, nullable(true, string()), Some(String::new())).boxed(),
+            array(CreatableRenewers::arbitrary(version)).boxed(),
+            boundary_i64().boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| {
+                CreateDelegationTokenRequest {
+                    owner_principal_type: value_0,
+                    owner_principal_name: value_1,
+                    renewers: value_2,
+                    max_lifetime_ms: value_3,
+                    unknown_tagged_fields: value_4,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl CreateDelegationTokenRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -194,6 +225,27 @@ impl CreatableRenewers {
     }
 }
 
+#[cfg(test)]
+impl CreatableRenewers {
+    /// Values of `CreatableRenewers` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<CreatableRenewers> {
+        use crate::test_strategies::{present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            string().boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| CreatableRenewers {
+                principal_type: value_0,
+                principal_name: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl CreatableRenewers {
     fn write_fields(
         &self,
@@ -253,4 +305,13 @@ impl crate::Message for CreateDelegationTokenRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        CreateDelegationTokenRequest::arbitrary,
+        CreateDelegationTokenRequest::VERSIONS,
+    );
 }

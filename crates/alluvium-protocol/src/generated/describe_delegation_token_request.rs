@@ -61,6 +61,27 @@ impl DescribeDelegationTokenRequest {
     }
 }
 
+#[cfg(test)]
+impl DescribeDelegationTokenRequest {
+    /// Values of `DescribeDelegationTokenRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeDelegationTokenRequest> {
+        use crate::test_strategies::{array, nullable, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            nullable(true, array(DescribeDelegationTokenOwner::arbitrary(version))).boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1),)| DescribeDelegationTokenRequest {
+                owners: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeDelegationTokenRequest {
     fn write_fields(
         &self,
@@ -143,6 +164,29 @@ impl DescribeDelegationTokenOwner {
     }
 }
 
+#[cfg(test)]
+impl DescribeDelegationTokenOwner {
+    /// Values of `DescribeDelegationTokenOwner` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeDelegationTokenOwner> {
+        use crate::test_strategies::{present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            string().boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| DescribeDelegationTokenOwner {
+                principal_type: value_0,
+                principal_name: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeDelegationTokenOwner {
     fn write_fields(
         &self,
@@ -202,4 +246,13 @@ impl crate::Message for DescribeDelegationTokenRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeDelegationTokenRequest::arbitrary,
+        DescribeDelegationTokenRequest::VERSIONS,
+    );
 }

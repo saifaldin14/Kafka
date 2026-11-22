@@ -36,6 +36,21 @@ impl ControlRecordTypeSchema {
     }
 }
 
+#[cfg(test)]
+impl ControlRecordTypeSchema {
+    /// Values of `ControlRecordTypeSchema` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ControlRecordTypeSchema> {
+        use crate::test_strategies::boundary_i16;
+        use proptest::prelude::*;
+        ((boundary_i16().boxed(),),)
+            .prop_map(|((value_0,),)| ControlRecordTypeSchema { type_: value_0 })
+            .boxed()
+    }
+}
+
 impl ControlRecordTypeSchema {
     fn write_fields(&self, writer: &mut crate::Writer, _version: i16) {
         writer.write_i16(self.type_);
@@ -71,4 +86,13 @@ impl crate::Message for ControlRecordTypeSchema {
         self.write_fields(writer, version);
         Ok(())
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ControlRecordTypeSchema::arbitrary,
+        ControlRecordTypeSchema::VERSIONS,
+    );
 }

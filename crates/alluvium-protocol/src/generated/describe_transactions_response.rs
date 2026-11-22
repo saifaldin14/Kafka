@@ -52,6 +52,29 @@ impl DescribeTransactionsResponse {
     }
 }
 
+#[cfg(test)]
+impl DescribeTransactionsResponse {
+    /// Values of `DescribeTransactionsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeTransactionsResponse> {
+        use crate::test_strategies::{array, boundary_i32, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            array(TransactionState::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| DescribeTransactionsResponse {
+                throttle_time_ms: value_0,
+                transaction_states: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeTransactionsResponse {
     fn write_fields(
         &self,
@@ -159,6 +182,53 @@ impl TransactionState {
     }
 }
 
+#[cfg(test)]
+impl TransactionState {
+    /// Values of `TransactionState` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<TransactionState> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, boundary_i64, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            string().boxed(),
+            string().boxed(),
+            boundary_i32().boxed(),
+            boundary_i64().boxed(),
+            boundary_i64().boxed(),
+            boundary_i16().boxed(),
+            array(TopicData::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(
+                |((
+                    value_0,
+                    value_1,
+                    value_2,
+                    value_3,
+                    value_4,
+                    value_5,
+                    value_6,
+                    value_7,
+                    value_8,
+                ),)| TransactionState {
+                    error_code: value_0,
+                    transactional_id: value_1,
+                    transaction_state: value_2,
+                    transaction_timeout_ms: value_3,
+                    transaction_start_time_ms: value_4,
+                    producer_id: value_5,
+                    producer_epoch: value_6,
+                    topics: value_7,
+                    unknown_tagged_fields: value_8,
+                },
+            )
+            .boxed()
+    }
+}
+
 impl TransactionState {
     fn write_fields(
         &self,
@@ -238,6 +308,23 @@ impl TopicData {
     }
 }
 
+#[cfg(test)]
+impl TopicData {
+    /// Values of `TopicData` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<TopicData> {
+        use crate::test_strategies::{array, boundary_i32, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((string().boxed(), array(boundary_i32()).boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| TopicData {
+                topic: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl TopicData {
     fn write_fields(
         &self,
@@ -286,4 +373,13 @@ impl crate::Message for DescribeTransactionsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeTransactionsResponse::arbitrary,
+        DescribeTransactionsResponse::VERSIONS,
+    );
 }

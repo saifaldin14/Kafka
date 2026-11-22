@@ -51,6 +51,27 @@ impl AlterReplicaLogDirsRequest {
     }
 }
 
+#[cfg(test)]
+impl AlterReplicaLogDirsRequest {
+    /// Values of `AlterReplicaLogDirsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterReplicaLogDirsRequest> {
+        use crate::test_strategies::{array, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(AlterReplicaLogDir::arbitrary(version)).boxed(),
+            present(version == 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1),)| AlterReplicaLogDirsRequest {
+                dirs: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl AlterReplicaLogDirsRequest {
     fn write_fields(
         &self,
@@ -145,6 +166,27 @@ impl AlterReplicaLogDir {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl AlterReplicaLogDir {
+    /// Values of `AlterReplicaLogDir` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<AlterReplicaLogDir> {
+        use crate::test_strategies::{array, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(AlterReplicaLogDirTopic::arbitrary(version)).boxed(),
+            present(version == 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| AlterReplicaLogDir {
+                path: value_0,
+                topics: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
     }
 }
 
@@ -249,6 +291,29 @@ impl AlterReplicaLogDirTopic {
     }
 }
 
+#[cfg(test)]
+impl AlterReplicaLogDirTopic {
+    /// Values of `AlterReplicaLogDirTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterReplicaLogDirTopic> {
+        use crate::test_strategies::{array, boundary_i32, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(boundary_i32()).boxed(),
+            present(version == 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| AlterReplicaLogDirTopic {
+                name: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl AlterReplicaLogDirTopic {
     fn write_fields(
         &self,
@@ -311,4 +376,13 @@ impl crate::Message for AlterReplicaLogDirsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        AlterReplicaLogDirsRequest::arbitrary,
+        AlterReplicaLogDirsRequest::VERSIONS,
+    );
 }

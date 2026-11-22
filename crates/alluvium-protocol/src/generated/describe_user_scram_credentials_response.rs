@@ -90,6 +90,37 @@ impl DescribeUserScramCredentialsResponse {
     }
 }
 
+#[cfg(test)]
+impl DescribeUserScramCredentialsResponse {
+    /// Values of `DescribeUserScramCredentialsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeUserScramCredentialsResponse> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, nullable, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            array(DescribeUserScramCredentialsResult::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| {
+                DescribeUserScramCredentialsResponse {
+                    throttle_time_ms: value_0,
+                    error_code: value_1,
+                    error_message: value_2,
+                    results: value_3,
+                    unknown_tagged_fields: value_4,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl DescribeUserScramCredentialsResponse {
     fn write_fields(
         &self,
@@ -188,6 +219,37 @@ impl DescribeUserScramCredentialsResult {
     }
 }
 
+#[cfg(test)]
+impl DescribeUserScramCredentialsResult {
+    /// Values of `DescribeUserScramCredentialsResult` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeUserScramCredentialsResult> {
+        use crate::test_strategies::{
+            array, boundary_i16, nullable, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            array(CredentialInfo::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| {
+                DescribeUserScramCredentialsResult {
+                    user: value_0,
+                    error_code: value_1,
+                    error_message: value_2,
+                    credential_infos: value_3,
+                    unknown_tagged_fields: value_4,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl DescribeUserScramCredentialsResult {
     fn write_fields(
         &self,
@@ -249,6 +311,23 @@ impl CredentialInfo {
     }
 }
 
+#[cfg(test)]
+impl CredentialInfo {
+    /// Values of `CredentialInfo` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<CredentialInfo> {
+        use crate::test_strategies::{boundary_i8, boundary_i32, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((boundary_i8().boxed(), boundary_i32().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| CredentialInfo {
+                mechanism: value_0,
+                iterations: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl CredentialInfo {
     fn write_fields(
         &self,
@@ -294,4 +373,13 @@ impl crate::Message for DescribeUserScramCredentialsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeUserScramCredentialsResponse::arbitrary,
+        DescribeUserScramCredentialsResponse::VERSIONS,
+    );
 }

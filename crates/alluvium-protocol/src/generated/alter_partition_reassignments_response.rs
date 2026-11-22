@@ -99,6 +99,39 @@ impl AlterPartitionReassignmentsResponse {
     }
 }
 
+#[cfg(test)]
+impl AlterPartitionReassignmentsResponse {
+    /// Values of `AlterPartitionReassignmentsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterPartitionReassignmentsResponse> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            present(version == 1, any::<bool>(), true).boxed(),
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            array(ReassignableTopicResponse::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5),)| {
+                AlterPartitionReassignmentsResponse {
+                    throttle_time_ms: value_0,
+                    allow_replication_factor_change: value_1,
+                    error_code: value_2,
+                    error_message: value_3,
+                    responses: value_4,
+                    unknown_tagged_fields: value_5,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl AlterPartitionReassignmentsResponse {
     fn write_fields(
         &self,
@@ -164,6 +197,29 @@ impl ReassignableTopicResponse {
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl ReassignableTopicResponse {
+    /// Values of `ReassignableTopicResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ReassignableTopicResponse> {
+        use crate::test_strategies::{array, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(ReassignablePartitionResponse::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| ReassignableTopicResponse {
+                name: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
     }
 }
 
@@ -255,6 +311,33 @@ impl ReassignablePartitionResponse {
     }
 }
 
+#[cfg(test)]
+impl ReassignablePartitionResponse {
+    /// Values of `ReassignablePartitionResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ReassignablePartitionResponse> {
+        use crate::test_strategies::{
+            boundary_i16, boundary_i32, nullable, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| ReassignablePartitionResponse {
+                partition_index: value_0,
+                error_code: value_1,
+                error_message: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl ReassignablePartitionResponse {
     fn write_fields(
         &self,
@@ -301,4 +384,13 @@ impl crate::Message for AlterPartitionReassignmentsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        AlterPartitionReassignmentsResponse::arbitrary,
+        AlterPartitionReassignmentsResponse::VERSIONS,
+    );
 }

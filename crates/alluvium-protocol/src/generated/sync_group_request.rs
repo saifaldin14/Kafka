@@ -103,6 +103,43 @@ impl SyncGroupRequest {
     }
 }
 
+#[cfg(test)]
+impl SyncGroupRequest {
+    /// Values of `SyncGroupRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<SyncGroupRequest> {
+        use crate::test_strategies::{
+            array, boundary_i32, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            boundary_i32().boxed(),
+            string().boxed(),
+            present(version >= 3, nullable(true, string()), None).boxed(),
+            present(version == 5, nullable(true, string()), None).boxed(),
+            present(version == 5, nullable(true, string()), None).boxed(),
+            array(SyncGroupRequestAssignment::arbitrary(version)).boxed(),
+            present(version >= 4, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(
+                |((value_0, value_1, value_2, value_3, value_4, value_5, value_6, value_7),)| {
+                    SyncGroupRequest {
+                        group_id: value_0,
+                        generation_id: value_1,
+                        member_id: value_2,
+                        group_instance_id: value_3,
+                        protocol_type: value_4,
+                        protocol_name: value_5,
+                        assignments: value_6,
+                        unknown_tagged_fields: value_7,
+                    }
+                },
+            )
+            .boxed()
+    }
+}
+
 impl SyncGroupRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -217,6 +254,29 @@ impl SyncGroupRequestAssignment {
     }
 }
 
+#[cfg(test)]
+impl SyncGroupRequestAssignment {
+    /// Values of `SyncGroupRequestAssignment` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<SyncGroupRequestAssignment> {
+        use crate::test_strategies::{bytes, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            bytes().boxed(),
+            present(version >= 4, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| SyncGroupRequestAssignment {
+                member_id: value_0,
+                assignment: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl SyncGroupRequestAssignment {
     fn write_fields(
         &self,
@@ -276,4 +336,13 @@ impl crate::Message for SyncGroupRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        SyncGroupRequest::arbitrary,
+        SyncGroupRequest::VERSIONS,
+    );
 }

@@ -55,6 +55,29 @@ impl AlterClientQuotasRequest {
     }
 }
 
+#[cfg(test)]
+impl AlterClientQuotasRequest {
+    /// Values of `AlterClientQuotasRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterClientQuotasRequest> {
+        use crate::test_strategies::{array, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(EntryData::arbitrary(version)).boxed(),
+            any::<bool>().boxed(),
+            present(version == 1, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| AlterClientQuotasRequest {
+                entries: value_0,
+                validate_only: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl AlterClientQuotasRequest {
     fn write_fields(
         &self,
@@ -128,6 +151,27 @@ impl EntryData {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl EntryData {
+    /// Values of `EntryData` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<EntryData> {
+        use crate::test_strategies::{array, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(EntityData::arbitrary(version)).boxed(),
+            array(OpData::arbitrary(version)).boxed(),
+            present(version == 1, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| EntryData {
+                entity: value_0,
+                ops: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
     }
 }
 
@@ -225,6 +269,27 @@ impl EntityData {
     }
 }
 
+#[cfg(test)]
+impl EntityData {
+    /// Values of `EntityData` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<EntityData> {
+        use crate::test_strategies::{nullable, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            nullable(true, string()).boxed(),
+            present(version == 1, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| EntityData {
+                entity_type: value_0,
+                entity_name: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl EntityData {
     fn write_fields(
         &self,
@@ -302,6 +367,29 @@ impl OpData {
     }
 }
 
+#[cfg(test)]
+impl OpData {
+    /// Values of `OpData` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<OpData> {
+        use crate::test_strategies::{float64, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            float64().boxed(),
+            any::<bool>().boxed(),
+            present(version == 1, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| OpData {
+                key: value_0,
+                value: value_1,
+                remove: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl OpData {
     fn write_fields(
         &self,
@@ -359,4 +447,13 @@ impl crate::Message for AlterClientQuotasRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        AlterClientQuotasRequest::arbitrary,
+        AlterClientQuotasRequest::VERSIONS,
+    );
 }

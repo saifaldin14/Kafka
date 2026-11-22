@@ -55,6 +55,27 @@ impl DescribeUserScramCredentialsRequest {
     }
 }
 
+#[cfg(test)]
+impl DescribeUserScramCredentialsRequest {
+    /// Values of `DescribeUserScramCredentialsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeUserScramCredentialsRequest> {
+        use crate::test_strategies::{array, nullable, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            nullable(true, array(UserName::arbitrary(version))).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1),)| DescribeUserScramCredentialsRequest {
+                users: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeUserScramCredentialsRequest {
     fn write_fields(
         &self,
@@ -110,6 +131,22 @@ impl UserName {
     }
 }
 
+#[cfg(test)]
+impl UserName {
+    /// Values of `UserName` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<UserName> {
+        use crate::test_strategies::{string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((string().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1),)| UserName {
+                name: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl UserName {
     fn write_fields(
         &self,
@@ -157,4 +194,13 @@ impl crate::Message for DescribeUserScramCredentialsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeUserScramCredentialsRequest::arbitrary,
+        DescribeUserScramCredentialsRequest::VERSIONS,
+    );
 }

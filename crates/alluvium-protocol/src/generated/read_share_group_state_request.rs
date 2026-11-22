@@ -50,6 +50,29 @@ impl ReadShareGroupStateRequest {
     }
 }
 
+#[cfg(test)]
+impl ReadShareGroupStateRequest {
+    /// Values of `ReadShareGroupStateRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ReadShareGroupStateRequest> {
+        use crate::test_strategies::{array, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(ReadStateData::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| ReadShareGroupStateRequest {
+                group_id: value_0,
+                topics: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl ReadShareGroupStateRequest {
     fn write_fields(
         &self,
@@ -118,6 +141,27 @@ impl ReadStateData {
     }
 }
 
+#[cfg(test)]
+impl ReadStateData {
+    /// Values of `ReadStateData` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<ReadStateData> {
+        use crate::test_strategies::{array, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((
+            uuid().boxed(),
+            array(PartitionData::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| ReadStateData {
+                topic_id: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl ReadStateData {
     fn write_fields(
         &self,
@@ -174,6 +218,23 @@ impl PartitionData {
     }
 }
 
+#[cfg(test)]
+impl PartitionData {
+    /// Values of `PartitionData` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<PartitionData> {
+        use crate::test_strategies::{boundary_i32, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((boundary_i32().boxed(), boundary_i32().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| PartitionData {
+                partition: value_0,
+                leader_epoch: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl PartitionData {
     fn write_fields(
         &self,
@@ -222,4 +283,13 @@ impl crate::Message for ReadShareGroupStateRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ReadShareGroupStateRequest::arbitrary,
+        ReadShareGroupStateRequest::VERSIONS,
+    );
 }

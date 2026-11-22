@@ -87,6 +87,43 @@ impl AddPartitionsToTxnResponse {
     }
 }
 
+#[cfg(test)]
+impl AddPartitionsToTxnResponse {
+    /// Values of `AddPartitionsToTxnResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AddPartitionsToTxnResponse> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, present, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            present(version >= 4, boundary_i16(), 0).boxed(),
+            present(version >= 4, array(AddPartitionsToTxnResult::arbitrary(version)), Vec::new())
+                .boxed(),
+            present(
+                version <= 3,
+                array(AddPartitionsToTxnTopicResult::arbitrary(version)),
+                Vec::new(),
+            )
+            .boxed(),
+            present(version >= 3, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| {
+                AddPartitionsToTxnResponse {
+                    throttle_time_ms: value_0,
+                    error_code: value_1,
+                    results_by_transaction: value_2,
+                    results_by_topic_v3_and_below: value_3,
+                    unknown_tagged_fields: value_4,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl AddPartitionsToTxnResponse {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -207,6 +244,29 @@ impl AddPartitionsToTxnResult {
     }
 }
 
+#[cfg(test)]
+impl AddPartitionsToTxnResult {
+    /// Values of `AddPartitionsToTxnResult` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AddPartitionsToTxnResult> {
+        use crate::test_strategies::{array, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(AddPartitionsToTxnTopicResult::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| AddPartitionsToTxnResult {
+                transactional_id: value_0,
+                topic_results: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl AddPartitionsToTxnResult {
     fn write_fields(
         &self,
@@ -294,6 +354,29 @@ impl AddPartitionsToTxnTopicResult {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl AddPartitionsToTxnTopicResult {
+    /// Values of `AddPartitionsToTxnTopicResult` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AddPartitionsToTxnTopicResult> {
+        use crate::test_strategies::{array, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(AddPartitionsToTxnPartitionResult::arbitrary(version)).boxed(),
+            present(version >= 3, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| AddPartitionsToTxnTopicResult {
+                name: value_0,
+                results_by_partition: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
     }
 }
 
@@ -401,6 +484,29 @@ impl AddPartitionsToTxnPartitionResult {
     }
 }
 
+#[cfg(test)]
+impl AddPartitionsToTxnPartitionResult {
+    /// Values of `AddPartitionsToTxnPartitionResult` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AddPartitionsToTxnPartitionResult> {
+        use crate::test_strategies::{boundary_i16, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            present(version >= 3, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| AddPartitionsToTxnPartitionResult {
+                partition_index: value_0,
+                partition_error_code: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl AddPartitionsToTxnPartitionResult {
     fn write_fields(
         &self,
@@ -451,4 +557,13 @@ impl crate::Message for AddPartitionsToTxnResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        AddPartitionsToTxnResponse::arbitrary,
+        AddPartitionsToTxnResponse::VERSIONS,
+    );
 }

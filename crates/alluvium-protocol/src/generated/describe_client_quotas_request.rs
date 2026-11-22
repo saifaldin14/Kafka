@@ -57,6 +57,29 @@ impl DescribeClientQuotasRequest {
     }
 }
 
+#[cfg(test)]
+impl DescribeClientQuotasRequest {
+    /// Values of `DescribeClientQuotasRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeClientQuotasRequest> {
+        use crate::test_strategies::{array, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(ComponentData::arbitrary(version)).boxed(),
+            any::<bool>().boxed(),
+            present(version == 1, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| DescribeClientQuotasRequest {
+                components: value_0,
+                strict: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeClientQuotasRequest {
     fn write_fields(
         &self,
@@ -151,6 +174,31 @@ impl ComponentData {
     }
 }
 
+#[cfg(test)]
+impl ComponentData {
+    /// Values of `ComponentData` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<ComponentData> {
+        use crate::test_strategies::{
+            boundary_i8, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            boundary_i8().boxed(),
+            nullable(true, string()).boxed(),
+            present(version == 1, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| ComponentData {
+                entity_type: value_0,
+                match_type: value_1,
+                match_: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl ComponentData {
     fn write_fields(
         &self,
@@ -211,4 +259,13 @@ impl crate::Message for DescribeClientQuotasRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeClientQuotasRequest::arbitrary,
+        DescribeClientQuotasRequest::VERSIONS,
+    );
 }

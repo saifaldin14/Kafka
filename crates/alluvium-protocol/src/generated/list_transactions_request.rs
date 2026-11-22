@@ -89,6 +89,35 @@ impl ListTransactionsRequest {
     }
 }
 
+#[cfg(test)]
+impl ListTransactionsRequest {
+    /// Values of `ListTransactionsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ListTransactionsRequest> {
+        use crate::test_strategies::{
+            array, boundary_i64, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            array(string()).boxed(),
+            array(boundary_i64()).boxed(),
+            present(version >= 1, boundary_i64(), -1).boxed(),
+            present(version == 2, nullable(true, string()), None).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| ListTransactionsRequest {
+                state_filters: value_0,
+                producer_id_filters: value_1,
+                duration_filter: value_2,
+                transactional_id_pattern: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl ListTransactionsRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -170,4 +199,13 @@ impl crate::Message for ListTransactionsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ListTransactionsRequest::arbitrary,
+        ListTransactionsRequest::VERSIONS,
+    );
 }

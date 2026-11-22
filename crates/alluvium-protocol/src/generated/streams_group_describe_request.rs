@@ -63,6 +63,31 @@ impl StreamsGroupDescribeRequest {
     }
 }
 
+#[cfg(test)]
+impl StreamsGroupDescribeRequest {
+    /// Values of `StreamsGroupDescribeRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<StreamsGroupDescribeRequest> {
+        use crate::test_strategies::{array, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(string()).boxed(),
+            any::<bool>().boxed(),
+            present(version == 1, any::<bool>(), false).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| StreamsGroupDescribeRequest {
+                group_ids: value_0,
+                include_authorized_operations: value_1,
+                include_topology_description: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl StreamsGroupDescribeRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -132,4 +157,13 @@ impl crate::Message for StreamsGroupDescribeRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        StreamsGroupDescribeRequest::arbitrary,
+        StreamsGroupDescribeRequest::VERSIONS,
+    );
 }

@@ -85,6 +85,45 @@ impl AddPartitionsToTxnRequest {
     }
 }
 
+#[cfg(test)]
+impl AddPartitionsToTxnRequest {
+    /// Values of `AddPartitionsToTxnRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AddPartitionsToTxnRequest> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i64, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            present(
+                version >= 4,
+                array(AddPartitionsToTxnTransaction::arbitrary(version)),
+                Vec::new(),
+            )
+            .boxed(),
+            present(version <= 3, string(), String::new()).boxed(),
+            present(version <= 3, boundary_i64(), 0).boxed(),
+            present(version <= 3, boundary_i16(), 0).boxed(),
+            present(version <= 3, array(AddPartitionsToTxnTopic::arbitrary(version)), Vec::new())
+                .boxed(),
+            present(version >= 3, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5),)| {
+                AddPartitionsToTxnRequest {
+                    transactions: value_0,
+                    v3_and_below_transactional_id: value_1,
+                    v3_and_below_producer_id: value_2,
+                    v3_and_below_producer_epoch: value_3,
+                    v3_and_below_topics: value_4,
+                    unknown_tagged_fields: value_5,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl AddPartitionsToTxnRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -227,6 +266,39 @@ impl AddPartitionsToTxnTransaction {
     }
 }
 
+#[cfg(test)]
+impl AddPartitionsToTxnTransaction {
+    /// Values of `AddPartitionsToTxnTransaction` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AddPartitionsToTxnTransaction> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i64, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            boundary_i64().boxed(),
+            boundary_i16().boxed(),
+            any::<bool>().boxed(),
+            array(AddPartitionsToTxnTopic::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5),)| {
+                AddPartitionsToTxnTransaction {
+                    transactional_id: value_0,
+                    producer_id: value_1,
+                    producer_epoch: value_2,
+                    verify_only: value_3,
+                    topics: value_4,
+                    unknown_tagged_fields: value_5,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl AddPartitionsToTxnTransaction {
     fn write_fields(
         &self,
@@ -320,6 +392,29 @@ impl AddPartitionsToTxnTopic {
     }
 }
 
+#[cfg(test)]
+impl AddPartitionsToTxnTopic {
+    /// Values of `AddPartitionsToTxnTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AddPartitionsToTxnTopic> {
+        use crate::test_strategies::{array, boundary_i32, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(boundary_i32()).boxed(),
+            present(version >= 3, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| AddPartitionsToTxnTopic {
+                name: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl AddPartitionsToTxnTopic {
     fn write_fields(
         &self,
@@ -382,4 +477,13 @@ impl crate::Message for AddPartitionsToTxnRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        AddPartitionsToTxnRequest::arbitrary,
+        AddPartitionsToTxnRequest::VERSIONS,
+    );
 }

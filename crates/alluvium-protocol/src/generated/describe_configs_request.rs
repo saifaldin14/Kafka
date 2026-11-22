@@ -62,6 +62,31 @@ impl DescribeConfigsRequest {
     }
 }
 
+#[cfg(test)]
+impl DescribeConfigsRequest {
+    /// Values of `DescribeConfigsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeConfigsRequest> {
+        use crate::test_strategies::{array, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(DescribeConfigsResource::arbitrary(version)).boxed(),
+            any::<bool>().boxed(),
+            present(version >= 3, any::<bool>(), false).boxed(),
+            present(version == 4, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| DescribeConfigsRequest {
+                resources: value_0,
+                include_synonyms: value_1,
+                include_documentation: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeConfigsRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -182,6 +207,33 @@ impl DescribeConfigsResource {
     }
 }
 
+#[cfg(test)]
+impl DescribeConfigsResource {
+    /// Values of `DescribeConfigsResource` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeConfigsResource> {
+        use crate::test_strategies::{
+            array, boundary_i8, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i8().boxed(),
+            string().boxed(),
+            nullable(true, array(string())).boxed(),
+            present(version == 4, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| DescribeConfigsResource {
+                resource_type: value_0,
+                resource_name: value_1,
+                configuration_keys: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeConfigsResource {
     fn write_fields(
         &self,
@@ -250,4 +302,13 @@ impl crate::Message for DescribeConfigsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeConfigsRequest::arbitrary,
+        DescribeConfigsRequest::VERSIONS,
+    );
 }

@@ -53,6 +53,31 @@ impl DefaultPrincipalData {
     }
 }
 
+#[cfg(test)]
+impl DefaultPrincipalData {
+    /// Values of `DefaultPrincipalData` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DefaultPrincipalData> {
+        use crate::test_strategies::{string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            string().boxed(),
+            any::<bool>().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| DefaultPrincipalData {
+                type_: value_0,
+                name: value_1,
+                token_authenticated: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl DefaultPrincipalData {
     fn write_fields(
         &self,
@@ -97,4 +122,13 @@ impl crate::Message for DefaultPrincipalData {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DefaultPrincipalData::arbitrary,
+        DefaultPrincipalData::VERSIONS,
+    );
 }

@@ -74,6 +74,31 @@ impl ListGroupsResponse {
     }
 }
 
+#[cfg(test)]
+impl ListGroupsResponse {
+    /// Values of `ListGroupsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<ListGroupsResponse> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, present, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            present(version >= 1, boundary_i32(), 0).boxed(),
+            boundary_i16().boxed(),
+            array(ListedGroup::arbitrary(version)).boxed(),
+            present(version >= 3, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| ListGroupsResponse {
+                throttle_time_ms: value_0,
+                error_code: value_1,
+                groups: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl ListGroupsResponse {
     fn write_fields(
         &self,
@@ -169,6 +194,31 @@ impl ListedGroup {
     }
 }
 
+#[cfg(test)]
+impl ListedGroup {
+    /// Values of `ListedGroup` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<ListedGroup> {
+        use crate::test_strategies::{present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            string().boxed(),
+            present(version >= 4, string(), String::new()).boxed(),
+            present(version == 5, string(), String::new()).boxed(),
+            present(version >= 3, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| ListedGroup {
+                group_id: value_0,
+                protocol_type: value_1,
+                group_state: value_2,
+                group_type: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl ListedGroup {
     fn write_fields(
         &self,
@@ -231,4 +281,13 @@ impl crate::Message for ListGroupsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ListGroupsResponse::arbitrary,
+        ListGroupsResponse::VERSIONS,
+    );
 }

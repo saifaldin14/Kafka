@@ -55,6 +55,27 @@ impl DeleteGroupsRequest {
     }
 }
 
+#[cfg(test)]
+impl DeleteGroupsRequest {
+    /// Values of `DeleteGroupsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DeleteGroupsRequest> {
+        use crate::test_strategies::{array, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(string()).boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1),)| DeleteGroupsRequest {
+                groups_names: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl DeleteGroupsRequest {
     fn write_fields(
         &self,
@@ -116,4 +137,13 @@ impl crate::Message for DeleteGroupsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DeleteGroupsRequest::arbitrary,
+        DeleteGroupsRequest::VERSIONS,
+    );
 }

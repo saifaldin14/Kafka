@@ -55,6 +55,27 @@ impl DeleteAclsResponse {
     }
 }
 
+#[cfg(test)]
+impl DeleteAclsResponse {
+    /// Values of `DeleteAclsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<DeleteAclsResponse> {
+        use crate::test_strategies::{array, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            array(DeleteAclsFilterResult::arbitrary(version)).boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| DeleteAclsResponse {
+                throttle_time_ms: value_0,
+                filter_results: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl DeleteAclsResponse {
     fn write_fields(
         &self,
@@ -160,6 +181,33 @@ impl DeleteAclsFilterResult {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl DeleteAclsFilterResult {
+    /// Values of `DeleteAclsFilterResult` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DeleteAclsFilterResult> {
+        use crate::test_strategies::{
+            array, boundary_i16, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            array(DeleteAclsMatchingAcl::arbitrary(version)).boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| DeleteAclsFilterResult {
+                error_code: value_0,
+                error_message: value_1,
+                matching_acls: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
     }
 }
 
@@ -324,6 +372,58 @@ impl DeleteAclsMatchingAcl {
     }
 }
 
+#[cfg(test)]
+impl DeleteAclsMatchingAcl {
+    /// Values of `DeleteAclsMatchingAcl` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DeleteAclsMatchingAcl> {
+        use crate::test_strategies::{
+            boundary_i8, boundary_i16, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            boundary_i8().boxed(),
+            string().boxed(),
+            boundary_i8().boxed(),
+            string().boxed(),
+            string().boxed(),
+            boundary_i8().boxed(),
+            boundary_i8().boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(
+                |((
+                    value_0,
+                    value_1,
+                    value_2,
+                    value_3,
+                    value_4,
+                    value_5,
+                    value_6,
+                    value_7,
+                    value_8,
+                    value_9,
+                ),)| DeleteAclsMatchingAcl {
+                    error_code: value_0,
+                    error_message: value_1,
+                    resource_type: value_2,
+                    resource_name: value_3,
+                    pattern_type: value_4,
+                    principal: value_5,
+                    host: value_6,
+                    operation: value_7,
+                    permission_type: value_8,
+                    unknown_tagged_fields: value_9,
+                },
+            )
+            .boxed()
+    }
+}
+
 impl DeleteAclsMatchingAcl {
     fn write_fields(
         &self,
@@ -393,4 +493,13 @@ impl crate::Message for DeleteAclsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DeleteAclsResponse::arbitrary,
+        DeleteAclsResponse::VERSIONS,
+    );
 }

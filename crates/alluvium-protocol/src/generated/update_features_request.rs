@@ -68,6 +68,31 @@ impl UpdateFeaturesRequest {
     }
 }
 
+#[cfg(test)]
+impl UpdateFeaturesRequest {
+    /// Values of `UpdateFeaturesRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<UpdateFeaturesRequest> {
+        use crate::test_strategies::{array, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            array(FeatureUpdateKey::arbitrary(version)).boxed(),
+            present(version >= 1, any::<bool>(), false).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| UpdateFeaturesRequest {
+                timeout_ms: value_0,
+                feature_updates: value_1,
+                validate_only: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl UpdateFeaturesRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -196,6 +221,33 @@ impl FeatureUpdateKey {
     }
 }
 
+#[cfg(test)]
+impl FeatureUpdateKey {
+    /// Values of `FeatureUpdateKey` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<FeatureUpdateKey> {
+        use crate::test_strategies::{
+            boundary_i8, boundary_i16, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            boundary_i16().boxed(),
+            present(version == 0, any::<bool>(), false).boxed(),
+            present(version >= 1, boundary_i8(), 1).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| FeatureUpdateKey {
+                feature: value_0,
+                max_version_level: value_1,
+                allow_downgrade: value_2,
+                upgrade_type: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl FeatureUpdateKey {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -268,4 +320,13 @@ impl crate::Message for UpdateFeaturesRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        UpdateFeaturesRequest::arbitrary,
+        UpdateFeaturesRequest::VERSIONS,
+    );
 }

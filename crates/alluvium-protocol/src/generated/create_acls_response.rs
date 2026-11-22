@@ -55,6 +55,27 @@ impl CreateAclsResponse {
     }
 }
 
+#[cfg(test)]
+impl CreateAclsResponse {
+    /// Values of `CreateAclsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<CreateAclsResponse> {
+        use crate::test_strategies::{array, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            array(AclCreationResult::arbitrary(version)).boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| CreateAclsResponse {
+                throttle_time_ms: value_0,
+                results: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl CreateAclsResponse {
     fn write_fields(
         &self,
@@ -152,6 +173,29 @@ impl AclCreationResult {
     }
 }
 
+#[cfg(test)]
+impl AclCreationResult {
+    /// Values of `AclCreationResult` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<AclCreationResult> {
+        use crate::test_strategies::{
+            boundary_i16, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| AclCreationResult {
+                error_code: value_0,
+                error_message: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl AclCreationResult {
     fn write_fields(
         &self,
@@ -205,4 +249,13 @@ impl crate::Message for CreateAclsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        CreateAclsResponse::arbitrary,
+        CreateAclsResponse::VERSIONS,
+    );
 }

@@ -75,6 +75,39 @@ impl PushTelemetryRequest {
     }
 }
 
+#[cfg(test)]
+impl PushTelemetryRequest {
+    /// Values of `PushTelemetryRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<PushTelemetryRequest> {
+        use crate::test_strategies::{
+            boundary_i8, boundary_i32, bytes, unknown_tagged_fields, uuid,
+        };
+        use proptest::prelude::*;
+        ((
+            uuid().boxed(),
+            boundary_i32().boxed(),
+            any::<bool>().boxed(),
+            boundary_i8().boxed(),
+            bytes().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5),)| {
+                PushTelemetryRequest {
+                    client_instance_id: value_0,
+                    subscription_id: value_1,
+                    terminating: value_2,
+                    compression_type: value_3,
+                    metrics: value_4,
+                    unknown_tagged_fields: value_5,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl PushTelemetryRequest {
     fn write_fields(
         &self,
@@ -126,4 +159,13 @@ impl crate::Message for PushTelemetryRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        PushTelemetryRequest::arbitrary,
+        PushTelemetryRequest::VERSIONS,
+    );
 }

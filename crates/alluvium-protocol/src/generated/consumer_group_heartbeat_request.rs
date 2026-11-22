@@ -130,6 +130,65 @@ impl ConsumerGroupHeartbeatRequest {
     }
 }
 
+#[cfg(test)]
+impl ConsumerGroupHeartbeatRequest {
+    /// Values of `ConsumerGroupHeartbeatRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ConsumerGroupHeartbeatRequest> {
+        use crate::test_strategies::{
+            array, boundary_i32, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        (
+            (
+                string().boxed(),
+                string().boxed(),
+                boundary_i32().boxed(),
+                nullable(true, string()).boxed(),
+                nullable(true, string()).boxed(),
+                boundary_i32().boxed(),
+                nullable(true, array(string())).boxed(),
+                present(version == 1, nullable(true, string()), None).boxed(),
+                nullable(true, string()).boxed(),
+                nullable(true, array(TopicPartitions::arbitrary(version))).boxed(),
+            ),
+            (unknown_tagged_fields(0).boxed(),),
+        )
+            .prop_map(
+                |(
+                    (
+                        value_0,
+                        value_1,
+                        value_2,
+                        value_3,
+                        value_4,
+                        value_5,
+                        value_6,
+                        value_7,
+                        value_8,
+                        value_9,
+                    ),
+                    (value_10,),
+                )| ConsumerGroupHeartbeatRequest {
+                    group_id: value_0,
+                    member_id: value_1,
+                    member_epoch: value_2,
+                    instance_id: value_3,
+                    rack_id: value_4,
+                    rebalance_timeout_ms: value_5,
+                    subscribed_topic_names: value_6,
+                    subscribed_topic_regex: value_7,
+                    server_assignor: value_8,
+                    topic_partitions: value_9,
+                    unknown_tagged_fields: value_10,
+                },
+            )
+            .boxed()
+    }
+}
+
 impl ConsumerGroupHeartbeatRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -242,6 +301,23 @@ impl TopicPartitions {
     }
 }
 
+#[cfg(test)]
+impl TopicPartitions {
+    /// Values of `TopicPartitions` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<TopicPartitions> {
+        use crate::test_strategies::{array, boundary_i32, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((uuid().boxed(), array(boundary_i32()).boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| TopicPartitions {
+                topic_id: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl TopicPartitions {
     fn write_fields(
         &self,
@@ -293,4 +369,13 @@ impl crate::Message for ConsumerGroupHeartbeatRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ConsumerGroupHeartbeatRequest::arbitrary,
+        ConsumerGroupHeartbeatRequest::VERSIONS,
+    );
 }

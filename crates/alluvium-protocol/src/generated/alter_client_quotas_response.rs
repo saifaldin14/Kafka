@@ -57,6 +57,29 @@ impl AlterClientQuotasResponse {
     }
 }
 
+#[cfg(test)]
+impl AlterClientQuotasResponse {
+    /// Values of `AlterClientQuotasResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterClientQuotasResponse> {
+        use crate::test_strategies::{array, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            array(EntryData::arbitrary(version)).boxed(),
+            present(version == 1, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| AlterClientQuotasResponse {
+                throttle_time_ms: value_0,
+                entries: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl AlterClientQuotasResponse {
     fn write_fields(
         &self,
@@ -162,6 +185,31 @@ impl EntryData {
     }
 }
 
+#[cfg(test)]
+impl EntryData {
+    /// Values of `EntryData` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<EntryData> {
+        use crate::test_strategies::{
+            array, boundary_i16, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            array(EntityData::arbitrary(version)).boxed(),
+            present(version == 1, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| EntryData {
+                error_code: value_0,
+                error_message: value_1,
+                entity: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl EntryData {
     fn write_fields(
         &self,
@@ -254,6 +302,27 @@ impl EntityData {
     }
 }
 
+#[cfg(test)]
+impl EntityData {
+    /// Values of `EntityData` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<EntityData> {
+        use crate::test_strategies::{nullable, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            nullable(true, string()).boxed(),
+            present(version == 1, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| EntityData {
+                entity_type: value_0,
+                entity_name: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl EntityData {
     fn write_fields(
         &self,
@@ -310,4 +379,13 @@ impl crate::Message for AlterClientQuotasResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        AlterClientQuotasResponse::arbitrary,
+        AlterClientQuotasResponse::VERSIONS,
+    );
 }

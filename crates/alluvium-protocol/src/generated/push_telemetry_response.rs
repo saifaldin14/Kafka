@@ -61,6 +61,25 @@ impl PushTelemetryResponse {
     }
 }
 
+#[cfg(test)]
+impl PushTelemetryResponse {
+    /// Values of `PushTelemetryResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<PushTelemetryResponse> {
+        use crate::test_strategies::{boundary_i16, boundary_i32, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((boundary_i32().boxed(), boundary_i16().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| PushTelemetryResponse {
+                throttle_time_ms: value_0,
+                error_code: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl PushTelemetryResponse {
     fn write_fields(
         &self,
@@ -106,4 +125,13 @@ impl crate::Message for PushTelemetryResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        PushTelemetryResponse::arbitrary,
+        PushTelemetryResponse::VERSIONS,
+    );
 }

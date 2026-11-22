@@ -81,6 +81,37 @@ impl ControllerRegistrationRequest {
     }
 }
 
+#[cfg(test)]
+impl ControllerRegistrationRequest {
+    /// Values of `ControllerRegistrationRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ControllerRegistrationRequest> {
+        use crate::test_strategies::{array, boundary_i32, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            uuid().boxed(),
+            any::<bool>().boxed(),
+            array(Listener::arbitrary(version)).boxed(),
+            array(Feature::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5),)| {
+                ControllerRegistrationRequest {
+                    controller_id: value_0,
+                    incarnation_id: value_1,
+                    zk_migration_ready: value_2,
+                    listeners: value_3,
+                    features: value_4,
+                    unknown_tagged_fields: value_5,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl ControllerRegistrationRequest {
     fn write_fields(
         &self,
@@ -168,6 +199,31 @@ impl Listener {
     }
 }
 
+#[cfg(test)]
+impl Listener {
+    /// Values of `Listener` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<Listener> {
+        use crate::test_strategies::{boundary_i16, boundary_u16, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            string().boxed(),
+            boundary_u16().boxed(),
+            boundary_i16().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| Listener {
+                name: value_0,
+                host: value_1,
+                port: value_2,
+                security_protocol: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl Listener {
     fn write_fields(
         &self,
@@ -240,6 +296,29 @@ impl Feature {
     }
 }
 
+#[cfg(test)]
+impl Feature {
+    /// Values of `Feature` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<Feature> {
+        use crate::test_strategies::{boundary_i16, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            boundary_i16().boxed(),
+            boundary_i16().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| Feature {
+                name: value_0,
+                min_supported_version: value_1,
+                max_supported_version: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl Feature {
     fn write_fields(
         &self,
@@ -289,4 +368,13 @@ impl crate::Message for ControllerRegistrationRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ControllerRegistrationRequest::arbitrary,
+        ControllerRegistrationRequest::VERSIONS,
+    );
 }

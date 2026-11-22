@@ -54,6 +54,25 @@ impl ConsumerGroupDescribeRequest {
     }
 }
 
+#[cfg(test)]
+impl ConsumerGroupDescribeRequest {
+    /// Values of `ConsumerGroupDescribeRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ConsumerGroupDescribeRequest> {
+        use crate::test_strategies::{array, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((array(string()).boxed(), any::<bool>().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| ConsumerGroupDescribeRequest {
+                group_ids: value_0,
+                include_authorized_operations: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl ConsumerGroupDescribeRequest {
     fn write_fields(
         &self,
@@ -105,4 +124,13 @@ impl crate::Message for ConsumerGroupDescribeRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ConsumerGroupDescribeRequest::arbitrary,
+        ConsumerGroupDescribeRequest::VERSIONS,
+    );
 }

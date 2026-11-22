@@ -53,6 +53,29 @@ impl DeleteShareGroupOffsetsRequest {
     }
 }
 
+#[cfg(test)]
+impl DeleteShareGroupOffsetsRequest {
+    /// Values of `DeleteShareGroupOffsetsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DeleteShareGroupOffsetsRequest> {
+        use crate::test_strategies::{array, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(DeleteShareGroupOffsetsRequestTopic::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| DeleteShareGroupOffsetsRequest {
+                group_id: value_0,
+                topics: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl DeleteShareGroupOffsetsRequest {
     fn write_fields(
         &self,
@@ -107,6 +130,24 @@ impl DeleteShareGroupOffsetsRequestTopic {
     }
 }
 
+#[cfg(test)]
+impl DeleteShareGroupOffsetsRequestTopic {
+    /// Values of `DeleteShareGroupOffsetsRequestTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DeleteShareGroupOffsetsRequestTopic> {
+        use crate::test_strategies::{string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((string().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1),)| DeleteShareGroupOffsetsRequestTopic {
+                topic_name: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl DeleteShareGroupOffsetsRequestTopic {
     fn write_fields(
         &self,
@@ -154,4 +195,13 @@ impl crate::Message for DeleteShareGroupOffsetsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DeleteShareGroupOffsetsRequest::arbitrary,
+        DeleteShareGroupOffsetsRequest::VERSIONS,
+    );
 }

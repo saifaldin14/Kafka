@@ -86,6 +86,41 @@ impl UpdateRaftVoterRequest {
     }
 }
 
+#[cfg(test)]
+impl UpdateRaftVoterRequest {
+    /// Values of `UpdateRaftVoterRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<UpdateRaftVoterRequest> {
+        use crate::test_strategies::{
+            array, boundary_i32, nullable, string, unknown_tagged_fields, uuid,
+        };
+        use proptest::prelude::*;
+        ((
+            nullable(true, string()).boxed(),
+            boundary_i32().boxed(),
+            boundary_i32().boxed(),
+            uuid().boxed(),
+            array(Listener::arbitrary(version)).boxed(),
+            KRaftVersionFeature::arbitrary(version).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5, value_6),)| {
+                UpdateRaftVoterRequest {
+                    cluster_id: value_0,
+                    current_leader_epoch: value_1,
+                    voter_id: value_2,
+                    voter_directory_id: value_3,
+                    listeners: value_4,
+                    k_raft_version_feature: value_5,
+                    unknown_tagged_fields: value_6,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl UpdateRaftVoterRequest {
     fn write_fields(
         &self,
@@ -166,6 +201,29 @@ impl Listener {
     }
 }
 
+#[cfg(test)]
+impl Listener {
+    /// Values of `Listener` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<Listener> {
+        use crate::test_strategies::{boundary_u16, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            string().boxed(),
+            boundary_u16().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| Listener {
+                name: value_0,
+                host: value_1,
+                port: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl Listener {
     fn write_fields(
         &self,
@@ -223,6 +281,25 @@ impl KRaftVersionFeature {
     }
 }
 
+#[cfg(test)]
+impl KRaftVersionFeature {
+    /// Values of `KRaftVersionFeature` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<KRaftVersionFeature> {
+        use crate::test_strategies::{boundary_i16, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((boundary_i16().boxed(), boundary_i16().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| KRaftVersionFeature {
+                min_supported_version: value_0,
+                max_supported_version: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl KRaftVersionFeature {
     fn write_fields(
         &self,
@@ -271,4 +348,13 @@ impl crate::Message for UpdateRaftVoterRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        UpdateRaftVoterRequest::arbitrary,
+        UpdateRaftVoterRequest::VERSIONS,
+    );
 }

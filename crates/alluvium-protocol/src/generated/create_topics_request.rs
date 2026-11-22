@@ -71,6 +71,31 @@ impl CreateTopicsRequest {
     }
 }
 
+#[cfg(test)]
+impl CreateTopicsRequest {
+    /// Values of `CreateTopicsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<CreateTopicsRequest> {
+        use crate::test_strategies::{array, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(CreatableTopic::arbitrary(version)).boxed(),
+            boundary_i32().boxed(),
+            any::<bool>().boxed(),
+            present(version >= 5, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| CreateTopicsRequest {
+                topics: value_0,
+                timeout_ms: value_1,
+                validate_only: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl CreateTopicsRequest {
     fn write_fields(
         &self,
@@ -191,6 +216,35 @@ impl CreatableTopic {
     }
 }
 
+#[cfg(test)]
+impl CreatableTopic {
+    /// Values of `CreatableTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<CreatableTopic> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            array(CreatableReplicaAssignment::arbitrary(version)).boxed(),
+            array(CreatableTopicConfig::arbitrary(version)).boxed(),
+            present(version >= 5, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5),)| CreatableTopic {
+                name: value_0,
+                num_partitions: value_1,
+                replication_factor: value_2,
+                assignments: value_3,
+                configs: value_4,
+                unknown_tagged_fields: value_5,
+            })
+            .boxed()
+    }
+}
+
 impl CreatableTopic {
     fn write_fields(
         &self,
@@ -294,6 +348,29 @@ impl CreatableReplicaAssignment {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl CreatableReplicaAssignment {
+    /// Values of `CreatableReplicaAssignment` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<CreatableReplicaAssignment> {
+        use crate::test_strategies::{array, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            array(boundary_i32()).boxed(),
+            present(version >= 5, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| CreatableReplicaAssignment {
+                partition_index: value_0,
+                broker_ids: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
     }
 }
 
@@ -406,6 +483,29 @@ impl CreatableTopicConfig {
     }
 }
 
+#[cfg(test)]
+impl CreatableTopicConfig {
+    /// Values of `CreatableTopicConfig` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<CreatableTopicConfig> {
+        use crate::test_strategies::{nullable, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            nullable(true, string()).boxed(),
+            present(version >= 5, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| CreatableTopicConfig {
+                name: value_0,
+                value: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl CreatableTopicConfig {
     fn write_fields(
         &self,
@@ -465,4 +565,13 @@ impl crate::Message for CreateTopicsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        CreateTopicsRequest::arbitrary,
+        CreateTopicsRequest::VERSIONS,
+    );
 }

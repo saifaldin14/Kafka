@@ -57,6 +57,29 @@ impl AlterUserScramCredentialsRequest {
     }
 }
 
+#[cfg(test)]
+impl AlterUserScramCredentialsRequest {
+    /// Values of `AlterUserScramCredentialsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterUserScramCredentialsRequest> {
+        use crate::test_strategies::{array, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(ScramCredentialDeletion::arbitrary(version)).boxed(),
+            array(ScramCredentialUpsertion::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| AlterUserScramCredentialsRequest {
+                deletions: value_0,
+                upsertions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl AlterUserScramCredentialsRequest {
     fn write_fields(
         &self,
@@ -116,6 +139,25 @@ impl ScramCredentialDeletion {
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl ScramCredentialDeletion {
+    /// Values of `ScramCredentialDeletion` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ScramCredentialDeletion> {
+        use crate::test_strategies::{boundary_i8, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((string().boxed(), boundary_i8().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| ScramCredentialDeletion {
+                name: value_0,
+                mechanism: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
     }
 }
 
@@ -204,6 +246,39 @@ impl ScramCredentialUpsertion {
     }
 }
 
+#[cfg(test)]
+impl ScramCredentialUpsertion {
+    /// Values of `ScramCredentialUpsertion` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ScramCredentialUpsertion> {
+        use crate::test_strategies::{
+            boundary_i8, boundary_i32, bytes, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            boundary_i8().boxed(),
+            boundary_i32().boxed(),
+            bytes().boxed(),
+            bytes().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5),)| {
+                ScramCredentialUpsertion {
+                    name: value_0,
+                    mechanism: value_1,
+                    iterations: value_2,
+                    salt: value_3,
+                    salted_password: value_4,
+                    unknown_tagged_fields: value_5,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl ScramCredentialUpsertion {
     fn write_fields(
         &self,
@@ -255,4 +330,13 @@ impl crate::Message for AlterUserScramCredentialsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        AlterUserScramCredentialsRequest::arbitrary,
+        AlterUserScramCredentialsRequest::VERSIONS,
+    );
 }

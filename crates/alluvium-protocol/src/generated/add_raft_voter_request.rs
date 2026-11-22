@@ -87,6 +87,41 @@ impl AddRaftVoterRequest {
     }
 }
 
+#[cfg(test)]
+impl AddRaftVoterRequest {
+    /// Values of `AddRaftVoterRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AddRaftVoterRequest> {
+        use crate::test_strategies::{
+            array, boundary_i32, nullable, present, string, unknown_tagged_fields, uuid,
+        };
+        use proptest::prelude::*;
+        ((
+            nullable(true, string()).boxed(),
+            boundary_i32().boxed(),
+            boundary_i32().boxed(),
+            uuid().boxed(),
+            array(Listener::arbitrary(version)).boxed(),
+            present(version == 1, any::<bool>(), true).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5, value_6),)| {
+                AddRaftVoterRequest {
+                    cluster_id: value_0,
+                    timeout_ms: value_1,
+                    voter_id: value_2,
+                    voter_directory_id: value_3,
+                    listeners: value_4,
+                    ack_when_committed: value_5,
+                    unknown_tagged_fields: value_6,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl AddRaftVoterRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -184,6 +219,29 @@ impl Listener {
     }
 }
 
+#[cfg(test)]
+impl Listener {
+    /// Values of `Listener` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<Listener> {
+        use crate::test_strategies::{boundary_u16, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            string().boxed(),
+            boundary_u16().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| Listener {
+                name: value_0,
+                host: value_1,
+                port: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl Listener {
     fn write_fields(
         &self,
@@ -233,4 +291,13 @@ impl crate::Message for AddRaftVoterRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        AddRaftVoterRequest::arbitrary,
+        AddRaftVoterRequest::VERSIONS,
+    );
 }

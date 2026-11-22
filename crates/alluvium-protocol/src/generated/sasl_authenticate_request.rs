@@ -60,6 +60,24 @@ impl SaslAuthenticateRequest {
     }
 }
 
+#[cfg(test)]
+impl SaslAuthenticateRequest {
+    /// Values of `SaslAuthenticateRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<SaslAuthenticateRequest> {
+        use crate::test_strategies::{bytes, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((bytes().boxed(), present(version == 2, unknown_tagged_fields(0), Vec::new()).boxed()),)
+            .prop_map(|((value_0, value_1),)| SaslAuthenticateRequest {
+                auth_bytes: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl SaslAuthenticateRequest {
     fn write_fields(
         &self,
@@ -115,4 +133,13 @@ impl crate::Message for SaslAuthenticateRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        SaslAuthenticateRequest::arbitrary,
+        SaslAuthenticateRequest::VERSIONS,
+    );
 }

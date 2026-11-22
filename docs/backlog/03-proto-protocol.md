@@ -354,11 +354,11 @@ Done when: fixtures with unknown tags around known ones re-encode to identical b
 P0 · M1 · Task · deps: PROTO-0075, PROTO-0071, PROTO-0064 · ref: clients/src/main/java/org/apache/kafka/common/protocol/MessageUtil.java toVersionPrefixedBytes @4.4.0
 Done when: `encode_version_prefixed`/`decode_version_prefixed` exist; a negative version is a DecodeError; used by control record keys and consumer protocol payloads; round-trip test.
 
-### [To Do] PROTO-0081 Generated proptest strategies for every message and version respecting presence, nullability and tagged fields
+### [Done] PROTO-0081 Generated proptest strategies for every message and version respecting presence, nullability and tagged fields
 P0 · M1 · Task · deps: PROTO-0068, TEST-F16 · labels: test
 Done when: strategies are generated beside each message behind `cfg(test)`/a `proptest` feature using TEST-F16 building blocks; absent fields are always default.
 
-### [To Do] PROTO-0082 Round-trip property tests for every message and every valid version
+### [Done] PROTO-0082 Round-trip property tests for every message and every valid version
 P0 · M1 · Task · deps: PROTO-0081, PROTO-0078, PROTO-0079, PROTO-0076, PROTO-0072 · labels: test
 Done when: one generated test per message decodes(encode(m)) == m for each valid version and checks `encoded_size`; the suite runs within the nextest time budget.
 
@@ -594,7 +594,7 @@ Done when: new targets appear in CI automatically when codegen adds them.
 P0 · M1 · Task · deps: PROTO-0128, PROTO-0111 · labels: security, test
 Done when: a counting allocator fails the target on budget overrun; a deliberate overrun fixture is caught.
 
-## [In Progress] PROTO-F12 Generator testing
+## [Done] PROTO-F12 Generator testing
 P1 · M1 · Feature · deps: PROTO-F04
 Scope: Golden-output tests for the generator, drift check `cargo xtask codegen --check`.
 
@@ -618,7 +618,7 @@ Done when: hand-editing a generated file fails CI with a clear message; the chec
 P1 · M1 · Task · deps: PROTO-0138 · labels: test
 Done when: two runs over shuffled input order produce identical bytes.
 
-### [To Do] PROTO-0140 AllTypeMessage end-to-end: generated code for every field type round-trips across all fixture versions
+### [Done] PROTO-0140 AllTypeMessage end-to-end: generated code for every field type round-trips across all fixture versions
 P1 · M1 · Task · deps: PROTO-0135, PROTO-0082 · labels: test
 Done when: round-trip and size tests pass for AllTypeMessage at every version.
 

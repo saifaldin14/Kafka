@@ -95,6 +95,35 @@ impl DescribeAclsResponse {
     }
 }
 
+#[cfg(test)]
+impl DescribeAclsResponse {
+    /// Values of `DescribeAclsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeAclsResponse> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            array(DescribeAclsResource::arbitrary(version)).boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| DescribeAclsResponse {
+                throttle_time_ms: value_0,
+                error_code: value_1,
+                error_message: value_2,
+                resources: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeAclsResponse {
     fn write_fields(
         &self,
@@ -202,6 +231,33 @@ impl DescribeAclsResource {
     }
 }
 
+#[cfg(test)]
+impl DescribeAclsResource {
+    /// Values of `DescribeAclsResource` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeAclsResource> {
+        use crate::test_strategies::{array, boundary_i8, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i8().boxed(),
+            string().boxed(),
+            boundary_i8().boxed(),
+            array(AclDescription::arbitrary(version)).boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| DescribeAclsResource {
+                resource_type: value_0,
+                resource_name: value_1,
+                pattern_type: value_2,
+                acls: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeAclsResource {
     fn write_fields(
         &self,
@@ -298,6 +354,31 @@ impl AclDescription {
     }
 }
 
+#[cfg(test)]
+impl AclDescription {
+    /// Values of `AclDescription` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<AclDescription> {
+        use crate::test_strategies::{boundary_i8, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            string().boxed(),
+            boundary_i8().boxed(),
+            boundary_i8().boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| AclDescription {
+                principal: value_0,
+                host: value_1,
+                operation: value_2,
+                permission_type: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl AclDescription {
     fn write_fields(
         &self,
@@ -356,4 +437,13 @@ impl crate::Message for DescribeAclsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeAclsResponse::arbitrary,
+        DescribeAclsResponse::VERSIONS,
+    );
 }

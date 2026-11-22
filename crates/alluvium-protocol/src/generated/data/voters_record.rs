@@ -46,6 +46,27 @@ impl VotersRecord {
     }
 }
 
+#[cfg(test)]
+impl VotersRecord {
+    /// Values of `VotersRecord` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<VotersRecord> {
+        use crate::test_strategies::{array, boundary_i16, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            array(Voter::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| VotersRecord {
+                version: value_0,
+                voters: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl VotersRecord {
     fn write_fields(
         &self,
@@ -127,6 +148,31 @@ impl Voter {
     }
 }
 
+#[cfg(test)]
+impl Voter {
+    /// Values of `Voter` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<Voter> {
+        use crate::test_strategies::{array, boundary_i32, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            uuid().boxed(),
+            array(Endpoint::arbitrary(version)).boxed(),
+            KRaftVersionFeature::arbitrary(version).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| Voter {
+                voter_id: value_0,
+                voter_directory_id: value_1,
+                endpoints: value_2,
+                k_raft_version_feature: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl Voter {
     fn write_fields(
         &self,
@@ -205,6 +251,29 @@ impl Endpoint {
     }
 }
 
+#[cfg(test)]
+impl Endpoint {
+    /// Values of `Endpoint` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<Endpoint> {
+        use crate::test_strategies::{boundary_u16, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            string().boxed(),
+            boundary_u16().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| Endpoint {
+                name: value_0,
+                host: value_1,
+                port: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl Endpoint {
     fn write_fields(
         &self,
@@ -262,6 +331,25 @@ impl KRaftVersionFeature {
     }
 }
 
+#[cfg(test)]
+impl KRaftVersionFeature {
+    /// Values of `KRaftVersionFeature` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<KRaftVersionFeature> {
+        use crate::test_strategies::{boundary_i16, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((boundary_i16().boxed(), boundary_i16().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| KRaftVersionFeature {
+                min_supported_version: value_0,
+                max_supported_version: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl KRaftVersionFeature {
     fn write_fields(
         &self,
@@ -305,4 +393,10 @@ impl crate::Message for VotersRecord {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(VotersRecord::arbitrary, VotersRecord::VERSIONS);
 }

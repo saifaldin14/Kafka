@@ -69,6 +69,29 @@ impl LeaveGroupRequest {
     }
 }
 
+#[cfg(test)]
+impl LeaveGroupRequest {
+    /// Values of `LeaveGroupRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<LeaveGroupRequest> {
+        use crate::test_strategies::{array, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            present(version <= 2, string(), String::new()).boxed(),
+            present(version >= 3, array(MemberIdentity::arbitrary(version)), Vec::new()).boxed(),
+            present(version >= 4, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| LeaveGroupRequest {
+                group_id: value_0,
+                member_id: value_1,
+                members: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl LeaveGroupRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -183,6 +206,29 @@ impl MemberIdentity {
     }
 }
 
+#[cfg(test)]
+impl MemberIdentity {
+    /// Values of `MemberIdentity` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<MemberIdentity> {
+        use crate::test_strategies::{nullable, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            nullable(true, string()).boxed(),
+            present(version == 5, nullable(true, string()), None).boxed(),
+            present(version >= 4, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| MemberIdentity {
+                member_id: value_0,
+                group_instance_id: value_1,
+                reason: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl MemberIdentity {
     fn write_fields(
         &self,
@@ -245,4 +291,13 @@ impl crate::Message for LeaveGroupRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        LeaveGroupRequest::arbitrary,
+        LeaveGroupRequest::VERSIONS,
+    );
 }

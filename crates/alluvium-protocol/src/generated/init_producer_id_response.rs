@@ -102,6 +102,41 @@ impl InitProducerIdResponse {
     }
 }
 
+#[cfg(test)]
+impl InitProducerIdResponse {
+    /// Values of `InitProducerIdResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<InitProducerIdResponse> {
+        use crate::test_strategies::{
+            boundary_i16, boundary_i32, boundary_i64, present, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            boundary_i64().boxed(),
+            boundary_i16().boxed(),
+            present(version == 6, boundary_i64(), -1).boxed(),
+            present(version == 6, boundary_i16(), -1).boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5, value_6),)| {
+                InitProducerIdResponse {
+                    throttle_time_ms: value_0,
+                    error_code: value_1,
+                    producer_id: value_2,
+                    producer_epoch: value_3,
+                    ongoing_txn_producer_id: value_4,
+                    ongoing_txn_producer_epoch: value_5,
+                    unknown_tagged_fields: value_6,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl InitProducerIdResponse {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -174,4 +209,13 @@ impl crate::Message for InitProducerIdResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        InitProducerIdResponse::arbitrary,
+        InitProducerIdResponse::VERSIONS,
+    );
 }

@@ -64,6 +64,27 @@ impl HeartbeatResponse {
     }
 }
 
+#[cfg(test)]
+impl HeartbeatResponse {
+    /// Values of `HeartbeatResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<HeartbeatResponse> {
+        use crate::test_strategies::{boundary_i16, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            present(version >= 1, boundary_i32(), 0).boxed(),
+            boundary_i16().boxed(),
+            present(version == 4, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| HeartbeatResponse {
+                throttle_time_ms: value_0,
+                error_code: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl HeartbeatResponse {
     fn write_fields(
         &self,
@@ -116,4 +137,13 @@ impl crate::Message for HeartbeatResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        HeartbeatResponse::arbitrary,
+        HeartbeatResponse::VERSIONS,
+    );
 }

@@ -45,6 +45,24 @@ impl DescribeQuorumRequest {
     }
 }
 
+#[cfg(test)]
+impl DescribeQuorumRequest {
+    /// Values of `DescribeQuorumRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeQuorumRequest> {
+        use crate::test_strategies::{array, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((array(TopicData::arbitrary(version)).boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1),)| DescribeQuorumRequest {
+                topics: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeQuorumRequest {
     fn write_fields(
         &self,
@@ -102,6 +120,27 @@ impl TopicData {
     }
 }
 
+#[cfg(test)]
+impl TopicData {
+    /// Values of `TopicData` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<TopicData> {
+        use crate::test_strategies::{array, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(PartitionData::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| TopicData {
+                topic_name: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl TopicData {
     fn write_fields(
         &self,
@@ -153,6 +192,22 @@ impl PartitionData {
     }
 }
 
+#[cfg(test)]
+impl PartitionData {
+    /// Values of `PartitionData` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<PartitionData> {
+        use crate::test_strategies::{boundary_i32, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((boundary_i32().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1),)| PartitionData {
+                partition_index: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl PartitionData {
     fn write_fields(
         &self,
@@ -200,4 +255,13 @@ impl crate::Message for DescribeQuorumRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeQuorumRequest::arbitrary,
+        DescribeQuorumRequest::VERSIONS,
+    );
 }

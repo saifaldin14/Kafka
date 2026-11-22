@@ -57,6 +57,29 @@ impl AlterReplicaLogDirsResponse {
     }
 }
 
+#[cfg(test)]
+impl AlterReplicaLogDirsResponse {
+    /// Values of `AlterReplicaLogDirsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterReplicaLogDirsResponse> {
+        use crate::test_strategies::{array, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            array(AlterReplicaLogDirTopicResult::arbitrary(version)).boxed(),
+            present(version == 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| AlterReplicaLogDirsResponse {
+                throttle_time_ms: value_0,
+                results: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl AlterReplicaLogDirsResponse {
     fn write_fields(
         &self,
@@ -134,6 +157,29 @@ impl AlterReplicaLogDirTopicResult {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl AlterReplicaLogDirTopicResult {
+    /// Values of `AlterReplicaLogDirTopicResult` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterReplicaLogDirTopicResult> {
+        use crate::test_strategies::{array, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(AlterReplicaLogDirPartitionResult::arbitrary(version)).boxed(),
+            present(version == 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| AlterReplicaLogDirTopicResult {
+                topic_name: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
     }
 }
 
@@ -221,6 +267,29 @@ impl AlterReplicaLogDirPartitionResult {
     }
 }
 
+#[cfg(test)]
+impl AlterReplicaLogDirPartitionResult {
+    /// Values of `AlterReplicaLogDirPartitionResult` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterReplicaLogDirPartitionResult> {
+        use crate::test_strategies::{boundary_i16, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            present(version == 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| AlterReplicaLogDirPartitionResult {
+                partition_index: value_0,
+                error_code: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl AlterReplicaLogDirPartitionResult {
     fn write_fields(
         &self,
@@ -271,4 +340,13 @@ impl crate::Message for AlterReplicaLogDirsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        AlterReplicaLogDirsResponse::arbitrary,
+        AlterReplicaLogDirsResponse::VERSIONS,
+    );
 }

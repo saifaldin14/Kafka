@@ -53,6 +53,24 @@ impl GetTelemetrySubscriptionsRequest {
     }
 }
 
+#[cfg(test)]
+impl GetTelemetrySubscriptionsRequest {
+    /// Values of `GetTelemetrySubscriptionsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<GetTelemetrySubscriptionsRequest> {
+        use crate::test_strategies::{unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((uuid().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1),)| GetTelemetrySubscriptionsRequest {
+                client_instance_id: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl GetTelemetrySubscriptionsRequest {
     fn write_fields(
         &self,
@@ -100,4 +118,13 @@ impl crate::Message for GetTelemetrySubscriptionsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        GetTelemetrySubscriptionsRequest::arbitrary,
+        GetTelemetrySubscriptionsRequest::VERSIONS,
+    );
 }

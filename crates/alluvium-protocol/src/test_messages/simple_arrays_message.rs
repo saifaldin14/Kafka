@@ -59,6 +59,29 @@ impl SimpleArraysMessage {
     }
 }
 
+#[cfg(test)]
+impl SimpleArraysMessage {
+    /// Values of `SimpleArraysMessage` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<SimpleArraysMessage> {
+        use crate::test_strategies::{array, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            present(version >= 1, array(StructArray::arbitrary(version)), Vec::new()).boxed(),
+            array(boundary_i32()).boxed(),
+            present(version >= 1, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| SimpleArraysMessage {
+                goats: value_0,
+                sheep: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl SimpleArraysMessage {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -145,6 +168,27 @@ impl StructArray {
     }
 }
 
+#[cfg(test)]
+impl StructArray {
+    /// Values of `StructArray` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<StructArray> {
+        use crate::test_strategies::{boundary_i8, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i8().boxed(),
+            present(version == 2, string(), String::new()).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| StructArray {
+                color: value_0,
+                name: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl StructArray {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -205,4 +249,13 @@ impl crate::Message for SimpleArraysMessage {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        SimpleArraysMessage::arbitrary,
+        SimpleArraysMessage::VERSIONS,
+    );
 }

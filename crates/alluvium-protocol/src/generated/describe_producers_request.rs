@@ -45,6 +45,24 @@ impl DescribeProducersRequest {
     }
 }
 
+#[cfg(test)]
+impl DescribeProducersRequest {
+    /// Values of `DescribeProducersRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeProducersRequest> {
+        use crate::test_strategies::{array, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((array(TopicRequest::arbitrary(version)).boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1),)| DescribeProducersRequest {
+                topics: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeProducersRequest {
     fn write_fields(
         &self,
@@ -117,6 +135,23 @@ impl TopicRequest {
     }
 }
 
+#[cfg(test)]
+impl TopicRequest {
+    /// Values of `TopicRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<TopicRequest> {
+        use crate::test_strategies::{array, boundary_i32, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((string().boxed(), array(boundary_i32()).boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| TopicRequest {
+                name: value_0,
+                partition_indexes: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl TopicRequest {
     fn write_fields(
         &self,
@@ -168,4 +203,13 @@ impl crate::Message for DescribeProducersRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeProducersRequest::arbitrary,
+        DescribeProducersRequest::VERSIONS,
+    );
 }

@@ -55,6 +55,29 @@ impl DeleteTopicsResponse {
     }
 }
 
+#[cfg(test)]
+impl DeleteTopicsResponse {
+    /// Values of `DeleteTopicsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DeleteTopicsResponse> {
+        use crate::test_strategies::{array, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            array(DeletableTopicResult::arbitrary(version)).boxed(),
+            present(version >= 4, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| DeleteTopicsResponse {
+                throttle_time_ms: value_0,
+                responses: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl DeleteTopicsResponse {
     fn write_fields(
         &self,
@@ -196,6 +219,35 @@ impl DeletableTopicResult {
     }
 }
 
+#[cfg(test)]
+impl DeletableTopicResult {
+    /// Values of `DeletableTopicResult` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DeletableTopicResult> {
+        use crate::test_strategies::{
+            boundary_i16, nullable, present, string, unknown_tagged_fields, uuid,
+        };
+        use proptest::prelude::*;
+        ((
+            nullable(version == 6, string()).boxed(),
+            present(version == 6, uuid(), alluvium_types::Uuid::ZERO).boxed(),
+            boundary_i16().boxed(),
+            present(version >= 5, nullable(true, string()), None).boxed(),
+            present(version >= 4, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| DeletableTopicResult {
+                name: value_0,
+                topic_id: value_1,
+                error_code: value_2,
+                error_message: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl DeletableTopicResult {
     fn write_fields(
         &self,
@@ -266,4 +318,13 @@ impl crate::Message for DeleteTopicsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DeleteTopicsResponse::arbitrary,
+        DeleteTopicsResponse::VERSIONS,
+    );
 }

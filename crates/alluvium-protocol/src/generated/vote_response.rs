@@ -74,6 +74,29 @@ impl VoteResponse {
     }
 }
 
+#[cfg(test)]
+impl VoteResponse {
+    /// Values of `VoteResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<VoteResponse> {
+        use crate::test_strategies::{array, boundary_i16, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            array(TopicData::arbitrary(version)).boxed(),
+            present(version >= 1, array(NodeEndpoint::arbitrary(version)), Vec::new()).boxed(),
+            unknown_tagged_fields(1).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| VoteResponse {
+                error_code: value_0,
+                topics: value_1,
+                node_endpoints: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl VoteResponse {
     fn write_tagged_fields(
         &self,
@@ -166,6 +189,27 @@ impl TopicData {
     }
 }
 
+#[cfg(test)]
+impl TopicData {
+    /// Values of `TopicData` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<TopicData> {
+        use crate::test_strategies::{array, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(PartitionData::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| TopicData {
+                topic_name: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl TopicData {
     fn write_fields(
         &self,
@@ -249,6 +293,33 @@ impl PartitionData {
     }
 }
 
+#[cfg(test)]
+impl PartitionData {
+    /// Values of `PartitionData` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<PartitionData> {
+        use crate::test_strategies::{boundary_i16, boundary_i32, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            boundary_i32().boxed(),
+            boundary_i32().boxed(),
+            any::<bool>().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5),)| PartitionData {
+                partition_index: value_0,
+                error_code: value_1,
+                leader_id: value_2,
+                leader_epoch: value_3,
+                vote_granted: value_4,
+                unknown_tagged_fields: value_5,
+            })
+            .boxed()
+    }
+}
+
 impl PartitionData {
     fn write_fields(
         &self,
@@ -326,6 +397,29 @@ impl NodeEndpoint {
     }
 }
 
+#[cfg(test)]
+impl NodeEndpoint {
+    /// Values of `NodeEndpoint` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<NodeEndpoint> {
+        use crate::test_strategies::{boundary_i32, boundary_u16, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            string().boxed(),
+            boundary_u16().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| NodeEndpoint {
+                node_id: value_0,
+                host: value_1,
+                port: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl NodeEndpoint {
     fn write_fields(
         &self,
@@ -372,4 +466,10 @@ impl crate::Message for VoteResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(VoteResponse::arbitrary, VoteResponse::VERSIONS);
 }

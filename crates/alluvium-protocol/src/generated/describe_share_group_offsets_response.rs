@@ -54,6 +54,29 @@ impl DescribeShareGroupOffsetsResponse {
     }
 }
 
+#[cfg(test)]
+impl DescribeShareGroupOffsetsResponse {
+    /// Values of `DescribeShareGroupOffsetsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeShareGroupOffsetsResponse> {
+        use crate::test_strategies::{array, boundary_i32, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            array(DescribeShareGroupOffsetsResponseGroup::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| DescribeShareGroupOffsetsResponse {
+                throttle_time_ms: value_0,
+                groups: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeShareGroupOffsetsResponse {
     fn write_fields(
         &self,
@@ -140,6 +163,37 @@ impl DescribeShareGroupOffsetsResponseGroup {
     }
 }
 
+#[cfg(test)]
+impl DescribeShareGroupOffsetsResponseGroup {
+    /// Values of `DescribeShareGroupOffsetsResponseGroup` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeShareGroupOffsetsResponseGroup> {
+        use crate::test_strategies::{
+            array, boundary_i16, nullable, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(DescribeShareGroupOffsetsResponseTopic::arbitrary(version)).boxed(),
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| {
+                DescribeShareGroupOffsetsResponseGroup {
+                    group_id: value_0,
+                    topics: value_1,
+                    error_code: value_2,
+                    error_message: value_3,
+                    unknown_tagged_fields: value_4,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl DescribeShareGroupOffsetsResponseGroup {
     fn write_fields(
         &self,
@@ -218,6 +272,33 @@ impl DescribeShareGroupOffsetsResponseTopic {
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl DescribeShareGroupOffsetsResponseTopic {
+    /// Values of `DescribeShareGroupOffsetsResponseTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeShareGroupOffsetsResponseTopic> {
+        use crate::test_strategies::{array, string, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            uuid().boxed(),
+            array(DescribeShareGroupOffsetsResponsePartition::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| {
+                DescribeShareGroupOffsetsResponseTopic {
+                    topic_name: value_0,
+                    topic_id: value_1,
+                    partitions: value_2,
+                    unknown_tagged_fields: value_3,
+                }
+            })
+            .boxed()
     }
 }
 
@@ -330,6 +411,42 @@ impl DescribeShareGroupOffsetsResponsePartition {
     }
 }
 
+#[cfg(test)]
+impl DescribeShareGroupOffsetsResponsePartition {
+    /// Values of `DescribeShareGroupOffsetsResponsePartition` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeShareGroupOffsetsResponsePartition> {
+        use crate::test_strategies::{
+            boundary_i16, boundary_i32, boundary_i64, nullable, present, string,
+            unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i64().boxed(),
+            boundary_i32().boxed(),
+            present(version == 1, boundary_i64(), -1).boxed(),
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5, value_6),)| {
+                DescribeShareGroupOffsetsResponsePartition {
+                    partition_index: value_0,
+                    start_offset: value_1,
+                    leader_epoch: value_2,
+                    lag: value_3,
+                    error_code: value_4,
+                    error_message: value_5,
+                    unknown_tagged_fields: value_6,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl DescribeShareGroupOffsetsResponsePartition {
     fn write_fields(
         &self,
@@ -381,4 +498,13 @@ impl crate::Message for DescribeShareGroupOffsetsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeShareGroupOffsetsResponse::arbitrary,
+        DescribeShareGroupOffsetsResponse::VERSIONS,
+    );
 }

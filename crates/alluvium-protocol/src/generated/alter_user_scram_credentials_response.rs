@@ -54,6 +54,29 @@ impl AlterUserScramCredentialsResponse {
     }
 }
 
+#[cfg(test)]
+impl AlterUserScramCredentialsResponse {
+    /// Values of `AlterUserScramCredentialsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterUserScramCredentialsResponse> {
+        use crate::test_strategies::{array, boundary_i32, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            array(AlterUserScramCredentialsResult::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| AlterUserScramCredentialsResponse {
+                throttle_time_ms: value_0,
+                results: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl AlterUserScramCredentialsResponse {
     fn write_fields(
         &self,
@@ -142,6 +165,31 @@ impl AlterUserScramCredentialsResult {
     }
 }
 
+#[cfg(test)]
+impl AlterUserScramCredentialsResult {
+    /// Values of `AlterUserScramCredentialsResult` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterUserScramCredentialsResult> {
+        use crate::test_strategies::{boundary_i16, nullable, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| AlterUserScramCredentialsResult {
+                user: value_0,
+                error_code: value_1,
+                error_message: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl AlterUserScramCredentialsResult {
     fn write_fields(
         &self,
@@ -188,4 +236,13 @@ impl crate::Message for AlterUserScramCredentialsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        AlterUserScramCredentialsResponse::arbitrary,
+        AlterUserScramCredentialsResponse::VERSIONS,
+    );
 }
