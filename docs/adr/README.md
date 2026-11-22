@@ -31,3 +31,4 @@ An ADR records a decision that is hard to reverse, crosses crates, deviates from
 | [0016](0016-layer-0-crates-may-depend-on-alluvium-types.md) | Layer 0 crates may depend on alluvium-types | Accepted |
 | [0017](0017-per-decode-allocation-budget.md) | A per-decode allocation budget | Accepted |
 | [0018](0018-fuzz-corpus-storage.md) | Fuzz corpus storage | Accepted |
+| [0019](0019-benchmark-regression-gating.md) | Benchmark regression gating | Accepted |
