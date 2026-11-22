@@ -141,7 +141,7 @@ Done when: Tests cover a zero timeout, `Duration::MAX`, an expired deadline, and
 P0 · M2 · Task · deps: TYPE-0024 · ref: ADR-0011
 Done when: The trait is `Send + Sync + Debug` and object-safe (`Arc<dyn Timer>` compiles); its doc says state machines never wait and links ADR-0011; `alluvium-types` gains no dependency; a unit test polls a hand-written implementation's future to completion without a runtime.
 
-## [In Progress] TYPE-F07 Seeded randomness and deterministic collections
+## [Done] TYPE-F07 Seeded randomness and deterministic collections
 P0 · M0 · Feature · deps: FND-F02
 Scope: Injected RNG trait, `SeededHashMap`/`SeededHashSet`, process-random seed in production, fixed seed in simulation.
 
@@ -154,9 +154,10 @@ Notes: Accepted as [ADR-0012](../adr/0012-seeded-randomness-and-hashing.md). It 
 P0 · M0 · Task · deps: TYPE-0028, TYPE-0001 · ref: ADR-0012
 Done when: The type is `SeededRng` (ChaCha12 via `chacha20`, with `from_seed`'s SplitMix64 key expansion and `below` as ADR-0012 specifies); `chacha20` and `getrandom` are justified per security.md#dependencies; `Debug` prints no key or position; golden tests commit the first values for fixed seeds and forks and pass on Linux and macOS; `fork` with the same parent seed and label always gives the same stream, and adding a new fork doesn't change existing ones; no other code calls `rand::rng` (the lint canary already proves the lint fires).
 
-### [To Do] TYPE-0030 `alluvium_types::collections::{SeededHashMap, SeededHashSet}` using SipHash-1-3 (`siphasher`), keyed by a `HashSeed` drawn from the injected RNG and passed to `with_seed`/`with_capacity_and_seed`
+### [Done] TYPE-0030 `alluvium_types::collections::{SeededHashMap, SeededHashSet}` using SipHash-1-3 (`siphasher`), keyed by a `HashSeed` drawn from the injected RNG and passed to `with_seed`/`with_capacity_and_seed`
 P0 · M0 · Task · deps: TYPE-0029 · labels: security · ref: ADR-0012
 Done when: `siphasher` is justified per security.md#dependencies; `HashSeed`'s `Debug` prints `HashSeed(***)`; the same seed gives the same iteration order across runs (test); different seeds give different hashes for the same key (test); the module doc says iteration order must never reach output or decisions (use `BTreeMap` where order is observable); the clippy messages in clippy.toml point to these types, and the names match.
+Notes: Built with std's `with_hasher(seed)` and `with_capacity_and_hasher(capacity, seed)`, because `HashSeed` is itself the `BuildHasher`: no wrapper type or extension trait is needed for `with_seed` names, and `HashSeed` has no `Default`, so an unseeded `default()` or `collect()` doesn't compile.
 
 ## [In Progress] TYPE-F08 Secrets
 P0 · M0 · Feature · deps: FND-F02

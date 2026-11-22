@@ -51,6 +51,8 @@
 //! - [`Deadline`]: when a wait must end; a timeout too long to represent saturates.
 //! - [`SeededRng`]: the only random number generator, replayable from a `u64` seed,
 //!   with independent `fork`s per component ([`EntropyError`] if the OS has none).
+//! - [`collections`]: `SeededHashMap` and `SeededHashSet`, hashed under a `HashSeed`
+//!   drawn from a `SeededRng`, replacing `std`'s randomly seeded maps.
 //! - [`IdError`]: why a value was rejected.
 //! - [`Secret`]: a value that is never printed and is zeroized on drop.
 //! - [`PayloadSummary`]: how record payloads are printed (length and CRC32C only).
@@ -61,6 +63,7 @@
 //! came from, so the decoder or handler that rejects it maps it.
 
 mod clock;
+pub mod collections;
 mod deadline;
 mod epoch;
 mod id;
