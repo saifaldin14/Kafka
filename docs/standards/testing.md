@@ -28,7 +28,7 @@ Decisions are in [ADR-0003](../adr/0003-deterministic-simulation-testing.md).
 7. **Flaky tests are bugs.** Quarantine one with `#[ignore = "flaky: #issue"]` only together with an open issue. Fix it within the milestone. That is why the nextest profiles in [`.config/nextest.toml`](../../.config/nextest.toml) never retry: a retry would hide the flake. Tests are reported as slow after 60 s and stopped after 300 s. CI runs them on ubuntu-24.04 and macos-15 (arm64) for every PR and push, and keeps each run's JUnit report as an artifact.
 8. **Names describe the behavior**: `fetch_beyond_high_watermark_returns_no_records`, not `test_fetch_3`.
 9. **Cover each supported API version.** Version-dependent behavior is tested for every version in the advertised range.
-10. **Port Kafka's tests where they encode tricky semantics.** Name the source in a comment: `// Ported from: core/src/test/scala/unit/kafka/cluster/PartitionTest.scala@4.4.0 testXyz`. Follow the attribution rules in [ADR-0008](../adr/0008-protocol-code-generated-from-kafka-schemas.md).
+10. **Port Kafka's tests where they encode tricky semantics.** Name the source in a comment: `// Ported from: core/src/test/scala/unit/kafka/cluster/PartitionTest.scala@4.4.0 testXyz`. A ported test is Kafka material, so its file also takes the header in [Attributing Kafka material](../../CONTRIBUTING.md#attributing-kafka-material) and is listed in `NOTICE` ([ADR-0008](../adr/0008-protocol-code-generated-from-kafka-schemas.md)).
 
 ## Shared strategies
 

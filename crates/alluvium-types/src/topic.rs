@@ -1,3 +1,8 @@
+// Portions of this file are ported from Apache Kafka 4.4.0 and modified by Alluvium;
+// each is marked `// Ported from:`. Apache Kafka is Copyright The Apache Software
+// Foundation and licensed under the Apache License 2.0 (LICENSES/Apache-2.0.txt).
+// See NOTICE.
+
 //! Topic names, validated by Kafka's rules.
 
 use std::borrow::Cow;
@@ -191,8 +196,7 @@ mod tests {
         TopicName::try_from(text).unwrap()
     }
 
-    // Ported from clients/src/test/java/org/apache/kafka/common/internals/TopicTest.java@4.4.0
-    // (Apache License 2.0).
+    // Ported from: clients/src/test/java/org/apache/kafka/common/internals/TopicTest.java@4.4.0.
 
     #[test]
     fn should_accept_valid_topic_names() {

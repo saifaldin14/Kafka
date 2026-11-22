@@ -1,3 +1,8 @@
+// Portions of this file are ported from Apache Kafka 4.4.0 and modified by Alluvium;
+// each is marked `// Ported from:`. Apache Kafka is Copyright The Apache Software
+// Foundation and licensed under the Apache License 2.0 (LICENSES/Apache-2.0.txt).
+// See NOTICE.
+
 //! Kafka's 128-bit UUIDs: topic ids, directory ids, incarnation ids and the like.
 //!
 //! Kafka writes a UUID on the wire as two big-endian `int64`s and prints it as 22
@@ -346,9 +351,9 @@ mod tests {
     use crate::strategies::{topic_id, uuid};
     use crate::{IdError, IdKind, SeededRng};
 
-    // Ported from clients/src/test/java/org/apache/kafka/common/UuidTest.java@4.4.0
-    // (Apache License 2.0). testHashCode and the array helpers are not ported: Java's
-    // hashCode and array conversions have no counterpart here.
+    // Ported from: clients/src/test/java/org/apache/kafka/common/UuidTest.java@4.4.0.
+    // testHashCode and the array helpers are not ported: Java's hashCode and array
+    // conversions have no counterpart here.
 
     #[test]
     fn significant_bits() {

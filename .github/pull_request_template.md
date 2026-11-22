@@ -6,6 +6,8 @@
 
 <!-- For Kafka behavior: links to Kafka 4.4.0 source (tag 4.4.0) and KIPs. Write "n/a" if none applies. -->
 
+- **Closely ported Kafka code or tests:** <!-- "none", or the files. Each has the header and `// Ported from:` comments from CONTRIBUTING.md#attributing-kafka-material and is listed in NOTICE. -->
+
 ## Bug fixes only
 
 - **Root cause:**

@@ -20,7 +20,7 @@ Kafka is licensed under Apache-2.0. Alluvium currently has no license (all right
 5. **Attribution rules** for anything derived from Kafka:
    - Vendored schemas keep their license headers. `schemas/kafka-4.4.0/` contains Kafka's `LICENSE` and `NOTICE`.
    - Alluvium's [`NOTICE`](../../NOTICE) file states that it includes material from Apache Kafka.
-   - **We reimplement behavior; we don't transliterate code.** If a piece of code or a test is ported closely, its header cites the source file and states that it was modified, as Apache-2.0 §4 requires.
+   - **We reimplement behavior; we don't transliterate code.** If a piece of code or a test is ported closely, its header cites the source file and states that it was modified, as Apache-2.0 §4 requires. [Attributing Kafka material](../../CONTRIBUTING.md#attributing-kafka-material) gives the exact header.
    - `// Parity:` comments that merely reference Kafka need no attribution.
 
 ## Consequences
