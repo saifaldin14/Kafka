@@ -6,11 +6,14 @@
 //! It depends on no other Alluvium crate, and every crate may depend on it. Like all
 //! layer 0 crates it does no I/O, reads no clock and uses no randomness.
 //!
-//! Kafka counterparts at 4.4.0: the `int` node ids of
-//! `clients/src/main/java/org/apache/kafka/common/Node.java`, including the `-1`
-//! "no node" sentinel of `Node.noNode()`, and
-//! `clients/src/main/java/org/apache/kafka/common/config/types/Password.java` and
-//! `clients/src/main/java/org/apache/kafka/common/utils/internals/Crc32C.java`.
+//! Kafka counterparts at 4.4.0, each cited with `// Parity:` where it is mirrored:
+//!
+//! - `clients/.../common/Node.java` (node ids and the `-1` "no node" sentinel);
+//! - `clients/.../common/record/internal/RecordBatch.java` and `DefaultRecordBatch.java`
+//!   (producer id, epoch and sequence sentinels and arithmetic);
+//! - `transaction-coordinator/.../TransactionMetadata.java` (epoch exhaustion);
+//! - `clients/.../common/config/types/Password.java` and
+//!   `clients/.../common/utils/internals/Crc32C.java`.
 //!
 //! # Invariants
 //!
@@ -24,6 +27,8 @@
 //! - [`NodeId`] and [`BrokerId`]: which process, and which broker.
 //! - [`PartitionIndex`] and [`CorrelationId`]: which partition of a topic, and which
 //!   request a response answers.
+//! - [`ProducerId`], [`ProducerEpoch`] and [`Sequence`]: idempotent and transactional
+//!   producers.
 //! - [`IdError`]: why a value was rejected.
 //! - [`Secret`]: a value that is never printed and is zeroized on drop.
 //! - [`PayloadSummary`]: how record payloads are printed (length and CRC32C only).
@@ -35,10 +40,12 @@
 
 mod id;
 mod payload;
+mod producer;
 mod secret;
 #[cfg(any(test, feature = "proptest-strategies"))]
 pub mod strategies;
 
 pub use id::{BrokerId, CorrelationId, IdError, IdKind, NodeId, PartitionIndex};
 pub use payload::PayloadSummary;
+pub use producer::{ProducerEpoch, ProducerId, Sequence};
 pub use secret::Secret;

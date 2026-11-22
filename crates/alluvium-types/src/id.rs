@@ -36,6 +36,12 @@ pub enum IdKind {
     Broker,
     /// A [`PartitionIndex`].
     Partition,
+    /// A [`ProducerId`](crate::ProducerId).
+    Producer,
+    /// A [`ProducerEpoch`](crate::ProducerEpoch).
+    ProducerEpoch,
+    /// A [`Sequence`](crate::Sequence).
+    Sequence,
 }
 
 impl fmt::Display for IdKind {
@@ -44,6 +50,9 @@ impl fmt::Display for IdKind {
             IdKind::Node => "node id",
             IdKind::Broker => "broker id",
             IdKind::Partition => "partition index",
+            IdKind::Producer => "producer id",
+            IdKind::ProducerEpoch => "producer epoch",
+            IdKind::Sequence => "sequence number",
         })
     }
 }

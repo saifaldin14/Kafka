@@ -11,7 +11,7 @@
 
 use proptest::prelude::{Just, Strategy, any, prop_oneof};
 
-use crate::{BrokerId, CorrelationId, NodeId, PartitionIndex};
+use crate::{BrokerId, CorrelationId, NodeId, PartitionIndex, ProducerEpoch, ProducerId, Sequence};
 
 /// Non-negative `i32` values, with extra weight on 0, 1 and `i32::MAX`.
 pub(crate) fn non_negative_i32() -> impl Strategy<Value = i32> {
@@ -43,4 +43,33 @@ pub fn partition_index() -> impl Strategy<Value = PartitionIndex> {
 /// Any [`CorrelationId`], including negative ones.
 pub fn correlation_id() -> impl Strategy<Value = CorrelationId> {
     any::<i32>().prop_map(CorrelationId::from)
+}
+
+/// Valid [`ProducerId`]s, biased towards 0, 1, `i32::MAX` and `i64::MAX`.
+pub fn producer_id() -> impl Strategy<Value = ProducerId> {
+    prop_oneof![
+        1 => Just(0),
+        1 => Just(1),
+        1 => Just(i64::from(i32::MAX)),
+        1 => Just(i64::MAX),
+        6 => 0..=i64::MAX,
+    ]
+    .prop_filter_map("non-negative", |value| ProducerId::try_from(value).ok())
+}
+
+/// Valid [`ProducerEpoch`]s, biased towards 0, 1 and the exhaustion boundary
+/// (`i16::MAX - 2` to `i16::MAX`).
+pub fn producer_epoch() -> impl Strategy<Value = ProducerEpoch> {
+    prop_oneof![
+        1 => Just(0),
+        1 => Just(1),
+        2 => (i16::MAX - 2)..=i16::MAX,
+        6 => 0..=i16::MAX,
+    ]
+    .prop_filter_map("non-negative", |value| ProducerEpoch::try_from(value).ok())
+}
+
+/// Valid [`Sequence`]s, biased towards 0, 1 and the wrap point `i32::MAX`.
+pub fn sequence() -> impl Strategy<Value = Sequence> {
+    non_negative_i32().prop_filter_map("non-negative", |value| Sequence::try_from(value).ok())
 }
