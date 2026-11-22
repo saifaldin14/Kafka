@@ -75,6 +75,8 @@
 //! - [`TimestampType`] and [`CompressionType`]: record batch attributes, by Kafka id
 //!   and name ([`AttributeError`] for others).
 //! - [`CleanupPolicy`]: delete, compact, both or neither ([`CleanupPolicyError`]).
+//! - [`ByteSize`]: a non-negative size, printed with an IEC approximation
+//!   ([`ByteSizeError`]).
 //! - [`Acks`] and [`IsolationLevel`]: what a write waits for and what a read may see
 //!   ([`DeliveryError`] for other wire values).
 //! - [`TopicPartition`] and [`TopicIdPartition`]: a partition named by topic name, or by
@@ -90,6 +92,7 @@
 //! Errors here carry no Kafka error code: the Kafka error depends on where the value
 //! came from, so the decoder or handler that rejects it maps it.
 
+mod byte_size;
 mod cleanup_policy;
 mod client_ids;
 mod clock;
@@ -113,6 +116,7 @@ mod time;
 mod topic;
 mod uuid;
 
+pub use byte_size::{ByteSize, ByteSizeError};
 pub use cleanup_policy::{CleanupPolicy, CleanupPolicyError};
 pub use client_ids::{ClientId, GroupId, GroupInstanceId, TransactionalId};
 pub use clock::{Clock, ManualClock, SystemClock, WallClockError};
