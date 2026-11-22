@@ -138,7 +138,7 @@ fn gather() -> Facts {
             .iter()
             .map(|tool| {
                 (
-                    tool.crate_name,
+                    tool.name,
                     tools::check(tool).err().map(|problem| problem.to_string()),
                 )
             })

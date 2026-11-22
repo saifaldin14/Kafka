@@ -158,7 +158,7 @@ fn run_one(step: &Step) -> Outcome {
 #[cfg(test)]
 mod tests {
     use super::{Outcome, Step, all_passed, run};
-    use crate::tools::{Invocation, Tool};
+    use crate::tools::{Invocation, Source, Tool, VersionOutput};
 
     fn missing_program() -> Step {
         Step {
@@ -227,9 +227,11 @@ mod tests {
     #[test]
     fn a_missing_required_tool_blocks_the_step_with_the_install_command() {
         const TOOL: Tool = Tool {
-            crate_name: "cargo-alluvium-test-absent",
+            name: "cargo-alluvium-test-absent",
             version: "1.2.3",
             invocation: Invocation::CargoSubcommand("alluvium-test-absent"),
+            source: Source::Crate,
+            version_output: VersionOutput::NameThenVersion,
         };
         static REQUIRES: [&Tool; 1] = [&TOOL];
         let mut step = Step::cargo("needs-tool", &["--version"]);
