@@ -317,9 +317,10 @@ Done when: GitHub validates the file without errors (CODEOWNERS errors view is c
 P2 · M0 · Task · deps: none · labels: docs
 Done when: Bug: version, reproduction or simulation seed with the replay command, Kafka 4.4.0 behavior compared, redacted logs; parity gap: Kafka path at 4.4.0 or KIP, client and version; design/ADR proposal; flaky test: test name, seed, quarantine issue; `config.yml` disables blank issues. Each form renders on GitHub with its required fields marked; the bug form tells reporters to never paste record payloads or credentials (debuggability.md); the flaky form matches testing.md rule 7.
 
-### [To Do] FND-0060 Labels as code: `.github/labels.yml` (the backlog labels such as `security`, `nfr`, `decoder`, `perf`, `docs`, `test`, `good-first-task`, plus `bug`, `flaky`, `parity`, `dependencies`) synced by a workflow on changes to main
+### [Done] FND-0060 Labels as code: `.github/labels.yml` (the backlog labels such as `security`, `nfr`, `decoder`, `perf`, `docs`, `test`, `good-first-task`, plus `bug`, `flaky`, `parity`, `dependencies`) synced by a workflow on changes to main
 P3 · M0 · Task · deps: none · labels: docs
 Done when: The sync workflow creates and updates labels and never deletes labels it doesn't manage; its permissions are `issues: write` only; the backlog README's label list and labels.yml agree.
+Notes: The backlog README now links to `.github/labels.yml` instead of keeping its own list, so the two can't disagree; every label used in the backlog is in the file (two `debuggability` labels became `observability`, and the README example's `storage` label was dropped). The sync loop was run once locally with the same `gh label create --force` commands: it added 12 labels, updated `bug`, and removed none.
 
 ### [To Do] FND-0061 Document repository settings in `docs/guides/repository-settings.md` and commit the main-branch ruleset export
 P2 · M0 · Task · deps: FND-0037 · labels: docs, security

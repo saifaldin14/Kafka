@@ -1,0 +1,45 @@
+# The repository's issue and PR labels: the single list. The backlog's `labels:` field
+# uses the same names (docs/backlog/README.md), and `foundation-for:<EPIC>` is a
+# backlog-only label, never created on GitHub.
+#
+# .github/workflows/labels.yml creates and updates these on every change to this file on
+# main. It never deletes a label, so labels created by hand or by GitHub stay.
+- name: security
+  color: "b60205"
+  description: "Security-sensitive: untrusted input, secrets, authn/authz, dependencies"
+- name: nfr
+  color: "5319e7"
+  description: "Non-functional requirement: limits, durability, availability, operability"
+- name: decoder
+  color: "d93f0b"
+  description: "Decodes untrusted bytes from the network or disk; needs a fuzz target"
+- name: perf
+  color: "fbca04"
+  description: "Performance: needs benchmark evidence"
+- name: docs
+  color: "0075ca"
+  description: "Documentation"
+- name: test
+  color: "0e8a16"
+  description: "Tests and test infrastructure"
+- name: observability
+  color: "1d76db"
+  description: "Logs, metrics, traces, flight recorders and debug tooling"
+- name: config
+  color: "c5def5"
+  description: "Configuration keys, validation and defaults"
+- name: good-first-task
+  color: "7057ff"
+  description: "Self-contained and well specified: a good start for a new engineer"
+- name: bug
+  color: "d73a4a"
+  description: "Something behaves differently from its specification or from Kafka 4.4.0"
+- name: flaky
+  color: "e99695"
+  description: "A test that passes and fails without a code change (testing.md rule 7)"
+- name: parity
+  color: "006b75"
+  description: "A difference from Apache Kafka 4.4.0 behavior"
+- name: dependencies
+  color: "0366d6"
+  description: "Dependency updates (Dependabot)"
