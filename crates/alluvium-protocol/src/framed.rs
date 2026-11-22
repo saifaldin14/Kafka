@@ -16,6 +16,7 @@ use bytes::Bytes;
 use crate::error::{DecodeError, DecodeErrorKind, EncodeError};
 use crate::limits::Limit;
 use crate::reader::Reader;
+use crate::records::RecordsField;
 use crate::writer::Writer;
 
 /// How a length prefix is written.
@@ -177,8 +178,9 @@ impl Reader {
     ///
     /// [`DecodeErrorKind::Truncated`] if the input ends inside it.
     // Parity: clients/src/main/java/org/apache/kafka/common/protocol/Readable.java@4.4.0 Readable.readRecords
-    pub fn read_records(&mut self, framing: Framing) -> Result<Option<Bytes>, DecodeError> {
+    pub fn read_records(&mut self, framing: Framing) -> Result<Option<RecordsField>, DecodeError> {
         self.read_nullable_bytes(framing)
+            .map(|bytes| bytes.map(RecordsField::new))
     }
 }
 
@@ -281,9 +283,9 @@ impl Writer {
     pub fn write_records(
         &mut self,
         framing: Framing,
-        value: Option<&[u8]>,
+        value: Option<&RecordsField>,
     ) -> Result<(), EncodeError> {
-        self.write_nullable_bytes(framing, value)
+        self.write_nullable_bytes(framing, value.map(|records| &records.as_bytes()[..]))
     }
 
     /// An array's element count.
@@ -326,6 +328,7 @@ mod tests {
     use crate::error::{DecodeError, DecodeErrorKind, EncodeError};
     use crate::limits::{DecodeLimits, Limit};
     use crate::reader::Reader;
+    use crate::records::RecordsField;
     use crate::writer::Writer;
 
     fn reader(bytes: &[u8]) -> Reader {
@@ -527,6 +530,7 @@ mod tests {
         let mut input_reader = Reader::new(input.clone());
         let classic = input_reader.read_bytes(Classic).unwrap();
         let compact = input_reader.read_records(Compact).unwrap().unwrap();
+        let compact = compact.as_bytes().clone();
         assert_eq!((&classic[..], &compact[..]), (&[7, 8][..], &[9, 9][..]));
         let input_range = input.as_ptr_range();
         for slice in [&classic, &compact] {
@@ -617,12 +621,12 @@ mod tests {
             let bytes = written(|w| {
                 w.write_bytes(framing, &value)?;
                 w.write_nullable_bytes(framing, nullable.as_deref())?;
-                w.write_records(framing, nullable.as_deref())
+                w.write_records(framing, nullable.clone().map(|bytes| RecordsField::new(Bytes::from(bytes))).as_ref())
             });
             let mut input = reader(&bytes);
             prop_assert_eq!(input.read_bytes(framing).map(|b| b.to_vec()), Ok(value));
             prop_assert_eq!(input.read_nullable_bytes(framing).map(|b| b.map(|b| b.to_vec())), Ok(nullable.clone()));
-            prop_assert_eq!(input.read_records(framing).map(|b| b.map(|b| b.to_vec())), Ok(nullable));
+            prop_assert_eq!(input.read_records(framing).map(|b| b.map(|b| b.as_bytes().to_vec())), Ok(nullable));
             prop_assert_eq!(input.remaining(), 0);
         }
     }
