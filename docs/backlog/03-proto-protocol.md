@@ -21,7 +21,7 @@ Done when: metadata (27), group-coordinator (44), transaction-coordinator (2), s
 P0 · M1 · Task · deps: PROTO-0001, PROTO-0002 · labels: security · ref: ADR-0008
 Done when: the manifest lists every vendored file with its SHA-256 and the tag commit; `verify` fails naming the file on any added, removed or modified schema (tested with a tampered fixture directory); the step runs in CI.
 
-### [To Do] PROTO-0004 `cargo xtask schemas vendor --tag <tag>`: fetch schema directories from an apache/kafka tag and rewrite the manifest
+### [Done] PROTO-0004 `cargo xtask schemas vendor --tag <tag>`: fetch schema directories from an apache/kafka tag and rewrite the manifest
 P2 · M1 · Task · deps: PROTO-0003
 Done when: the command sparse-clones the tag into `target/`, replaces `schemas/kafka-<tag>/`, regenerates the manifest, and `--dry-run` prints added, removed and changed schema files; never runs in CI (network).
 

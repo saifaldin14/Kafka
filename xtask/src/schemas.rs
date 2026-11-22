@@ -1,5 +1,7 @@
 //! `cargo xtask schemas verify`: the vendored Kafka schemas are exactly the files their
 //! manifest lists, unmodified ([ADR-0008](../../docs/adr/0008-protocol-code-generated-from-kafka-schemas.md)).
+//! `cargo xtask schemas vendor --tag <tag> [--dry-run]`: copies them from an
+//! apache/kafka tag and writes the manifest.
 //!
 //! Each `schemas/kafka-<tag>/` directory holds Kafka files copied from that tag and a
 //! `MANIFEST.sha256` naming the tag, its commit, and every copied file with its SHA-256.
@@ -9,6 +11,12 @@
 //!
 //! Hashes come from one `shasum -a 256` run per directory, the tool `tools install`
 //! already relies on, so no hashing crate is needed.
+//!
+//! `vendor` sparse-clones the tag into `target/`, copies [`SOURCES`] and Kafka's
+//! `LICENSE` and `NOTICE` into a staging directory, and compares it with the vendored
+//! one. `--dry-run` stops there and prints what would change; otherwise it replaces the
+//! directory's files, keeping its README.md, and writes the manifest. It needs the
+//! network, so it never runs in CI.
 
 use std::collections::BTreeMap;
 use std::io::Write;
@@ -26,6 +34,33 @@ pub(crate) const MANIFEST: &str = "MANIFEST.sha256";
 
 /// Alluvium's description of a vendored directory, the other file that isn't Kafka's.
 const README: &str = "README.md";
+
+/// The Kafka directories vendored: where each goes inside `schemas/kafka-<tag>/`, and
+/// its path in apache/kafka. Streams' `SubscriptionInfoData.json` is left out on
+/// purpose; the vendored README says why.
+pub(crate) const SOURCES: &[(&str, &str)] = &[
+    ("clients", "clients/src/main/resources/common/message"),
+    ("metadata", "metadata/src/main/resources/common/metadata"),
+    (
+        "group-coordinator",
+        "group-coordinator/src/main/resources/common/message",
+    ),
+    (
+        "transaction-coordinator",
+        "transaction-coordinator/src/main/resources/common/message",
+    ),
+    (
+        "share-coordinator",
+        "share-coordinator/src/main/resources/common/message",
+    ),
+    ("raft", "raft/src/main/resources/common/message"),
+];
+
+/// Kafka's files copied to the top of each vendored directory.
+const KAFKA_FILES: [&str; 2] = ["LICENSE", "NOTICE"];
+
+/// The repository `vendor` clones.
+const KAFKA_REPOSITORY: &str = "https://github.com/apache/kafka.git";
 
 /// A vendored directory's manifest: which Kafka tag and commit the files came from, and
 /// the SHA-256 of each, by path relative to the directory.
@@ -78,6 +113,23 @@ impl Manifest {
             commit,
             hashes,
         })
+    }
+}
+
+impl Manifest {
+    /// The manifest's text, as `parse` reads it, with paths in sorted order.
+    pub(crate) fn render(&self) -> String {
+        let lines: Vec<String> = self
+            .hashes
+            .iter()
+            .map(|(path, hash)| format!("{hash}  {path}\n"))
+            .collect();
+        let lines = lines.concat();
+        format!(
+            "# Apache Kafka {}, commit {}.\n# Written by `cargo xtask schemas vendor`; \
+             checked by `cargo xtask schemas verify`.\n{lines}",
+            self.tag, self.commit
+        )
     }
 }
 
@@ -256,12 +308,216 @@ fn verify_all(root: &Path) -> Result<(usize, Vec<String>), String> {
     Ok((dirs.len(), problems))
 }
 
+/// Runs `schemas vendor --tag <tag> [--dry-run]`.
+pub(crate) fn run_vendor(tag: &str, dry_run: bool, out: &mut impl Write) -> Exit {
+    match vendor(&crate::repo_root(), tag, dry_run) {
+        Ok(lines) => {
+            for line in lines {
+                output::line(out, &line);
+            }
+            Exit::Success
+        }
+        Err(error) => {
+            output::line(out, &format!("error: {error}"));
+            Exit::CheckFailed
+        }
+    }
+}
+
+/// A tag safe to pass to git: it can't be read as an option, and has no path or
+/// shell-significant characters.
+pub(crate) fn is_valid_tag(tag: &str) -> bool {
+    tag.chars()
+        .next()
+        .is_some_and(|first| first.is_ascii_alphanumeric())
+        && tag
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'))
+}
+
+fn vendor(root: &Path, tag: &str, dry_run: bool) -> Result<Vec<String>, String> {
+    if !is_valid_tag(tag) {
+        return Err(format!(
+            "`{tag}` is not a tag: use letters, digits, `.`, `-` and `_`, starting with a \
+             letter or digit"
+        ));
+    }
+    let work = root.join("target").join("schemas-vendor");
+    let clone = work.join(format!("kafka-{tag}-source"));
+    let staging = work.join(format!("kafka-{tag}"));
+    for dir in [&clone, &staging] {
+        if dir.exists() {
+            std::fs::remove_dir_all(dir)
+                .map_err(|error| format!("could not clear {}: {error}", dir.display()))?;
+        }
+    }
+    std::fs::create_dir_all(&work)
+        .map_err(|error| format!("could not create {}: {error}", work.display()))?;
+    let clone_path = clone.to_string_lossy().into_owned();
+    git(
+        &work,
+        &[
+            "clone",
+            "--quiet",
+            "--depth",
+            "1",
+            "--filter=blob:none",
+            "--sparse",
+            "--branch",
+            tag,
+            "--",
+            KAFKA_REPOSITORY,
+            &clone_path,
+        ],
+    )?;
+    let mut sparse = vec!["sparse-checkout", "set", "--no-cone"];
+    let patterns: Vec<String> = KAFKA_FILES
+        .iter()
+        .map(|file| format!("/{file}"))
+        .chain(SOURCES.iter().map(|(_, source)| format!("/{source}/")))
+        .collect();
+    sparse.extend(patterns.iter().map(String::as_str));
+    git(&clone, &sparse)?;
+    let commit = git(&clone, &["rev-parse", "HEAD"])?.trim().to_owned();
+    for file in KAFKA_FILES {
+        copy_file(&clone.join(file), &staging.join(file))?;
+    }
+    for (directory, source) in SOURCES {
+        let from = clone.join(source);
+        let entries = std::fs::read_dir(&from)
+            .map_err(|error| format!("{source} is missing at {tag}: {error}"))?;
+        for entry in entries {
+            let entry = entry.map_err(|error| format!("could not read {source}: {error}"))?;
+            if entry.path().is_file() {
+                copy_file(
+                    &entry.path(),
+                    &staging.join(directory).join(entry.file_name()),
+                )?;
+            }
+        }
+    }
+    let manifest = Manifest {
+        tag: tag.to_owned(),
+        commit,
+        hashes: hash_tree(&staging)?,
+    };
+    let target = root.join(SCHEMAS_DIR).join(format!("kafka-{tag}"));
+    let label = format!("{SCHEMAS_DIR}/kafka-{tag}");
+    let current = match std::fs::read_to_string(target.join(MANIFEST)) {
+        Ok(text) => {
+            Some(Manifest::parse(&text).map_err(|error| format!("{label}/{MANIFEST}: {error}"))?)
+        }
+        Err(_) => None,
+    };
+    let mut lines = report(&label, current.as_ref(), &manifest);
+    if dry_run {
+        lines.push("dry run: nothing was written".to_owned());
+        return Ok(lines);
+    }
+    replace_dir(&staging, &target)?;
+    std::fs::write(target.join(MANIFEST), manifest.render())
+        .map_err(|error| format!("could not write {label}/{MANIFEST}: {error}"))?;
+    if !target.join(README).exists() {
+        lines.push(format!(
+            "{label}/{README} is missing: write one from the previous version's (docs/guides/updating-kafka-schemas.md)"
+        ));
+    }
+    lines.push(format!("wrote {label} and its {MANIFEST}"));
+    Ok(lines)
+}
+
+/// What vendoring `next` would change in a directory whose manifest is `current`.
+pub(crate) fn report(label: &str, current: Option<&Manifest>, next: &Manifest) -> Vec<String> {
+    let empty = BTreeMap::new();
+    let before = current.map_or(&empty, |manifest| &manifest.hashes);
+    let mut lines = vec![format!(
+        "{label}: Apache Kafka {} at commit {}",
+        next.tag, next.commit
+    )];
+    if let Some(current) = current
+        && current.commit != next.commit
+    {
+        lines.push(format!(
+            "  the tag now points at {}, not {}",
+            next.commit, current.commit
+        ));
+    }
+    let changes = compare(before, &next.hashes);
+    if changes.is_empty() {
+        lines.push("  no files change".to_owned());
+    }
+    for change in changes {
+        lines.push(match change {
+            Change::Added(path) => format!("  added    {path}"),
+            Change::Removed(path) => format!("  removed  {path}"),
+            Change::Modified(path) => format!("  changed  {path}"),
+        });
+    }
+    lines
+}
+
+fn git(dir: &Path, args: &[&str]) -> Result<String, String> {
+    let output = Command::new("git")
+        .args(args)
+        .current_dir(dir)
+        .output()
+        .map_err(|error| format!("could not run git: {error}"))?;
+    if output.status.success() {
+        Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+    } else {
+        Err(format!(
+            "git {} failed: {}",
+            args.first().unwrap_or(&""),
+            String::from_utf8_lossy(&output.stderr).trim()
+        ))
+    }
+}
+
+fn copy_file(from: &Path, to: &Path) -> Result<(), String> {
+    if let Some(parent) = to.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|error| format!("could not create {}: {error}", parent.display()))?;
+    }
+    std::fs::copy(from, to)
+        .map(drop)
+        .map_err(|error| format!("could not copy {}: {error}", from.display()))
+}
+
+/// Replaces every file in `target` except its README.md with the files in `staging`.
+fn replace_dir(staging: &Path, target: &Path) -> Result<(), String> {
+    if target.exists() {
+        for entry in std::fs::read_dir(target)
+            .map_err(|error| format!("could not read {}: {error}", target.display()))?
+        {
+            let path = entry
+                .map_err(|error| format!("could not read {}: {error}", target.display()))?
+                .path();
+            if path.file_name().is_some_and(|name| name == README) {
+                continue;
+            }
+            let removed = if path.is_dir() {
+                std::fs::remove_dir_all(&path)
+            } else {
+                std::fs::remove_file(&path)
+            };
+            removed.map_err(|error| format!("could not remove {}: {error}", path.display()))?;
+        }
+    }
+    let mut files = Vec::new();
+    collect_files(staging, "", &mut files)
+        .map_err(|error| format!("could not read {}: {error}", staging.display()))?;
+    for file in files {
+        copy_file(&staging.join(&file), &target.join(&file))?;
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;
     use std::path::PathBuf;
 
-    use super::{Change, Manifest, compare, verify_dir};
+    use super::{Change, Manifest, compare, is_valid_tag, report, verify_dir};
 
     const COMMIT: &str = "1156b2752aaa28eafc0b4c4d387e63356793268d";
     const HASH_A: &str = "0000000000000000000000000000000000000000000000000000000000000000";
@@ -300,6 +556,67 @@ mod tests {
                 hashes: hashes(&[("LICENSE", HASH_A), ("clients/b.json", HASH_B)]),
             })
         );
+    }
+
+    #[test]
+    fn a_rendered_manifest_parses_back_with_paths_sorted() {
+        let manifest = Manifest {
+            tag: "4.4.0".to_owned(),
+            commit: COMMIT.to_owned(),
+            hashes: hashes(&[("clients/b.json", HASH_B), ("LICENSE", HASH_A)]),
+        };
+        let text = manifest.render();
+        assert!(text.ends_with(&format!("{HASH_A}  LICENSE\n{HASH_B}  clients/b.json\n")));
+        assert_eq!(Manifest::parse(&text), Ok(manifest));
+    }
+
+    #[test]
+    fn the_vendor_report_lists_each_change_and_a_moved_tag() {
+        let current = Manifest {
+            tag: "4.4.0".to_owned(),
+            commit: COMMIT.to_owned(),
+            hashes: hashes(&[("kept", HASH_A), ("edited", HASH_A), ("gone", HASH_A)]),
+        };
+        let next = Manifest {
+            commit: "2".repeat(40),
+            hashes: hashes(&[("kept", HASH_A), ("edited", HASH_B), ("new", HASH_A)]),
+            ..current.clone()
+        };
+        assert_eq!(
+            report("schemas/kafka-4.4.0", Some(&current), &next),
+            [
+                format!(
+                    "schemas/kafka-4.4.0: Apache Kafka 4.4.0 at commit {}",
+                    "2".repeat(40)
+                ),
+                format!("  the tag now points at {}, not {COMMIT}", "2".repeat(40)),
+                "  added    new".to_owned(),
+                "  removed  gone".to_owned(),
+                "  changed  edited".to_owned(),
+            ]
+        );
+        assert_eq!(
+            report("d", Some(&current), &current)[1],
+            "  no files change"
+        );
+    }
+
+    #[test]
+    fn only_plain_tags_reach_git() {
+        for tag in ["4.4.0", "3.9.1-rc0", "trunk_1"] {
+            assert!(is_valid_tag(tag), "{tag}");
+        }
+        for tag in [
+            "",
+            "-c",
+            "--upload-pack=x",
+            "../x",
+            "4.4 0",
+            "a;b",
+            ".hidden",
+        ] {
+            assert!(!is_valid_tag(tag), "{tag}");
+        }
     }
 
     #[test]
