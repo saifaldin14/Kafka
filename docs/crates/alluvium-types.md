@@ -20,7 +20,7 @@ It is layer 0 in the [code map](../architecture.md#4-code-map) and depends on no
 | [`producer`](../../crates/alluvium-types/src/producer.rs) | `ProducerId`, `ProducerEpoch`, `Sequence` |
 | [`epoch`](../../crates/alluvium-types/src/epoch.rs) | `LeaderEpoch`, `BrokerEpoch`, `MemberEpoch`, `GenerationId` |
 | [`offset`](../../crates/alluvium-types/src/offset.rs) | `Offset`, `OffsetRange`, `OffsetSpec` |
-| [`time`](../../crates/alluvium-types/src/time.rs), [`clock`](../../crates/alluvium-types/src/clock.rs), [`deadline`](../../crates/alluvium-types/src/deadline.rs) | `MonotonicInstant`, `WallTime`, `Clock`, `SystemClock`, `ManualClock`, `Deadline` ([ADR-0011](../adr/0011-time-model-and-clock-injection.md)) |
+| [`time`](../../crates/alluvium-types/src/time.rs), [`clock`](../../crates/alluvium-types/src/clock.rs), [`deadline`](../../crates/alluvium-types/src/deadline.rs), [`timer`](../../crates/alluvium-types/src/timer.rs) | `MonotonicInstant`, `WallTime`, `Clock`, `SystemClock`, `ManualClock`, `Deadline`, and the `Timer` trait that layer 3–5 code waits through ([ADR-0011](../adr/0011-time-model-and-clock-injection.md)) |
 | [`rng`](../../crates/alluvium-types/src/rng.rs), [`collections`](../../crates/alluvium-types/src/collections.rs) | `SeededRng`, `SeededHashMap`, `SeededHashSet`, `HashSeed` ([ADR-0012](../adr/0012-seeded-randomness-and-hashing.md)) |
 | [`uuid`](../../crates/alluvium-types/src/uuid.rs) | `Uuid` and `TopicId` |
 | [`topic`](../../crates/alluvium-types/src/topic.rs), [`client_ids`](../../crates/alluvium-types/src/client_ids.rs), [`listener`](../../crates/alluvium-types/src/listener.rs) | `TopicName`; `GroupId`, `GroupInstanceId`, `TransactionalId`, `ClientId`; `ListenerName` |

@@ -113,7 +113,7 @@ Done when: Tests assert the display format and that a `BTreeSet` of partitions i
 P0 · M0 · Task · deps: TYPE-0021 · ref: clients/src/main/java/org/apache/kafka/common/TopicIdPartition.java @4.4.0
 Done when: Tests cover the display with and without a name and equality when the name differs; the doc explains when the name is `None` and that resolving it is the metadata image's job (META); strategies are added.
 
-## [In Progress] TYPE-F06 Clock injection
+## [Done] TYPE-F06 Clock injection
 P0 · M0 · Feature · deps: FND-F02
 Scope: `Clock` trait, `SystemClock` (the one sanctioned `Instant::now`), `ManualClock` for tests, wall vs monotonic time types.
 
@@ -138,7 +138,7 @@ Done when: Tests show the monotonic reading never decreases under any sequence o
 P0 · M0 · Task · deps: TYPE-0024 · ref: clients/src/main/java/org/apache/kafka/common/utils/Timer.java @4.4.0
 Done when: Tests cover a zero timeout, `Duration::MAX`, an expired deadline, and `remaining` at and after expiry (zero, never negative); `// Parity:` cites `Timer`; the doc ties it to the rule "every network wait has a timeout".
 
-### [To Do] TYPE-0048 `Timer` trait: `sleep_until(MonotonicInstant)` returning a boxed `Send` future, with no async-runtime dependency, the one way layer 3–5 code waits (ADR-0011)
+### [Done] TYPE-0048 `Timer` trait: `sleep_until(MonotonicInstant)` returning a boxed `Send` future, with no async-runtime dependency, the one way layer 3–5 code waits (ADR-0011)
 P0 · M2 · Task · deps: TYPE-0024 · ref: ADR-0011
 Done when: The trait is `Send + Sync + Debug` and object-safe (`Arc<dyn Timer>` compiles); its doc says state machines never wait and links ADR-0011; `alluvium-types` gains no dependency; a unit test polls a hand-written implementation's future to completion without a runtime.
 
