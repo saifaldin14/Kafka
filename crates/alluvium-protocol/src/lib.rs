@@ -23,8 +23,10 @@
 
 mod error;
 mod reader;
+mod varint;
 mod writer;
 
 pub use error::{DecodeError, DecodeErrorKind};
 pub use reader::Reader;
+pub use varint::{size_of_unsigned_varint, size_of_varint, size_of_varlong};
 pub use writer::Writer;
