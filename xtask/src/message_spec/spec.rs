@@ -8,11 +8,16 @@
 //! and the per-field rules Kafka's `MessageDataGenerator` checks before generating.
 //!
 //! Properties are read as Jackson reads them: an unknown property is an error, JSON
-//! `null` means the property is absent, a text property also takes a number or a
+//! `null` means the property is absent, a text property also takes an integer or a
 //! boolean (Jackson's scalar coercion: `"default": -1` is the text `-1`), and a list
-//! property also takes a single value (`ACCEPT_SINGLE_VALUE_AS_ARRAY`). Numeric and
-//! boolean properties take only numbers and booleans: no vendored schema writes them
-//! as text.
+//! property also takes a single value (`ACCEPT_SINGLE_VALUE_AS_ARRAY`).
+//!
+//! The reader is stricter than Jackson and Java in ways no vendored schema relies on,
+//! each rejecting a form rather than reading it differently: numeric and boolean
+//! properties take only JSON numbers and booleans, and enums only their names (not
+//! ordinals or padded names); a non-integer number for a text property is rejected,
+//! since its text could differ from the token's; versions take ASCII digits and trim
+//! Unicode whitespace; and duplicate keys keep the last value, as `serde_json` does.
 //!
 //! Note that `"default": null` is an absent default, so the field's default is the
 //! type's empty value, not null. Only the text `"null"` asks for a null default.
@@ -194,9 +199,18 @@ impl MessageSpec {
             fields,
             common_structs,
         };
-        // A message with no valid versions keeps its API key reserved and nothing else.
+        // Jackson binds these before Kafka's constructor runs, so they are read even for
+        // a message with no valid versions, which keeps its API key reserved and nothing
+        // else.
+        let flexible = object.text("flexibleVersions")?;
+        let listeners = object
+            .list("listeners")
+            .into_iter()
+            .map(|(pointer, value)| parse_listener(value, &pointer))
+            .collect::<Result<_, _>>()?;
+        let latest_version_unstable = object.boolean("latestVersionUnstable")?;
         if !message.valid_versions.is_empty() {
-            let flexible = object.text("flexibleVersions")?.ok_or_else(|| {
+            let flexible = flexible.ok_or_else(|| {
                 Problem::at(
                     "",
                     "You must specify a value for flexibleVersions. Please use 0+ for all new \
@@ -206,12 +220,8 @@ impl MessageSpec {
             message.flexible_versions = Versions::parse(Some(&flexible), Some(Versions::NONE))
                 .map_err(|error| Problem::at(&object.at("flexibleVersions"), error))?
                 .unwrap_or(Versions::NONE);
-            message.listeners = object
-                .list("listeners")
-                .into_iter()
-                .map(|(pointer, value)| parse_listener(value, &pointer))
-                .collect::<Result<_, _>>()?;
-            message.latest_version_unstable = object.boolean("latestVersionUnstable")?;
+            message.listeners = listeners;
+            message.latest_version_unstable = latest_version_unstable;
             message.check()?;
         }
         Ok(message)
@@ -417,7 +427,7 @@ fn check_inline_struct(
     if field_type.struct_name().is_some() {
         // Kafka checks an inline struct with the field's own `versions` text, so one with
         // only `taggedVersions` is rejected.
-        if object.text("versions")?.is_none() {
+        if object.versions("versions", None)?.is_none() {
             return Err(missing_versions(object, name));
         }
         check_struct_fields(&object.pointer, name, fields)?;
@@ -607,7 +617,11 @@ fn check_flexible_fields(
                 ),
             ));
         }
-        check_flexible_fields(&field.fields, &format!("{at}/fields"), message_flexible)?;
+        // Kafka generates the fields of structs only; an array of primitives may list
+        // fields, which are ignored.
+        if field.field_type.struct_name().is_some() {
+            check_flexible_fields(&field.fields, &format!("{at}/fields"), message_flexible)?;
+        }
     }
     Ok(())
 }
@@ -721,7 +735,11 @@ impl<'a> Object<'a> {
         match self.get(key) {
             None => Ok(None),
             Some(Value::String(text)) => Ok(Some(text.clone())),
-            Some(scalar @ (Value::Number(_) | Value::Bool(_))) => Ok(Some(scalar.to_string())),
+            // An integer prints exactly as its JSON token; other numbers may not.
+            Some(Value::Number(number)) if number.is_i64() || number.is_u64() => {
+                Ok(Some(number.to_string()))
+            }
+            Some(Value::Bool(flag)) => Ok(Some(flag.to_string())),
             Some(other) => Err(Problem::at(
                 &self.at(key),
                 format!("expected text, found {other}"),
@@ -1149,5 +1167,28 @@ mod tests {
         let parsed = message(&schema).unwrap();
         assert_eq!(parsed.fields.len(), 1);
         assert_eq!(parsed.fields[0].versions, Versions::new(2, 2).unwrap());
+    }
+
+    #[test]
+    fn retired_messages_still_type_check_their_properties_and_inline_structs_need_versions() {
+        let retired = json!({ "type": "request", "name": "Gone", "validVersions": "none",
+                              "flexibleVersions": {} });
+        assert!(error(&retired).starts_with("expected text"));
+        let blank = request(
+            &json!([{ "name": "S", "type": "S", "versions": "", "taggedVersions": "2+", "tag": 0,
+                                       "fields": [{ "name": "X", "type": "int32", "versions": "2+" }] }]),
+        );
+        assert_eq!(
+            error(&blank),
+            "You must specify the version of the S structure."
+        );
+        let float =
+            request(&json!([{ "name": "A", "type": "string", "versions": "0+", "default": 1e2 }]));
+        assert!(error(&float).starts_with("expected text, found 100.0"));
+        let primitive_children = request(
+            &json!([{ "name": "A", "type": "[]int32", "versions": "0+",
+            "fields": [{ "name": "X", "type": "int32", "versions": "0+", "taggedVersions": "0+", "tag": 0 }] }]),
+        );
+        assert!(message(&primitive_children).is_ok());
     }
 }

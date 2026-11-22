@@ -82,7 +82,11 @@ pub(crate) fn load(file: &str, text: &str) -> Result<MessageSpec, SchemaError> {
     let from_problem =
         |problem: spec::Problem| error(Location::Pointer(problem.pointer), problem.message);
     let message = MessageSpec::from_json(&value).map_err(from_problem)?;
-    StructRegistry::new(&message).map_err(from_problem)?;
+    // Kafka generates nothing for a message without valid versions, so its structs are
+    // never registered.
+    if !message.valid_versions.is_empty() {
+        StructRegistry::new(&message).map_err(from_problem)?;
+    }
     Ok(message)
 }
 
