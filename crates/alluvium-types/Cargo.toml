@@ -4,6 +4,7 @@ version = "0.0.0"
 edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
+license-file.workspace = true
 
 [features]
 # `alluvium_types::strategies`: proptest strategies for this crate's types, for other

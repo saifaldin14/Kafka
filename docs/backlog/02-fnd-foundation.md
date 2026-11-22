@@ -254,7 +254,7 @@ P1 · M0 · Spike · deps: none · labels: docs · ref: ADR-0008
 Done when: An accepted ADR "Project license and contributor terms" records the license, the contributor terms, whether files carry SPDX headers, and the consequences for ADR-0008's attribution rules; README.md's license statement matches it.
 Notes: Accepted as [ADR-0015](../adr/0015-project-license-and-contributor-terms.md): proprietary, all rights reserved; Kafka material keeps Apache-2.0 with `LICENSES/Apache-2.0.txt`, `NOTICE` and per-file headers; owner-only contributions, so no DCO or CLA; no SPDX headers. ADR-0008's attribution rules stand unchanged and now have a license to sit beside.
 
-### [To Do] FND-0047 Apply the license decision: `LICENSE` file, the `license` field in `[workspace.package]`, and the `[licenses]` private-crate handling in `deny.toml` adjusted if the ADR requires it
+### [Done] FND-0047 Apply the license decision: `LICENSE` file, the `license` field in `[workspace.package]`, and the `[licenses]` private-crate handling in `deny.toml` adjusted if the ADR requires it
 P1 · M0 · Task · deps: FND-0046, FND-0001 · labels: docs
 Done when: `cargo metadata` shows the license on every member; `cargo deny check licenses` passes; if the ADR requires SPDX headers, a `check-manifests` rule enforces them, with a fixture test.
 
