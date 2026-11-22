@@ -2,6 +2,8 @@
 
 use std::fmt;
 
+use crate::limits::Limit;
+
 /// Why decoding failed, where in the input, and in which field.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("{kind} at byte {offset}{}", FieldPath(.field_path))]
@@ -60,6 +62,17 @@ pub enum DecodeErrorKind {
         length: usize,
         /// The bytes left in the input.
         remaining: usize,
+    },
+    /// A declared size above one of the caller's [`DecodeLimits`](crate::DecodeLimits),
+    /// found before anything was allocated for it.
+    #[error("{limit} {requested} exceeds the limit {allowed}")]
+    LimitExceeded {
+        /// The limit exceeded.
+        limit: Limit,
+        /// The size the input declared.
+        requested: usize,
+        /// The most the limit allows.
+        allowed: usize,
     },
     /// A tagged-field count that is negative as a Java `int`.
     #[error("invalid negative number of tagged fields {count}")]

@@ -1,4 +1,5 @@
-//! Length-prefixed values: strings, byte arrays, records and array lengths.
+//! Length-prefixed values: strings, byte arrays and records, and the length prefix of
+//! arrays, whose elements `array.rs` decodes.
 //!
 //! Each comes in two framings. Classic versions prefix the length as an `int16` (strings)
 //! or `int32` (everything else), with -1 for null. Flexible versions use the compact
@@ -6,8 +7,7 @@
 //!
 //! Lengths are computed as Kafka's generated decoders compute them, with Java `int`
 //! arithmetic: any negative length is null, and a compact prefix of `0x80000000` wraps to
-//! `i32::MAX` and then fails as truncated. The limits on string and array sizes are
-//! the caller's, in `DecodeLimits`.
+//! `i32::MAX` and then fails as truncated.
 
 use bytes::Bytes;
 
@@ -26,7 +26,7 @@ pub enum Framing {
 
 /// The width of a classic length prefix.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Width {
+pub(crate) enum Width {
     /// `int16`, for strings.
     Short,
     /// `int32`, for byte arrays, records and arrays.
@@ -48,7 +48,7 @@ impl Reader {
     }
 
     /// A length prefix that may be null.
-    fn read_nullable_length(
+    pub(crate) fn read_nullable_length(
         &mut self,
         framing: Framing,
         width: Width,
@@ -58,7 +58,7 @@ impl Reader {
     }
 
     /// A length prefix that must not be null.
-    fn read_present_length(
+    pub(crate) fn read_present_length(
         &mut self,
         framing: Framing,
         width: Width,
@@ -131,48 +131,6 @@ impl Reader {
     // Parity: clients/src/main/java/org/apache/kafka/common/protocol/Readable.java@4.4.0 Readable.readRecords
     pub fn read_records(&mut self, framing: Framing) -> Result<Option<Bytes>, DecodeError> {
         self.read_nullable_bytes(framing)
-    }
-
-    /// An array's element count. Each element takes at least one byte, so a count larger
-    /// than the bytes left is rejected before the caller allocates anything.
-    ///
-    /// # Errors
-    ///
-    /// [`DecodeErrorKind::UnexpectedNull`] for a null length, and
-    /// [`DecodeErrorKind::ArrayLongerThanInput`] if it exceeds the bytes remaining.
-    pub fn read_array_length(&mut self, framing: Framing) -> Result<usize, DecodeError> {
-        let start = self.offset();
-        let length = self.read_present_length(framing, Width::Int)?;
-        self.check_array_length(start, length)
-    }
-
-    /// A nullable array's element count: any negative length is null.
-    ///
-    /// # Errors
-    ///
-    /// [`DecodeErrorKind::ArrayLongerThanInput`] if it exceeds the bytes remaining.
-    pub fn read_nullable_array_length(
-        &mut self,
-        framing: Framing,
-    ) -> Result<Option<usize>, DecodeError> {
-        let start = self.offset();
-        match self.read_nullable_length(framing, Width::Int)? {
-            Some(length) => self.check_array_length(start, length).map(Some),
-            None => Ok(None),
-        }
-    }
-
-    fn check_array_length(&self, start: usize, length: usize) -> Result<usize, DecodeError> {
-        if length > self.remaining() {
-            return Err(Reader::error_at(
-                start,
-                DecodeErrorKind::ArrayLongerThanInput {
-                    length,
-                    remaining: self.remaining(),
-                },
-            ));
-        }
-        Ok(length)
     }
 }
 
@@ -311,7 +269,7 @@ impl Writer {
 mod tests {
     use bytes::Bytes;
     use proptest::option;
-    use proptest::prelude::{any, prop_assert, prop_assert_eq, proptest};
+    use proptest::prelude::{any, prop_assert_eq, proptest};
 
     use super::Framing::{self, Classic, Compact};
     use crate::error::{DecodeError, DecodeErrorKind, EncodeError};
@@ -473,40 +431,6 @@ mod tests {
         );
     }
 
-    #[test]
-    fn array_lengths_beyond_the_input_fail_before_any_allocation() {
-        assert_eq!(
-            reader(&[0x7f, 0xff, 0xff, 0xff]).read_array_length(Classic),
-            Err(error(
-                0,
-                DecodeErrorKind::ArrayLongerThanInput {
-                    length: i32::MAX.cast_unsigned() as usize,
-                    remaining: 0
-                }
-            ))
-        );
-        assert_eq!(
-            reader(&[0xff, 0xff, 0xff, 0xff]).read_nullable_array_length(Classic),
-            Ok(None)
-        );
-        assert_eq!(
-            reader(&[0xff, 0xff, 0xff, 0xff]).read_array_length(Classic),
-            Err(error(0, DecodeErrorKind::UnexpectedNull))
-        );
-        assert_eq!(reader(&[3, 1, 2]).read_array_length(Compact), Ok(2));
-        assert_eq!(reader(&[0]).read_nullable_array_length(Compact), Ok(None));
-        assert_eq!(
-            reader(&compact_prefix(0x8000_0000)).read_array_length(Compact),
-            Err(error(
-                0,
-                DecodeErrorKind::ArrayLongerThanInput {
-                    length: i32::MAX.cast_unsigned() as usize,
-                    remaining: 0
-                }
-            ))
-        );
-    }
-
     fn framing() -> impl proptest::strategy::Strategy<Value = Framing> {
         proptest::prop_oneof![
             proptest::strategy::Just(Classic),
@@ -528,28 +452,21 @@ mod tests {
         }
 
         #[test]
-        fn bytes_records_and_array_lengths_round_trip(
+        fn bytes_and_records_round_trip(
             framing in framing(),
             value in proptest::collection::vec(any::<u8>(), 0..40),
             nullable in option::of(proptest::collection::vec(any::<u8>(), 0..40)),
-            length in 0_usize..10,
-            nullable_length in option::of(0_usize..10),
         ) {
             let bytes = written(|w| {
                 w.write_bytes(framing, &value)?;
                 w.write_nullable_bytes(framing, nullable.as_deref())?;
-                w.write_records(framing, nullable.as_deref())?;
-                w.write_array_length(framing, length)?;
-                w.write_nullable_array_length(framing, nullable_length)?;
-                w.write_bytes(framing, &[0; 20])
+                w.write_records(framing, nullable.as_deref())
             });
             let mut input = reader(&bytes);
             prop_assert_eq!(input.read_bytes(framing).map(|b| b.to_vec()), Ok(value));
             prop_assert_eq!(input.read_nullable_bytes(framing).map(|b| b.map(|b| b.to_vec())), Ok(nullable.clone()));
             prop_assert_eq!(input.read_records(framing).map(|b| b.map(|b| b.to_vec())), Ok(nullable));
-            prop_assert_eq!(input.read_array_length(framing), Ok(length));
-            prop_assert_eq!(input.read_nullable_array_length(framing), Ok(nullable_length));
-            prop_assert!(input.read_bytes(framing).is_ok());
+            prop_assert_eq!(input.remaining(), 0);
         }
     }
 }
