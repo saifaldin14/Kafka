@@ -47,6 +47,8 @@ Every run uses these libFuzzer limits, from `LIMITS` in [`xtask/src/fuzz.rs`](..
 
 Every pull request fuzzes each target for 60 s, one job per target, in [ci.yml](../.github/workflows/ci.yml). Each job starts from the corpus the nightly run grew. A crash fails the PR and uploads its input as the artifact `fuzz-crash-<target>`, kept 14 days. To reproduce it, download it and run `cargo xtask fuzz <target> <input>`.
 
+Every night, [fuzz-nightly.yml](../.github/workflows/fuzz-nightly.yml) fuzzes each target for an hour, and on `main` uploads the grown corpus. On Sundays it minimizes each corpus first. A crash uploads its input as `fuzz-crash-<target>`, kept 90 days. It also opens one issue per target titled `Fuzz crash: <target>`, or comments on the open one. The issue carries the commit, the toolchain and, for inputs up to 4 KiB, the input itself. A maintainer can start the workflow by hand with a duration and minimization; dispatched runs on other branches report crashes but never upload corpora.
+
 ## Writing a target
 
 A target is named `<crate>_<decoder>`, after the crate without its `alluvium-` prefix and the decoder it feeds, such as `types_uuid_parse` or `protocol_wire_primitives`. Its file is `fuzz_targets/<name>.rs`, with a `[[bin]]` entry of the same name in `Cargo.toml`.

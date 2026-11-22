@@ -248,7 +248,7 @@ Done when: A fresh clone can pull the corpus and run a target from it; the minim
 P0 · M1 · Task · deps: TEST-0050, TEST-0052 · labels: test, security · ref: docs/standards/security.md#untrusted-input
 Done when: A planted crash in a PR fails the job and the artifact reproduces it with `cargo xtask fuzz <target> <artifact>`; the job's total wall time is reported in the PR description.
 
-### [To Do] TEST-0054 Nightly fuzzing job: each target for one hour (configurable), saving the grown corpus and opening or updating one issue per crashing target with the minimized reproducer
+### [In Review] TEST-0054 Nightly fuzzing job: each target for one hour (configurable), saving the grown corpus and opening or updating one issue per crashing target with the minimized reproducer
 P0 · M1 · Task · deps: TEST-0053 · labels: test, security · ref: docs/standards/security.md#untrusted-input
 Done when: The job runs only on schedule, with write permissions limited to corpus storage and issues; a planted crash creates one issue (not one per run) with the reproducer and the `cargo xtask fuzz` command.
 
