@@ -478,7 +478,7 @@ Done when: a valid array of 5000 elements decodes; `Vec::with_capacity` never ex
 P0 · M1 · Task · deps: PROTO-0105, PROTO-0040 · labels: security · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateVariableLengthReader @4.4.0
 Done when: a compact string declaring 40000 bytes fails with "string field had invalid length" semantics before allocation.
 
-### [To Do] PROTO-0109 Rule: tagged-field count ≤ 10,000 and ≤ remaining bytes
+### [Done] PROTO-0109 Rule: tagged-field count ≤ 10,000 and ≤ remaining bytes
 P0 · M1 · Task · deps: PROTO-0105, PROTO-0049 · labels: security · ref: clients/src/main/java/org/apache/kafka/common/protocol/MessageUtil.java MAX_TAGGED_FIELD_COUNT; generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateClassReader @4.4.0
 Done when: 10,001 declared tags fail before reading entries; test for each bound.
 

@@ -155,6 +155,7 @@ mod tests {
     fn a_count_above_the_limit_fails_before_any_element_is_read() {
         let limits = DecodeLimits {
             max_array_length: 3,
+            ..DecodeLimits::default()
         };
         let never = |_: &mut Reader| -> Result<(), DecodeError> { unreachable!() };
         let input = Bytes::from_static(&[0, 0, 0, 4, 1, 2, 3, 4]);
