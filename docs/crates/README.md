@@ -8,7 +8,7 @@ Crates, in code-map order:
 
 | Crate | Deep dive |
 |---|---|
-| `alluvium-types` | Not written yet |
+| `alluvium-types` | [alluvium-types.md](alluvium-types.md) |
 | `alluvium-protocol` | Not written yet |
 | `alluvium-records` | Not written yet |
 | `alluvium-storage` | Not written yet |
@@ -26,5 +26,5 @@ Crates, in code-map order:
 | `alluvium-server` | Not written yet |
 | `alluvium` | Not written yet |
 | `alluvium-testkit` | Not written yet |
-| `xtask` | Not written yet |
-| `lint-canary` | Not written yet |
+| `xtask` | [xtask.md](xtask.md) |
+| `lint-canary` | [lint-canary.md](lint-canary.md) |
