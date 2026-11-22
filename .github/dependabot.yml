@@ -20,3 +20,18 @@ updates:
       interval: weekly
     labels:
       - dependencies
+
+  # The devcontainer: its base image is pinned by digest in the Dockerfile (`docker`),
+  # and its features by major version in devcontainer.json (`devcontainers`).
+  - package-ecosystem: docker
+    directory: /.devcontainer
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+  - package-ecosystem: devcontainers
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
