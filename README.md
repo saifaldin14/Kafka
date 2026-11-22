@@ -31,6 +31,6 @@ Alluvium is a streaming platform written in Rust. It is fully compatible with Ap
 
 ## License
 
-No license has been chosen yet. All rights reserved.
+Alluvium is proprietary: all rights reserved. The repository is public, which lets GitHub users view and fork it on GitHub, but grants no other license ([ADR-0015](docs/adr/0015-project-license-and-contributor-terms.md)). Outside contributions aren't accepted.
 
-Alluvium uses Apache Kafka's protocol schemas and studies its source, both of which are Apache-2.0 licensed. See [ADR-0008](docs/adr/0008-protocol-code-generated-from-kafka-schemas.md) for the attribution rules.
+Alluvium includes some material from Apache Kafka, which remains under the Apache License 2.0. See [ADR-0008](docs/adr/0008-protocol-code-generated-from-kafka-schemas.md) for the attribution rules.
