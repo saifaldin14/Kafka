@@ -429,7 +429,7 @@ P1 · M0 · Task · deps: TYPE-F11 · labels: perf, test · ref: docs/standards/
 Done when: `cargo bench -p alluvium-types` runs the benchmark; the conventions are in testing.md; `criterion` is added to `[workspace.dependencies]` with a justification; the murmur2 result is in the PR.
 Notes: Pulled into M0 because TYPE-0035 (M0) needs its benchmark budget measured with criterion, and benchmarks should follow conventions from the first one.
 
-### [To Do] TEST-0095 Spike: benchmark regression gating: wall-time criterion runs on shared runners (noisy), a dedicated runner, or instruction counts (for example iai-callgrind) for the gate, with criterion kept for local work
+### [Done] TEST-0095 Spike: benchmark regression gating: wall-time criterion runs on shared runners (noisy), a dedicated runner, or instruction counts (for example iai-callgrind) for the gate, with criterion kept for local work
 P1 · M1 · Spike · deps: TEST-0094 · labels: perf
 Done when: An accepted ADR "Benchmark regression gating" picks the method, the regression threshold and its statistical basis, measured on 20 repeated runs of the murmur2 benchmark on the chosen runner.
 
