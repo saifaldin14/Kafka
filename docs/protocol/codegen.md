@@ -161,6 +161,41 @@ Every message implements `Message::encode(writer, version)`, which mirrors Kafka
 
 **Tests.** A generated table encodes every message's default at every version, checks its size, and decodes it back. Each message module also has a property test, `round_trips_at_every_version`, which encodes arbitrary values at each version (from a generated `arbitrary(version)` strategy, unknown tagged fields included), checks `encoded_size`, and decodes them back unchanged.
 
+## Errors
+
+Kafka throws a `RuntimeException` or `UnsupportedVersionException` whose message is its only detail. Here each failure is a variant of `DecodeErrorKind` (inside a `DecodeError` with the byte offset and field path) or `EncodeError`. The tables give the Kafka 4.4.0 message each variant corresponds to; "—" means Kafka has no such check.
+
+Sources: `MessageDataGenerator`, `FieldSpec`, `ByteBufferAccessor`, `ByteUtils` and `RawTaggedFieldWriter`, in `generator/` and `clients/` at tag `4.4.0`.
+
+| `DecodeErrorKind` | Kafka 4.4.0 |
+|---|---|
+| `Truncated` | `BufferUnderflowException`, or "Error reading byte array of N byte(s): only M byte(s) available" |
+| `VarintTooLong` | "Varint is too long, the most significant bit in the 5th byte is set, converted value: X" |
+| `VarlongTooLong` | "Varlong is too long, most significant bit in the 10th byte is set, converted value: X" |
+| `UnexpectedNull` | "non-nullable field F was serialized as null" |
+| `ArrayLongerThanInput` | "Tried to allocate a collection of size N, but there are only M bytes remaining." |
+| `LimitExceeded` (array length) | "Tried to read a collection of size N, which exceeds the maximum allowed size of 1000000." |
+| `LimitExceeded` (string length) | "string field F had invalid length N" |
+| `LimitExceeded` (tagged-field count) | "Tried to read N tagged fields, which exceeds the maximum allowed count of 10000." |
+| `LimitExceeded` (allocation in bytes) | — ([DecodeLimits](../../crates/alluvium-protocol/src/limits.rs)) |
+| `NegativeTaggedFieldCount` | "Invalid negative number of tagged fields N" |
+| `TaggedFieldCountExceedsInput` | "Tried to read N tagged fields, but there are only M bytes remaining." |
+| `NegativeTaggedFieldSize` | `NegativeArraySizeException`, from `Readable.readUnknownTaggedField` |
+| `UnsupportedVersion` | "Can't read version V of M" |
+| `TagNotValidForVersion` | "Tag N is not valid for version V" |
+| `TaggedFieldSizeMismatch` | — ([ADR-0020](../adr/0020-known-tagged-fields-read-within-their-declared-size.md)) |
+
+| `EncodeError` | Kafka 4.4.0 |
+|---|---|
+| `StringTooLong` | "'F' field is too long to be serialized" |
+| `UnsortedRawTags` | "Invalid raw tag field list: tag N comes after tag P, but is not higher than it." |
+| `LengthTooLong` | — (Kafka's lengths are `int`s, so they can't exceed a prefix) |
+| `UnsupportedVersion` | "Can't write version V of M" |
+| `NullForNonNullable` | `NullPointerException` |
+| `NonDefaultFieldUnsupported` | "Attempted to write a non-default F at version V" |
+| `TaggedFieldsUnsupported` | "Tagged fields were set, but version V of this message does not support them." |
+| `RawTagIsDefined` | "Attempted to use tag N as an undefined tag." |
+
 ## Keyed arrays
 
 A struct with `mapKey` fields makes every array of it keyed. Kafka generates a collection class for such an array, with `find` and `findAll` taking the key fields.
