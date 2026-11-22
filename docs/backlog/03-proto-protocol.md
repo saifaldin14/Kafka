@@ -4,13 +4,14 @@
 
 Byte-exact Kafka 4.4.0 wire protocol: vendored schemas and a code generator producing committed, readable Rust codecs for every request, response and header version, with bounded allocation and fuzzing.
 
-## [To Do] PROTO-F01 Vendored schemas
+## [In Progress] PROTO-F01 Vendored schemas
 P0 · M1 · Feature · deps: FND-F08
 Scope: `schemas/kafka-4.4.0/` copied unmodified from tag 4.4.0 with LICENSE/NOTICE, checksum manifest and an update procedure.
 
-### [To Do] PROTO-0001 Vendor `clients/src/main/resources/common/message` from Kafka tag 4.4.0 into `schemas/kafka-4.4.0/clients/` with Kafka's LICENSE and NOTICE
+### [Done] PROTO-0001 Vendor `clients/src/main/resources/common/message` from Kafka tag 4.4.0 into `schemas/kafka-4.4.0/clients/` with Kafka's LICENSE and NOTICE
 P0 · M1 · Task · deps: none · labels: docs · ref: clients/src/main/resources/common/message @4.4.0
 Done when: all 203 files (request, response, header and data schemas plus README.md) are byte-identical to tag 4.4.0 (commit 1156b2752aaa28eafc0b4c4d387e63356793268d); `schemas/kafka-4.4.0/` holds Kafka's LICENSE and NOTICE; a README states the source tag, commit and the no-edit rule.
+Notes: The directory at the tag holds 204 files: 203 JSON schemas and Kafka's README.md on the schema format; all 204 are vendored. Twenty schemas have no final newline and ten have trailing whitespace, so `.editorconfig` turns those fixes off under `schemas/kafka-*/`, and every committed blob was compared byte for byte with the tag.
 
 ### [To Do] PROTO-0002 Vendor metadata, group, transaction and share coordinator and raft schemas from tag 4.4.0 into `schemas/kafka-4.4.0/`
 P0 · M1 · Task · deps: none · ref: metadata/src/main/resources/common/metadata @4.4.0

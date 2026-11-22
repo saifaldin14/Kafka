@@ -24,3 +24,8 @@ that it was modified, and marks every ported part `// Ported from:` with its sou
   clients/src/test/java/org/apache/kafka/common/UuidTest.java.
 - crates/alluvium-types/src/topic.rs: tests ported from
   clients/src/test/java/org/apache/kafka/common/internals/TopicTest.java.
+
+Apache Kafka files copied unmodified, with Kafka's own LICENSE and NOTICE beside them:
+
+- schemas/kafka-4.4.0/: the message schemas of Apache Kafka 4.4.0 (see its README.md
+  for the source directory of each subdirectory).
