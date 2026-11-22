@@ -24,4 +24,4 @@
 - [ ] `// Parity:` citations added for Kafka-mirroring code
 - [ ] Backlog task status updated; new work found along the way added as tasks; `cargo xtask backlog check` passes
 - [ ] Docs describing the changed behavior are updated (module docs, architecture, standards, ADRs, glossary)
-- [ ] New dependencies are justified (see `docs/standards/security.md#dependencies`)
+- [ ] New dependencies are justified: the PR answers the [dependency questions](https://github.com/saifaldin14/Kafka/blob/main/docs/standards/security.md#dependencies) for each one. When `Cargo.lock` changes, the `deny` job's summary lists the changes (`cargo xtask deps-diff origin/main`)

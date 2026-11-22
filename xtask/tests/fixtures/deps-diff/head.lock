@@ -1,0 +1,49 @@
+# Fixture for deps_diff's unit tests: the lockfile after the change. lazy_static is
+# removed, memchr upgraded, bitflags, serde and syn added, unicode-ident unchanged, and
+# the path crate tools added (workspace crates are left out of the diff).
+version = 4
+
+[[package]]
+name = "app"
+version = "0.1.0"
+dependencies = [
+ "bitflags",
+ "memchr 2.7.5",
+ "serde",
+ "tools",
+]
+
+[[package]]
+name = "bitflags"
+version = "2.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "memchr"
+version = "2.7.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "serde"
+version = "1.0.228"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "syn",
+]
+
+[[package]]
+name = "syn"
+version = "2.0.100"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "unicode-ident",
+]
+
+[[package]]
+name = "tools"
+version = "0.1.0"
+
+[[package]]
+name = "unicode-ident"
+version = "1.0.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
