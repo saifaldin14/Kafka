@@ -60,7 +60,7 @@ Scope: `Uuid` and `TopicId` with Kafka's base64url display, reserved zero/metada
 P0 · M0 · Task · deps: TYPE-0002 · labels: decoder, security · ref: clients/src/main/java/org/apache/kafka/common/Uuid.java toString/fromString/compareTo @4.4.0
 Done when: `Display` is unpadded base64url (22 characters); `FromStr` follows `Uuid.fromString` (rejects input over 24 characters before decoding, accepts optional padding, requires exactly 16 bytes); `Ord` matches Kafka's signed `compareTo`. Ported `UuidTest` cases pass; property tests show string round-trips for all values and that ordering equals signed comparison of the most significant then least significant bits; errors are a typed `UuidError` that echoes at most the first 24 characters of the input; no panic on any input; no new dependency unless justified per security.md#dependencies.
 
-### [To Do] TYPE-0012 Reserved UUIDs and `TopicId`: `Uuid::ZERO` (null/unset, `ZERO_UUID`), `Uuid::ONE` (`ONE_UUID`), and a `TopicId` newtype with `TopicId::METADATA` (`METADATA_TOPIC_ID`) that cannot hold `ZERO`
+### [Done] TYPE-0012 Reserved UUIDs and `TopicId`: `Uuid::ZERO` (null/unset, `ZERO_UUID`), `Uuid::ONE` (`ONE_UUID`), and a `TopicId` newtype with `TopicId::METADATA` (`METADATA_TOPIC_ID`) that cannot hold `ZERO`
 P0 · M0 · Task · deps: TYPE-0011 · ref: clients/src/main/java/org/apache/kafka/common/Uuid.java RESERVED @4.4.0
 Done when: `TopicId::try_from(Uuid::ZERO)` fails; nullable wire mapping turns `ZERO` into `None`; `TopicId::METADATA` displays as `AAAAAAAAAAAAAAAAAAAAAQ`; `// Parity:` cites `Uuid.RESERVED`.
 

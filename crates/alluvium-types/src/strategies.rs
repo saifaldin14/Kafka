@@ -14,7 +14,7 @@ use proptest::prelude::{Just, Strategy, any, prop_oneof};
 use crate::{
     BrokerEpoch, BrokerId, CorrelationId, GenerationId, LeaderEpoch, MemberEpoch, MonotonicInstant,
     NodeId, Offset, OffsetRange, OffsetSpec, PartitionIndex, ProducerEpoch, ProducerId, Sequence,
-    Uuid, WallTime,
+    TopicId, Uuid, WallTime,
 };
 
 /// Non-negative `i32` values, with extra weight on 0, 1 and `i32::MAX`.
@@ -181,4 +181,12 @@ pub fn uuid() -> impl Strategy<Value = Uuid> {
         ]
     };
     (half(), half()).prop_map(|(most, least)| Uuid::from_bits(most, least))
+}
+
+/// Valid [`TopicId`]s: any non-zero [`Uuid`], biased towards the metadata topic's id.
+pub fn topic_id() -> impl Strategy<Value = TopicId> {
+    prop_oneof![
+        1 => Just(TopicId::METADATA),
+        9 => uuid().prop_filter_map("non-zero", |id| TopicId::try_from(id).ok()),
+    ]
 }

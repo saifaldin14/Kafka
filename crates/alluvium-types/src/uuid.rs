@@ -8,6 +8,8 @@
 use std::fmt;
 use std::str::FromStr;
 
+use crate::{IdError, IdKind};
+
 /// A Kafka UUID: the most significant 64 bits, then the least significant 64 bits.
 ///
 /// `Display` and `FromStr` use Kafka's base64url form (`AAAAAAAAAAAAAAAAAAAAAA` is the
@@ -86,7 +88,18 @@ const MAX_INPUT_LENGTH: usize = 24;
 
 const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
+/// A topic's id. Never [`Uuid::ZERO`], which Kafka uses for "no topic id".
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct TopicId(Uuid);
+
+// Parity: clients/src/main/java/org/apache/kafka/common/Uuid.java@4.4.0 Uuid.ZERO_UUID, Uuid.ONE_UUID, Uuid.METADATA_TOPIC_ID, Uuid.RESERVED
 impl Uuid {
+    /// Kafka's `ZERO_UUID`: a null or unset id. Reserved: never generated.
+    pub const ZERO: Uuid = Uuid::from_bits(0, 0);
+
+    /// Kafka's `ONE_UUID`, the metadata topic's id. Reserved: never generated.
+    pub const ONE: Uuid = Uuid::from_bits(0, 1);
+
     /// The UUID with these halves, as Kafka's `new Uuid(mostSigBits, leastSigBits)`.
     pub const fn from_bits(most_significant: i64, least_significant: i64) -> Uuid {
         Uuid {
@@ -121,6 +134,48 @@ impl Uuid {
             most: i64::from_be_bytes(most),
             least: i64::from_be_bytes(least),
         }
+    }
+}
+
+impl TopicId {
+    /// The id of the cluster metadata topic, `__cluster_metadata` (Kafka's
+    /// `METADATA_TOPIC_ID`, equal to [`Uuid::ONE`]).
+    pub const METADATA: TopicId = TopicId(Uuid::ONE);
+
+    /// The UUID.
+    pub fn get(self) -> Uuid {
+        self.0
+    }
+
+    /// Reads a nullable topic id field, where [`Uuid::ZERO`] means "no topic id".
+    pub fn from_wire_nullable(id: Uuid) -> Option<TopicId> {
+        TopicId::try_from(id).ok()
+    }
+}
+
+impl TryFrom<Uuid> for TopicId {
+    type Error = IdError;
+
+    fn try_from(id: Uuid) -> Result<TopicId, IdError> {
+        if id == Uuid::ZERO {
+            Err(IdError::Zero {
+                kind: IdKind::Topic,
+            })
+        } else {
+            Ok(TopicId(id))
+        }
+    }
+}
+
+impl fmt::Display for TopicId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl fmt::Debug for TopicId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "TopicId({})", self.0)
     }
 }
 
@@ -257,8 +312,9 @@ mod tests {
     use proptest::prelude::{any, prop_assert_eq, proptest};
     use proptest::sample::select;
 
-    use super::{Base64Problem, Uuid, UuidError};
-    use crate::strategies::uuid;
+    use super::{Base64Problem, TopicId, Uuid, UuidError};
+    use crate::strategies::{topic_id, uuid};
+    use crate::{IdError, IdKind};
 
     // Ported from clients/src/test/java/org/apache/kafka/common/UuidTest.java@4.4.0
     // (Apache License 2.0). testHashCode and the array helpers are not ported: Java's
@@ -324,6 +380,40 @@ mod tests {
     }
 
     // End of the ported cases.
+
+    #[test]
+    fn reserved_uuids_and_the_metadata_topic_id() {
+        assert_eq!(Uuid::ZERO.to_string(), "AAAAAAAAAAAAAAAAAAAAAA");
+        assert_eq!(Uuid::ONE.to_string(), "AAAAAAAAAAAAAAAAAAAAAQ");
+        assert_eq!(TopicId::METADATA.to_string(), "AAAAAAAAAAAAAAAAAAAAAQ");
+        assert_eq!(TopicId::METADATA.get(), Uuid::ONE);
+        assert_eq!(
+            format!("{:?}", TopicId::METADATA),
+            "TopicId(AAAAAAAAAAAAAAAAAAAAAQ)"
+        );
+    }
+
+    #[test]
+    fn a_topic_id_is_never_zero() {
+        assert_eq!(
+            TopicId::try_from(Uuid::ZERO),
+            Err(IdError::Zero {
+                kind: IdKind::Topic
+            })
+        );
+        assert_eq!(TopicId::from_wire_nullable(Uuid::ZERO), None);
+        assert_eq!(
+            TopicId::from_wire_nullable(Uuid::ONE),
+            Some(TopicId::METADATA)
+        );
+        assert_eq!(
+            IdError::Zero {
+                kind: IdKind::Topic
+            }
+            .to_string(),
+            "the zero UUID is not a topic id"
+        );
+    }
 
     #[test]
     fn padding_follows_javas_decoder() {
@@ -413,6 +503,12 @@ mod tests {
             let text = id.to_string();
             prop_assert_eq!(text.len(), 22);
             prop_assert_eq!(text.parse::<Uuid>(), Ok(id));
+        }
+
+        #[test]
+        fn topic_ids_round_trip_through_nullable_fields(id in topic_id()) {
+            prop_assert_eq!(TopicId::from_wire_nullable(id.get()), Some(id));
+            prop_assert_eq!(id.to_string(), id.get().to_string());
         }
 
         #[test]
