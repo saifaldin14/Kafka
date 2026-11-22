@@ -1,0 +1,12 @@
+name: Probe
+on:
+  workflow_dispatch:
+permissions: {}
+jobs:
+  probe:
+    runs-on: ubuntu-99.04
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - run: echo ${{ github.event.pull_request.no_such_field.oops( }}
+      - run: echo $UNQUOTED_VAR
