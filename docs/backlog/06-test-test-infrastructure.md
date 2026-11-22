@@ -228,11 +228,11 @@ Scope: cargo-fuzz layout, corpus management, short CI runs per PR, nightly long 
 P0 · M1 · Task · deps: TYPE-F03, TYPE-F04 · labels: test, security, decoder · ref: docs/standards/security.md#untrusted-input
 Done when: `cargo +nightly fuzz run types_uuid_parse -- -max_total_time=60` runs clean; each target asserts no panic and, when parsing succeeds, that display then parse round-trips; target naming (`<crate>_<decoder>`) and the assertion pattern are documented in `fuzz/README.md`; the main workspace excludes `fuzz/`.
 
-### [To Do] TEST-0049 Fuzzing resource limits: every run uses `-rss_limit_mb`, `-malloc_limit_mb`, `-timeout` and `-max_len` values from one table, so unbounded allocation and hangs are reported as crashes
+### [Done] TEST-0049 Fuzzing resource limits: every run uses `-rss_limit_mb`, `-malloc_limit_mb`, `-timeout` and `-max_len` values from one table, so unbounded allocation and hangs are reported as crashes
 P0 · M1 · Task · deps: TEST-0048 · labels: test, security · ref: docs/standards/security.md#untrusted-input
 Done when: A planted target that allocates from an untrusted length (test-only, not committed) is reported as a malloc-limit crash; the limits and why they were chosen are documented in `fuzz/README.md`.
 
-### [To Do] TEST-0050 `cargo xtask fuzz <target> [--time 60s]` and `cargo xtask fuzz --list`, wrapping cargo-fuzz (version pinned in the xtask tool table) with the standard limits
+### [Done] TEST-0050 `cargo xtask fuzz <target> [--time 60s]` and `cargo xtask fuzz --list`, wrapping cargo-fuzz (version pinned in the xtask tool table) with the standard limits
 P0 · M1 · Task · deps: TEST-0049 · labels: test · ref: docs/standards/rust.md#tooling-commands-contract-implemented-in-m0
 Done when: The command fails with the target list on an unknown target, and with the install hint when cargo-fuzz or the nightly toolchain is missing; the rust.md tooling table entry matches the behavior.
 

@@ -1,9 +1,10 @@
-//! `cargo xtask tools install [--step <name>]...`: installs the pinned external tools
-//! that are missing or at the wrong version, using the step runner.
+//! `cargo xtask tools install [--step <name>]... [--tool <name>]...`: installs the pinned
+//! external tools that are missing or at the wrong version, using the step runner.
 //!
-//! With `--step`, only the tools those CI steps require are installed, so a CI job
-//! installs what its steps need and nothing more. The step table in `ci` is the single
-//! record of which step needs which tool.
+//! With no arguments, it installs every tool a CI step needs. With `--step`, only the
+//! tools those CI steps require are installed, so a CI job installs what its steps need
+//! and nothing more. The step table in `ci` is the single record of which step needs
+//! which tool. `--tool` names a tool directly, such as cargo-fuzz, which no step needs.
 
 use std::io::Write;
 use std::path::PathBuf;
@@ -15,8 +16,8 @@ use crate::output;
 use crate::steps::{self, Step};
 use crate::tools::{self, Source, TOOLS, Tool};
 
-pub(crate) fn run(step_names: &[String], out: &mut impl Write) -> Exit {
-    let wanted = wanted_tools(step_names);
+pub(crate) fn run(step_names: &[String], tool_names: &[String], out: &mut impl Write) -> Exit {
+    let wanted = wanted_tools(step_names, tool_names);
     if wanted.is_empty() {
         output::line(out, "The selected steps need no external tools.");
         return Exit::Success;
@@ -171,9 +172,9 @@ fn make_executable(_path: &std::path::Path) -> Result<(), String> {
 
 /// Every tool when no step is named; otherwise the tools the named steps require, in
 /// `TOOLS` order and without duplicates.
-fn wanted_tools(step_names: &[String]) -> Vec<&'static Tool> {
-    if step_names.is_empty() {
-        return TOOLS.iter().collect();
+fn wanted_tools(step_names: &[String], tool_names: &[String]) -> Vec<&'static Tool> {
+    if step_names.is_empty() && tool_names.is_empty() {
+        return tools::required_by_steps().collect();
     }
     let required: Vec<&Tool> = ci::STEPS
         .iter()
@@ -182,7 +183,10 @@ fn wanted_tools(step_names: &[String]) -> Vec<&'static Tool> {
         .collect();
     TOOLS
         .iter()
-        .filter(|tool| required.iter().any(|needed| needed.name == tool.name))
+        .filter(|tool| {
+            required.iter().any(|needed| needed.name == tool.name)
+                || tool_names.iter().any(|name| name == tool.name)
+        })
         .collect()
 }
 
@@ -202,15 +206,21 @@ mod tests {
     }
 
     fn names(steps: &[&str]) -> Vec<&'static str> {
-        let steps: Vec<String> = steps.iter().map(|step| (*step).to_owned()).collect();
-        wanted_tools(&steps)
+        names_with_tools(steps, &[])
+    }
+
+    fn names_with_tools(steps: &[&str], tools: &[&str]) -> Vec<&'static str> {
+        let owned = |names: &[&str]| -> Vec<String> {
+            names.iter().map(|name| (*name).to_owned()).collect()
+        };
+        wanted_tools(&owned(steps), &owned(tools))
             .into_iter()
             .map(|tool| tool.name)
             .collect()
     }
 
     #[test]
-    fn no_steps_means_every_tool() {
+    fn no_arguments_means_every_tool_a_step_needs() {
         assert_eq!(
             names(&[]),
             [
@@ -231,5 +241,14 @@ mod tests {
             ["cargo-deny", "lychee"]
         );
         assert_eq!(names(&["fmt", "clippy"]), Vec::<&str>::new());
+    }
+
+    #[test]
+    fn a_tool_no_step_needs_is_installed_only_by_name() {
+        assert_eq!(names_with_tools(&[], &["cargo-fuzz"]), ["cargo-fuzz"]);
+        assert_eq!(
+            names_with_tools(&["test"], &["cargo-fuzz"]),
+            ["cargo-nextest", "cargo-deny", "cargo-fuzz"]
+        );
     }
 }
