@@ -3,6 +3,9 @@
 //! Layer: dev ([ADR-0009](../../../docs/adr/0009-crate-layering-and-dependency-rules.md)).
 //! Nothing depends on this crate.
 //!
+//! Kafka counterpart: Kafka's checkstyle configuration (`checkstyle/` at 4.4.0), which
+//! has no equivalent test of its own rules.
+//!
 //! A lint that is misspelled, removed or weakened in `[workspace.lints]` fails silently:
 //! code simply stops being checked. The fixtures here catch that. Every line that should
 //! trip a lint ends with an `expect-lint:` line comment naming the lints, as clippy's

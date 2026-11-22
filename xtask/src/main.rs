@@ -3,6 +3,8 @@
 //! Layer: dev ([ADR-0009](../../docs/adr/0009-crate-layering-and-dependency-rules.md)).
 //! It may depend on anything, and nothing except tests depends on it.
 //!
+//! Kafka counterpart: Kafka's Gradle build tasks (`build.gradle` at 4.4.0).
+//!
 //! Every repository check that CI runs is a command here, so CI and a developer's
 //! machine run exactly the same thing. `cargo xtask help` lists the commands.
 //!

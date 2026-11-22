@@ -143,7 +143,12 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 
 ## Modules and documentation
 
-- Each crate's `lib.rs` starts with a `//!` doc covering: responsibility, layer, Kafka counterpart (with path at tag `4.4.0`), key invariants, and an entry-point type.
+- Each crate's `lib.rs` (or `main.rs` for a binary-only crate) starts with a `//!` doc covering: responsibility, layer, Kafka counterpart (with path at tag `4.4.0`), key invariants, and an entry-point type. The layer and counterpart are lines of their own, which `cargo xtask check-manifests` checks against the layer table:
+
+  ```rust
+  //! Layer: 0 ([ADR-0009](../../../docs/adr/0009-crate-layering-and-dependency-rules.md)).
+  //! Kafka counterpart: `clients/.../common/Uuid.java` at 4.4.0, or `none`.
+  ```
 - Each non-trivial module starts with a `//!` doc covering what it owns, its invariants, and its lock or ownership rules.
 - **One responsibility per module.** No `utils`, `helpers`, `common` or `misc`. A module over ~600 lines (excluding tests) is a signal to split by responsibility.
 - Use `foo.rs` with `foo/` for submodules, not `mod.rs`.
@@ -204,7 +209,7 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 | `clippy` | `cargo clippy --workspace --all-targets --locked -- -D warnings` |
 | `doc` | `cargo doc --workspace --no-deps --document-private-items --locked` with `RUSTDOCFLAGS="-D warnings"`: docs build with no broken intra-doc links or invalid HTML. Private items are documented too, because most items are `pub(crate)` and their docs must stay correct |
 | `layers` | `cargo xtask check-layers`: crate dependency layering ([architecture §5](../architecture.md#5-layering-rules)); `--print` shows the layer table |
-| `manifests` | `cargo xtask check-manifests`: `[workspace.lints]` and `clippy.toml` equal the blocks in [workspace configuration](#workspace-configuration), compared as parsed TOML, and every member has `[lints] workspace = true` and inherits every dependency with `{ workspace = true }`; every advisory ignore in `deny.toml` has a `reason` and an `expiry` |
+| `manifests` | `cargo xtask check-manifests`: `[workspace.lints]` and `clippy.toml` equal the blocks in [workspace configuration](#workspace-configuration), compared as parsed TOML, and every member has `[lints] workspace = true` and inherits every dependency with `{ workspace = true }`; every advisory ignore in `deny.toml` has a `reason` and an `expiry`; every crate root's `//!` doc has `Layer:` (matching the layer table) and `Kafka counterpart:` lines |
 | `workflows` | `cargo xtask check-workflows`: every `uses:` in `.github/workflows/` and `.github/actions/` is pinned to a commit SHA with a `# v…` comment, no workflow uses `pull_request_target`, and every job sets `timeout-minutes` and `permissions` |
 | `backlog` | `cargo xtask backlog check`: the backlog's format, dependency rules, feature statuses and README totals ([backlog rules](../backlog/README.md)) |
 | `lint-canary` | `cargo xtask lint-canary`: clippy on the fixtures in [`xtask/lint-canary`](../../xtask/lint-canary/src/lib.rs) must report exactly the lints their `expect-lint:` comments name, so a removed or weakened lint fails. Every `clippy.toml` entry must fire with its configured reason |
