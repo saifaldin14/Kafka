@@ -113,7 +113,7 @@ pub(crate) const STEPS: &[CiStep] = &[
     },
     CiStep {
         name: "workflows",
-        summary: "GitHub Actions files pin actions by SHA and set timeouts and permissions (cargo xtask check-workflows)",
+        summary: "GitHub Actions files pin actions by SHA, set timeouts and permissions, and pass actionlint and shellcheck (cargo xtask check-workflows)",
         program: Program::Cargo,
         args: &[
             "run",
@@ -125,7 +125,7 @@ pub(crate) const STEPS: &[CiStep] = &[
             "check-workflows",
         ],
         env: &[],
-        requires: &[],
+        requires: &[&tools::ACTIONLINT, &tools::SHELLCHECK],
     },
     CiStep {
         name: "backlog",

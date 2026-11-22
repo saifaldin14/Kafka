@@ -1,0 +1,30 @@
+name: Parity gap
+description: A Kafka 4.4.0 API, behavior or tool that Alluvium doesn't support, or supports differently.
+labels: [parity]
+body:
+  - type: textarea
+    id: kafka
+    attributes:
+      label: Kafka behavior
+      description: What Kafka 4.4.0 does, with the source path at tag `4.4.0` or the KIP that defines it.
+    validations:
+      required: true
+  - type: input
+    id: client
+    attributes:
+      label: Client and version
+      description: For example "Java client 4.4.0", "librdkafka 2.12.0" or "kafka-topics.sh 4.4.0".
+    validations:
+      required: true
+  - type: textarea
+    id: alluvium
+    attributes:
+      label: What Alluvium does
+      description: The error, response or behavior you see instead.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: What this blocks for you.

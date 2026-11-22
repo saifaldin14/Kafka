@@ -204,7 +204,7 @@ P1 · M0 · Task · deps: FND-0031, FND-0007 · labels: security · ref: docs/st
 Done when: Every `uses:` in `.github/workflows/*.yml` must be pinned to a 40-hex SHA with a `# v…` comment; every job sets `timeout-minutes` and explicit `permissions`; Dependabot covers the `github-actions` ecosystem weekly. Fixture workflows (tag-pinned action, missing timeout, missing permissions, `pull_request_target`) are each rejected with file:line; the real workflows pass; registered as the `workflows` step in the `policy` job; Dependabot opens SHA-bump PRs that keep the version comment.
 Notes: check-workflows is verified locally and runs in `policy` on every PR. Dependabot validated the new `github-actions` entry and ran it from main ([run 44937154825](https://github.com/saifaldin14/Kafka/actions/runs/44937154825), success, no updates). Closed at the user's request: the last criterion, a Dependabot PR that bumps a SHA and keeps the version comment, can only be observed after an action publishes a new release, since all of them are at their latest release today. Check the first such PR when it arrives.
 
-### [To Do] FND-0039 Lint workflow files with actionlint (version pinned in the xtask tool table) as part of the `workflows` step
+### [Done] FND-0039 Lint workflow files with actionlint (version pinned in the xtask tool table) as part of the `workflows` step
 P2 · M0 · Task · deps: FND-0038
 Done when: A workflow with an invalid expression or an unknown runner label fails the step locally and in CI; shellcheck findings in `run:` blocks are reported (actionlint's integration); the current workflows pass.
 
@@ -264,19 +264,19 @@ Done when: NOTICE names the included material (vendored schemas under `schemas/k
 P1 · M0 · Task · deps: FND-0046 · labels: docs · ref: ADR-0008
 Done when: The header template appears once (CONTRIBUTING) and is linked from ADR-0008 and docs/standards/testing.md rule 10; it states when attribution is required (close port) and when not (`// Parity:` references); the PR template's Kafka-reference section asks whether code was closely ported.
 
-## [To Do] FND-F09 Developer environment
+## [In Progress] FND-F09 Developer environment
 P2 · M0 · Feature · deps: FND-F04
 Scope: `cargo xtask doctor` (toolchain, rustup and tool checks), editor settings, optional git hooks, devcontainer.
 
-### [To Do] FND-0050 `cargo xtask doctor`: check the local toolchain and tools, with fix commands
+### [Done] FND-0050 `cargo xtask doctor`: check the local toolchain and tools, with fix commands
 P2 · M0 · Task · deps: FND-0020 · labels: good-first-task
 Done when: Required checks: `cargo` is rustup's proxy (not Homebrew's or a distribution's), the active toolchain matches `rust-toolchain.toml` with rustfmt and clippy, and every tool in the xtask tool table is installed at its pinned version; optional checks: Docker (compat tests), a nightly toolchain and cargo-fuzz (fuzzing). Each check prints `ok` or `missing` with the exact fix command; the exit code is 1 only when a required check fails; a unit test feeds fake `rustup which cargo` and version outputs for the Homebrew-cargo case and the wrong-toolchain case; CONTRIBUTING §2 tells new engineers to run it.
 
-### [To Do] FND-0051 Editor settings: `.editorconfig` (UTF-8, LF, final newline, 4-space Rust, 2-space YAML/TOML/JSON) and shared `.vscode/settings.json` and `extensions.json` (rust-analyzer with clippy as the check command)
+### [Done] FND-0051 Editor settings: `.editorconfig` (UTF-8, LF, final newline, 4-space Rust, 2-space YAML/TOML/JSON) and shared `.vscode/settings.json` and `extensions.json` (rust-analyzer with clippy as the check command)
 P2 · M0 · Task · deps: none · labels: good-first-task
 Done when: `cargo fmt` and the editor settings agree (no reformatting churn on save in a sample edit); no user-specific paths are committed; CONTRIBUTING mentions the files.
 
-### [To Do] FND-0052 Optional git hooks: `cargo xtask install-hooks` writes a pre-push hook that runs `cargo xtask ci --step fmt --step clippy`, and `--uninstall` removes it
+### [Done] FND-0052 Optional git hooks: `cargo xtask install-hooks` writes a pre-push hook that runs `cargo xtask ci --step fmt --step clippy`, and `--uninstall` removes it
 P3 · M0 · Task · deps: FND-0021 · labels: good-first-task
 Done when: Hooks are never installed automatically; installing twice is idempotent; an existing hook that xtask did not write is left alone, with a warning.
 
@@ -300,25 +300,28 @@ Done when: A test PR with a broken relative link and a wrong heading anchor fail
 P2 · M0 · Task · deps: FND-0055, FND-0031 · labels: docs
 Done when: The workflow never runs on PRs; a dead link creates an issue listing file:line and URL; permissions are `contents: read` and `issues: write` only.
 
-### [To Do] FND-0057 `check-manifests` rule: each library crate's `lib.rs` starts with a `//!` doc that has `Layer:` (matching the xtask layer table) and `Kafka counterpart:` lines
+### [Done] FND-0057 `check-manifests` rule: each library crate's `lib.rs` starts with a `//!` doc that has `Layer:` (matching the xtask layer table) and `Kafka counterpart:` lines
 P2 · M0 · Task · deps: FND-0023, FND-0007, TYPE-F01 · labels: docs · ref: docs/standards/rust.md#modules-and-documentation
 Done when: Fixture crates with a missing doc, a missing line or a wrong layer are rejected; rust.md's "Modules and documentation" section shows the required lines; `alluvium-types` and `xtask` pass.
+Notes: The rule reads only the crate root's text, so its fixtures are inline `lib.rs` texts in the unit test (missing doc, missing `Layer:`, wrong layer, missing or empty `Kafka counterpart:`, lines outside the leading doc, unknown crate) rather than fixture crates. Binary-only crates are checked through `src/main.rs`, which is how `xtask` passes. Also proved on the real workspace by changing `alluvium-types`' doc.
 
 ## [In Progress] FND-F11 Repository hygiene
 P2 · M0 · Feature · deps: none
 Scope: CODEOWNERS, issue templates, labels, branch protection settings documented.
 
-### [To Do] FND-0058 `.github/CODEOWNERS`: an owner for every path, with security-sensitive paths listed explicitly (`deny.toml`, `Cargo.lock`, `.github/workflows/`, `docs/adr/`, `docs/standards/`, `.agents/`)
+### [Done] FND-0058 `.github/CODEOWNERS`: an owner for every path, with security-sensitive paths listed explicitly (`deny.toml`, `Cargo.lock`, `.github/workflows/`, `docs/adr/`, `docs/standards/`, `.agents/`)
 P2 · M0 · Task · deps: none · labels: security
 Done when: GitHub validates the file without errors (CODEOWNERS errors view is clean); a PR that touches `deny.toml` requests review from its owner.
+Notes: GitHub's `codeowners/errors` API returned `{"errors":[]}` for the file on the PR branch. The repository has one maintainer, who owns every path and authors every PR; GitHub never requests a review from a PR's own author, so the review request on a `deny.toml` change appears once a second owner is added. Until then the ruleset can't require code-owner review either (FND-0061).
 
-### [To Do] FND-0059 Issue forms in `.github/ISSUE_TEMPLATE/` for bugs, parity gaps, design proposals and flaky tests
+### [Done] FND-0059 Issue forms in `.github/ISSUE_TEMPLATE/` for bugs, parity gaps, design proposals and flaky tests
 P2 · M0 · Task · deps: none · labels: docs
 Done when: Bug: version, reproduction or simulation seed with the replay command, Kafka 4.4.0 behavior compared, redacted logs; parity gap: Kafka path at 4.4.0 or KIP, client and version; design/ADR proposal; flaky test: test name, seed, quarantine issue; `config.yml` disables blank issues. Each form renders on GitHub with its required fields marked; the bug form tells reporters to never paste record payloads or credentials (debuggability.md); the flaky form matches testing.md rule 7.
 
-### [To Do] FND-0060 Labels as code: `.github/labels.yml` (the backlog labels such as `security`, `nfr`, `decoder`, `perf`, `docs`, `test`, `good-first-task`, plus `bug`, `flaky`, `parity`, `dependencies`) synced by a workflow on changes to main
+### [Done] FND-0060 Labels as code: `.github/labels.yml` (the backlog labels such as `security`, `nfr`, `decoder`, `perf`, `docs`, `test`, `good-first-task`, plus `bug`, `flaky`, `parity`, `dependencies`) synced by a workflow on changes to main
 P3 · M0 · Task · deps: none · labels: docs
 Done when: The sync workflow creates and updates labels and never deletes labels it doesn't manage; its permissions are `issues: write` only; the backlog README's label list and labels.yml agree.
+Notes: The backlog README now links to `.github/labels.yml` instead of keeping its own list, so the two can't disagree; every label used in the backlog is in the file (two `debuggability` labels became `observability`, and the README example's `storage` label was dropped). The sync loop was run once locally with the same `gh label create --force` commands: it added 12 labels, updated `bug`, and removed none.
 
 ### [To Do] FND-0061 Document repository settings in `docs/guides/repository-settings.md` and commit the main-branch ruleset export
 P2 · M0 · Task · deps: FND-0037 · labels: docs, security
