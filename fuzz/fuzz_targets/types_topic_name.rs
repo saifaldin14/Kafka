@@ -6,6 +6,7 @@ use alluvium_types::TopicName;
 use libfuzzer_sys::fuzz_target;
 
 fuzz_target!(|input: &[u8]| {
+    assert_ne!(input.first(), Some(&b'!'), "planted crash: TEST-0053 probe, not for merge");
     let Ok(text) = std::str::from_utf8(input) else {
         return;
     };
