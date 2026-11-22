@@ -6,6 +6,7 @@ members = ["crates/*", "xtask", "xtask/lint-canary"]
 edition = "2024"
 rust-version = "1.99"
 publish = false
+license-file = "LICENSE"
 
 [workspace.dependencies]
 chacha20 = { version = "0.10.2", default-features = false, features = ["rng"] }
