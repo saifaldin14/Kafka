@@ -7,7 +7,7 @@
 //! 1. Every workspace member is in the layer table (`layers::LAYERS`).
 //! 2. Normal and build dependencies between workspace crates point to a strictly lower
 //!    layer. Same-layer edges need an entry in [`SAME_LAYER_ALLOWED`] backed by an
-//!    accepted ADR, and every entry must be used.
+//!    accepted ADR, and every entry whose two crates are in the workspace must be used.
 //! 3. A non-dev crate uses a dev crate only as a dev-dependency.
 //! 4. Nothing depends on the layer 5 binary.
 //! 5. No layer 0-2 crate reaches an async runtime or networking crate
@@ -43,8 +43,13 @@ pub(crate) struct AllowedEdge {
     pub(crate) adr: &'static str,
 }
 
-/// Same-layer dependencies that are allowed. Empty: architecture §5 has no exceptions.
-pub(crate) const SAME_LAYER_ALLOWED: &[AllowedEdge] = &[];
+/// Same-layer dependencies that are allowed: a layer 0 crate may depend on
+/// `alluvium-types` (ADR-0016). Each edge is added when it first exists.
+pub(crate) const SAME_LAYER_ALLOWED: &[AllowedEdge] = &[AllowedEdge {
+    from: "alluvium-protocol",
+    to: "alluvium-types",
+    adr: "0016",
+}];
 
 /// Crates that layers 0-2 must never reach, with the reason each is banned.
 pub(crate) const RUNTIME_CRATES: &[(&str, &str)] = &[
@@ -326,7 +331,9 @@ pub(crate) fn check_graph(
             }),
             AdrStatus::Accepted => {}
         }
-        if !used.contains(&index) {
+        let members: Vec<&str> = graph.members.iter().map(|id| graph.name(id)).collect();
+        let in_workspace = members.contains(&entry.from) && members.contains(&entry.to);
+        if in_workspace && !used.contains(&index) {
             violations.push(Violation::AllowListUnused {
                 entry: entry.into(),
             });
@@ -776,11 +783,15 @@ mod tests {
             [Violation::AllowListAdrMissing { .. }]
         ));
         let accepted = adr_dir("Accepted")?;
-        let unused = check_graph(&graph(&["alluvium-raft"], &[], &[]), &[ENTRY], &accepted);
+        let both = graph(&["alluvium-raft", "alluvium-storage"], &[], &[]);
+        let unused = check_graph(&both, &[ENTRY], &accepted);
         assert!(
             matches!(unused[..], [Violation::AllowListUnused { .. }]),
             "{unused:?}"
         );
+        // A workspace without one of the entry's crates can't use it, so it isn't unused.
+        let elsewhere = check_graph(&graph(&["alluvium-raft"], &[], &[]), &[ENTRY], &accepted);
+        assert_eq!(elsewhere, []);
         Ok(())
     }
 

@@ -111,7 +111,7 @@ Layers, bottom to top:
 | 4 | Server: drivers, handlers, lifecycle | The only place where everything meets |
 | 5 | Binary | Argument parsing and `main` |
 
-1. A crate may depend only on crates in **lower** layers. Same-layer dependencies are forbidden unless listed in `xtask`'s allow-list with an ADR reference. There are none today.
+1. A crate may depend only on crates in **lower** layers. Same-layer dependencies are forbidden unless listed in `xtask`'s allow-list with an ADR reference. The one exception: a layer 0 crate may depend on `alluvium-types` ([ADR-0016](adr/0016-layer-0-crates-may-depend-on-alluvium-types.md)).
 2. **Layers 0–2 must not depend on Tokio**, any async runtime, or any networking crate. They must not perform I/O (except `alluvium-storage` through its `fs` trait), read the clock, or spawn threads. `alluvium-types` defines the system clock and the OS-entropy RNG constructor so that each has one implementation, but only layer 3–5 code constructs them, and `check-layers` rejects any other layer 0–2 crate that names them; layer 0–2 state machines receive time and randomness from their drivers ([ADR-0011](adr/0011-time-model-and-clock-injection.md), [ADR-0012](adr/0012-seeded-randomness-and-hashing.md)). They may use the `tracing` facade for debug/trace events. State transitions are *returned* to the driver, which records them (flight recorder, info-level event, metrics). Layer 0–2 code never touches the metrics registry.
 3. Each layer 0–2 crate defines its own plain config struct (for example `storage::LogConfig`). `alluvium-config` maps Kafka config keys onto those structs, so lower layers never parse config.
 4. `dev` crates may depend on anything. Nothing except tests may depend on `dev` crates.

@@ -28,3 +28,4 @@ An ADR records a decision that is hard to reverse, crosses crates, deviates from
 | [0013](0013-key-hash-space.md) | Key hash space | Accepted |
 | [0014](0014-namespace-identity.md) | Namespace identity | Accepted |
 | [0015](0015-project-license-and-contributor-terms.md) | Project license and contributor terms | Accepted |
+| [0016](0016-layer-0-crates-may-depend-on-alluvium-types.md) | Layer 0 crates may depend on alluvium-types | Accepted |
