@@ -24,6 +24,7 @@ pub(crate) enum Command {
     CheckWorkflows,
     LintCanary,
     Backlog(BacklogCommand),
+    Docs(DocsCommand),
     Doctor,
     /// `install-hooks [--uninstall]`.
     InstallHooks {
@@ -42,6 +43,15 @@ pub(crate) enum BacklogCommand {
     Stats { write: bool },
     /// `check [--allow-empty-features] [--epic <code>]...`.
     Check(CheckOptions),
+}
+
+/// A `cargo xtask docs` subcommand.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum DocsCommand {
+    /// `check-crates`.
+    CheckCrates,
+    /// `new-crate-doc <crate>`.
+    NewCrateDoc { name: String },
 }
 
 /// Options for `cargo xtask ci`.
@@ -75,6 +85,14 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
     (
         "check-workflows",
         "Check that GitHub Actions files pin actions by SHA and set timeouts and permissions",
+    ),
+    (
+        "docs check-crates",
+        "Check that every workspace crate has a deep dive in docs/crates/, and list the stubs",
+    ),
+    (
+        "docs new-crate-doc <crate>",
+        "Write a stub deep dive for a workspace crate from docs/crates/template.md",
     ),
     (
         "doctor",
@@ -187,6 +205,7 @@ pub(crate) fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Command,
             no_arguments("check-workflows", rest).map(|()| Command::CheckWorkflows)
         }
         "backlog" => parse_backlog(rest).map(Command::Backlog),
+        "docs" => parse_docs(rest).map(Command::Docs),
         "lint-canary" => no_arguments("lint-canary", rest).map(|()| Command::LintCanary),
         "doctor" => no_arguments("doctor", rest).map(|()| Command::Doctor),
         "install-hooks" => match rest {
@@ -370,6 +389,32 @@ fn parse_backlog(rest: &[String]) -> Result<BacklogCommand, UsageError> {
     }
 }
 
+fn parse_docs(rest: &[String]) -> Result<DocsCommand, UsageError> {
+    let Some((sub, rest)) = rest.split_first() else {
+        return Err(UsageError::MissingSubcommand { command: "docs" });
+    };
+    match sub.as_str() {
+        "check-crates" => {
+            no_arguments("docs check-crates", rest).map(|()| DocsCommand::CheckCrates)
+        }
+        "new-crate-doc" => match rest {
+            [name] => Ok(DocsCommand::NewCrateDoc { name: name.clone() }),
+            [] => Err(UsageError::MissingArgument {
+                command: "docs new-crate-doc",
+                name: "a crate name",
+            }),
+            [_, extra, ..] => Err(UsageError::UnexpectedArgument {
+                command: "docs new-crate-doc",
+                argument: extra.clone(),
+            }),
+        },
+        _ => Err(UsageError::UnknownSubcommand {
+            command: "docs",
+            name: sub.clone(),
+        }),
+    }
+}
+
 fn add_step(options: &mut CiOptions, name: &str) -> Result<(), UsageError> {
     if !ci::is_step(name) {
         return Err(UsageError::UnknownStep(name.to_owned()));
@@ -384,7 +429,7 @@ fn add_step(options: &mut CiOptions, name: &str) -> Result<(), UsageError> {
 mod tests {
     use std::ffi::OsString;
 
-    use super::{BacklogCommand, CiOptions, Command, UsageError, parse};
+    use super::{BacklogCommand, CiOptions, Command, DocsCommand, UsageError, parse};
 
     fn args(list: &[&str]) -> Vec<OsString> {
         list.iter().map(OsString::from).collect()
@@ -649,6 +694,52 @@ mod tests {
         assert_eq!(
             parse(args(&["backlog"])),
             Err(UsageError::MissingSubcommand { command: "backlog" })
+        );
+    }
+
+    #[test]
+    fn docs_subcommands_parse_and_reject_bad_arguments() {
+        assert_eq!(
+            parse(args(&["docs", "check-crates"])),
+            Ok(Command::Docs(DocsCommand::CheckCrates))
+        );
+        assert_eq!(
+            parse(args(&["docs", "new-crate-doc", "alluvium-raft"])),
+            Ok(Command::Docs(DocsCommand::NewCrateDoc {
+                name: "alluvium-raft".to_owned()
+            }))
+        );
+        assert_eq!(
+            parse(args(&["docs", "check-crates", "x"])),
+            Err(UsageError::UnexpectedArgument {
+                command: "docs check-crates",
+                argument: "x".to_owned()
+            })
+        );
+        assert_eq!(
+            parse(args(&["docs", "new-crate-doc"])),
+            Err(UsageError::MissingArgument {
+                command: "docs new-crate-doc",
+                name: "a crate name"
+            })
+        );
+        assert_eq!(
+            parse(args(&["docs", "new-crate-doc", "a", "b"])),
+            Err(UsageError::UnexpectedArgument {
+                command: "docs new-crate-doc",
+                argument: "b".to_owned()
+            })
+        );
+        assert_eq!(
+            parse(args(&["docs"])),
+            Err(UsageError::MissingSubcommand { command: "docs" })
+        );
+        assert_eq!(
+            parse(args(&["docs", "build"])),
+            Err(UsageError::UnknownSubcommand {
+                command: "docs",
+                name: "build".to_owned()
+            })
         );
     }
 

@@ -39,6 +39,7 @@ mod check_workflows;
 mod ci;
 mod cli;
 mod clock;
+mod crate_docs;
 mod doctor;
 mod graph;
 mod hooks;
@@ -51,7 +52,7 @@ mod tools;
 
 use std::process::ExitCode;
 
-use cli::{BacklogCommand, Command};
+use cli::{BacklogCommand, Command, DocsCommand};
 
 /// How an `xtask` invocation ended. Converted to the process exit code in `main`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -104,6 +105,8 @@ fn run(command: &Command, out: &mut impl std::io::Write) -> Exit {
         Command::Backlog(BacklogCommand::Show { id }) => backlog_next::run_show(id, out),
         Command::Backlog(BacklogCommand::Stats { write }) => backlog_stats::run(*write, out),
         Command::Backlog(BacklogCommand::Check(options)) => backlog_check::run(options, out),
+        Command::Docs(DocsCommand::CheckCrates) => crate_docs::run_check(out),
+        Command::Docs(DocsCommand::NewCrateDoc { name }) => crate_docs::run_new(name, out),
         Command::LintCanary => lint_canary::run(out),
         Command::Doctor => doctor::run(out),
         Command::InstallHooks { uninstall } => hooks::run(*uninstall, out),

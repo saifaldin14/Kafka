@@ -528,9 +528,10 @@ Scope: Per-crate design docs as crates land.
 P1 · M0 · Task · deps: none · labels: docs
 Done when: docs/crates/README.md indexes crates in the order of the architecture code map; the template has sections for responsibility and layer, Kafka counterpart with parity citations, state machines (inputs, actions, states), invariants and where they are checked, events, metrics and flight recorder, error enum and Kafka error mapping, test strategy, and how to debug the crate.
 
-### [To Do] DOCS-0121 Check that every workspace crate has a deep dive
+### [Done] DOCS-0121 Check that every workspace crate has a deep dive
 P1 · M0 · Task · deps: DOCS-0120, FND-F04 · labels: docs
 Done when: `cargo xtask docs check-crates` (part of `cargo xtask ci`) fails when a crate under `crates/` or `xtask` has no `docs/crates/<crate>.md` or is missing from architecture §4; `cargo xtask docs new-crate-doc <crate>` writes a marked stub that satisfies the check, and the check lists remaining stubs.
+Notes: Every workspace member is checked, so `lint-canary` needs a deep dive too (DOCS-0143). That every member is in architecture §4 is already the `layers` step's rule (member in the layer table, layer table equals §4), so `crate-docs` doesn't repeat it; `cargo xtask ci` still fails when it breaks.
 
 ### [To Do] DOCS-0122 Contributor deep dive: `alluvium-types`
 P1 · M0 · Task · deps: DOCS-0120, TYPE-F01, TYPE-F06, TYPE-F08 · labels: docs
@@ -539,6 +540,10 @@ Done when: docs/crates/alluvium-types.md replaces the stub and fills every templ
 ### [To Do] DOCS-0123 Contributor deep dive: `xtask`
 P1 · M0 · Task · deps: DOCS-0120, FND-F04, FND-F05 · labels: docs
 Done when: docs/crates/xtask.md replaces the stub and fills every template section from the crate's actual code and module docs; it links the ADRs and Kafka 4.4.0 sources the crate mirrors; a reviewer new to the crate confirms they can locate its state machine, invariants and tests from it.
+
+### [To Do] DOCS-0143 Contributor deep dive: `lint-canary`
+P2 · M0 · Task · deps: DOCS-0120, DOCS-0121 · labels: docs
+Done when: docs/crates/lint-canary.md replaces the stub and fills every template section from the crate's actual code and module docs, writing "None" with the reason for sections a fixture crate doesn't have; it explains how to add a fixture for a new lint or `clippy.toml` entry, and how to read a canary failure.
 
 ### [To Do] DOCS-0124 Contributor deep dive: `alluvium-protocol`
 P1 · M1 · Task · deps: DOCS-0120, PROTO-F05, PROTO-F09 · labels: docs
