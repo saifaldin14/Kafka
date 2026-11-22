@@ -298,7 +298,7 @@ Done when: `codegen::generate(inputs, out_dir, filter)` is the single entry poin
 P1 · M1 · Task · deps: PROTO-0058, PROTO-0061, PROTO-0062, PROTO-0063 · labels: docs
 Done when: covers versions, nullable, defaults, common and inline structs, mapKey, known-value accessors, unknown tagged fields and redaction, with one worked example (ProduceRequest).
 
-## [In Progress] PROTO-F05 Generator: versioned encode/decode
+## [Done] PROTO-F05 Generator: versioned encode/decode
 P0 · M1 · Feature · deps: PROTO-F03, PROTO-F04
 Scope: Per-version encode/decode, size computation, flexible versions, tagged fields, unknown tagged-field preservation, ignorable-field semantics.
 
@@ -366,7 +366,7 @@ Done when: one generated test per message decodes(encode(m)) == m for each valid
 P1 · M1 · Task · deps: PROTO-0082, PROTO-0135 · labels: test · ref: clients/src/test/java/org/apache/kafka/common/message/MessageTest.java @4.4.0
 Done when: tricky cases (tagged defaults, nullable structs, unknown tags, version downgrades) pass against the generated fixtures with `// Ported from:` attribution.
 
-### [To Do] PROTO-0084 Criterion benchmarks: ProduceRequest v13 and FetchResponse v18 decode and encode with 1, 100 and 1000 partitions
+### [Done] PROTO-0084 Criterion benchmarks: ProduceRequest v13 and FetchResponse v18 decode and encode with 1, 100 and 1000 partitions
 P2 · M1 · Task · deps: PROTO-0082, TEST-F11 · labels: perf
 Done when: benchmarks run in the benchmark CI job with recorded baselines.
 
