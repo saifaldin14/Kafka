@@ -236,13 +236,13 @@ Done when: A planted target that allocates from an untrusted length (test-only, 
 P0 · M1 · Task · deps: TEST-0049 · labels: test · ref: docs/standards/rust.md#tooling-commands-contract-implemented-in-m0
 Done when: The command fails with the target list on an unknown target, and with the install hint when cargo-fuzz or the nightly toolchain is missing; the rust.md tooling table entry matches the behavior.
 
-### [To Do] TEST-0051 Spike: fuzz corpus storage and CI fuzzing service: a separate corpus repository, ClusterFuzzLite with its storage, or GitHub Actions cache plus artifacts; also which seed inputs live in this repo
+### [Done] TEST-0051 Spike: fuzz corpus storage and CI fuzzing service: a separate corpus repository, ClusterFuzzLite with its storage, or GitHub Actions cache plus artifacts; also which seed inputs live in this repo
 P0 · M1 · Spike · deps: TEST-0048 · labels: test
 Done when: An accepted ADR "Fuzz corpus storage" names where corpora live, how CI reads and writes them with least-privilege tokens, retention, and a size budget; `.gitignore`'s `/fuzz/corpus/` entry is kept or changed accordingly.
 
-### [To Do] TEST-0052 Corpus management per the ADR: `cargo xtask fuzz corpus pull|push`, committed seed inputs under `fuzz/seeds/<target>/`, and weekly corpus minimization (`cargo fuzz cmin`)
+### [To Do] TEST-0052 Corpus management per ADR-0018: `cargo xtask fuzz corpus pull`, committed seed inputs under `fuzz/seeds/<target>/`, and weekly corpus minimization (`cargo xtask fuzz corpus minimize`, libFuzzer `-merge=1`)
 P0 · M1 · Task · deps: TEST-0051, TEST-0050 · labels: test
-Done when: A fresh clone can pull the corpus and run a target from it; the minimization job reduces the corpus without losing coverage (cargo-fuzz coverage before and after, in the job log).
+Done when: A fresh clone can pull the corpus and run a target from it; the minimization job reduces the corpus without losing coverage (libFuzzer's coverage and feature counts before and after, from the same binary, in the job log). Only CI writes corpora (ADR-0018), so there is no push command.
 
 ### [To Do] TEST-0053 PR fuzzing job: every fuzz target runs for 60 s per PR (targets sharded across a matrix), starting from the stored corpus, failing the PR on a crash with the reproducer uploaded
 P0 · M1 · Task · deps: TEST-0050, TEST-0052 · labels: test, security · ref: docs/standards/security.md#untrusted-input
