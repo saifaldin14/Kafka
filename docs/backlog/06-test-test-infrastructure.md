@@ -420,13 +420,14 @@ Done when: Every test class has a verdict; behaviors that depend on broker respo
 P2 · M2 · Task · deps: TEST-0082, FND-F04 · labels: test
 Done when: The report runs in CI as information only (not a gate); a unit test on fixture inventories and source files checks the counts.
 
-## [To Do] TEST-F11 Benchmark infrastructure
-P1 · M1 · Feature · deps: FND-F06
+## [In Progress] TEST-F11 Benchmark infrastructure
+P1 · M0 · Feature · deps: FND-F06
 Scope: Criterion micro-benchmarks, benchmark CI job with regression thresholds, macro benchmarks (OpenMessaging Benchmark, perf-test tools).
 
-### [To Do] TEST-0094 Criterion conventions and the first benchmark: `benches/` per crate with `harness = false`, deterministic inputs, throughput annotations and naming `<area>/<operation>/<size>`, starting with `alluvium-types` murmur2 over 16 B-64 KiB keys
-P1 · M1 · Task · deps: TYPE-F11 · labels: perf, test · ref: docs/standards/rust.md#performance
+### [Done] TEST-0094 Criterion conventions and the first benchmark: `benches/` per crate with `harness = false`, deterministic inputs, throughput annotations and naming `<area>/<operation>/<size>`, starting with `alluvium-types` murmur2 over 16 B-64 KiB keys
+P1 · M0 · Task · deps: TYPE-F11 · labels: perf, test · ref: docs/standards/rust.md#performance
 Done when: `cargo bench -p alluvium-types` runs the benchmark; the conventions are in testing.md; `criterion` is added to `[workspace.dependencies]` with a justification; the murmur2 result is in the PR.
+Notes: Pulled into M0 because TYPE-0035 (M0) needs its benchmark budget measured with criterion, and benchmarks should follow conventions from the first one.
 
 ### [To Do] TEST-0095 Spike: benchmark regression gating: wall-time criterion runs on shared runners (noisy), a dedicated runner, or instruction counts (for example iai-callgrind) for the gate, with criterion kept for local work
 P1 · M1 · Spike · deps: TEST-0094 · labels: perf

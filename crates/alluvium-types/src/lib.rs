@@ -14,6 +14,10 @@
 //!
 //! - `clients/.../common/Node.java` (node ids and the `-1` "no node" sentinel);
 //! - `clients/.../common/Uuid.java` (base64 form, signed ordering, reserved ids);
+//! - `clients/.../common/record/TimestampType.java` and
+//!   `clients/.../common/record/internal/CompressionType.java` (ids and names);
+//! - `clients/.../common/IsolationLevel.java` and `core/.../server/ReplicaManager.scala`
+//!   (isolation level and `acks` wire values);
 //! - `clients/.../common/internals/Topic.java` (topic name rules, also applied to group
 //!   instance ids by `JoinGroupRequest.java`);
 //! - `clients/.../common/record/internal/RecordBatch.java` and `DefaultRecordBatch.java`
@@ -27,6 +31,10 @@
 //!   and monotonic readings, saturating deadlines);
 //! - `clients/.../common/network/ListenerName.java` (listener name normalisation);
 //! - `clients/.../common/TopicPartition.java` and `TopicIdPartition.java` (display);
+//! - `clients/.../common/config/ConfigDef.java` `ValidList` (the `cleanup.policy` list
+//!   rules);
+//! - `clients/.../common/utils/Utils.java` (`murmur2`, ported closely; see `partitioner`)
+//!   and `clients/.../producer/internals/BuiltInPartitioner.java` (`partitionForKey`);
 //! - `clients/.../common/config/types/Password.java` and
 //!   `clients/.../common/utils/internals/Crc32C.java`.
 //!
@@ -66,6 +74,22 @@
 //! - [`GroupId`], [`GroupInstanceId`], [`TransactionalId`] and [`ClientId`]: ids
 //!   clients choose, printed with [`LogSafe`].
 //! - [`ListenerName`]: a listener's name, upper-cased as Kafka normalises it.
+//! - [`TimestampType`] and [`CompressionType`]: record batch attributes, by Kafka id
+//!   and name ([`AttributeError`] for others).
+//! - [`murmur2`] and [`partition_for_key`]: Kafka's key hash, and the partition a
+//!   producer picks with it.
+//! - [`KeyHash`] and [`KeyRange`]: a key's place in the hash space and half-open
+//!   ranges of it, for elastic partitions
+//!   ([ADR-0013](../../../docs/adr/0013-key-hash-space.md); [`KeyRangeError`]), and
+//!   [`check_coverage`] for sets of ranges that must cover the space exactly.
+//! - [`NamespaceId`]: a tenant namespace, `default` unless tenancy says otherwise
+//!   ([ADR-0014](../../../docs/adr/0014-namespace-identity.md); [`NamespaceIdError`]),
+//!   and [`NamespacedName`], a topic, group or transactional id in a namespace.
+//! - [`CleanupPolicy`]: delete, compact, both or neither ([`CleanupPolicyError`]).
+//! - [`ByteSize`]: a non-negative size, printed with an IEC approximation
+//!   ([`ByteSizeError`]).
+//! - [`Acks`] and [`IsolationLevel`]: what a write waits for and what a read may see
+//!   ([`DeliveryError`] for other wire values).
 //! - [`TopicPartition`] and [`TopicIdPartition`]: a partition named by topic name, or by
 //!   topic id with the name when known.
 //! - [`IdError`]: why a value was rejected.
@@ -79,18 +103,25 @@
 //! Errors here carry no Kafka error code: the Kafka error depends on where the value
 //! came from, so the decoder or handler that rejects it maps it.
 
+mod byte_size;
+mod cleanup_policy;
 mod client_ids;
 mod clock;
 pub mod collections;
 mod deadline;
+mod delivery;
 mod epoch;
 mod id;
+mod key_range;
 mod listener;
 mod log_safe;
+mod namespace;
 mod offset;
 mod partition;
+mod partitioner;
 mod payload;
 mod producer;
+mod record_attributes;
 mod rng;
 mod secret;
 #[cfg(any(test, feature = "proptest-strategies"))]
@@ -99,17 +130,26 @@ mod time;
 mod topic;
 mod uuid;
 
+pub use byte_size::{ByteSize, ByteSizeError};
+pub use cleanup_policy::{CleanupPolicy, CleanupPolicyError};
 pub use client_ids::{ClientId, GroupId, GroupInstanceId, TransactionalId};
 pub use clock::{Clock, ManualClock, SystemClock, WallClockError};
 pub use deadline::Deadline;
+pub use delivery::{Acks, DeliveryError, IsolationLevel};
 pub use epoch::{BrokerEpoch, GenerationId, LeaderEpoch, MemberEpoch, PositiveEpoch};
 pub use id::{BrokerId, CorrelationId, IdError, IdKind, NodeId, PartitionIndex};
+pub use key_range::{KeyHash, KeyRange, KeyRangeError, check_coverage};
 pub use listener::{BlankListenerName, ListenerName};
 pub use log_safe::LogSafe;
+pub use namespace::{
+    KafkaName, NamespaceId, NamespaceIdError, NamespacedName, NotInDefaultNamespace,
+};
 pub use offset::{Offset, OffsetError, OffsetRange, OffsetSpec};
 pub use partition::{TopicIdPartition, TopicPartition};
+pub use partitioner::{murmur2, partition_for_key};
 pub use payload::PayloadSummary;
 pub use producer::{ProducerEpoch, ProducerId, Sequence};
+pub use record_attributes::{AttributeError, CompressionType, TimestampType};
 pub use rng::{EntropyError, SeededRng};
 pub use secret::Secret;
 pub use time::{MonotonicInstant, TimeError, WallTime};

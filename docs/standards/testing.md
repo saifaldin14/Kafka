@@ -15,7 +15,7 @@ Decisions are in [ADR-0003](../adr/0003-deterministic-simulation-testing.md).
 | **Crash consistency** | `alluvium-storage` tests with the fault-injecting `fs` | Recovery after torn writes, lost unsynced data and crashes at every write point | Any storage write path |
 | **Compatibility** | `tests/compat/` | Real Kafka clients (Java client and CLI tools, librdkafka, franz-go) against Alluvium | Every client-visible API before it is advertised |
 | **Differential** | `tests/compat/differential/` | The same scenario against Kafka 4.4.0 and Alluvium; responses compared field by field (ignoring fields that legitimately differ, such as node ids and timestamps) | Every API; this is the parity proof |
-| **Benchmark** (`criterion`) | `crates/<crate>/benches/` | Hot-path performance; regression detection | Hot paths and any change justified by performance |
+| **Benchmark** (`criterion`) | `crates/<crate>/benches/` ([conventions](#benchmarks)) | Hot-path performance; regression detection | Hot paths and any change justified by performance |
 
 ## Rules
 
@@ -47,6 +47,15 @@ Proptest strategies for a crate's types live in that crate, in a `strategies` mo
 - Run with `cargo xtask compat`. Real Kafka 4.4.0 and the client tools run in containers whose images are pinned by digest.
 - Client matrix: the Apache Kafka Java client 4.4.0, librdkafka (current stable), franz-go (current stable), and the `kafka-*.sh` admin tools.
 - An API's backlog feature is marked **Done** only when its compatibility and differential tests pass.
+
+## Benchmarks
+
+- Each crate has one criterion target, `crates/<crate>/benches/<area>.rs`, declared in its `Cargo.toml` with `harness = false`. Run it with `cargo bench -p <crate>`. The first is `alluvium-types`' [`benches/types.rs`](../../crates/alluvium-types/benches/types.rs).
+- Benchmark ids are `<area>/<operation>/<size>`, such as `types/murmur2/4096`: one group per operation, with the input size as the parameter.
+- Inputs are deterministic, drawn from `SeededRng::from_seed` with a fixed seed, so two runs measure the same work.
+- Every group declares its throughput (`Throughput::Bytes` or `Throughput::Elements`), so results compare across sizes and machines.
+- A PR that claims a performance change includes the before and after numbers and the CPU they ran on.
+- `criterion` is built without its default features: no plotting and no rayon, only `cargo bench` support. Benchmarks don't run in CI yet; regression gating is TEST-0095.
 
 ## Coverage
 
