@@ -219,7 +219,8 @@ mod tests {
         for message in messages.values() {
             inventory.add(message);
         }
-        assert_eq!(inventory.schemas, 281);
+        // 281 Kafka schemas, and the 6 test schemas of Kafka's generator.
+        assert_eq!(inventory.schemas, 287);
         let requests = messages
             .values()
             .filter(|message| message.kind == MessageKind::Request)
@@ -229,7 +230,7 @@ mod tests {
         assert_eq!(inventory.requests.len(), 91);
         assert_eq!(inventory.responses.len(), 91);
         assert_eq!(inventory.unpaired(), Vec::<i16>::new());
-        assert_eq!(inventory.keyed_arrays, 76);
+        assert_eq!(inventory.keyed_arrays, 77);
         assert_eq!(messages["ProduceRequest"].valid_versions, range("3-13"));
         assert_eq!(messages["FetchRequest"].valid_versions, range("4-18"));
     }
@@ -312,6 +313,8 @@ mod tests {
                 "EnvelopeRequest.RequestData",
                 "EnvelopeResponse.ResponseData",
                 "PushTelemetryRequest.Metrics",
+                "SimpleExampleMessage.nullableZeroCopyByteBuffer",
+                "SimpleExampleMessage.zeroCopyByteBuffer",
             ]
         );
     }
