@@ -1,4 +1,5 @@
-//! Identifier newtypes for nodes and brokers.
+//! Identifier newtypes for nodes, brokers, partitions and requests, and the error every
+//! id type reports when a wire value is out of range.
 
 use std::fmt;
 
@@ -17,20 +18,32 @@ pub struct NodeId(i32);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BrokerId(i32);
 
-/// Which kind of id a value was meant to be, for error messages.
+/// A partition's index within its topic, from 0.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PartitionIndex(i32);
+
+/// The correlation id of a request header: any `i32` the client chose, echoed in the
+/// response. Kafka doesn't validate it, so neither do we.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct CorrelationId(i32);
+
+/// Which kind of value was rejected, for error messages.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IdKind {
     /// A [`NodeId`].
     Node,
     /// A [`BrokerId`].
     Broker,
+    /// A [`PartitionIndex`].
+    Partition,
 }
 
 impl fmt::Display for IdKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
-            IdKind::Node => "node",
-            IdKind::Broker => "broker",
+            IdKind::Node => "node id",
+            IdKind::Broker => "broker id",
+            IdKind::Partition => "partition index",
         })
     }
 }
@@ -38,14 +51,37 @@ impl fmt::Display for IdKind {
 /// Why a value is not a valid id.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 pub enum IdError {
-    /// Ids are non-negative; `-1` is accepted only where the wire allows "none".
-    #[error("negative {kind} id {value}")]
+    /// Ids are non-negative. A negative wire value is accepted only where Kafka defines
+    /// it as a sentinel (usually `-1`, "none"), and then it becomes `None` or an enum
+    /// variant, never an id.
+    #[error("negative {kind} {value}")]
     Negative {
-        /// The id the value was meant to be.
+        /// The kind of value expected.
         kind: IdKind,
-        /// The rejected value.
-        value: i32,
+        /// The rejected value, widened to `i64`.
+        value: i64,
     },
+}
+
+/// Accepts `value` if it is not negative.
+pub(crate) fn non_negative(kind: IdKind, value: i64) -> Result<(), IdError> {
+    if value < 0 {
+        Err(IdError::Negative { kind, value })
+    } else {
+        Ok(())
+    }
+}
+
+/// Reads a nullable wire field: `-1` is `None`, anything else must convert.
+pub(crate) fn nullable<T, V: Copy + PartialEq + From<i8>>(
+    value: V,
+    convert: impl FnOnce(V) -> Result<T, IdError>,
+) -> Result<Option<T>, IdError> {
+    if value == V::from(-1) {
+        Ok(None)
+    } else {
+        convert(value).map(Some)
+    }
 }
 
 impl NodeId {
@@ -61,10 +97,7 @@ impl NodeId {
     /// [`IdError::Negative`] for a negative value other than `-1`.
     // Parity: clients/src/main/java/org/apache/kafka/common/Node.java@4.4.0 Node.noNode (id -1)
     pub fn from_wire_nullable(value: i32) -> Result<Option<NodeId>, IdError> {
-        match value {
-            -1 => Ok(None),
-            _ => NodeId::try_from(value).map(Some),
-        }
+        nullable(value, NodeId::try_from)
     }
 }
 
@@ -72,13 +105,7 @@ impl TryFrom<i32> for NodeId {
     type Error = IdError;
 
     fn try_from(value: i32) -> Result<Self, Self::Error> {
-        if value < 0 {
-            return Err(IdError::Negative {
-                kind: IdKind::Node,
-                value,
-            });
-        }
-        Ok(NodeId(value))
+        non_negative(IdKind::Node, value.into()).map(|()| NodeId(value))
     }
 }
 
@@ -102,10 +129,7 @@ impl BrokerId {
     /// [`IdError::Negative`] for a negative value other than `-1`.
     // Parity: clients/src/main/java/org/apache/kafka/common/Node.java@4.4.0 Node.noNode (id -1)
     pub fn from_wire_nullable(value: i32) -> Result<Option<BrokerId>, IdError> {
-        match value {
-            -1 => Ok(None),
-            _ => BrokerId::try_from(value).map(Some),
-        }
+        nullable(value, BrokerId::try_from)
     }
 }
 
@@ -113,13 +137,7 @@ impl TryFrom<i32> for BrokerId {
     type Error = IdError;
 
     fn try_from(value: i32) -> Result<Self, Self::Error> {
-        if value < 0 {
-            return Err(IdError::Negative {
-                kind: IdKind::Broker,
-                value,
-            });
-        }
-        Ok(BrokerId(value))
+        non_negative(IdKind::Broker, value.into()).map(|()| BrokerId(value))
     }
 }
 
@@ -129,18 +147,72 @@ impl fmt::Display for BrokerId {
     }
 }
 
+impl PartitionIndex {
+    /// The index as Kafka writes it.
+    pub fn get(self) -> i32 {
+        self.0
+    }
+
+    /// The next index, or `None` at `i32::MAX`, where there is no next partition.
+    pub fn checked_next(self) -> Option<PartitionIndex> {
+        self.0.checked_add(1).map(PartitionIndex)
+    }
+}
+
+impl TryFrom<i32> for PartitionIndex {
+    type Error = IdError;
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        non_negative(IdKind::Partition, value.into()).map(|()| PartitionIndex(value))
+    }
+}
+
+impl fmt::Display for PartitionIndex {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl CorrelationId {
+    /// The id as the client sent it.
+    pub fn get(self) -> i32 {
+        self.0
+    }
+}
+
+impl From<i32> for CorrelationId {
+    fn from(value: i32) -> Self {
+        CorrelationId(value)
+    }
+}
+
+impl fmt::Display for CorrelationId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use proptest::prelude::{any, prop_assert_eq, proptest};
 
-    use super::{BrokerId, IdError, IdKind, NodeId};
+    use super::{BrokerId, CorrelationId, IdError, IdKind, NodeId, PartitionIndex};
     use crate::strategies;
+
+    fn negative(kind: IdKind, value: i32) -> IdError {
+        IdError::Negative {
+            kind,
+            value: value.into(),
+        }
+    }
 
     proptest! {
         #[test]
         fn try_from_accepts_exactly_the_non_negative_values(value in any::<i32>()) {
-            prop_assert_eq!(NodeId::try_from(value).map(NodeId::get).ok(), (value >= 0).then_some(value));
-            prop_assert_eq!(BrokerId::try_from(value).map(BrokerId::get).ok(), (value >= 0).then_some(value));
+            let valid = (value >= 0).then_some(value);
+            prop_assert_eq!(NodeId::try_from(value).map(NodeId::get).ok(), valid);
+            prop_assert_eq!(BrokerId::try_from(value).map(BrokerId::get).ok(), valid);
+            prop_assert_eq!(PartitionIndex::try_from(value).map(PartitionIndex::get).ok(), valid);
         }
 
         #[test]
@@ -148,32 +220,24 @@ mod tests {
             prop_assert_eq!(NodeId::from_wire_nullable(id.get()), Ok(Some(id)));
             prop_assert_eq!(BrokerId::from_wire_nullable(broker.get()), Ok(Some(broker)));
         }
-    }
 
-    #[test]
-    fn non_negative_values_are_ids() {
-        for value in [0, 1, 3, i32::MAX] {
-            assert_eq!(NodeId::try_from(value).map(NodeId::get), Ok(value));
-            assert_eq!(BrokerId::try_from(value).map(BrokerId::get), Ok(value));
+        #[test]
+        fn correlation_ids_round_trip_every_i32(value in any::<i32>()) {
+            prop_assert_eq!(CorrelationId::from(value).get(), value);
         }
     }
 
     #[test]
     fn negative_values_are_rejected_with_kind_and_value() {
         for value in [-1, -2, i32::MIN] {
-            assert_eq!(
-                NodeId::try_from(value),
-                Err(IdError::Negative {
-                    kind: IdKind::Node,
-                    value
-                })
-            );
+            assert_eq!(NodeId::try_from(value), Err(negative(IdKind::Node, value)));
             assert_eq!(
                 BrokerId::try_from(value),
-                Err(IdError::Negative {
-                    kind: IdKind::Broker,
-                    value
-                })
+                Err(negative(IdKind::Broker, value))
+            );
+            assert_eq!(
+                PartitionIndex::try_from(value),
+                Err(negative(IdKind::Partition, value))
             );
         }
     }
@@ -188,18 +252,26 @@ mod tests {
         );
         assert_eq!(
             BrokerId::from_wire_nullable(-2),
-            Err(IdError::Negative {
-                kind: IdKind::Broker,
-                value: -2
-            })
+            Err(negative(IdKind::Broker, -2))
         );
         assert_eq!(
             NodeId::from_wire_nullable(i32::MIN),
-            Err(IdError::Negative {
-                kind: IdKind::Node,
-                value: i32::MIN
-            })
+            Err(negative(IdKind::Node, i32::MIN))
         );
+    }
+
+    #[test]
+    fn partition_index_boundaries_and_next() {
+        for value in [0, 1, i32::MAX] {
+            assert_eq!(
+                PartitionIndex::try_from(value).map(PartitionIndex::get),
+                Ok(value)
+            );
+        }
+        let next = PartitionIndex::try_from(4).map(PartitionIndex::checked_next);
+        assert_eq!(next, Ok(PartitionIndex::try_from(5).ok()));
+        let last = PartitionIndex::try_from(i32::MAX).map(PartitionIndex::checked_next);
+        assert_eq!(last, Ok(None));
     }
 
     #[test]
@@ -214,14 +286,22 @@ mod tests {
             broker.map(|id| format!("{id:?} {id}")),
             Ok("BrokerId(7) 7".to_owned())
         );
+        assert_eq!(
+            PartitionIndex::try_from(2).map(|index| index.to_string()),
+            Ok("2".to_owned())
+        );
+        assert_eq!(CorrelationId::from(-5).to_string(), "-5");
     }
 
     #[test]
     fn errors_read_as_a_sentence_fragment() {
-        let error = IdError::Negative {
-            kind: IdKind::Broker,
-            value: -2,
-        };
-        assert_eq!(error.to_string(), "negative broker id -2");
+        assert_eq!(
+            negative(IdKind::Broker, -2).to_string(),
+            "negative broker id -2"
+        );
+        assert_eq!(
+            negative(IdKind::Partition, -1).to_string(),
+            "negative partition index -1"
+        );
     }
 }
