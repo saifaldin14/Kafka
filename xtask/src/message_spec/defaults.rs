@@ -2,7 +2,11 @@
 //! doesn't carry it is read.
 //!
 //! An empty default is the type's zero value. Integers take decimal or `0x` hex, each
-//! within its type's range. `"null"` asks for null and is allowed only when the field is
+//! within its type's range. Kafka checks an integer default as decimal or hex, but then
+//! writes the text into its generated Java as a literal, so a form whose literal means
+//! something else, or doesn't compile, is rejected here rather than given a value that
+//! differs from Kafka's: a leading zero (`010` is octal 8 in Java), a signed hex
+//! default (`0x-1`), and a `uint32` default above `i32::MAX` (a Java `int` literal). `"null"` asks for null and is allowed only when the field is
 //! nullable in all its versions. Kafka ignores a `records` field's default: it is always
 //! null.
 
@@ -95,7 +99,7 @@ impl FieldDefault {
     }
 }
 
-/// An integer default: decimal, or hex after a `0x` prefix, with an optional sign, within
+/// An integer default: decimal with an optional sign, or hex after a `0x` prefix, within
 /// the Java type's range. `0x` alone, like an empty default, is 0.
 fn parse_integer(text: &str, name: &str, field_type: &FieldType) -> Result<i64, String> {
     let (digits, radix) = match text.strip_prefix("0x") {
@@ -104,6 +108,19 @@ fn parse_integer(text: &str, name: &str, field_type: &FieldType) -> Result<i64, 
     };
     if digits.is_empty() {
         return Ok(0);
+    }
+    let unsigned = digits.trim_start_matches(['+', '-']);
+    let literal = |why: &str| {
+        format!(
+            "Default {text} for {field_type} field {name} is {why} in the Java literal Kafka's \
+             generator writes; write it without that"
+        )
+    };
+    if radix == 16 && unsigned.len() != digits.len() {
+        return Err(literal("not valid (a sign after `0x`)"));
+    }
+    if radix == 10 && unsigned.len() > 1 && unsigned.starts_with('0') {
+        return Err(literal("octal (a leading zero)"));
     }
     let invalid = || format!("Invalid default for {field_type} field {name}: {digits}");
     let value = match field_type {
@@ -122,6 +139,9 @@ fn parse_integer(text: &str, name: &str, field_type: &FieldType) -> Result<i64, 
         Some(range) if !range.contains(&value) => Err(format!(
             "Invalid default for {field_type} field {name}: out of range."
         )),
+        _ if *field_type == FieldType::Uint32 && value > i64::from(i32::MAX) => {
+            Err(literal("a different number, or too large,"))
+        }
         _ => Ok(value),
     }
 }
@@ -180,7 +200,7 @@ mod tests {
             ("int16", i64::from(i16::MIN), i64::from(i16::MAX)),
             ("uint16", 0, i64::from(u16::MAX)),
             ("int32", i64::from(i32::MIN), i64::from(i32::MAX)),
-            ("uint32", 0, i64::from(u32::MAX)),
+            ("uint32", 0, i64::from(i32::MAX)),
             ("int64", i64::MIN, i64::MAX),
         ] {
             assert_eq!(
@@ -210,9 +230,27 @@ mod tests {
             assert!(default("one", field_type).is_err(), "{field_type}");
         }
         assert_eq!(default("0x7f", "int8"), Ok(FieldDefault::Integer(127)));
-        assert_eq!(default("0x-80", "int8"), Ok(FieldDefault::Integer(-128)));
+        assert_eq!(
+            default("0x7fffffff", "int32"),
+            Ok(FieldDefault::Integer(i64::from(i32::MAX)))
+        );
         assert_eq!(default("0x", "int32"), Ok(FieldDefault::Integer(0)));
-        assert_eq!(default("010", "int32"), Ok(FieldDefault::Integer(10)));
+        assert_eq!(default("+5", "int16"), Ok(FieldDefault::Integer(5)));
+        assert_eq!(default("0", "int16"), Ok(FieldDefault::Integer(0)));
+        // Kafka accepts these, but its generated Java literal is octal, doesn't compile,
+        // or isn't the value it checked.
+        for (text, field_type) in [
+            ("010", "int32"),
+            ("-07", "int64"),
+            ("0x-80", "int8"),
+            ("0xffffffff", "uint32"),
+            ("4294967295", "uint32"),
+        ] {
+            assert!(
+                default(text, field_type).is_err_and(|error| error.contains("Java literal")),
+                "{text}"
+            );
+        }
         assert_eq!(
             default("0x80", "int8"),
             Err("Invalid default for int8 field F: 80".to_owned())

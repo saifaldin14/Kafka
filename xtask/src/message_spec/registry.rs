@@ -113,7 +113,13 @@ impl<'a> StructRegistry<'a> {
                 self.structs.insert(
                     name,
                     RegisteredStruct {
-                        versions: field.versions,
+                        // Kafka rebuilds these from the versions' text, so an empty
+                        // range becomes `none`.
+                        versions: if field.versions.is_empty() {
+                            Versions::NONE
+                        } else {
+                            field.versions
+                        },
                         parent_versions: parent,
                         fields: &field.fields,
                     },
@@ -139,7 +145,11 @@ impl<'a> StructRegistry<'a> {
                     format!("Unable to locate a specification for the structure {name}"),
                 ));
             }
-            self.check_references(&field.fields, &format!("{at}/fields"))?;
+            // Only structs' fields are generated; an array of primitives may list fields,
+            // which Kafka ignores.
+            if field.field_type.struct_name().is_some() {
+                self.check_references(&field.fields, &format!("{at}/fields"))?;
+            }
         }
         Ok(())
     }
@@ -318,6 +328,23 @@ mod tests {
         assert_eq!(
             register_error(&unknown),
             "Unable to locate a specification for the structure Missing"
+        );
+    }
+
+    #[test]
+    fn empty_inline_ranges_become_none_and_primitive_array_children_are_ignored() {
+        let spec = message(&json!({
+            "type": "data", "name": "D", "validVersions": "0", "flexibleVersions": "none",
+            "fields": [
+                { "name": "F", "type": "S", "versions": "2-1" },
+                { "name": "G", "type": "[]int32", "versions": "0",
+                  "fields": [{ "name": "X", "type": "Missing", "versions": "0" }] }
+            ]
+        }));
+        let registry = StructRegistry::new(&spec).unwrap();
+        assert_eq!(
+            registry.find("S").map(|found| found.versions),
+            Some(Versions::NONE)
         );
     }
 }

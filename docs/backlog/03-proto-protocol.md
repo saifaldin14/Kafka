@@ -77,6 +77,7 @@ Done when: fixture tests reject: negative tag; tag without taggedVersions and vi
 ### [Done] PROTO-0016 Default values for int8, int16, uint16, int32, uint32 and int64: decimal and `0x` hex with range checks
 P0 · M1 · Task · deps: PROTO-0009 · ref: generator/src/main/java/org/apache/kafka/message/FieldSpec.java fieldDefault @4.4.0
 Done when: empty default means 0; out-of-range and non-numeric defaults are SchemaErrors naming the field; hex parses with the same base rules as Kafka (no octal); tests per type at both bounds.
+Notes: Kafka checks an integer default as decimal or hex but then writes the text into Java as a literal. So three forms are rejected here instead of being given a value that differs from Kafka's generated code: a leading zero (`010` is octal 8 in Java), a sign after `0x` (not a Java literal), and a `uint32` default above `i32::MAX` (an `int` literal that is too large, or negative in hex). The vendored schemas' defaults (`-1`, `0x7fffffff` and the like) are unaffected.
 
 ### [Done] PROTO-0017 Default values for bool, float64, uuid, string, bytes, records, struct and array fields, including `null`
 P0 · M1 · Task · deps: PROTO-0009, PROTO-0014 · ref: generator/src/main/java/org/apache/kafka/message/FieldSpec.java fieldDefault @4.4.0

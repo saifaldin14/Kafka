@@ -59,7 +59,7 @@ fn strip_comments(text: &str) -> Result<String, SyntaxError> {
             (b'/', Some(b'/')) => {
                 let end = bytes
                     .get(index..)
-                    .and_then(|rest| rest.iter().position(|&b| b == b'\n'))
+                    .and_then(|rest| rest.iter().position(|&b| b == b'\n' || b == b'\r'))
                     .map_or(bytes.len(), |offset| index + offset);
                 out.resize(out.len() + (end - index), b' ');
                 index = end;
@@ -131,6 +131,7 @@ mod tests {
             parse(text),
             Ok(json!({ "about": "a // b /* c */", "n": 1 }))
         );
+        assert_eq!(parse("// a\r{ \"n\": 1 }"), Ok(json!({ "n": 1 })));
         let escaped = "{ \"about\": \"quote \\\" // still a string\" }";
         assert_eq!(
             parse(escaped),
