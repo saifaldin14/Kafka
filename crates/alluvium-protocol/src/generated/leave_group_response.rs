@@ -4,6 +4,8 @@
 
 //! The `LeaveGroupResponse` response.
 
+use crate::WithinField as _;
+
 /// The `LeaveGroupResponse` response, API key 13: versions 0-5, flexible versions 4+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct LeaveGroupResponse {
@@ -33,6 +35,44 @@ impl LeaveGroupResponse {
     /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
     pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
         crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
+impl LeaveGroupResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<LeaveGroupResponse, crate::DecodeError> {
+        let mut value = LeaveGroupResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version >= 1 {
+            self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        }
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        if version >= 3 {
+            self.members = reader
+                .read_array(
+                    if version >= 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+                    |reader| MemberResponse::read(reader, version),
+                )
+                .within("Members")?;
+        }
+        if version >= 4 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -78,6 +118,47 @@ impl MemberResponse {
     }
 }
 
+impl MemberResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<MemberResponse, crate::DecodeError> {
+        let mut value = MemberResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.member_id = reader
+            .read_string(if version >= 4 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("MemberId")?;
+        self.group_instance_id = reader
+            .read_nullable_string(if version >= 4 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("GroupInstanceId")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        if version >= 4 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl LeaveGroupResponse {
     /// The API key.
     pub const API_KEY: i16 = 13;
@@ -87,4 +168,15 @@ impl LeaveGroupResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(4, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for LeaveGroupResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<LeaveGroupResponse, crate::DecodeError> {
+        if !LeaveGroupResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("LeaveGroupResponse", version));
+        }
+        LeaveGroupResponse::read(reader, version)
+    }
 }

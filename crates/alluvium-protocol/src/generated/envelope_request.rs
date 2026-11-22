@@ -4,6 +4,8 @@
 
 //! The `EnvelopeRequest` request.
 
+use crate::WithinField as _;
+
 /// The `EnvelopeRequest` request, API key 58: versions 0, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct EnvelopeRequest {
@@ -35,6 +37,35 @@ impl Default for EnvelopeRequest {
 }
 
 impl EnvelopeRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<EnvelopeRequest, crate::DecodeError> {
+        let mut value = EnvelopeRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.request_data = reader.read_bytes(crate::Framing::Compact).within("RequestData")?;
+        self.request_principal =
+            reader.read_nullable_bytes(crate::Framing::Compact).within("RequestPrincipal")?;
+        self.client_host_address =
+            reader.read_bytes(crate::Framing::Compact).within("ClientHostAddress")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
+impl EnvelopeRequest {
     /// The API key.
     pub const API_KEY: i16 = 58;
     /// The versions of this message.
@@ -46,4 +77,15 @@ impl EnvelopeRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for EnvelopeRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<EnvelopeRequest, crate::DecodeError> {
+        if !EnvelopeRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("EnvelopeRequest", version));
+        }
+        EnvelopeRequest::read(reader, version)
+    }
 }

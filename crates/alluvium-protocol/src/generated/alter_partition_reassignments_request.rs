@@ -5,6 +5,8 @@
 
 //! The `AlterPartitionReassignmentsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `AlterPartitionReassignmentsRequest` request, API key 45: versions 0-1, flexible
 /// versions 0+.
 #[derive(Debug, Clone, PartialEq)]
@@ -37,6 +39,38 @@ impl Default for AlterPartitionReassignmentsRequest {
     }
 }
 
+impl AlterPartitionReassignmentsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterPartitionReassignmentsRequest, crate::DecodeError> {
+        let mut value = AlterPartitionReassignmentsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.timeout_ms = reader.read_i32().within("TimeoutMs")?;
+        if version == 1 {
+            self.allow_replication_factor_change =
+                reader.read_bool().within("AllowReplicationFactorChange")?;
+        }
+        self.topics = reader
+            .read_array(crate::Framing::Compact, |reader| ReassignableTopic::read(reader, version))
+            .within("Topics")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `AlterPartitionReassignmentsRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ReassignableTopic {
@@ -50,6 +84,36 @@ pub struct ReassignableTopic {
     pub partitions: Vec<ReassignablePartition>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl ReassignableTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ReassignableTopic, crate::DecodeError> {
+        let mut value = ReassignableTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                ReassignablePartition::read(reader, version)
+            })
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `ReassignableTopic`'s `Partitions` array.
@@ -68,6 +132,34 @@ pub struct ReassignablePartition {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl ReassignablePartition {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ReassignablePartition, crate::DecodeError> {
+        let mut value = ReassignablePartition::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.replicas = reader
+            .read_nullable_array(crate::Framing::Compact, crate::Reader::read_i32)
+            .within("Replicas")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl AlterPartitionReassignmentsRequest {
     /// The API key.
     pub const API_KEY: i16 = 45;
@@ -80,4 +172,15 @@ impl AlterPartitionReassignmentsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for AlterPartitionReassignmentsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterPartitionReassignmentsRequest, crate::DecodeError> {
+        if !AlterPartitionReassignmentsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("AlterPartitionReassignmentsRequest", version));
+        }
+        AlterPartitionReassignmentsRequest::read(reader, version)
+    }
 }

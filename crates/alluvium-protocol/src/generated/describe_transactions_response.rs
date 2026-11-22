@@ -5,6 +5,8 @@
 
 //! The `DescribeTransactionsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `DescribeTransactionsResponse` response, API key 65: versions 0, flexible versions
 /// 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -20,6 +22,34 @@ pub struct DescribeTransactionsResponse {
     pub transaction_states: Vec<TransactionState>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl DescribeTransactionsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeTransactionsResponse, crate::DecodeError> {
+        let mut value = DescribeTransactionsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.transaction_states = reader
+            .read_array(crate::Framing::Compact, |reader| TransactionState::read(reader, version))
+            .within("TransactionStates")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `DescribeTransactionsResponse`'s `TransactionStates` array.
@@ -75,6 +105,42 @@ impl TransactionState {
     }
 }
 
+impl TransactionState {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TransactionState, crate::DecodeError> {
+        let mut value = TransactionState::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.transactional_id =
+            reader.read_string(crate::Framing::Compact).within("TransactionalId")?;
+        self.transaction_state =
+            reader.read_string(crate::Framing::Compact).within("TransactionState")?;
+        self.transaction_timeout_ms = reader.read_i32().within("TransactionTimeoutMs")?;
+        self.transaction_start_time_ms = reader.read_i64().within("TransactionStartTimeMs")?;
+        self.producer_id = reader.read_i64().within("ProducerId")?;
+        self.producer_epoch = reader.read_i16().within("ProducerEpoch")?;
+        self.topics = reader
+            .read_array(crate::Framing::Compact, |reader| TopicData::read(reader, version))
+            .within("Topics")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `TransactionState`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopicData {
@@ -101,9 +167,32 @@ impl TopicData {
         elements: &'a [TopicData],
         topic: &str,
     ) -> impl Iterator<Item = &'a TopicData> {
-        elements
-            .iter()
-            .filter(move |element| element.topic == topic)
+        elements.iter().filter(move |element| element.topic == topic)
+    }
+}
+
+impl TopicData {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<TopicData, crate::DecodeError> {
+        let mut value = TopicData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic = reader.read_string(crate::Framing::Compact).within("Topic")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, crate::Reader::read_i32)
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -116,4 +205,15 @@ impl DescribeTransactionsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for DescribeTransactionsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeTransactionsResponse, crate::DecodeError> {
+        if !DescribeTransactionsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DescribeTransactionsResponse", version));
+        }
+        DescribeTransactionsResponse::read(reader, version)
+    }
 }

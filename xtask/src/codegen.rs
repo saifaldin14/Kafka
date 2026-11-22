@@ -24,6 +24,7 @@
 //! changed without `schemas vendor` fails here as well as in `schemas verify`. How each
 //! schema feature maps to Rust is in docs/protocol/codegen.md.
 
+mod decode;
 mod docs;
 mod errors;
 mod names;
@@ -31,6 +32,7 @@ mod overlays;
 mod structs;
 
 use std::collections::BTreeMap;
+use std::fmt::Write as _;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -343,6 +345,9 @@ fn render(inputs: &[PathBuf], filter: &Filter) -> Result<Rendered, String> {
         }
         None => overlays::Overlays::default(),
     };
+    // Each message's path from the output directory's root module, for the test that
+    // decodes arbitrary input as every message.
+    let mut decodable = Vec::new();
     for (path, shown, message) in &messages {
         let module = structs::module(message, &filter.runtime, &overlays)
             .map_err(|problem| format!("{shown}: {problem}"))?;
@@ -359,6 +364,16 @@ fn render(inputs: &[PathBuf], filter: &Filter) -> Result<Rendered, String> {
             PathBuf::new()
         };
         let file = directory.join(format!("{}.rs", names::identifier(&message.name)));
+        let module_path = directory
+            .join(names::identifier(&message.name))
+            .display()
+            .to_string()
+            .replace(['/', '\\'], "::");
+        decodable.push((
+            format!("{module_path}::{}", message.name),
+            message.valid_versions.lowest(),
+            message.valid_versions.highest(),
+        ));
         let source = format!(
             "{}\n{}\n{}",
             header(&format!("from {shown}{}", kafka_version(path))),
@@ -389,7 +404,7 @@ fn render(inputs: &[PathBuf], filter: &Filter) -> Result<Rendered, String> {
         pages.insert(error_codes.page.clone(), errors::page(&entries, &source));
         report.error_codes = entries.len();
     }
-    let mut files = mod_files(&modules, &filter.doc);
+    let mut files = mod_files(&modules, &filter.doc, &decodable);
     files.extend(modules);
     let mut formatted = BTreeMap::new();
     for (file, source) in files {
@@ -469,7 +484,11 @@ fn module_doc(message: &message_spec::MessageSpec) -> String {
 
 /// The `mod.rs` of the output directory and of each subdirectory, declaring the modules
 /// in them.
-fn mod_files(modules: &BTreeMap<PathBuf, String>, root_doc: &str) -> BTreeMap<PathBuf, String> {
+fn mod_files(
+    modules: &BTreeMap<PathBuf, String>,
+    root_doc: &str,
+    decodable: &[(String, i16, i16)],
+) -> BTreeMap<PathBuf, String> {
     let mut declared: BTreeMap<PathBuf, Vec<String>> = BTreeMap::new();
     for file in modules.keys() {
         let directory = file.parent().map(Path::to_path_buf).unwrap_or_default();
@@ -503,10 +522,15 @@ fn mod_files(modules: &BTreeMap<PathBuf, String>, root_doc: &str) -> BTreeMap<Pa
                 text.push_str(";\n");
                 text
             });
+            let tests = if directory.as_os_str().is_empty() {
+                decode_every_version(decodable)
+            } else {
+                String::new()
+            };
             (
                 directory.join("mod.rs"),
                 format!(
-                    "{}\n{}\n{declarations}",
+                    "{}\n{}\n{declarations}{tests}",
                     header(""),
                     docs::wrap(doc, "//! ")
                 ),
@@ -515,10 +539,41 @@ fn mod_files(modules: &BTreeMap<PathBuf, String>, root_doc: &str) -> BTreeMap<Pa
         .collect()
 }
 
-/// `source` formatted by the pinned toolchain's `rustfmt`, as `cargo fmt` formats it.
+/// A test-only table of functions that each decode their input as one message at every
+/// version, so a property test can show that no input makes a decoder panic. Each entry
+/// is `module::Message` with its lowest and highest version.
+fn decode_every_version(decodable: &[(String, i16, i16)]) -> String {
+    if decodable.is_empty() {
+        return String::new();
+    }
+    let entries =
+        decodable
+            .iter()
+            .fold(String::new(), |mut entries, (message, lowest, highest)| {
+                let _ = writeln!(
+                    entries,
+                    "    decode_at_every_version::<{message}, {lowest}, {highest}>,"
+                );
+                entries
+            });
+    format!(
+        "\n/// Functions that decode their input as one message at each of its versions, for \
+         the test\n/// that no input makes a decoder panic.\n#[cfg(test)]\npub(crate) const \
+         DECODE_EVERY_VERSION: &[fn(&bytes::Bytes)] = &[\n{entries}];\n\n#[cfg(test)]\nfn \
+         decode_at_every_version<M: crate::Message, const LOWEST: i16, const HIGHEST: \
+         i16>(input: &bytes::Bytes) {{\n    for version in LOWEST..=HIGHEST {{\n        // \
+         Any result will do: the test is that decoding returns.\n        let _ = \
+         M::decode(&mut crate::Reader::new(input.clone()), version);\n    }}\n}}\n"
+    )
+}
+
+/// `source` formatted by the pinned toolchain's `rustfmt`, with every width heuristic at
+/// the full line width so that a field's read or default fits on one line. `cargo fmt`
+/// skips the generated modules (`#[rustfmt::skip]` where they are declared), so it
+/// doesn't undo this; `codegen --check` keeps them exactly as generated.
 fn rustfmt(source: &str) -> Result<String, String> {
     let mut child = Command::new("rustfmt")
-        .args(["--edition", "2024"])
+        .args(["--edition", "2024", "--config", "use_small_heuristics=Max"])
         .current_dir(crate::repo_root())
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -682,8 +737,7 @@ mod tests {
         let (_, problems) = check(std::slice::from_ref(&inputs), &out_dir, &filter).unwrap();
         assert_eq!(problems.len(), 2, "{problems:?}");
         assert!(
-            problems[0].contains("test_record.rs:")
-                && problems[0].contains(r#"found "            epoch: 0,""#),
+            problems[0].contains("test_record.rs:") && problems[0].contains("epoch: 0,"),
             "{problems:?}"
         );
         assert!(problems[1].ends_with("extra.rs: no longer generated, so codegen would remove it"));
@@ -906,29 +960,49 @@ mod tests {
             .and_then(|(_, after)| after.split_once("\n}\n"))
             .unwrap_or_else(|| panic!("{name} has no Default"))
             .0;
+        let defaults = literal_fields(block, name);
         for field in fields {
-            let prefix = format!("            {}: ", names::identifier(&field.name));
-            let mut lines = block.lines();
-            let mut expression = lines
-                .find_map(|line| line.strip_prefix(&prefix))
-                .unwrap_or_else(|| panic!("{name}.{} is not in Default", field.name))
-                .to_owned();
-            // rustfmt splits a long expression; its last line closes at the field's indent.
-            if !expression.ends_with(',') {
-                for line in lines.by_ref() {
-                    expression.push_str(line.trim());
-                    if line.len() - line.trim_start().len() == 12 {
-                        break;
-                    }
-                }
-            }
-            let expression = expression.strip_suffix(',').unwrap();
+            let identifier = names::identifier(&field.name);
+            let expression = defaults
+                .iter()
+                .find_map(|(label, expression)| (*label == identifier).then_some(expression))
+                .unwrap_or_else(|| panic!("{name}.{} is not in Default", field.name));
             assert!(
                 is_schema_default(field, expression),
                 "{name}.{}: {expression}",
                 field.name
             );
         }
+    }
+
+    /// The fields of the `name { ... }` literal that `fn default` in `code` returns, as
+    /// label and expression. Lines are joined first, which keeps string literals whole:
+    /// rustfmt never splits them.
+    fn literal_fields(code: &str, name: &str) -> Vec<(String, String)> {
+        let joined: String = code.lines().map(str::trim).collect();
+        let body = joined
+            .split_once(&format!("-> {name} {{"))
+            .and_then(|(_, after)| after.split_once(&format!("{name} {{")))
+            .map_or_else(|| panic!("no {name} literal"), |(_, body)| body);
+        let mut fields = Vec::new();
+        let (mut depth, mut quoted, mut start) = (0_i32, false, 0);
+        for (at, c) in body.char_indices() {
+            match c {
+                '"' => quoted = !quoted,
+                _ if quoted => {}
+                '}' if depth == 0 => break,
+                '(' | '[' | '{' => depth += 1,
+                ')' | ']' | '}' => depth -= 1,
+                ',' if depth == 0 => {
+                    let field = body.get(start..at).unwrap();
+                    let (label, expression) = field.split_once(':').unwrap();
+                    fields.push((label.trim().to_owned(), expression.trim().to_owned()));
+                    start = at + 1;
+                }
+                _ => {}
+            }
+        }
+        fields
     }
 
     fn check_structs(

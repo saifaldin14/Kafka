@@ -5,6 +5,8 @@
 
 //! The `DescribeShareGroupOffsetsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `DescribeShareGroupOffsetsRequest` request, API key 90: versions 0-1, flexible
 /// versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -15,6 +17,35 @@ pub struct DescribeShareGroupOffsetsRequest {
     pub groups: Vec<DescribeShareGroupOffsetsRequestGroup>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl DescribeShareGroupOffsetsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeShareGroupOffsetsRequest, crate::DecodeError> {
+        let mut value = DescribeShareGroupOffsetsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.groups = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                DescribeShareGroupOffsetsRequestGroup::read(reader, version)
+            })
+            .within("Groups")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `DescribeShareGroupOffsetsRequest`'s `Groups` array.
@@ -42,6 +73,36 @@ impl Default for DescribeShareGroupOffsetsRequestGroup {
     }
 }
 
+impl DescribeShareGroupOffsetsRequestGroup {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeShareGroupOffsetsRequestGroup, crate::DecodeError> {
+        let mut value = DescribeShareGroupOffsetsRequestGroup::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.group_id = reader.read_string(crate::Framing::Compact).within("GroupId")?;
+        self.topics = reader
+            .read_nullable_array(crate::Framing::Compact, |reader| {
+                DescribeShareGroupOffsetsRequestTopic::read(reader, version)
+            })
+            .within("Topics")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribeShareGroupOffsetsRequestGroup`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DescribeShareGroupOffsetsRequestTopic {
@@ -57,6 +118,34 @@ pub struct DescribeShareGroupOffsetsRequestTopic {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl DescribeShareGroupOffsetsRequestTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeShareGroupOffsetsRequestTopic, crate::DecodeError> {
+        let mut value = DescribeShareGroupOffsetsRequestTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_name = reader.read_string(crate::Framing::Compact).within("TopicName")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, crate::Reader::read_i32)
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl DescribeShareGroupOffsetsRequest {
     /// The API key.
     pub const API_KEY: i16 = 90;
@@ -69,4 +158,15 @@ impl DescribeShareGroupOffsetsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for DescribeShareGroupOffsetsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeShareGroupOffsetsRequest, crate::DecodeError> {
+        if !DescribeShareGroupOffsetsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DescribeShareGroupOffsetsRequest", version));
+        }
+        DescribeShareGroupOffsetsRequest::read(reader, version)
+    }
 }

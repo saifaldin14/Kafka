@@ -5,6 +5,8 @@
 
 //! The `StreamsGroupTopologyDescriptionUpdateRequest` request.
 
+use crate::WithinField as _;
+
 /// The `StreamsGroupTopologyDescriptionUpdateRequest` request, API key 93: versions 0,
 /// flexible versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -32,6 +34,35 @@ pub struct StreamsGroupTopologyDescriptionUpdateRequest {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl StreamsGroupTopologyDescriptionUpdateRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<StreamsGroupTopologyDescriptionUpdateRequest, crate::DecodeError> {
+        let mut value = StreamsGroupTopologyDescriptionUpdateRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.group_id = reader.read_string(crate::Framing::Compact).within("GroupId")?;
+        self.member_id = reader.read_string(crate::Framing::Compact).within("MemberId")?;
+        self.topology_epoch = reader.read_i32().within("TopologyEpoch")?;
+        self.topology_description =
+            TopologyDescription::read(reader, version).within("TopologyDescription")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// `TopologyDescription`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopologyDescription {
@@ -47,6 +78,40 @@ pub struct TopologyDescription {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl TopologyDescription {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TopologyDescription, crate::DecodeError> {
+        let mut value = TopologyDescription::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.subtopologies = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                TopologyDescriptionSubtopology::read(reader, version)
+            })
+            .within("Subtopologies")?;
+        self.global_stores = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                TopologyDescriptionGlobalStore::read(reader, version)
+            })
+            .within("GlobalStores")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// `TopologyDescriptionSubtopology`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopologyDescriptionSubtopology {
@@ -60,6 +125,37 @@ pub struct TopologyDescriptionSubtopology {
     pub nodes: Vec<TopologyDescriptionNode>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl TopologyDescriptionSubtopology {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TopologyDescriptionSubtopology, crate::DecodeError> {
+        let mut value = TopologyDescriptionSubtopology::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.subtopology_id =
+            reader.read_string(crate::Framing::Compact).within("SubtopologyId")?;
+        self.nodes = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                TopologyDescriptionNode::read(reader, version)
+            })
+            .within("Nodes")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// `TopologyDescriptionNode`, a struct several fields share.
@@ -96,6 +192,49 @@ pub struct TopologyDescriptionNode {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl TopologyDescriptionNode {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TopologyDescriptionNode, crate::DecodeError> {
+        let mut value = TopologyDescriptionNode::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        self.node_type = reader.read_i8().within("NodeType")?;
+        self.source_topics = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                reader.read_string(crate::Framing::Compact)
+            })
+            .within("SourceTopics")?;
+        self.sink_topic =
+            reader.read_nullable_string(crate::Framing::Compact).within("SinkTopic")?;
+        self.stores = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                reader.read_string(crate::Framing::Compact)
+            })
+            .within("Stores")?;
+        self.successors = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                reader.read_string(crate::Framing::Compact)
+            })
+            .within("Successors")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// `TopologyDescriptionGlobalStore`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopologyDescriptionGlobalStore {
@@ -111,6 +250,32 @@ pub struct TopologyDescriptionGlobalStore {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl TopologyDescriptionGlobalStore {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TopologyDescriptionGlobalStore, crate::DecodeError> {
+        let mut value = TopologyDescriptionGlobalStore::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.source = TopologyDescriptionNode::read(reader, version).within("Source")?;
+        self.processor = TopologyDescriptionNode::read(reader, version).within("Processor")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl StreamsGroupTopologyDescriptionUpdateRequest {
     /// The API key.
     pub const API_KEY: i16 = 93;
@@ -123,4 +288,17 @@ impl StreamsGroupTopologyDescriptionUpdateRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for StreamsGroupTopologyDescriptionUpdateRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<StreamsGroupTopologyDescriptionUpdateRequest, crate::DecodeError> {
+        if !StreamsGroupTopologyDescriptionUpdateRequest::VERSIONS.contains(version) {
+            return Err(
+                reader.unsupported_version("StreamsGroupTopologyDescriptionUpdateRequest", version)
+            );
+        }
+        StreamsGroupTopologyDescriptionUpdateRequest::read(reader, version)
+    }
 }

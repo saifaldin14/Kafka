@@ -4,6 +4,8 @@
 
 //! The `ResponseHeader` header.
 
+use crate::WithinField as _;
+
 /// The `ResponseHeader` header: versions 0-1, flexible versions 1+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ResponseHeader {
@@ -16,10 +18,48 @@ pub struct ResponseHeader {
 }
 
 impl ResponseHeader {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ResponseHeader, crate::DecodeError> {
+        let mut value = ResponseHeader::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.correlation_id = reader.read_i32().within("CorrelationId")?;
+        if version == 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl ResponseHeader {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 1);
     /// The versions that use the flexible encoding.
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(1, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for ResponseHeader {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ResponseHeader, crate::DecodeError> {
+        if !ResponseHeader::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ResponseHeader", version));
+        }
+        ResponseHeader::read(reader, version)
+    }
 }

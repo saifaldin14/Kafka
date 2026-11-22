@@ -4,6 +4,8 @@
 
 //! The `HeartbeatResponse` response.
 
+use crate::WithinField as _;
+
 /// The `HeartbeatResponse` response, API key 12: versions 0-4, flexible versions 4+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct HeartbeatResponse {
@@ -33,6 +35,36 @@ impl HeartbeatResponse {
 }
 
 impl HeartbeatResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<HeartbeatResponse, crate::DecodeError> {
+        let mut value = HeartbeatResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version >= 1 {
+            self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        }
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        if version == 4 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl HeartbeatResponse {
     /// The API key.
     pub const API_KEY: i16 = 12;
     /// The versions of this message.
@@ -41,4 +73,15 @@ impl HeartbeatResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(4, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for HeartbeatResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<HeartbeatResponse, crate::DecodeError> {
+        if !HeartbeatResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("HeartbeatResponse", version));
+        }
+        HeartbeatResponse::read(reader, version)
+    }
 }

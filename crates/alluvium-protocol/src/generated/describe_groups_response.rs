@@ -5,6 +5,8 @@
 
 //! The `DescribeGroupsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `DescribeGroupsResponse` response, API key 15: versions 0-6, flexible versions 5+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DescribeGroupsResponse {
@@ -19,6 +21,41 @@ pub struct DescribeGroupsResponse {
     pub groups: Vec<DescribedGroup>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl DescribeGroupsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeGroupsResponse, crate::DecodeError> {
+        let mut value = DescribeGroupsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version >= 1 {
+            self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        }
+        self.groups = reader
+            .read_array(
+                if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| DescribedGroup::read(reader, version),
+            )
+            .within("Groups")?;
+        if version >= 5 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `DescribeGroupsResponse`'s `Groups` array.
@@ -88,6 +125,74 @@ impl DescribedGroup {
     }
 }
 
+impl DescribedGroup {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribedGroup, crate::DecodeError> {
+        let mut value = DescribedGroup::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        if version == 6 {
+            self.error_message =
+                reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        }
+        self.group_id = reader
+            .read_string(if version >= 5 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("GroupId")?;
+        self.group_state = reader
+            .read_string(if version >= 5 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("GroupState")?;
+        self.protocol_type = reader
+            .read_string(if version >= 5 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ProtocolType")?;
+        self.protocol_data = reader
+            .read_string(if version >= 5 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ProtocolData")?;
+        self.members = reader
+            .read_array(
+                if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| DescribedGroupMember::read(reader, version),
+            )
+            .within("Members")?;
+        if version >= 3 {
+            self.authorized_operations = reader.read_i32().within("AuthorizedOperations")?;
+        }
+        if version >= 5 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribedGroup`'s `Members` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DescribedGroupMember {
@@ -119,6 +224,76 @@ pub struct DescribedGroupMember {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl DescribedGroupMember {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribedGroupMember, crate::DecodeError> {
+        let mut value = DescribedGroupMember::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.member_id = reader
+            .read_string(if version >= 5 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("MemberId")?;
+        if version >= 4 {
+            self.group_instance_id = reader
+                .read_nullable_string(if version >= 5 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("GroupInstanceId")?;
+        }
+        self.client_id = reader
+            .read_string(if version >= 5 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ClientId")?;
+        self.client_host = reader
+            .read_string(if version >= 5 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ClientHost")?;
+        self.member_metadata = reader
+            .read_bytes(if version >= 5 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("MemberMetadata")?;
+        self.member_assignment = reader
+            .read_bytes(if version >= 5 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("MemberAssignment")?;
+        if version >= 5 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl DescribeGroupsResponse {
     /// The API key.
     pub const API_KEY: i16 = 15;
@@ -128,4 +303,15 @@ impl DescribeGroupsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(5, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for DescribeGroupsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeGroupsResponse, crate::DecodeError> {
+        if !DescribeGroupsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DescribeGroupsResponse", version));
+        }
+        DescribeGroupsResponse::read(reader, version)
+    }
 }

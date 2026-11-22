@@ -5,6 +5,8 @@
 
 //! The `SaslHandshakeResponse` response.
 
+use crate::WithinField as _;
+
 /// The `SaslHandshakeResponse` response, API key 17: versions 0-1, flexible versions none.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct SaslHandshakeResponse {
@@ -31,6 +33,31 @@ impl SaslHandshakeResponse {
 }
 
 impl SaslHandshakeResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<SaslHandshakeResponse, crate::DecodeError> {
+        let mut value = SaslHandshakeResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.mechanisms = reader
+            .read_array(crate::Framing::Classic, |reader| {
+                reader.read_string(crate::Framing::Classic)
+            })
+            .within("Mechanisms")?;
+        Ok(())
+    }
+}
+
+impl SaslHandshakeResponse {
     /// The API key.
     pub const API_KEY: i16 = 17;
     /// The versions of this message.
@@ -39,4 +66,15 @@ impl SaslHandshakeResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::NONE;
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for SaslHandshakeResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<SaslHandshakeResponse, crate::DecodeError> {
+        if !SaslHandshakeResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("SaslHandshakeResponse", version));
+        }
+        SaslHandshakeResponse::read(reader, version)
+    }
 }

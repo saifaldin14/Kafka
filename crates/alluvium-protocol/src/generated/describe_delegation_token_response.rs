@@ -5,6 +5,8 @@
 
 //! The `DescribeDelegationTokenResponse` response.
 
+use crate::WithinField as _;
+
 /// The `DescribeDelegationTokenResponse` response, API key 41: versions 1-3, flexible
 /// versions 2+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -35,6 +37,40 @@ impl DescribeDelegationTokenResponse {
     /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
     pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
         crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
+impl DescribeDelegationTokenResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeDelegationTokenResponse, crate::DecodeError> {
+        let mut value = DescribeDelegationTokenResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.tokens = reader
+            .read_array(
+                if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| DescribedDelegationToken::read(reader, version),
+            )
+            .within("Tokens")?;
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -90,14 +126,8 @@ impl std::fmt::Debug for DescribedDelegationToken {
         f.debug_struct("DescribedDelegationToken")
             .field("principal_type", &self.principal_type)
             .field("principal_name", &self.principal_name)
-            .field(
-                "token_requester_principal_type",
-                &self.token_requester_principal_type,
-            )
-            .field(
-                "token_requester_principal_name",
-                &self.token_requester_principal_name,
-            )
+            .field("token_requester_principal_type", &self.token_requester_principal_type)
+            .field("token_requester_principal_name", &self.token_requester_principal_name)
             .field("issue_timestamp", &self.issue_timestamp)
             .field("expiry_timestamp", &self.expiry_timestamp)
             .field("max_timestamp", &self.max_timestamp)
@@ -106,6 +136,77 @@ impl std::fmt::Debug for DescribedDelegationToken {
             .field("renewers", &self.renewers)
             .field("unknown_tagged_fields", &self.unknown_tagged_fields)
             .finish()
+    }
+}
+
+impl DescribedDelegationToken {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribedDelegationToken, crate::DecodeError> {
+        let mut value = DescribedDelegationToken::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.principal_type = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("PrincipalType")?;
+        self.principal_name = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("PrincipalName")?;
+        if version == 3 {
+            self.token_requester_principal_type = reader
+                .read_string(crate::Framing::Compact)
+                .within("TokenRequesterPrincipalType")?;
+            self.token_requester_principal_name = reader
+                .read_string(crate::Framing::Compact)
+                .within("TokenRequesterPrincipalName")?;
+        }
+        self.issue_timestamp = reader.read_i64().within("IssueTimestamp")?;
+        self.expiry_timestamp = reader.read_i64().within("ExpiryTimestamp")?;
+        self.max_timestamp = reader.read_i64().within("MaxTimestamp")?;
+        self.token_id = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("TokenId")?;
+        self.hmac = reader
+            .read_bytes(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Hmac")?;
+        self.renewers = reader
+            .read_array(
+                if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| DescribedDelegationTokenRenewer::read(reader, version),
+            )
+            .within("Renewers")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -124,6 +225,46 @@ pub struct DescribedDelegationTokenRenewer {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl DescribedDelegationTokenRenewer {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribedDelegationTokenRenewer, crate::DecodeError> {
+        let mut value = DescribedDelegationTokenRenewer::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.principal_type = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("PrincipalType")?;
+        self.principal_name = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("PrincipalName")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl DescribeDelegationTokenResponse {
     /// The API key.
     pub const API_KEY: i16 = 41;
@@ -133,4 +274,15 @@ impl DescribeDelegationTokenResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(2, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for DescribeDelegationTokenResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeDelegationTokenResponse, crate::DecodeError> {
+        if !DescribeDelegationTokenResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DescribeDelegationTokenResponse", version));
+        }
+        DescribeDelegationTokenResponse::read(reader, version)
+    }
 }

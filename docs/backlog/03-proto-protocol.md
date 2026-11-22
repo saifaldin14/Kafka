@@ -298,37 +298,37 @@ Done when: `codegen::generate(inputs, out_dir, filter)` is the single entry poin
 P1 · M1 · Task · deps: PROTO-0058, PROTO-0061, PROTO-0062, PROTO-0063 · labels: docs
 Done when: covers versions, nullable, defaults, common and inline structs, mapKey, known-value accessors, unknown tagged fields and redaction, with one worked example (ProduceRequest).
 
-## [To Do] PROTO-F05 Generator: versioned encode/decode
+## [In Progress] PROTO-F05 Generator: versioned encode/decode
 P0 · M1 · Feature · deps: PROTO-F03, PROTO-F04
 Scope: Per-version encode/decode, size computation, flexible versions, tagged fields, unknown tagged-field preservation, ignorable-field semantics.
 
-### [To Do] PROTO-0068 `Message` trait: `decode(reader, version)`, `encode(writer, version)`, `encoded_size(version)`; versions outside the valid range fail with `UnsupportedVersion`
+### [Done] PROTO-0068 `Message` trait with `decode(reader, version)`; versions outside the valid range fail with `UnsupportedVersion`
 P0 · M1 · Task · deps: none · ref: clients/src/main/java/org/apache/kafka/common/protocol/Message.java, ApiMessage.java @4.4.0
-Done when: decoding or encoding an out-of-range version returns `UnsupportedVersion { message, version }` (Kafka's "Can't read version"/"Can't write version"); the trait is implemented by every generated message.
+Done when: decoding an out-of-range version returns `UnsupportedVersion { message, version }` (Kafka's "Can't read version"); the trait is implemented by every generated message. `encode` and `encoded_size` join the trait with the tasks that generate them (PROTO-0074, PROTO-0078).
 
-### [To Do] PROTO-0069 Decode generation for fixed-size fields: present fields read per version, absent fields set to their defaults
+### [Done] PROTO-0069 Decode generation for fixed-size fields: present fields read per version, absent fields set to their defaults
 P0 · M1 · Task · deps: PROTO-0068 · labels: decoder · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateClassReader @4.4.0
-Done when: for every message and version, fields outside their versions hold defaults after decode (generated test); decode never panics.
+Done when: decode starts from `Default` and assigns only the fields present in the version, so fields outside their versions hold defaults (tested on the generator fixtures; PROTO-0082's round trips check every message); a generated table decodes arbitrary input as every message at every version, and a property test shows decode never panics.
 
-### [To Do] PROTO-0070 Decode generation for strings, bytes and records: classic vs compact chosen by the field's effective flexible versions; nullability enforced per version
+### [Done] PROTO-0070 Decode generation for strings, bytes and records: classic vs compact chosen by the field's effective flexible versions; nullability enforced per version
 P0 · M1 · Task · deps: PROTO-0069 · labels: decoder · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateVariableLengthReader @4.4.0
-Done when: a null in a non-nullable version is `DecodeError::NullForNonNullable { field, version }` (Kafka's "non-nullable field … was serialized as null"); RequestHeader v2 `ClientId` decodes as a classic nullable string; a decoded ProduceRequest's records point into the frame allocation (pointer-range test).
+Done when: a null in a non-nullable version is `DecodeErrorKind::UnexpectedNull` with the field's path (Kafka's "non-nullable field … was serialized as null"); RequestHeader v2 `ClientId` decodes as a classic nullable string; a decoded ProduceRequest's records point into the frame allocation (pointer-range test).
 
-### [To Do] PROTO-0071 Decode generation for nested structs, nullable structs and struct arrays
+### [Done] PROTO-0071 Decode generation for nested structs, nullable structs and struct arrays
 P0 · M1 · Task · deps: PROTO-0070 · labels: decoder · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateStructReader @4.4.0
 Done when: nullable structs read an int8 marker (negative = null) in mandatory position and an unsigned varint marker (≤ 0 = null) when tagged, as Kafka does; struct arrays preallocate within PROTO-F09 limits.
 
-### [To Do] PROTO-0072 Decode generation for arrays of primitives (`[]int32`, `[]int64`, `[]string`, `[]uuid`, …)
+### [Done] PROTO-0072 Decode generation for arrays of primitives (`[]int32`, `[]int64`, `[]string`, `[]uuid`, …)
 P0 · M1 · Task · deps: PROTO-0070 · labels: decoder · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateVariableLengthReader @4.4.0
 Done when: every primitive element type used in the vendored schemas decodes in classic and compact form; property round-trip per element type.
 
-### [To Do] PROTO-0073 Decode generation for tagged-field sections: known tags dispatched within their tagged versions, unknown tags kept as raw bytes
+### [Done] PROTO-0073 Decode generation for tagged-field sections: known tags dispatched within their tagged versions, unknown tags kept as raw bytes
 P0 · M1 · Task · deps: PROTO-0071, PROTO-0049 · labels: decoder · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateClassReader @4.4.0
 Done when: a known tag outside its tagged versions fails with "Tag N is not valid for version V" as in Kafka; each known tag decodes from a sub-reader bounded by its declared size and a size mismatch is a DecodeError (stricter than Kafka for malformed input only; noted in docs/parity.md); a repeated known tag keeps the last value and repeated unknown tags are all kept, as in Kafka.
 
 ### [To Do] PROTO-0074 Encode generation for fixed and variable-length fields per version, rejecting `None` in non-nullable versions
 P0 · M1 · Task · deps: PROTO-0068 · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateClassWriter/generateVariableLengthWriter @4.4.0
-Done when: `None` in a version where the field is not nullable is `EncodeError::NullForNonNullable` (Kafka throws NullPointerException); classic vs compact chosen as in decode.
+Done when: `Message` gains `encode(writer, version)`, and an out-of-range version fails with `EncodeError::UnsupportedVersion` (Kafka's "Can't write version"); `None` in a version where the field is not nullable is `EncodeError::NullForNonNullable` (Kafka throws NullPointerException); classic vs compact chosen as in decode.
 
 ### [To Do] PROTO-0075 Encode generation for nested, nullable and array structs and primitive arrays
 P0 · M1 · Task · deps: PROTO-0074 · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateClassWriter @4.4.0
@@ -344,7 +344,7 @@ Done when: setting a tagged field or unknown tag in a non-flexible version fails
 
 ### [To Do] PROTO-0078 Per-version `encoded_size` generation equal to the encoder's output, with zero-copy bytes counted separately
 P0 · M1 · Task · deps: PROTO-0077 · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateClassMessageSize; clients/src/main/java/org/apache/kafka/common/protocol/MessageSizeAccumulator.java @4.4.0
-Done when: property test: `encoded_size(v) == encode(v).len()` for every message and version; records and zeroCopy bytes are reported as zero-copy bytes for PROTO-F08; no serialization cache is needed (strings are already UTF-8).
+Done when: `Message` gains `encoded_size(version)`; property test: `encoded_size(v) == encode(v).len()` for every message and version; records and zeroCopy bytes are reported as zero-copy bytes for PROTO-F08; no serialization cache is needed (strings are already UTF-8).
 
 ### [To Do] PROTO-0079 Unknown tagged field preservation: byte-exact decode → encode round trip at root and nested levels
 P0 · M1 · Task · deps: PROTO-0073, PROTO-0077 · ref: clients/src/main/java/org/apache/kafka/common/protocol/types/RawTaggedField.java @4.4.0

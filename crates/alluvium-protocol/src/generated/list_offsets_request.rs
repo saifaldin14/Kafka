@@ -4,6 +4,8 @@
 
 //! The `ListOffsetsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `ListOffsetsRequest` request, API key 2: versions 1-11, flexible versions 6+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ListOffsetsRequest {
@@ -49,6 +51,45 @@ impl ListOffsetsRequest {
     }
 }
 
+impl ListOffsetsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListOffsetsRequest, crate::DecodeError> {
+        let mut value = ListOffsetsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.replica_id = reader.read_i32().within("ReplicaId")?;
+        if version >= 2 {
+            self.isolation_level = reader.read_i8().within("IsolationLevel")?;
+        }
+        self.topics = reader
+            .read_array(
+                if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| ListOffsetsTopic::read(reader, version),
+            )
+            .within("Topics")?;
+        if version >= 10 {
+            self.timeout_ms = reader.read_i32().within("TimeoutMs")?;
+        }
+        if version >= 6 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `ListOffsetsRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ListOffsetsTopic {
@@ -62,6 +103,45 @@ pub struct ListOffsetsTopic {
     pub partitions: Vec<ListOffsetsPartition>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl ListOffsetsTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListOffsetsTopic, crate::DecodeError> {
+        let mut value = ListOffsetsTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader
+            .read_string(if version >= 6 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Name")?;
+        self.partitions = reader
+            .read_array(
+                if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| ListOffsetsPartition::read(reader, version),
+            )
+            .within("Partitions")?;
+        if version >= 6 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `ListOffsetsTopic`'s `Partitions` array.
@@ -94,6 +174,37 @@ impl Default for ListOffsetsPartition {
     }
 }
 
+impl ListOffsetsPartition {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListOffsetsPartition, crate::DecodeError> {
+        let mut value = ListOffsetsPartition::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        if version >= 4 {
+            self.current_leader_epoch = reader.read_i32().within("CurrentLeaderEpoch")?;
+        }
+        self.timestamp = reader.read_i64().within("Timestamp")?;
+        if version >= 6 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl ListOffsetsRequest {
     /// The API key.
     pub const API_KEY: i16 = 2;
@@ -106,4 +217,15 @@ impl ListOffsetsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for ListOffsetsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListOffsetsRequest, crate::DecodeError> {
+        if !ListOffsetsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ListOffsetsRequest", version));
+        }
+        ListOffsetsRequest::read(reader, version)
+    }
 }

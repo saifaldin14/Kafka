@@ -5,6 +5,8 @@
 
 //! The `SimpleExampleMessage` header.
 
+use crate::WithinField as _;
+
 /// The `SimpleExampleMessage` header: versions 0-2, flexible versions 1+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct SimpleExampleMessage {
@@ -113,6 +115,108 @@ impl Default for SimpleExampleMessage {
     }
 }
 
+impl SimpleExampleMessage {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<SimpleExampleMessage, crate::DecodeError> {
+        let mut value = SimpleExampleMessage::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version >= 1 {
+            self.process_id = reader.read_uuid().within("processId")?;
+        }
+        if version == 1 {
+            self.zero_copy_byte_buffer =
+                reader.read_bytes(crate::Framing::Compact).within("zeroCopyByteBuffer")?;
+            self.nullable_zero_copy_byte_buffer = reader
+                .read_nullable_bytes(crate::Framing::Compact)
+                .within("nullableZeroCopyByteBuffer")?;
+        }
+        if version == 2 {
+            self.my_struct = MyStruct::read(reader, version).within("myStruct")?;
+        }
+        self.my_common_struct = TestCommonStruct::read(reader, version).within("myCommonStruct")?;
+        self.my_other_common_struct =
+            TestCommonStruct::read(reader, version).within("myOtherCommonStruct")?;
+        if version >= 1 {
+            self.my_uint16 = reader.read_u16().within("myUint16")?;
+            self.my_uint32 = reader.read_u32().within("myUint32")?;
+        }
+        if version >= 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                if tag == 0 {
+                    self.my_tagged_int_array = reader
+                        .read_tagged_value(tag, size, |reader| {
+                            reader.read_array(crate::Framing::Compact, crate::Reader::read_i32)
+                        })
+                        .within("myTaggedIntArray")?;
+                } else if tag == 1 {
+                    self.my_nullable_string = reader
+                        .read_tagged_value(tag, size, |reader| {
+                            reader.read_nullable_string(crate::Framing::Compact)
+                        })
+                        .within("myNullableString")?;
+                } else if tag == 2 {
+                    self.my_int16 = reader
+                        .read_tagged_value(tag, size, crate::Reader::read_i16)
+                        .within("myInt16")?;
+                } else if tag == 3 {
+                    self.my_float64 = reader
+                        .read_tagged_value(tag, size, crate::Reader::read_f64)
+                        .within("myFloat64")?;
+                } else if tag == 4 {
+                    self.my_string = reader
+                        .read_tagged_value(tag, size, |reader| {
+                            reader.read_string(crate::Framing::Compact)
+                        })
+                        .within("myString")?;
+                } else if tag == 5 {
+                    self.my_bytes = reader
+                        .read_tagged_value(tag, size, |reader| {
+                            reader.read_nullable_bytes(crate::Framing::Compact)
+                        })
+                        .within("myBytes")?;
+                } else if tag == 6 {
+                    self.tagged_uuid = reader
+                        .read_tagged_value(tag, size, crate::Reader::read_uuid)
+                        .within("taggedUuid")?;
+                } else if tag == 7 {
+                    self.tagged_long = reader
+                        .read_tagged_value(tag, size, crate::Reader::read_i64)
+                        .within("taggedLong")?;
+                } else if tag == 8 && version == 2 {
+                    self.my_tagged_struct = reader
+                        .read_tagged_value(tag, size, |reader| TaggedStruct::read(reader, version))
+                        .within("myTaggedStruct")?;
+                } else if tag == 8 {
+                    return Err(reader.tag_not_valid(tag, version).within("myTaggedStruct"));
+                } else if tag == 9 && version == 2 {
+                    self.tagged_long_flexible_version_subset = reader
+                        .read_tagged_value(tag, size, crate::Reader::read_i64)
+                        .within("taggedLongFlexibleVersionSubset")?;
+                } else if tag == 9 {
+                    return Err(reader
+                        .tag_not_valid(tag, version)
+                        .within("taggedLongFlexibleVersionSubset"));
+                } else {
+                    reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
 /// The `myStruct` field of `SimpleExampleMessage`.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct MyStruct {
@@ -128,6 +232,31 @@ pub struct MyStruct {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl MyStruct {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<MyStruct, crate::DecodeError> {
+        let mut value = MyStruct::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.struct_id = reader.read_i32().within("structId")?;
+        self.array_in_struct = reader
+            .read_array(crate::Framing::Compact, |reader| StructArray::read(reader, version))
+            .within("arrayInStruct")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `MyStruct`'s `arrayInStruct` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct StructArray {
@@ -139,6 +268,28 @@ pub struct StructArray {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl StructArray {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<StructArray, crate::DecodeError> {
+        let mut value = StructArray::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.array_field_id = reader.read_i32().within("arrayFieldId")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// The `myTaggedStruct` field of `SimpleExampleMessage`.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TaggedStruct {
@@ -148,6 +299,28 @@ pub struct TaggedStruct {
     pub struct_id: String,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl TaggedStruct {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<TaggedStruct, crate::DecodeError> {
+        let mut value = TaggedStruct::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.struct_id = reader.read_string(crate::Framing::Compact).within("structId")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// `TestCommonStruct`, a struct several fields share.
@@ -167,11 +340,35 @@ pub struct TestCommonStruct {
 
 impl Default for TestCommonStruct {
     fn default() -> TestCommonStruct {
-        TestCommonStruct {
-            foo: 123,
-            bar: 123,
-            unknown_tagged_fields: Vec::new(),
+        TestCommonStruct { foo: 123, bar: 123, unknown_tagged_fields: Vec::new() }
+    }
+}
+
+impl TestCommonStruct {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TestCommonStruct, crate::DecodeError> {
+        let mut value = TestCommonStruct::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.foo = reader.read_i32().within("foo")?;
+        self.bar = reader.read_i32().within("bar")?;
+        if version >= 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
         }
+        Ok(())
     }
 }
 
@@ -182,4 +379,15 @@ impl SimpleExampleMessage {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(1, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for SimpleExampleMessage {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<SimpleExampleMessage, crate::DecodeError> {
+        if !SimpleExampleMessage::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("SimpleExampleMessage", version));
+        }
+        SimpleExampleMessage::read(reader, version)
+    }
 }

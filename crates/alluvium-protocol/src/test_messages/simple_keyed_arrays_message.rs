@@ -5,6 +5,8 @@
 
 //! The `SimpleKeyedArraysMessage` header.
 
+use crate::WithinField as _;
+
 /// The `SimpleKeyedArraysMessage` header: versions 0-2, flexible versions 1+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct SimpleKeyedArraysMessage {
@@ -14,6 +16,38 @@ pub struct SimpleKeyedArraysMessage {
     pub keyed_structs: Vec<KeyedStruct>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl SimpleKeyedArraysMessage {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<SimpleKeyedArraysMessage, crate::DecodeError> {
+        let mut value = SimpleKeyedArraysMessage::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.keyed_structs = reader
+            .read_array(
+                if version >= 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| KeyedStruct::read(reader, version),
+            )
+            .within("KeyedStructs")?;
+        if version >= 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `SimpleKeyedArraysMessage`'s `KeyedStructs` array.
@@ -43,6 +77,31 @@ impl KeyedStruct {
     }
 }
 
+impl KeyedStruct {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<KeyedStruct, crate::DecodeError> {
+        let mut value = KeyedStruct::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.key = reader.read_i32().within("Key")?;
+        self.value = reader.read_i32().within("Value")?;
+        if version >= 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl SimpleKeyedArraysMessage {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 2);
@@ -50,4 +109,15 @@ impl SimpleKeyedArraysMessage {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(1, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for SimpleKeyedArraysMessage {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<SimpleKeyedArraysMessage, crate::DecodeError> {
+        if !SimpleKeyedArraysMessage::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("SimpleKeyedArraysMessage", version));
+        }
+        SimpleKeyedArraysMessage::read(reader, version)
+    }
 }

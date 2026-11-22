@@ -5,6 +5,8 @@
 
 //! The `IncrementalAlterConfigsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `IncrementalAlterConfigsResponse` response, API key 44: versions 0-1, flexible
 /// versions 1+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -20,6 +22,39 @@ pub struct IncrementalAlterConfigsResponse {
     pub responses: Vec<AlterConfigsResourceResponse>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl IncrementalAlterConfigsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<IncrementalAlterConfigsResponse, crate::DecodeError> {
+        let mut value = IncrementalAlterConfigsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.responses = reader
+            .read_array(
+                if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| AlterConfigsResourceResponse::read(reader, version),
+            )
+            .within("Responses")?;
+        if version == 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `IncrementalAlterConfigsResponse`'s `Responses` array.
@@ -69,6 +104,48 @@ impl AlterConfigsResourceResponse {
     }
 }
 
+impl AlterConfigsResourceResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterConfigsResourceResponse, crate::DecodeError> {
+        let mut value = AlterConfigsResourceResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message = reader
+            .read_nullable_string(if version == 1 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ErrorMessage")?;
+        self.resource_type = reader.read_i8().within("ResourceType")?;
+        self.resource_name = reader
+            .read_string(if version == 1 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ResourceName")?;
+        if version == 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl IncrementalAlterConfigsResponse {
     /// The API key.
     pub const API_KEY: i16 = 44;
@@ -78,4 +155,15 @@ impl IncrementalAlterConfigsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(1, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for IncrementalAlterConfigsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<IncrementalAlterConfigsResponse, crate::DecodeError> {
+        if !IncrementalAlterConfigsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("IncrementalAlterConfigsResponse", version));
+        }
+        IncrementalAlterConfigsResponse::read(reader, version)
+    }
 }

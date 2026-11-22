@@ -4,6 +4,8 @@
 
 //! The `LeaveGroupRequest` request.
 
+use crate::WithinField as _;
+
 /// The `LeaveGroupRequest` request, API key 13: versions 0-5, flexible versions 4+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct LeaveGroupRequest {
@@ -21,6 +23,50 @@ pub struct LeaveGroupRequest {
     pub members: Vec<MemberIdentity>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl LeaveGroupRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<LeaveGroupRequest, crate::DecodeError> {
+        let mut value = LeaveGroupRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.group_id = reader
+            .read_string(if version >= 4 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("GroupId")?;
+        if version <= 2 {
+            self.member_id = reader.read_string(crate::Framing::Classic).within("MemberId")?;
+        }
+        if version >= 3 {
+            self.members = reader
+                .read_array(
+                    if version >= 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+                    |reader| MemberIdentity::read(reader, version),
+                )
+                .within("Members")?;
+        }
+        if version >= 4 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `LeaveGroupRequest`'s `Members` array.
@@ -42,6 +88,49 @@ pub struct MemberIdentity {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl MemberIdentity {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<MemberIdentity, crate::DecodeError> {
+        let mut value = MemberIdentity::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.member_id = reader
+            .read_string(if version >= 4 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("MemberId")?;
+        self.group_instance_id = reader
+            .read_nullable_string(if version >= 4 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("GroupInstanceId")?;
+        if version == 5 {
+            self.reason = reader.read_nullable_string(crate::Framing::Compact).within("Reason")?;
+        }
+        if version >= 4 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl LeaveGroupRequest {
     /// The API key.
     pub const API_KEY: i16 = 13;
@@ -54,4 +143,15 @@ impl LeaveGroupRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for LeaveGroupRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<LeaveGroupRequest, crate::DecodeError> {
+        if !LeaveGroupRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("LeaveGroupRequest", version));
+        }
+        LeaveGroupRequest::read(reader, version)
+    }
 }

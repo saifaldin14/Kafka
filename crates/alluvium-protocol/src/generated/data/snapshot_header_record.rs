@@ -4,6 +4,8 @@
 
 //! The `SnapshotHeaderRecord` data type.
 
+use crate::WithinField as _;
+
 /// The `SnapshotHeaderRecord` data type: versions 0, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct SnapshotHeaderRecord {
@@ -20,10 +22,48 @@ pub struct SnapshotHeaderRecord {
 }
 
 impl SnapshotHeaderRecord {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<SnapshotHeaderRecord, crate::DecodeError> {
+        let mut value = SnapshotHeaderRecord::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.version = reader.read_i16().within("Version")?;
+        self.last_contained_log_timestamp =
+            reader.read_i64().within("LastContainedLogTimestamp")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
+impl SnapshotHeaderRecord {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 0);
     /// The versions that use the flexible encoding.
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for SnapshotHeaderRecord {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<SnapshotHeaderRecord, crate::DecodeError> {
+        if !SnapshotHeaderRecord::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("SnapshotHeaderRecord", version));
+        }
+        SnapshotHeaderRecord::read(reader, version)
+    }
 }

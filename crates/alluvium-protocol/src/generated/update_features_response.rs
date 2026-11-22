@@ -5,6 +5,8 @@
 
 //! The `UpdateFeaturesResponse` response.
 
+use crate::WithinField as _;
+
 /// The `UpdateFeaturesResponse` response, API key 57: versions 0-2, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct UpdateFeaturesResponse {
@@ -53,6 +55,41 @@ impl UpdateFeaturesResponse {
     }
 }
 
+impl UpdateFeaturesResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<UpdateFeaturesResponse, crate::DecodeError> {
+        let mut value = UpdateFeaturesResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message =
+            reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        if version <= 1 {
+            self.results = reader
+                .read_array(crate::Framing::Compact, |reader| {
+                    UpdatableFeatureResult::read(reader, version)
+                })
+                .within("Results")?;
+        }
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `UpdateFeaturesResponse`'s `Results` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct UpdatableFeatureResult {
@@ -98,9 +135,7 @@ impl UpdatableFeatureResult {
         elements: &'a [UpdatableFeatureResult],
         feature: &str,
     ) -> impl Iterator<Item = &'a UpdatableFeatureResult> {
-        elements
-            .iter()
-            .filter(move |element| element.feature == feature)
+        elements.iter().filter(move |element| element.feature == feature)
     }
 }
 
@@ -116,6 +151,34 @@ impl UpdatableFeatureResult {
     }
 }
 
+impl UpdatableFeatureResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<UpdatableFeatureResult, crate::DecodeError> {
+        let mut value = UpdatableFeatureResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.feature = reader.read_string(crate::Framing::Compact).within("Feature")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message =
+            reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl UpdateFeaturesResponse {
     /// The API key.
     pub const API_KEY: i16 = 57;
@@ -125,4 +188,15 @@ impl UpdateFeaturesResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for UpdateFeaturesResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<UpdateFeaturesResponse, crate::DecodeError> {
+        if !UpdateFeaturesResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("UpdateFeaturesResponse", version));
+        }
+        UpdateFeaturesResponse::read(reader, version)
+    }
 }

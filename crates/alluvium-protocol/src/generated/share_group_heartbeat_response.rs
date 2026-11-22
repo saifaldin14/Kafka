@@ -5,6 +5,8 @@
 
 //! The `ShareGroupHeartbeatResponse` response.
 
+use crate::WithinField as _;
+
 /// The `ShareGroupHeartbeatResponse` response, API key 76: versions 1, flexible versions
 /// 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -55,6 +57,43 @@ impl ShareGroupHeartbeatResponse {
     }
 }
 
+impl ShareGroupHeartbeatResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ShareGroupHeartbeatResponse, crate::DecodeError> {
+        let mut value = ShareGroupHeartbeatResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message =
+            reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        self.member_id = reader.read_nullable_string(crate::Framing::Compact).within("MemberId")?;
+        self.member_epoch = reader.read_i32().within("MemberEpoch")?;
+        self.heartbeat_interval_ms = reader.read_i32().within("HeartbeatIntervalMs")?;
+        self.assignment = reader
+            .read_i8()
+            .and_then(|marker| {
+                if marker < 0 { Ok(None) } else { Assignment::read(reader, version).map(Some) }
+            })
+            .within("Assignment")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// The `Assignment` field of `ShareGroupHeartbeatResponse`.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Assignment {
@@ -64,6 +103,30 @@ pub struct Assignment {
     pub topic_partitions: Vec<TopicPartitions>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl Assignment {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<Assignment, crate::DecodeError> {
+        let mut value = Assignment::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_partitions = reader
+            .read_array(crate::Framing::Compact, |reader| TopicPartitions::read(reader, version))
+            .within("TopicPartitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// `TopicPartitions`, a struct several fields share.
@@ -91,6 +154,34 @@ impl Default for TopicPartitions {
     }
 }
 
+impl TopicPartitions {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TopicPartitions, crate::DecodeError> {
+        let mut value = TopicPartitions::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_id = reader.read_uuid().within("TopicId")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, crate::Reader::read_i32)
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl ShareGroupHeartbeatResponse {
     /// The API key.
     pub const API_KEY: i16 = 76;
@@ -100,4 +191,15 @@ impl ShareGroupHeartbeatResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for ShareGroupHeartbeatResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ShareGroupHeartbeatResponse, crate::DecodeError> {
+        if !ShareGroupHeartbeatResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ShareGroupHeartbeatResponse", version));
+        }
+        ShareGroupHeartbeatResponse::read(reader, version)
+    }
 }

@@ -4,6 +4,8 @@
 
 //! The `ShareFetchRequest` request.
 
+use crate::WithinField as _;
+
 /// The `ShareFetchRequest` request, API key 78: versions 1-2, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ShareFetchRequest {
@@ -82,6 +84,48 @@ impl Default for ShareFetchRequest {
     }
 }
 
+impl ShareFetchRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ShareFetchRequest, crate::DecodeError> {
+        let mut value = ShareFetchRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.group_id = reader.read_nullable_string(crate::Framing::Compact).within("GroupId")?;
+        self.member_id = reader.read_nullable_string(crate::Framing::Compact).within("MemberId")?;
+        self.share_session_epoch = reader.read_i32().within("ShareSessionEpoch")?;
+        self.max_wait_ms = reader.read_i32().within("MaxWaitMs")?;
+        self.min_bytes = reader.read_i32().within("MinBytes")?;
+        self.max_bytes = reader.read_i32().within("MaxBytes")?;
+        self.max_records = reader.read_i32().within("MaxRecords")?;
+        self.batch_size = reader.read_i32().within("BatchSize")?;
+        if version == 2 {
+            self.share_acquire_mode = reader.read_i8().within("ShareAcquireMode")?;
+            self.is_renew_ack = reader.read_bool().within("IsRenewAck")?;
+        }
+        self.topics = reader
+            .read_array(crate::Framing::Compact, |reader| FetchTopic::read(reader, version))
+            .within("Topics")?;
+        self.forgotten_topics_data = reader
+            .read_array(crate::Framing::Compact, |reader| ForgottenTopic::read(reader, version))
+            .within("ForgottenTopicsData")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `ShareFetchRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FetchTopic {
@@ -119,9 +163,32 @@ impl FetchTopic {
         elements: &[FetchTopic],
         topic_id: alluvium_types::Uuid,
     ) -> impl Iterator<Item = &FetchTopic> {
-        elements
-            .iter()
-            .filter(move |element| element.topic_id == topic_id)
+        elements.iter().filter(move |element| element.topic_id == topic_id)
+    }
+}
+
+impl FetchTopic {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<FetchTopic, crate::DecodeError> {
+        let mut value = FetchTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_id = reader.read_uuid().within("TopicId")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, |reader| FetchPartition::read(reader, version))
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -149,9 +216,7 @@ impl FetchPartition {
     /// The first of `elements`, in wire order, whose key (`PartitionIndex`) equals the
     /// arguments.
     pub fn find(elements: &[FetchPartition], partition_index: i32) -> Option<&FetchPartition> {
-        elements
-            .iter()
-            .find(|element| element.partition_index == partition_index)
+        elements.iter().find(|element| element.partition_index == partition_index)
     }
 
     /// Every element of `elements` whose key (`PartitionIndex`) equals the arguments, in
@@ -160,9 +225,37 @@ impl FetchPartition {
         elements: &[FetchPartition],
         partition_index: i32,
     ) -> impl Iterator<Item = &FetchPartition> {
-        elements
-            .iter()
-            .filter(move |element| element.partition_index == partition_index)
+        elements.iter().filter(move |element| element.partition_index == partition_index)
+    }
+}
+
+impl FetchPartition {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<FetchPartition, crate::DecodeError> {
+        let mut value = FetchPartition::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.acknowledgement_batches = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                AcknowledgementBatch::read(reader, version)
+            })
+            .within("AcknowledgementBatches")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -183,6 +276,35 @@ pub struct AcknowledgementBatch {
     pub acknowledge_types: Vec<i8>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl AcknowledgementBatch {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AcknowledgementBatch, crate::DecodeError> {
+        let mut value = AcknowledgementBatch::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.first_offset = reader.read_i64().within("FirstOffset")?;
+        self.last_offset = reader.read_i64().within("LastOffset")?;
+        self.acknowledge_types = reader
+            .read_array(crate::Framing::Compact, crate::Reader::read_i8)
+            .within("AcknowledgeTypes")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `ShareFetchRequest`'s `ForgottenTopicsData` array.
@@ -210,6 +332,34 @@ impl Default for ForgottenTopic {
     }
 }
 
+impl ForgottenTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ForgottenTopic, crate::DecodeError> {
+        let mut value = ForgottenTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_id = reader.read_uuid().within("TopicId")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, crate::Reader::read_i32)
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl ShareFetchRequest {
     /// The API key.
     pub const API_KEY: i16 = 78;
@@ -222,4 +372,15 @@ impl ShareFetchRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for ShareFetchRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ShareFetchRequest, crate::DecodeError> {
+        if !ShareFetchRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ShareFetchRequest", version));
+        }
+        ShareFetchRequest::read(reader, version)
+    }
 }

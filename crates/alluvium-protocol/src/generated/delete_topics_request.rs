@@ -4,6 +4,8 @@
 
 //! The `DeleteTopicsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `DeleteTopicsRequest` request, API key 20: versions 1-6, flexible versions 4+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DeleteTopicsRequest {
@@ -21,6 +23,54 @@ pub struct DeleteTopicsRequest {
     pub timeout_ms: i32,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl DeleteTopicsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeleteTopicsRequest, crate::DecodeError> {
+        let mut value = DeleteTopicsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version == 6 {
+            self.topics = reader
+                .read_array(crate::Framing::Compact, |reader| {
+                    DeleteTopicState::read(reader, version)
+                })
+                .within("Topics")?;
+        }
+        if version <= 5 {
+            self.topic_names = reader
+                .read_array(
+                    if version >= 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+                    |reader| {
+                        reader.read_string(if version >= 4 {
+                            crate::Framing::Compact
+                        } else {
+                            crate::Framing::Classic
+                        })
+                    },
+                )
+                .within("TopicNames")?;
+        }
+        self.timeout_ms = reader.read_i32().within("TimeoutMs")?;
+        if version >= 4 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `DeleteTopicsRequest`'s `Topics` array.
@@ -48,6 +98,32 @@ impl Default for DeleteTopicState {
     }
 }
 
+impl DeleteTopicState {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeleteTopicState, crate::DecodeError> {
+        let mut value = DeleteTopicState::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_nullable_string(crate::Framing::Compact).within("Name")?;
+        self.topic_id = reader.read_uuid().within("TopicId")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl DeleteTopicsRequest {
     /// The API key.
     pub const API_KEY: i16 = 20;
@@ -60,4 +136,15 @@ impl DeleteTopicsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for DeleteTopicsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeleteTopicsRequest, crate::DecodeError> {
+        if !DeleteTopicsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DeleteTopicsRequest", version));
+        }
+        DeleteTopicsRequest::read(reader, version)
+    }
 }

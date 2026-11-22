@@ -5,6 +5,8 @@
 
 //! The `WriteTxnMarkersResponse` response.
 
+use crate::WithinField as _;
+
 /// The `WriteTxnMarkersResponse` response, API key 27: versions 1-2, flexible versions 1+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct WriteTxnMarkersResponse {
@@ -14,6 +16,35 @@ pub struct WriteTxnMarkersResponse {
     pub markers: Vec<WritableTxnMarkerResult>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl WriteTxnMarkersResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<WriteTxnMarkersResponse, crate::DecodeError> {
+        let mut value = WriteTxnMarkersResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.markers = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                WritableTxnMarkerResult::read(reader, version)
+            })
+            .within("Markers")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `WriteTxnMarkersResponse`'s `Markers` array.
@@ -31,6 +62,36 @@ pub struct WritableTxnMarkerResult {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl WritableTxnMarkerResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<WritableTxnMarkerResult, crate::DecodeError> {
+        let mut value = WritableTxnMarkerResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.producer_id = reader.read_i64().within("ProducerId")?;
+        self.topics = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                WritableTxnMarkerTopicResult::read(reader, version)
+            })
+            .within("Topics")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `WritableTxnMarkerResult`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct WritableTxnMarkerTopicResult {
@@ -44,6 +105,36 @@ pub struct WritableTxnMarkerTopicResult {
     pub partitions: Vec<WritableTxnMarkerPartitionResult>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl WritableTxnMarkerTopicResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<WritableTxnMarkerTopicResult, crate::DecodeError> {
+        let mut value = WritableTxnMarkerTopicResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                WritableTxnMarkerPartitionResult::read(reader, version)
+            })
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `WritableTxnMarkerTopicResult`'s `Partitions` array.
@@ -73,6 +164,32 @@ impl WritableTxnMarkerPartitionResult {
     }
 }
 
+impl WritableTxnMarkerPartitionResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<WritableTxnMarkerPartitionResult, crate::DecodeError> {
+        let mut value = WritableTxnMarkerPartitionResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl WriteTxnMarkersResponse {
     /// The API key.
     pub const API_KEY: i16 = 27;
@@ -82,4 +199,15 @@ impl WriteTxnMarkersResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(1, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for WriteTxnMarkersResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<WriteTxnMarkersResponse, crate::DecodeError> {
+        if !WriteTxnMarkersResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("WriteTxnMarkersResponse", version));
+        }
+        WriteTxnMarkersResponse::read(reader, version)
+    }
 }

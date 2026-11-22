@@ -5,6 +5,8 @@
 
 //! The `FindCoordinatorResponse` response.
 
+use crate::WithinField as _;
+
 /// The `FindCoordinatorResponse` response, API key 10: versions 0-6, flexible versions 3+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FindCoordinatorResponse {
@@ -68,6 +70,63 @@ impl FindCoordinatorResponse {
     }
 }
 
+impl FindCoordinatorResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<FindCoordinatorResponse, crate::DecodeError> {
+        let mut value = FindCoordinatorResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version >= 1 {
+            self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        }
+        if version <= 3 {
+            self.error_code = reader.read_i16().within("ErrorCode")?;
+        }
+        if (1..=3).contains(&version) {
+            self.error_message = reader
+                .read_nullable_string(if version == 3 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("ErrorMessage")?;
+        }
+        if version <= 3 {
+            self.node_id = reader.read_i32().within("NodeId")?;
+            self.host = reader
+                .read_string(if version == 3 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("Host")?;
+            self.port = reader.read_i32().within("Port")?;
+        }
+        if version >= 4 {
+            self.coordinators = reader
+                .read_array(crate::Framing::Compact, |reader| Coordinator::read(reader, version))
+                .within("Coordinators")?;
+        }
+        if version >= 3 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `FindCoordinatorResponse`'s `Coordinators` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Coordinator {
@@ -125,6 +184,34 @@ impl Coordinator {
     }
 }
 
+impl Coordinator {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<Coordinator, crate::DecodeError> {
+        let mut value = Coordinator::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.key = reader.read_string(crate::Framing::Compact).within("Key")?;
+        self.node_id = reader.read_i32().within("NodeId")?;
+        self.host = reader.read_string(crate::Framing::Compact).within("Host")?;
+        self.port = reader.read_i32().within("Port")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message =
+            reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl FindCoordinatorResponse {
     /// The API key.
     pub const API_KEY: i16 = 10;
@@ -134,4 +221,15 @@ impl FindCoordinatorResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(3, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for FindCoordinatorResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<FindCoordinatorResponse, crate::DecodeError> {
+        if !FindCoordinatorResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("FindCoordinatorResponse", version));
+        }
+        FindCoordinatorResponse::read(reader, version)
+    }
 }

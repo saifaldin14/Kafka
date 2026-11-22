@@ -5,6 +5,8 @@
 
 //! The `DeleteShareGroupOffsetsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `DeleteShareGroupOffsetsResponse` response, API key 92: versions 0, flexible
 /// versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -39,6 +41,39 @@ impl DeleteShareGroupOffsetsResponse {
     /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
     pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
         crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
+impl DeleteShareGroupOffsetsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeleteShareGroupOffsetsResponse, crate::DecodeError> {
+        let mut value = DeleteShareGroupOffsetsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message =
+            reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        self.responses = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                DeleteShareGroupOffsetsResponseTopic::read(reader, version)
+            })
+            .within("Responses")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -89,6 +124,35 @@ impl DeleteShareGroupOffsetsResponseTopic {
     }
 }
 
+impl DeleteShareGroupOffsetsResponseTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeleteShareGroupOffsetsResponseTopic, crate::DecodeError> {
+        let mut value = DeleteShareGroupOffsetsResponseTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_name = reader.read_string(crate::Framing::Compact).within("TopicName")?;
+        self.topic_id = reader.read_uuid().within("TopicId")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message =
+            reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl DeleteShareGroupOffsetsResponse {
     /// The API key.
     pub const API_KEY: i16 = 92;
@@ -98,4 +162,15 @@ impl DeleteShareGroupOffsetsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for DeleteShareGroupOffsetsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeleteShareGroupOffsetsResponse, crate::DecodeError> {
+        if !DeleteShareGroupOffsetsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DeleteShareGroupOffsetsResponse", version));
+        }
+        DeleteShareGroupOffsetsResponse::read(reader, version)
+    }
 }

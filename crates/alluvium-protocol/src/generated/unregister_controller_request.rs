@@ -5,6 +5,8 @@
 
 //! The `UnregisterControllerRequest` request.
 
+use crate::WithinField as _;
+
 /// The `UnregisterControllerRequest` request, API key 94: versions 0, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct UnregisterControllerRequest {
@@ -14,6 +16,31 @@ pub struct UnregisterControllerRequest {
     pub controller_id: i32,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl UnregisterControllerRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<UnregisterControllerRequest, crate::DecodeError> {
+        let mut value = UnregisterControllerRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.controller_id = reader.read_i32().within("ControllerId")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 impl UnregisterControllerRequest {
@@ -28,4 +55,15 @@ impl UnregisterControllerRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for UnregisterControllerRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<UnregisterControllerRequest, crate::DecodeError> {
+        if !UnregisterControllerRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("UnregisterControllerRequest", version));
+        }
+        UnregisterControllerRequest::read(reader, version)
+    }
 }

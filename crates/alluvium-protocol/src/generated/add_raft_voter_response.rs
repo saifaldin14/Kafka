@@ -4,6 +4,8 @@
 
 //! The `AddRaftVoterResponse` response.
 
+use crate::WithinField as _;
+
 /// The `AddRaftVoterResponse` response, API key 80: versions 0-1, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AddRaftVoterResponse {
@@ -48,6 +50,34 @@ impl AddRaftVoterResponse {
 }
 
 impl AddRaftVoterResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AddRaftVoterResponse, crate::DecodeError> {
+        let mut value = AddRaftVoterResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message =
+            reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
+impl AddRaftVoterResponse {
     /// The API key.
     pub const API_KEY: i16 = 80;
     /// The versions of this message.
@@ -56,4 +86,15 @@ impl AddRaftVoterResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for AddRaftVoterResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AddRaftVoterResponse, crate::DecodeError> {
+        if !AddRaftVoterResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("AddRaftVoterResponse", version));
+        }
+        AddRaftVoterResponse::read(reader, version)
+    }
 }

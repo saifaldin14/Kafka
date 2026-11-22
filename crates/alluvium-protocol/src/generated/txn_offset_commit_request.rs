@@ -5,6 +5,8 @@
 
 //! The `TxnOffsetCommitRequest` request.
 
+use crate::WithinField as _;
+
 /// The `TxnOffsetCommitRequest` request, API key 28: versions 0-6, flexible versions 3+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TxnOffsetCommitRequest {
@@ -61,6 +63,61 @@ impl Default for TxnOffsetCommitRequest {
     }
 }
 
+impl TxnOffsetCommitRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TxnOffsetCommitRequest, crate::DecodeError> {
+        let mut value = TxnOffsetCommitRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.transactional_id = reader
+            .read_string(if version >= 3 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("TransactionalId")?;
+        self.group_id = reader
+            .read_string(if version >= 3 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("GroupId")?;
+        self.producer_id = reader.read_i64().within("ProducerId")?;
+        self.producer_epoch = reader.read_i16().within("ProducerEpoch")?;
+        if version >= 3 {
+            self.generation_id_or_member_epoch =
+                reader.read_i32().within("GenerationIdOrMemberEpoch")?;
+            self.member_id = reader.read_string(crate::Framing::Compact).within("MemberId")?;
+            self.group_instance_id =
+                reader.read_nullable_string(crate::Framing::Compact).within("GroupInstanceId")?;
+        }
+        self.topics = reader
+            .read_array(
+                if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| TxnOffsetCommitRequestTopic::read(reader, version),
+            )
+            .within("Topics")?;
+        if version >= 3 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `TxnOffsetCommitRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TxnOffsetCommitRequestTopic {
@@ -88,6 +145,50 @@ impl Default for TxnOffsetCommitRequestTopic {
             partitions: Vec::new(),
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl TxnOffsetCommitRequestTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TxnOffsetCommitRequestTopic, crate::DecodeError> {
+        let mut value = TxnOffsetCommitRequestTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version <= 5 {
+            self.name = reader
+                .read_string(if version >= 3 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("Name")?;
+        }
+        if version == 6 {
+            self.topic_id = reader.read_uuid().within("TopicId")?;
+        }
+        self.partitions = reader
+            .read_array(
+                if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| TxnOffsetCommitRequestPartition::read(reader, version),
+            )
+            .within("Partitions")?;
+        if version >= 3 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -126,6 +227,44 @@ impl Default for TxnOffsetCommitRequestPartition {
     }
 }
 
+impl TxnOffsetCommitRequestPartition {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TxnOffsetCommitRequestPartition, crate::DecodeError> {
+        let mut value = TxnOffsetCommitRequestPartition::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.committed_offset = reader.read_i64().within("CommittedOffset")?;
+        if version >= 2 {
+            self.committed_leader_epoch = reader.read_i32().within("CommittedLeaderEpoch")?;
+        }
+        self.committed_metadata = reader
+            .read_nullable_string(if version >= 3 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("CommittedMetadata")?;
+        if version >= 3 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl TxnOffsetCommitRequest {
     /// The API key.
     pub const API_KEY: i16 = 28;
@@ -138,4 +277,15 @@ impl TxnOffsetCommitRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for TxnOffsetCommitRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TxnOffsetCommitRequest, crate::DecodeError> {
+        if !TxnOffsetCommitRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("TxnOffsetCommitRequest", version));
+        }
+        TxnOffsetCommitRequest::read(reader, version)
+    }
 }

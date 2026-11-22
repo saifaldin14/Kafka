@@ -4,6 +4,8 @@
 
 //! The `DeleteGroupsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `DeleteGroupsResponse` response, API key 42: versions 0-3, flexible versions 2+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DeleteGroupsResponse {
@@ -18,6 +20,39 @@ pub struct DeleteGroupsResponse {
     pub results: Vec<DeletableGroupResult>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl DeleteGroupsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeleteGroupsResponse, crate::DecodeError> {
+        let mut value = DeleteGroupsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.results = reader
+            .read_array(
+                if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| DeletableGroupResult::read(reader, version),
+            )
+            .within("Results")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `DeleteGroupsResponse`'s `Results` array.
@@ -54,9 +89,7 @@ impl DeletableGroupResult {
         elements: &'a [DeletableGroupResult],
         group_id: &str,
     ) -> impl Iterator<Item = &'a DeletableGroupResult> {
-        elements
-            .iter()
-            .filter(move |element| element.group_id == group_id)
+        elements.iter().filter(move |element| element.group_id == group_id)
     }
 }
 
@@ -72,6 +105,44 @@ impl DeletableGroupResult {
     }
 }
 
+impl DeletableGroupResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeletableGroupResult, crate::DecodeError> {
+        let mut value = DeletableGroupResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.group_id = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("GroupId")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        if version == 3 {
+            self.error_message =
+                reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        }
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl DeleteGroupsResponse {
     /// The API key.
     pub const API_KEY: i16 = 42;
@@ -81,4 +152,15 @@ impl DeleteGroupsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(2, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for DeleteGroupsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeleteGroupsResponse, crate::DecodeError> {
+        if !DeleteGroupsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DeleteGroupsResponse", version));
+        }
+        DeleteGroupsResponse::read(reader, version)
+    }
 }

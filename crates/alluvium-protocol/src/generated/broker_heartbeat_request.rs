@@ -5,6 +5,8 @@
 
 //! The `BrokerHeartbeatRequest` request.
 
+use crate::WithinField as _;
+
 /// The `BrokerHeartbeatRequest` request, API key 63: versions 0-2, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct BrokerHeartbeatRequest {
@@ -57,6 +59,54 @@ impl Default for BrokerHeartbeatRequest {
 }
 
 impl BrokerHeartbeatRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<BrokerHeartbeatRequest, crate::DecodeError> {
+        let mut value = BrokerHeartbeatRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.broker_id = reader.read_i32().within("BrokerId")?;
+        self.broker_epoch = reader.read_i64().within("BrokerEpoch")?;
+        self.current_metadata_offset = reader.read_i64().within("CurrentMetadataOffset")?;
+        self.want_fence = reader.read_bool().within("WantFence")?;
+        self.want_shut_down = reader.read_bool().within("WantShutDown")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            if tag == 0 && version >= 1 {
+                self.offline_log_dirs = reader
+                    .read_tagged_value(tag, size, |reader| {
+                        reader.read_array(crate::Framing::Compact, crate::Reader::read_uuid)
+                    })
+                    .within("OfflineLogDirs")?;
+            } else if tag == 0 {
+                return Err(reader.tag_not_valid(tag, version).within("OfflineLogDirs"));
+            } else if tag == 1 && version == 2 {
+                self.cordoned_log_dirs = reader
+                    .read_tagged_value(tag, size, |reader| {
+                        reader
+                            .read_nullable_array(crate::Framing::Compact, crate::Reader::read_uuid)
+                    })
+                    .within("CordonedLogDirs")?;
+            } else if tag == 1 {
+                return Err(reader.tag_not_valid(tag, version).within("CordonedLogDirs"));
+            } else {
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl BrokerHeartbeatRequest {
     /// The API key.
     pub const API_KEY: i16 = 63;
     /// The versions of this message.
@@ -68,4 +118,15 @@ impl BrokerHeartbeatRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for BrokerHeartbeatRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<BrokerHeartbeatRequest, crate::DecodeError> {
+        if !BrokerHeartbeatRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("BrokerHeartbeatRequest", version));
+        }
+        BrokerHeartbeatRequest::read(reader, version)
+    }
 }

@@ -4,6 +4,8 @@
 
 //! The `VotersRecord` data type.
 
+use crate::WithinField as _;
+
 /// The `VotersRecord` data type: versions 0, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct VotersRecord {
@@ -17,6 +19,31 @@ pub struct VotersRecord {
     pub voters: Vec<Voter>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl VotersRecord {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<VotersRecord, crate::DecodeError> {
+        let mut value = VotersRecord::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.version = reader.read_i16().within("Version")?;
+        self.voters = reader
+            .read_array(crate::Framing::Compact, |reader| Voter::read(reader, version))
+            .within("Voters")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `VotersRecord`'s `Voters` array.
@@ -54,6 +81,34 @@ impl Default for Voter {
     }
 }
 
+impl Voter {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<Voter, crate::DecodeError> {
+        let mut value = Voter::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.voter_id = reader.read_i32().within("VoterId")?;
+        self.voter_directory_id = reader.read_uuid().within("VoterDirectoryId")?;
+        self.endpoints = reader
+            .read_array(crate::Framing::Compact, |reader| Endpoint::read(reader, version))
+            .within("Endpoints")?;
+        self.k_raft_version_feature =
+            KRaftVersionFeature::read(reader, version).within("KRaftVersionFeature")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `Voter`'s `Endpoints` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Endpoint {
@@ -88,6 +143,30 @@ impl Endpoint {
     }
 }
 
+impl Endpoint {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<Endpoint, crate::DecodeError> {
+        let mut value = Endpoint::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        self.host = reader.read_string(crate::Framing::Compact).within("Host")?;
+        self.port = reader.read_u16().within("Port")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// The `KRaftVersionFeature` field of `Voter`.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct KRaftVersionFeature {
@@ -103,6 +182,32 @@ pub struct KRaftVersionFeature {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl KRaftVersionFeature {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<KRaftVersionFeature, crate::DecodeError> {
+        let mut value = KRaftVersionFeature::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.min_supported_version = reader.read_i16().within("MinSupportedVersion")?;
+        self.max_supported_version = reader.read_i16().within("MaxSupportedVersion")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl VotersRecord {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 0);
@@ -110,4 +215,15 @@ impl VotersRecord {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for VotersRecord {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<VotersRecord, crate::DecodeError> {
+        if !VotersRecord::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("VotersRecord", version));
+        }
+        VotersRecord::read(reader, version)
+    }
 }

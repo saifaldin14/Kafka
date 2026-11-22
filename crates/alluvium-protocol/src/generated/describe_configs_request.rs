@@ -5,6 +5,8 @@
 
 //! The `DescribeConfigsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `DescribeConfigsRequest` request, API key 32: versions 1-4, flexible versions 4+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DescribeConfigsRequest {
@@ -22,6 +24,42 @@ pub struct DescribeConfigsRequest {
     pub include_documentation: bool,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl DescribeConfigsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeConfigsRequest, crate::DecodeError> {
+        let mut value = DescribeConfigsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.resources = reader
+            .read_array(
+                if version == 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| DescribeConfigsResource::read(reader, version),
+            )
+            .within("Resources")?;
+        self.include_synonyms = reader.read_bool().within("IncludeSynonyms")?;
+        if version >= 3 {
+            self.include_documentation = reader.read_bool().within("IncludeDocumentation")?;
+        }
+        if version == 4 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `DescribeConfigsRequest`'s `Resources` array.
@@ -54,6 +92,52 @@ impl Default for DescribeConfigsResource {
     }
 }
 
+impl DescribeConfigsResource {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeConfigsResource, crate::DecodeError> {
+        let mut value = DescribeConfigsResource::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.resource_type = reader.read_i8().within("ResourceType")?;
+        self.resource_name = reader
+            .read_string(if version == 4 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ResourceName")?;
+        self.configuration_keys = reader
+            .read_nullable_array(
+                if version == 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| {
+                    reader.read_string(if version == 4 {
+                        crate::Framing::Compact
+                    } else {
+                        crate::Framing::Classic
+                    })
+                },
+            )
+            .within("ConfigurationKeys")?;
+        if version == 4 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl DescribeConfigsRequest {
     /// The API key.
     pub const API_KEY: i16 = 32;
@@ -66,4 +150,15 @@ impl DescribeConfigsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for DescribeConfigsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeConfigsRequest, crate::DecodeError> {
+        if !DescribeConfigsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DescribeConfigsRequest", version));
+        }
+        DescribeConfigsRequest::read(reader, version)
+    }
 }

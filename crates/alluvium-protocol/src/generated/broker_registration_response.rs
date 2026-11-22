@@ -5,6 +5,8 @@
 
 //! The `BrokerRegistrationResponse` response.
 
+use crate::WithinField as _;
+
 /// The `BrokerRegistrationResponse` response, API key 62: versions 0-4, flexible versions
 /// 0+.
 #[derive(Debug, Clone, PartialEq)]
@@ -50,6 +52,33 @@ impl BrokerRegistrationResponse {
 }
 
 impl BrokerRegistrationResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<BrokerRegistrationResponse, crate::DecodeError> {
+        let mut value = BrokerRegistrationResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.broker_epoch = reader.read_i64().within("BrokerEpoch")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
+impl BrokerRegistrationResponse {
     /// The API key.
     pub const API_KEY: i16 = 62;
     /// The versions of this message.
@@ -58,4 +87,15 @@ impl BrokerRegistrationResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for BrokerRegistrationResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<BrokerRegistrationResponse, crate::DecodeError> {
+        if !BrokerRegistrationResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("BrokerRegistrationResponse", version));
+        }
+        BrokerRegistrationResponse::read(reader, version)
+    }
 }

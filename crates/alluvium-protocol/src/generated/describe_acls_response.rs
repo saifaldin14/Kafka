@@ -4,6 +4,8 @@
 
 //! The `DescribeAclsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `DescribeAclsResponse` response, API key 29: versions 1-3, flexible versions 2+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DescribeAclsResponse {
@@ -52,6 +54,47 @@ impl DescribeAclsResponse {
     }
 }
 
+impl DescribeAclsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeAclsResponse, crate::DecodeError> {
+        let mut value = DescribeAclsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message = reader
+            .read_nullable_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ErrorMessage")?;
+        self.resources = reader
+            .read_array(
+                if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| DescribeAclsResource::read(reader, version),
+            )
+            .within("Resources")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribeAclsResponse`'s `Resources` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DescribeAclsResource {
@@ -87,6 +130,47 @@ impl Default for DescribeAclsResource {
     }
 }
 
+impl DescribeAclsResource {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeAclsResource, crate::DecodeError> {
+        let mut value = DescribeAclsResource::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.resource_type = reader.read_i8().within("ResourceType")?;
+        self.resource_name = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ResourceName")?;
+        self.pattern_type = reader.read_i8().within("PatternType")?;
+        self.acls = reader
+            .read_array(
+                if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| AclDescription::read(reader, version),
+            )
+            .within("Acls")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribeAclsResource`'s `Acls` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AclDescription {
@@ -110,6 +194,48 @@ pub struct AclDescription {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl AclDescription {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AclDescription, crate::DecodeError> {
+        let mut value = AclDescription::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.principal = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Principal")?;
+        self.host = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Host")?;
+        self.operation = reader.read_i8().within("Operation")?;
+        self.permission_type = reader.read_i8().within("PermissionType")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl DescribeAclsResponse {
     /// The API key.
     pub const API_KEY: i16 = 29;
@@ -119,4 +245,15 @@ impl DescribeAclsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(2, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for DescribeAclsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeAclsResponse, crate::DecodeError> {
+        if !DescribeAclsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DescribeAclsResponse", version));
+        }
+        DescribeAclsResponse::read(reader, version)
+    }
 }

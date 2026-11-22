@@ -4,6 +4,8 @@
 
 //! The `FetchResponse` response.
 
+use crate::WithinField as _;
+
 /// The `FetchResponse` response, API key 1: versions 4-18, flexible versions 12+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct FetchResponse {
@@ -45,6 +47,52 @@ impl FetchResponse {
     }
 }
 
+impl FetchResponse {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<FetchResponse, crate::DecodeError> {
+        let mut value = FetchResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        if version >= 7 {
+            self.error_code = reader.read_i16().within("ErrorCode")?;
+            self.session_id = reader.read_i32().within("SessionId")?;
+        }
+        self.responses = reader
+            .read_array(
+                if version >= 12 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| FetchableTopicResponse::read(reader, version),
+            )
+            .within("Responses")?;
+        if version >= 12 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                if tag == 0 && version >= 16 {
+                    self.node_endpoints = reader
+                        .read_tagged_value(tag, size, |reader| {
+                            reader.read_array(crate::Framing::Compact, |reader| {
+                                NodeEndpoint::read(reader, version)
+                            })
+                        })
+                        .within("NodeEndpoints")?;
+                } else if tag == 0 {
+                    return Err(reader.tag_not_valid(tag, version).within("NodeEndpoints"));
+                } else {
+                    reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `FetchResponse`'s `Responses` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FetchableTopicResponse {
@@ -72,6 +120,50 @@ impl Default for FetchableTopicResponse {
             partitions: Vec::new(),
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl FetchableTopicResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<FetchableTopicResponse, crate::DecodeError> {
+        let mut value = FetchableTopicResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version <= 12 {
+            self.topic = reader
+                .read_string(if version == 12 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("Topic")?;
+        }
+        if version >= 13 {
+            self.topic_id = reader.read_uuid().within("TopicId")?;
+        }
+        self.partitions = reader
+            .read_array(
+                if version >= 12 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| PartitionData::read(reader, version),
+            )
+            .within("Partitions")?;
+        if version >= 12 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -162,6 +254,70 @@ impl PartitionData {
     }
 }
 
+impl PartitionData {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<PartitionData, crate::DecodeError> {
+        let mut value = PartitionData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.high_watermark = reader.read_i64().within("HighWatermark")?;
+        self.last_stable_offset = reader.read_i64().within("LastStableOffset")?;
+        if version >= 5 {
+            self.log_start_offset = reader.read_i64().within("LogStartOffset")?;
+        }
+        self.aborted_transactions = reader
+            .read_nullable_array(
+                if version >= 12 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| AbortedTransaction::read(reader, version),
+            )
+            .within("AbortedTransactions")?;
+        if version >= 11 {
+            self.preferred_read_replica = reader.read_i32().within("PreferredReadReplica")?;
+        }
+        self.records = reader
+            .read_records(if version >= 12 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Records")?;
+        if version >= 12 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                if tag == 0 {
+                    self.diverging_epoch = reader
+                        .read_tagged_value(tag, size, |reader| {
+                            EpochEndOffset::read(reader, version)
+                        })
+                        .within("DivergingEpoch")?;
+                } else if tag == 1 {
+                    self.current_leader = reader
+                        .read_tagged_value(tag, size, |reader| {
+                            LeaderIdAndEpoch::read(reader, version)
+                        })
+                        .within("CurrentLeader")?;
+                } else if tag == 2 {
+                    self.snapshot_id = reader
+                        .read_tagged_value(tag, size, |reader| SnapshotId::read(reader, version))
+                        .within("SnapshotId")?;
+                } else {
+                    reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
 /// The `DivergingEpoch` field of `PartitionData`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct EpochEndOffset {
@@ -179,11 +335,33 @@ pub struct EpochEndOffset {
 
 impl Default for EpochEndOffset {
     fn default() -> EpochEndOffset {
-        EpochEndOffset {
-            epoch: -1,
-            end_offset: -1,
-            unknown_tagged_fields: Vec::new(),
+        EpochEndOffset { epoch: -1, end_offset: -1, unknown_tagged_fields: Vec::new() }
+    }
+}
+
+impl EpochEndOffset {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<EpochEndOffset, crate::DecodeError> {
+        let mut value = EpochEndOffset::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.epoch = reader.read_i32().within("Epoch")?;
+        self.end_offset = reader.read_i64().within("EndOffset")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
     }
 }
 
@@ -204,11 +382,33 @@ pub struct LeaderIdAndEpoch {
 
 impl Default for LeaderIdAndEpoch {
     fn default() -> LeaderIdAndEpoch {
-        LeaderIdAndEpoch {
-            leader_id: -1,
-            leader_epoch: -1,
-            unknown_tagged_fields: Vec::new(),
+        LeaderIdAndEpoch { leader_id: -1, leader_epoch: -1, unknown_tagged_fields: Vec::new() }
+    }
+}
+
+impl LeaderIdAndEpoch {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<LeaderIdAndEpoch, crate::DecodeError> {
+        let mut value = LeaderIdAndEpoch::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.leader_id = reader.read_i32().within("LeaderId")?;
+        self.leader_epoch = reader.read_i32().within("LeaderEpoch")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
     }
 }
 
@@ -229,11 +429,30 @@ pub struct SnapshotId {
 
 impl Default for SnapshotId {
     fn default() -> SnapshotId {
-        SnapshotId {
-            end_offset: -1,
-            epoch: -1,
-            unknown_tagged_fields: Vec::new(),
+        SnapshotId { end_offset: -1, epoch: -1, unknown_tagged_fields: Vec::new() }
+    }
+}
+
+impl SnapshotId {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<SnapshotId, crate::DecodeError> {
+        let mut value = SnapshotId::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.end_offset = reader.read_i64().within("EndOffset")?;
+        self.epoch = reader.read_i32().within("Epoch")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
     }
 }
 
@@ -250,6 +469,34 @@ pub struct AbortedTransaction {
     pub first_offset: i64,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl AbortedTransaction {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AbortedTransaction, crate::DecodeError> {
+        let mut value = AbortedTransaction::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.producer_id = reader.read_i64().within("ProducerId")?;
+        self.first_offset = reader.read_i64().within("FirstOffset")?;
+        if version >= 12 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `FetchResponse`'s `NodeEndpoints` array.
@@ -287,9 +534,32 @@ impl NodeEndpoint {
         elements: &[NodeEndpoint],
         node_id: i32,
     ) -> impl Iterator<Item = &NodeEndpoint> {
-        elements
-            .iter()
-            .filter(move |element| element.node_id == node_id)
+        elements.iter().filter(move |element| element.node_id == node_id)
+    }
+}
+
+impl NodeEndpoint {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<NodeEndpoint, crate::DecodeError> {
+        let mut value = NodeEndpoint::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.node_id = reader.read_i32().within("NodeId")?;
+        self.host = reader.read_string(crate::Framing::Compact).within("Host")?;
+        self.port = reader.read_i32().within("Port")?;
+        self.rack = reader.read_nullable_string(crate::Framing::Compact).within("Rack")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -302,4 +572,15 @@ impl FetchResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(12, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for FetchResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<FetchResponse, crate::DecodeError> {
+        if !FetchResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("FetchResponse", version));
+        }
+        FetchResponse::read(reader, version)
+    }
 }

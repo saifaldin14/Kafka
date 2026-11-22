@@ -5,6 +5,8 @@
 
 //! The `ExpireDelegationTokenRequest` request.
 
+use crate::WithinField as _;
+
 /// The `ExpireDelegationTokenRequest` request, API key 40: versions 1-2, flexible versions
 /// 2+.
 #[derive(Clone, PartialEq, Default)]
@@ -32,6 +34,40 @@ impl std::fmt::Debug for ExpireDelegationTokenRequest {
 }
 
 impl ExpireDelegationTokenRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ExpireDelegationTokenRequest, crate::DecodeError> {
+        let mut value = ExpireDelegationTokenRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.hmac = reader
+            .read_bytes(if version == 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Hmac")?;
+        self.expiry_time_period_ms = reader.read_i64().within("ExpiryTimePeriodMs")?;
+        if version == 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl ExpireDelegationTokenRequest {
     /// The API key.
     pub const API_KEY: i16 = 40;
     /// The versions of this message.
@@ -43,4 +79,15 @@ impl ExpireDelegationTokenRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for ExpireDelegationTokenRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ExpireDelegationTokenRequest, crate::DecodeError> {
+        if !ExpireDelegationTokenRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ExpireDelegationTokenRequest", version));
+        }
+        ExpireDelegationTokenRequest::read(reader, version)
+    }
 }

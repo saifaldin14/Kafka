@@ -4,6 +4,8 @@
 
 //! The `ListOffsetsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `ListOffsetsResponse` response, API key 2: versions 1-11, flexible versions 6+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ListOffsetsResponse {
@@ -20,6 +22,41 @@ pub struct ListOffsetsResponse {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl ListOffsetsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListOffsetsResponse, crate::DecodeError> {
+        let mut value = ListOffsetsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version >= 2 {
+            self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        }
+        self.topics = reader
+            .read_array(
+                if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| ListOffsetsTopicResponse::read(reader, version),
+            )
+            .within("Topics")?;
+        if version >= 6 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `ListOffsetsResponse`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ListOffsetsTopicResponse {
@@ -33,6 +70,45 @@ pub struct ListOffsetsTopicResponse {
     pub partitions: Vec<ListOffsetsPartitionResponse>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl ListOffsetsTopicResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListOffsetsTopicResponse, crate::DecodeError> {
+        let mut value = ListOffsetsTopicResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader
+            .read_string(if version >= 6 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Name")?;
+        self.partitions = reader
+            .read_array(
+                if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| ListOffsetsPartitionResponse::read(reader, version),
+            )
+            .within("Partitions")?;
+        if version >= 6 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `ListOffsetsTopicResponse`'s `Partitions` array.
@@ -87,6 +163,39 @@ impl ListOffsetsPartitionResponse {
     }
 }
 
+impl ListOffsetsPartitionResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListOffsetsPartitionResponse, crate::DecodeError> {
+        let mut value = ListOffsetsPartitionResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.timestamp = reader.read_i64().within("Timestamp")?;
+        self.offset = reader.read_i64().within("Offset")?;
+        if version >= 4 {
+            self.leader_epoch = reader.read_i32().within("LeaderEpoch")?;
+        }
+        if version >= 6 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl ListOffsetsResponse {
     /// The API key.
     pub const API_KEY: i16 = 2;
@@ -96,4 +205,15 @@ impl ListOffsetsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(6, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for ListOffsetsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListOffsetsResponse, crate::DecodeError> {
+        if !ListOffsetsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ListOffsetsResponse", version));
+        }
+        ListOffsetsResponse::read(reader, version)
+    }
 }

@@ -5,6 +5,8 @@
 
 //! The `GetTelemetrySubscriptionsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `GetTelemetrySubscriptionsResponse` response, API key 71: versions 0, flexible
 /// versions 0+.
 #[derive(Debug, Clone, PartialEq)]
@@ -83,6 +85,45 @@ impl GetTelemetrySubscriptionsResponse {
 }
 
 impl GetTelemetrySubscriptionsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<GetTelemetrySubscriptionsResponse, crate::DecodeError> {
+        let mut value = GetTelemetrySubscriptionsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.client_instance_id = reader.read_uuid().within("ClientInstanceId")?;
+        self.subscription_id = reader.read_i32().within("SubscriptionId")?;
+        self.accepted_compression_types = reader
+            .read_array(crate::Framing::Compact, crate::Reader::read_i8)
+            .within("AcceptedCompressionTypes")?;
+        self.push_interval_ms = reader.read_i32().within("PushIntervalMs")?;
+        self.telemetry_max_bytes = reader.read_i32().within("TelemetryMaxBytes")?;
+        self.delta_temporality = reader.read_bool().within("DeltaTemporality")?;
+        self.requested_metrics = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                reader.read_string(crate::Framing::Compact)
+            })
+            .within("RequestedMetrics")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
+impl GetTelemetrySubscriptionsResponse {
     /// The API key.
     pub const API_KEY: i16 = 71;
     /// The versions of this message.
@@ -91,4 +132,15 @@ impl GetTelemetrySubscriptionsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for GetTelemetrySubscriptionsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<GetTelemetrySubscriptionsResponse, crate::DecodeError> {
+        if !GetTelemetrySubscriptionsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("GetTelemetrySubscriptionsResponse", version));
+        }
+        GetTelemetrySubscriptionsResponse::read(reader, version)
+    }
 }

@@ -5,6 +5,8 @@
 
 //! The `ListTransactionsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `ListTransactionsResponse` response, API key 66: versions 0-2, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ListTransactionsResponse {
@@ -42,6 +44,40 @@ impl ListTransactionsResponse {
     }
 }
 
+impl ListTransactionsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListTransactionsResponse, crate::DecodeError> {
+        let mut value = ListTransactionsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.unknown_state_filters = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                reader.read_string(crate::Framing::Compact)
+            })
+            .within("UnknownStateFilters")?;
+        self.transaction_states = reader
+            .read_array(crate::Framing::Compact, |reader| TransactionState::read(reader, version))
+            .within("TransactionStates")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `ListTransactionsResponse`'s `TransactionStates` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TransactionState {
@@ -61,6 +97,35 @@ pub struct TransactionState {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl TransactionState {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TransactionState, crate::DecodeError> {
+        let mut value = TransactionState::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.transactional_id =
+            reader.read_string(crate::Framing::Compact).within("TransactionalId")?;
+        self.producer_id = reader.read_i64().within("ProducerId")?;
+        self.transaction_state =
+            reader.read_string(crate::Framing::Compact).within("TransactionState")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl ListTransactionsResponse {
     /// The API key.
     pub const API_KEY: i16 = 66;
@@ -70,4 +135,15 @@ impl ListTransactionsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for ListTransactionsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListTransactionsResponse, crate::DecodeError> {
+        if !ListTransactionsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ListTransactionsResponse", version));
+        }
+        ListTransactionsResponse::read(reader, version)
+    }
 }

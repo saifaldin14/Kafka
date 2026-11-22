@@ -5,6 +5,8 @@
 
 //! The `DeleteRecordsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `DeleteRecordsResponse` response, API key 21: versions 0-2, flexible versions 2+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DeleteRecordsResponse {
@@ -19,6 +21,39 @@ pub struct DeleteRecordsResponse {
     pub topics: Vec<DeleteRecordsTopicResult>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl DeleteRecordsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeleteRecordsResponse, crate::DecodeError> {
+        let mut value = DeleteRecordsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.topics = reader
+            .read_array(
+                if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| DeleteRecordsTopicResult::read(reader, version),
+            )
+            .within("Topics")?;
+        if version == 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `DeleteRecordsResponse`'s `Topics` array.
@@ -54,6 +89,45 @@ impl DeleteRecordsTopicResult {
     }
 }
 
+impl DeleteRecordsTopicResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeleteRecordsTopicResult, crate::DecodeError> {
+        let mut value = DeleteRecordsTopicResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader
+            .read_string(if version == 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Name")?;
+        self.partitions = reader
+            .read_array(
+                if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| DeleteRecordsPartitionResult::read(reader, version),
+            )
+            .within("Partitions")?;
+        if version == 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DeleteRecordsTopicResult`'s `Partitions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DeleteRecordsPartitionResult {
@@ -80,9 +154,7 @@ impl DeleteRecordsPartitionResult {
         elements: &[DeleteRecordsPartitionResult],
         partition_index: i32,
     ) -> Option<&DeleteRecordsPartitionResult> {
-        elements
-            .iter()
-            .find(|element| element.partition_index == partition_index)
+        elements.iter().find(|element| element.partition_index == partition_index)
     }
 
     /// Every element of `elements` whose key (`PartitionIndex`) equals the arguments, in
@@ -91,9 +163,7 @@ impl DeleteRecordsPartitionResult {
         elements: &[DeleteRecordsPartitionResult],
         partition_index: i32,
     ) -> impl Iterator<Item = &DeleteRecordsPartitionResult> {
-        elements
-            .iter()
-            .filter(move |element| element.partition_index == partition_index)
+        elements.iter().filter(move |element| element.partition_index == partition_index)
     }
 }
 
@@ -109,6 +179,35 @@ impl DeleteRecordsPartitionResult {
     }
 }
 
+impl DeleteRecordsPartitionResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeleteRecordsPartitionResult, crate::DecodeError> {
+        let mut value = DeleteRecordsPartitionResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.low_watermark = reader.read_i64().within("LowWatermark")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        if version == 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl DeleteRecordsResponse {
     /// The API key.
     pub const API_KEY: i16 = 21;
@@ -118,4 +217,15 @@ impl DeleteRecordsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(2, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for DeleteRecordsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeleteRecordsResponse, crate::DecodeError> {
+        if !DeleteRecordsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DeleteRecordsResponse", version));
+        }
+        DeleteRecordsResponse::read(reader, version)
+    }
 }

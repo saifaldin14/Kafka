@@ -4,6 +4,8 @@
 
 //! The `CreateAclsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `CreateAclsResponse` response, API key 30: versions 1-3, flexible versions 2+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CreateAclsResponse {
@@ -18,6 +20,39 @@ pub struct CreateAclsResponse {
     pub results: Vec<AclCreationResult>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl CreateAclsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreateAclsResponse, crate::DecodeError> {
+        let mut value = CreateAclsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.results = reader
+            .read_array(
+                if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| AclCreationResult::read(reader, version),
+            )
+            .within("Results")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `CreateAclsResponse`'s `Results` array.
@@ -57,6 +92,40 @@ impl AclCreationResult {
     }
 }
 
+impl AclCreationResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AclCreationResult, crate::DecodeError> {
+        let mut value = AclCreationResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message = reader
+            .read_nullable_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ErrorMessage")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl CreateAclsResponse {
     /// The API key.
     pub const API_KEY: i16 = 30;
@@ -66,4 +135,15 @@ impl CreateAclsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(2, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for CreateAclsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreateAclsResponse, crate::DecodeError> {
+        if !CreateAclsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("CreateAclsResponse", version));
+        }
+        CreateAclsResponse::read(reader, version)
+    }
 }

@@ -4,6 +4,8 @@
 
 //! The `EndTxnRequest` request.
 
+use crate::WithinField as _;
+
 /// The `EndTxnRequest` request, API key 26: versions 0-5, flexible versions 3+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct EndTxnRequest {
@@ -28,6 +30,39 @@ pub struct EndTxnRequest {
 }
 
 impl EndTxnRequest {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<EndTxnRequest, crate::DecodeError> {
+        let mut value = EndTxnRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.transactional_id = reader
+            .read_string(if version >= 3 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("TransactionalId")?;
+        self.producer_id = reader.read_i64().within("ProducerId")?;
+        self.producer_epoch = reader.read_i16().within("ProducerEpoch")?;
+        self.committed = reader.read_bool().within("Committed")?;
+        if version >= 3 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl EndTxnRequest {
     /// The API key.
     pub const API_KEY: i16 = 26;
     /// The versions of this message.
@@ -39,4 +74,15 @@ impl EndTxnRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for EndTxnRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<EndTxnRequest, crate::DecodeError> {
+        if !EndTxnRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("EndTxnRequest", version));
+        }
+        EndTxnRequest::read(reader, version)
+    }
 }

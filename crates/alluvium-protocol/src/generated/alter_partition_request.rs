@@ -5,6 +5,8 @@
 
 //! The `AlterPartitionRequest` request.
 
+use crate::WithinField as _;
+
 /// The `AlterPartitionRequest` request, API key 56: versions 2-3, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AlterPartitionRequest {
@@ -35,6 +37,35 @@ impl Default for AlterPartitionRequest {
     }
 }
 
+impl AlterPartitionRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterPartitionRequest, crate::DecodeError> {
+        let mut value = AlterPartitionRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.broker_id = reader.read_i32().within("BrokerId")?;
+        self.broker_epoch = reader.read_i64().within("BrokerEpoch")?;
+        self.topics = reader
+            .read_array(crate::Framing::Compact, |reader| TopicData::read(reader, version))
+            .within("Topics")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `AlterPartitionRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TopicData {
@@ -57,6 +88,31 @@ impl Default for TopicData {
             partitions: Vec::new(),
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl TopicData {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<TopicData, crate::DecodeError> {
+        let mut value = TopicData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_id = reader.read_uuid().within("TopicId")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, |reader| PartitionData::read(reader, version))
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -91,6 +147,41 @@ pub struct PartitionData {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl PartitionData {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<PartitionData, crate::DecodeError> {
+        let mut value = PartitionData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.leader_epoch = reader.read_i32().within("LeaderEpoch")?;
+        if version == 2 {
+            self.new_isr = reader
+                .read_array(crate::Framing::Compact, crate::Reader::read_i32)
+                .within("NewIsr")?;
+        }
+        if version == 3 {
+            self.new_isr_with_epochs = reader
+                .read_array(crate::Framing::Compact, |reader| BrokerState::read(reader, version))
+                .within("NewIsrWithEpochs")?;
+        }
+        self.leader_recovery_state = reader.read_i8().within("LeaderRecoveryState")?;
+        self.partition_epoch = reader.read_i32().within("PartitionEpoch")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `PartitionData`'s `NewIsrWithEpochs` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct BrokerState {
@@ -108,11 +199,30 @@ pub struct BrokerState {
 
 impl Default for BrokerState {
     fn default() -> BrokerState {
-        BrokerState {
-            broker_id: 0,
-            broker_epoch: -1,
-            unknown_tagged_fields: Vec::new(),
+        BrokerState { broker_id: 0, broker_epoch: -1, unknown_tagged_fields: Vec::new() }
+    }
+}
+
+impl BrokerState {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<BrokerState, crate::DecodeError> {
+        let mut value = BrokerState::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.broker_id = reader.read_i32().within("BrokerId")?;
+        self.broker_epoch = reader.read_i64().within("BrokerEpoch")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
     }
 }
 
@@ -128,4 +238,15 @@ impl AlterPartitionRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for AlterPartitionRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterPartitionRequest, crate::DecodeError> {
+        if !AlterPartitionRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("AlterPartitionRequest", version));
+        }
+        AlterPartitionRequest::read(reader, version)
+    }
 }

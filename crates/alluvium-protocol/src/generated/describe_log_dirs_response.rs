@@ -5,6 +5,8 @@
 
 //! The `DescribeLogDirsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `DescribeLogDirsResponse` response, API key 35: versions 1-5, flexible versions 2+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DescribeLogDirsResponse {
@@ -34,6 +36,42 @@ impl DescribeLogDirsResponse {
     /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
     pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
         crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
+impl DescribeLogDirsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeLogDirsResponse, crate::DecodeError> {
+        let mut value = DescribeLogDirsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        if version >= 3 {
+            self.error_code = reader.read_i16().within("ErrorCode")?;
+        }
+        self.results = reader
+            .read_array(
+                if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| DescribeLogDirsResult::read(reader, version),
+            )
+            .within("Results")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -96,6 +134,53 @@ impl DescribeLogDirsResult {
     }
 }
 
+impl DescribeLogDirsResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeLogDirsResult, crate::DecodeError> {
+        let mut value = DescribeLogDirsResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.log_dir = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("LogDir")?;
+        self.topics = reader
+            .read_array(
+                if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| DescribeLogDirsTopic::read(reader, version),
+            )
+            .within("Topics")?;
+        if version >= 4 {
+            self.total_bytes = reader.read_i64().within("TotalBytes")?;
+            self.usable_bytes = reader.read_i64().within("UsableBytes")?;
+        }
+        if version == 5 {
+            self.is_cordoned = reader.read_bool().within("IsCordoned")?;
+        }
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribeLogDirsResult`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DescribeLogDirsTopic {
@@ -109,6 +194,45 @@ pub struct DescribeLogDirsTopic {
     pub partitions: Vec<DescribeLogDirsPartition>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl DescribeLogDirsTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeLogDirsTopic, crate::DecodeError> {
+        let mut value = DescribeLogDirsTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Name")?;
+        self.partitions = reader
+            .read_array(
+                if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| DescribeLogDirsPartition::read(reader, version),
+            )
+            .within("Partitions")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `DescribeLogDirsTopic`'s `Partitions` array.
@@ -136,6 +260,36 @@ pub struct DescribeLogDirsPartition {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl DescribeLogDirsPartition {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeLogDirsPartition, crate::DecodeError> {
+        let mut value = DescribeLogDirsPartition::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.partition_size = reader.read_i64().within("PartitionSize")?;
+        self.offset_lag = reader.read_i64().within("OffsetLag")?;
+        self.is_future_key = reader.read_bool().within("IsFutureKey")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl DescribeLogDirsResponse {
     /// The API key.
     pub const API_KEY: i16 = 35;
@@ -145,4 +299,15 @@ impl DescribeLogDirsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(2, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for DescribeLogDirsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeLogDirsResponse, crate::DecodeError> {
+        if !DescribeLogDirsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DescribeLogDirsResponse", version));
+        }
+        DescribeLogDirsResponse::read(reader, version)
+    }
 }

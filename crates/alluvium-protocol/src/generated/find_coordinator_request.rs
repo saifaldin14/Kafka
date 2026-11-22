@@ -5,6 +5,8 @@
 
 //! The `FindCoordinatorRequest` request.
 
+use crate::WithinField as _;
+
 /// The `FindCoordinatorRequest` request, API key 10: versions 0-6, flexible versions 3+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct FindCoordinatorRequest {
@@ -25,6 +27,51 @@ pub struct FindCoordinatorRequest {
 }
 
 impl FindCoordinatorRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<FindCoordinatorRequest, crate::DecodeError> {
+        let mut value = FindCoordinatorRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version <= 3 {
+            self.key = reader
+                .read_string(if version == 3 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("Key")?;
+        }
+        if version >= 1 {
+            self.key_type = reader.read_i8().within("KeyType")?;
+        }
+        if version >= 4 {
+            self.coordinator_keys = reader
+                .read_array(crate::Framing::Compact, |reader| {
+                    reader.read_string(crate::Framing::Compact)
+                })
+                .within("CoordinatorKeys")?;
+        }
+        if version >= 3 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl FindCoordinatorRequest {
     /// The API key.
     pub const API_KEY: i16 = 10;
     /// The versions of this message.
@@ -36,4 +83,15 @@ impl FindCoordinatorRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for FindCoordinatorRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<FindCoordinatorRequest, crate::DecodeError> {
+        if !FindCoordinatorRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("FindCoordinatorRequest", version));
+        }
+        FindCoordinatorRequest::read(reader, version)
+    }
 }

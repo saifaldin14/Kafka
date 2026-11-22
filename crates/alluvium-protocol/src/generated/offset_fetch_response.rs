@@ -4,6 +4,8 @@
 
 //! The `OffsetFetchResponse` response.
 
+use crate::WithinField as _;
+
 /// The `OffsetFetchResponse` response, API key 9: versions 1-10, flexible versions 6+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct OffsetFetchResponse {
@@ -40,6 +42,53 @@ impl OffsetFetchResponse {
     }
 }
 
+impl OffsetFetchResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetFetchResponse, crate::DecodeError> {
+        let mut value = OffsetFetchResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version >= 3 {
+            self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        }
+        if version <= 7 {
+            self.topics = reader
+                .read_array(
+                    if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+                    |reader| OffsetFetchResponseTopic::read(reader, version),
+                )
+                .within("Topics")?;
+        }
+        if (2..=7).contains(&version) {
+            self.error_code = reader.read_i16().within("ErrorCode")?;
+        }
+        if version >= 8 {
+            self.groups = reader
+                .read_array(crate::Framing::Compact, |reader| {
+                    OffsetFetchResponseGroup::read(reader, version)
+                })
+                .within("Groups")?;
+        }
+        if version >= 6 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `OffsetFetchResponse`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct OffsetFetchResponseTopic {
@@ -53,6 +102,45 @@ pub struct OffsetFetchResponseTopic {
     pub partitions: Vec<OffsetFetchResponsePartition>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl OffsetFetchResponseTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetFetchResponseTopic, crate::DecodeError> {
+        let mut value = OffsetFetchResponseTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader
+            .read_string(if version >= 6 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Name")?;
+        self.partitions = reader
+            .read_array(
+                if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| OffsetFetchResponsePartition::read(reader, version),
+            )
+            .within("Partitions")?;
+        if version >= 6 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `OffsetFetchResponseTopic`'s `Partitions` array.
@@ -107,6 +195,45 @@ impl OffsetFetchResponsePartition {
     }
 }
 
+impl OffsetFetchResponsePartition {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetFetchResponsePartition, crate::DecodeError> {
+        let mut value = OffsetFetchResponsePartition::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.committed_offset = reader.read_i64().within("CommittedOffset")?;
+        if version >= 5 {
+            self.committed_leader_epoch = reader.read_i32().within("CommittedLeaderEpoch")?;
+        }
+        self.metadata = reader
+            .read_nullable_string(if version >= 6 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Metadata")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        if version >= 6 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `OffsetFetchResponse`'s `Groups` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct OffsetFetchResponseGroup {
@@ -138,6 +265,37 @@ impl OffsetFetchResponseGroup {
     }
 }
 
+impl OffsetFetchResponseGroup {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetFetchResponseGroup, crate::DecodeError> {
+        let mut value = OffsetFetchResponseGroup::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.group_id = reader.read_string(crate::Framing::Compact).within("GroupId")?;
+        self.topics = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                OffsetFetchResponseTopics::read(reader, version)
+            })
+            .within("Topics")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `OffsetFetchResponseGroup`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct OffsetFetchResponseTopics {
@@ -165,6 +323,41 @@ impl Default for OffsetFetchResponseTopics {
             partitions: Vec::new(),
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl OffsetFetchResponseTopics {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetFetchResponseTopics, crate::DecodeError> {
+        let mut value = OffsetFetchResponseTopics::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version <= 9 {
+            self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        }
+        if version == 10 {
+            self.topic_id = reader.read_uuid().within("TopicId")?;
+        }
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                OffsetFetchResponsePartitions::read(reader, version)
+            })
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -220,6 +413,35 @@ impl OffsetFetchResponsePartitions {
     }
 }
 
+impl OffsetFetchResponsePartitions {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetFetchResponsePartitions, crate::DecodeError> {
+        let mut value = OffsetFetchResponsePartitions::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.committed_offset = reader.read_i64().within("CommittedOffset")?;
+        self.committed_leader_epoch = reader.read_i32().within("CommittedLeaderEpoch")?;
+        self.metadata = reader.read_nullable_string(crate::Framing::Compact).within("Metadata")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl OffsetFetchResponse {
     /// The API key.
     pub const API_KEY: i16 = 9;
@@ -229,4 +451,15 @@ impl OffsetFetchResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(6, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for OffsetFetchResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetFetchResponse, crate::DecodeError> {
+        if !OffsetFetchResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("OffsetFetchResponse", version));
+        }
+        OffsetFetchResponse::read(reader, version)
+    }
 }

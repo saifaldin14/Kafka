@@ -5,6 +5,8 @@
 
 //! The `DescribeClientQuotasRequest` request.
 
+use crate::WithinField as _;
+
 /// The `DescribeClientQuotasRequest` request, API key 48: versions 0-1, flexible versions
 /// 1+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -20,6 +22,39 @@ pub struct DescribeClientQuotasRequest {
     pub strict: bool,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl DescribeClientQuotasRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeClientQuotasRequest, crate::DecodeError> {
+        let mut value = DescribeClientQuotasRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.components = reader
+            .read_array(
+                if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| ComponentData::read(reader, version),
+            )
+            .within("Components")?;
+        self.strict = reader.read_bool().within("Strict")?;
+        if version == 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `DescribeClientQuotasRequest`'s `Components` array.
@@ -52,6 +87,44 @@ impl Default for ComponentData {
     }
 }
 
+impl ComponentData {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<ComponentData, crate::DecodeError> {
+        let mut value = ComponentData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.entity_type = reader
+            .read_string(if version == 1 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("EntityType")?;
+        self.match_type = reader.read_i8().within("MatchType")?;
+        self.match_ = reader
+            .read_nullable_string(if version == 1 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Match")?;
+        if version == 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl DescribeClientQuotasRequest {
     /// The API key.
     pub const API_KEY: i16 = 48;
@@ -64,4 +137,15 @@ impl DescribeClientQuotasRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for DescribeClientQuotasRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeClientQuotasRequest, crate::DecodeError> {
+        if !DescribeClientQuotasRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DescribeClientQuotasRequest", version));
+        }
+        DescribeClientQuotasRequest::read(reader, version)
+    }
 }

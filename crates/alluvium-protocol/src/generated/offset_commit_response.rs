@@ -4,6 +4,8 @@
 
 //! The `OffsetCommitResponse` response.
 
+use crate::WithinField as _;
+
 /// The `OffsetCommitResponse` response, API key 8: versions 2-10, flexible versions 8+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct OffsetCommitResponse {
@@ -18,6 +20,41 @@ pub struct OffsetCommitResponse {
     pub topics: Vec<OffsetCommitResponseTopic>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl OffsetCommitResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetCommitResponse, crate::DecodeError> {
+        let mut value = OffsetCommitResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version >= 3 {
+            self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        }
+        self.topics = reader
+            .read_array(
+                if version >= 8 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| OffsetCommitResponseTopic::read(reader, version),
+            )
+            .within("Topics")?;
+        if version >= 8 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `OffsetCommitResponse`'s `Topics` array.
@@ -50,6 +87,50 @@ impl Default for OffsetCommitResponseTopic {
     }
 }
 
+impl OffsetCommitResponseTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetCommitResponseTopic, crate::DecodeError> {
+        let mut value = OffsetCommitResponseTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version <= 9 {
+            self.name = reader
+                .read_string(if version >= 8 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("Name")?;
+        }
+        if version == 10 {
+            self.topic_id = reader.read_uuid().within("TopicId")?;
+        }
+        self.partitions = reader
+            .read_array(
+                if version >= 8 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| OffsetCommitResponsePartition::read(reader, version),
+            )
+            .within("Partitions")?;
+        if version >= 8 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `OffsetCommitResponseTopic`'s `Partitions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct OffsetCommitResponsePartition {
@@ -77,6 +158,34 @@ impl OffsetCommitResponsePartition {
     }
 }
 
+impl OffsetCommitResponsePartition {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetCommitResponsePartition, crate::DecodeError> {
+        let mut value = OffsetCommitResponsePartition::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        if version >= 8 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl OffsetCommitResponse {
     /// The API key.
     pub const API_KEY: i16 = 8;
@@ -86,4 +195,15 @@ impl OffsetCommitResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(8, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for OffsetCommitResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetCommitResponse, crate::DecodeError> {
+        if !OffsetCommitResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("OffsetCommitResponse", version));
+        }
+        OffsetCommitResponse::read(reader, version)
+    }
 }

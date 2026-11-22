@@ -5,6 +5,8 @@
 
 //! The `InitProducerIdResponse` response.
 
+use crate::WithinField as _;
+
 /// The `InitProducerIdResponse` response, API key 22: versions 0-6, flexible versions 2+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct InitProducerIdResponse {
@@ -66,6 +68,41 @@ impl InitProducerIdResponse {
 }
 
 impl InitProducerIdResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<InitProducerIdResponse, crate::DecodeError> {
+        let mut value = InitProducerIdResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.producer_id = reader.read_i64().within("ProducerId")?;
+        self.producer_epoch = reader.read_i16().within("ProducerEpoch")?;
+        if version == 6 {
+            self.ongoing_txn_producer_id = reader.read_i64().within("OngoingTxnProducerId")?;
+            self.ongoing_txn_producer_epoch =
+                reader.read_i16().within("OngoingTxnProducerEpoch")?;
+        }
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl InitProducerIdResponse {
     /// The API key.
     pub const API_KEY: i16 = 22;
     /// The versions of this message.
@@ -74,4 +111,15 @@ impl InitProducerIdResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(2, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for InitProducerIdResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<InitProducerIdResponse, crate::DecodeError> {
+        if !InitProducerIdResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("InitProducerIdResponse", version));
+        }
+        InitProducerIdResponse::read(reader, version)
+    }
 }

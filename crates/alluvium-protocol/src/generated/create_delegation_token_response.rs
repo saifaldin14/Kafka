@@ -5,6 +5,8 @@
 
 //! The `CreateDelegationTokenResponse` response.
 
+use crate::WithinField as _;
+
 /// The `CreateDelegationTokenResponse` response, API key 38: versions 1-3, flexible
 /// versions 2+.
 #[derive(Clone, PartialEq, Default)]
@@ -64,14 +66,8 @@ impl std::fmt::Debug for CreateDelegationTokenResponse {
             .field("error_code", &self.error_code)
             .field("principal_type", &self.principal_type)
             .field("principal_name", &self.principal_name)
-            .field(
-                "token_requester_principal_type",
-                &self.token_requester_principal_type,
-            )
-            .field(
-                "token_requester_principal_name",
-                &self.token_requester_principal_name,
-            )
+            .field("token_requester_principal_type", &self.token_requester_principal_type)
+            .field("token_requester_principal_name", &self.token_requester_principal_name)
             .field("issue_timestamp_ms", &self.issue_timestamp_ms)
             .field("expiry_timestamp_ms", &self.expiry_timestamp_ms)
             .field("max_timestamp_ms", &self.max_timestamp_ms)
@@ -96,6 +92,73 @@ impl CreateDelegationTokenResponse {
 }
 
 impl CreateDelegationTokenResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreateDelegationTokenResponse, crate::DecodeError> {
+        let mut value = CreateDelegationTokenResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.principal_type = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("PrincipalType")?;
+        self.principal_name = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("PrincipalName")?;
+        if version == 3 {
+            self.token_requester_principal_type = reader
+                .read_string(crate::Framing::Compact)
+                .within("TokenRequesterPrincipalType")?;
+            self.token_requester_principal_name = reader
+                .read_string(crate::Framing::Compact)
+                .within("TokenRequesterPrincipalName")?;
+        }
+        self.issue_timestamp_ms = reader.read_i64().within("IssueTimestampMs")?;
+        self.expiry_timestamp_ms = reader.read_i64().within("ExpiryTimestampMs")?;
+        self.max_timestamp_ms = reader.read_i64().within("MaxTimestampMs")?;
+        self.token_id = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("TokenId")?;
+        self.hmac = reader
+            .read_bytes(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Hmac")?;
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl CreateDelegationTokenResponse {
     /// The API key.
     pub const API_KEY: i16 = 38;
     /// The versions of this message.
@@ -104,4 +167,15 @@ impl CreateDelegationTokenResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(2, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for CreateDelegationTokenResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreateDelegationTokenResponse, crate::DecodeError> {
+        if !CreateDelegationTokenResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("CreateDelegationTokenResponse", version));
+        }
+        CreateDelegationTokenResponse::read(reader, version)
+    }
 }

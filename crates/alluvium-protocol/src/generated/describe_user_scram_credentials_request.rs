@@ -5,6 +5,8 @@
 
 //! The `DescribeUserScramCredentialsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `DescribeUserScramCredentialsRequest` request, API key 50: versions 0, flexible
 /// versions 0+.
 #[derive(Debug, Clone, PartialEq)]
@@ -26,6 +28,33 @@ impl Default for DescribeUserScramCredentialsRequest {
     }
 }
 
+impl DescribeUserScramCredentialsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeUserScramCredentialsRequest, crate::DecodeError> {
+        let mut value = DescribeUserScramCredentialsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.users = reader
+            .read_nullable_array(crate::Framing::Compact, |reader| UserName::read(reader, version))
+            .within("Users")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribeUserScramCredentialsRequest`'s `Users` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct UserName {
@@ -35,6 +64,28 @@ pub struct UserName {
     pub name: String,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl UserName {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<UserName, crate::DecodeError> {
+        let mut value = UserName::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 impl DescribeUserScramCredentialsRequest {
@@ -49,4 +100,15 @@ impl DescribeUserScramCredentialsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for DescribeUserScramCredentialsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeUserScramCredentialsRequest, crate::DecodeError> {
+        if !DescribeUserScramCredentialsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DescribeUserScramCredentialsRequest", version));
+        }
+        DescribeUserScramCredentialsRequest::read(reader, version)
+    }
 }

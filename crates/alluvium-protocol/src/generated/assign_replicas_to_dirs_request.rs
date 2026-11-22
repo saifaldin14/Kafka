@@ -5,6 +5,8 @@
 
 //! The `AssignReplicasToDirsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `AssignReplicasToDirsRequest` request, API key 73: versions 0, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AssignReplicasToDirsRequest {
@@ -35,6 +37,35 @@ impl Default for AssignReplicasToDirsRequest {
     }
 }
 
+impl AssignReplicasToDirsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AssignReplicasToDirsRequest, crate::DecodeError> {
+        let mut value = AssignReplicasToDirsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.broker_id = reader.read_i32().within("BrokerId")?;
+        self.broker_epoch = reader.read_i64().within("BrokerEpoch")?;
+        self.directories = reader
+            .read_array(crate::Framing::Compact, |reader| DirectoryData::read(reader, version))
+            .within("Directories")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `AssignReplicasToDirsRequest`'s `Directories` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DirectoryData {
@@ -57,6 +88,31 @@ impl Default for DirectoryData {
             topics: Vec::new(),
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl DirectoryData {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<DirectoryData, crate::DecodeError> {
+        let mut value = DirectoryData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.id = reader.read_uuid().within("Id")?;
+        self.topics = reader
+            .read_array(crate::Framing::Compact, |reader| TopicData::read(reader, version))
+            .within("Topics")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -85,6 +141,31 @@ impl Default for TopicData {
     }
 }
 
+impl TopicData {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<TopicData, crate::DecodeError> {
+        let mut value = TopicData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_id = reader.read_uuid().within("TopicId")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, |reader| PartitionData::read(reader, version))
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `TopicData`'s `Partitions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct PartitionData {
@@ -94,6 +175,28 @@ pub struct PartitionData {
     pub partition_index: i32,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl PartitionData {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<PartitionData, crate::DecodeError> {
+        let mut value = PartitionData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 impl AssignReplicasToDirsRequest {
@@ -108,4 +211,15 @@ impl AssignReplicasToDirsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for AssignReplicasToDirsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AssignReplicasToDirsRequest, crate::DecodeError> {
+        if !AssignReplicasToDirsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("AssignReplicasToDirsRequest", version));
+        }
+        AssignReplicasToDirsRequest::read(reader, version)
+    }
 }

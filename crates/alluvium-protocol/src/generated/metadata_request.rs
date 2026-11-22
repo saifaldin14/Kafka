@@ -4,6 +4,8 @@
 
 //! The `MetadataRequest` request.
 
+use crate::WithinField as _;
+
 /// The `MetadataRequest` request, API key 3: versions 0-13, flexible versions 9+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct MetadataRequest {
@@ -40,6 +42,57 @@ impl Default for MetadataRequest {
     }
 }
 
+impl MetadataRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<MetadataRequest, crate::DecodeError> {
+        let mut value = MetadataRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topics = if version >= 1 {
+            reader.read_nullable_array(
+                if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| MetadataRequestTopic::read(reader, version),
+            )
+        } else {
+            reader
+                .read_array(
+                    if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+                    |reader| MetadataRequestTopic::read(reader, version),
+                )
+                .map(Some)
+        }
+        .within("Topics")?;
+        if version >= 4 {
+            self.allow_auto_topic_creation = reader.read_bool().within("AllowAutoTopicCreation")?;
+        }
+        if (8..=10).contains(&version) {
+            self.include_cluster_authorized_operations =
+                reader.read_bool().within("IncludeClusterAuthorizedOperations")?;
+        }
+        if version >= 8 {
+            self.include_topic_authorized_operations =
+                reader.read_bool().within("IncludeTopicAuthorizedOperations")?;
+        }
+        if version >= 9 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `MetadataRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct MetadataRequestTopic {
@@ -65,6 +118,51 @@ impl Default for MetadataRequestTopic {
     }
 }
 
+impl MetadataRequestTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<MetadataRequestTopic, crate::DecodeError> {
+        let mut value = MetadataRequestTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version >= 10 {
+            self.topic_id = reader.read_uuid().within("TopicId")?;
+        }
+        self.name = if version >= 10 {
+            reader.read_nullable_string(if version >= 9 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+        } else {
+            reader
+                .read_string(if version >= 9 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .map(Some)
+        }
+        .within("Name")?;
+        if version >= 9 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl MetadataRequest {
     /// The API key.
     pub const API_KEY: i16 = 3;
@@ -77,4 +175,15 @@ impl MetadataRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for MetadataRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<MetadataRequest, crate::DecodeError> {
+        if !MetadataRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("MetadataRequest", version));
+        }
+        MetadataRequest::read(reader, version)
+    }
 }

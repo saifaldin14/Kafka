@@ -5,6 +5,8 @@
 
 //! The `OffsetForLeaderEpochRequest` request.
 
+use crate::WithinField as _;
+
 /// The `OffsetForLeaderEpochRequest` request, API key 23: versions 2-4, flexible versions
 /// 4+.
 #[derive(Debug, Clone, PartialEq)]
@@ -28,6 +30,41 @@ impl Default for OffsetForLeaderEpochRequest {
             topics: Vec::new(),
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl OffsetForLeaderEpochRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetForLeaderEpochRequest, crate::DecodeError> {
+        let mut value = OffsetForLeaderEpochRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version >= 3 {
+            self.replica_id = reader.read_i32().within("ReplicaId")?;
+        }
+        self.topics = reader
+            .read_array(
+                if version == 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| OffsetForLeaderTopic::read(reader, version),
+            )
+            .within("Topics")?;
+        if version == 4 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -60,9 +97,46 @@ impl OffsetForLeaderTopic {
         elements: &'a [OffsetForLeaderTopic],
         topic: &str,
     ) -> impl Iterator<Item = &'a OffsetForLeaderTopic> {
-        elements
-            .iter()
-            .filter(move |element| element.topic == topic)
+        elements.iter().filter(move |element| element.topic == topic)
+    }
+}
+
+impl OffsetForLeaderTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetForLeaderTopic, crate::DecodeError> {
+        let mut value = OffsetForLeaderTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic = reader
+            .read_string(if version == 4 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Topic")?;
+        self.partitions = reader
+            .read_array(
+                if version == 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| OffsetForLeaderPartition::read(reader, version),
+            )
+            .within("Partitions")?;
+        if version == 4 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -99,6 +173,35 @@ impl Default for OffsetForLeaderPartition {
     }
 }
 
+impl OffsetForLeaderPartition {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetForLeaderPartition, crate::DecodeError> {
+        let mut value = OffsetForLeaderPartition::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition = reader.read_i32().within("Partition")?;
+        self.current_leader_epoch = reader.read_i32().within("CurrentLeaderEpoch")?;
+        self.leader_epoch = reader.read_i32().within("LeaderEpoch")?;
+        if version == 4 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl OffsetForLeaderEpochRequest {
     /// The API key.
     pub const API_KEY: i16 = 23;
@@ -111,4 +214,15 @@ impl OffsetForLeaderEpochRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for OffsetForLeaderEpochRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetForLeaderEpochRequest, crate::DecodeError> {
+        if !OffsetForLeaderEpochRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("OffsetForLeaderEpochRequest", version));
+        }
+        OffsetForLeaderEpochRequest::read(reader, version)
+    }
 }

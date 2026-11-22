@@ -5,6 +5,8 @@
 
 //! The `SaslAuthenticateResponse` response.
 
+use crate::WithinField as _;
+
 /// The `SaslAuthenticateResponse` response, API key 36: versions 0-2, flexible versions 2+.
 #[derive(Clone, PartialEq)]
 pub struct SaslAuthenticateResponse {
@@ -66,6 +68,50 @@ impl SaslAuthenticateResponse {
 }
 
 impl SaslAuthenticateResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<SaslAuthenticateResponse, crate::DecodeError> {
+        let mut value = SaslAuthenticateResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message = reader
+            .read_nullable_string(if version == 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ErrorMessage")?;
+        self.auth_bytes = reader
+            .read_bytes(if version == 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("AuthBytes")?;
+        if version >= 1 {
+            self.session_lifetime_ms = reader.read_i64().within("SessionLifetimeMs")?;
+        }
+        if version == 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl SaslAuthenticateResponse {
     /// The API key.
     pub const API_KEY: i16 = 36;
     /// The versions of this message.
@@ -74,4 +120,15 @@ impl SaslAuthenticateResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(2, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for SaslAuthenticateResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<SaslAuthenticateResponse, crate::DecodeError> {
+        if !SaslAuthenticateResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("SaslAuthenticateResponse", version));
+        }
+        SaslAuthenticateResponse::read(reader, version)
+    }
 }

@@ -4,6 +4,8 @@
 
 //! The `LeaderChangeMessage` data type.
 
+use crate::WithinField as _;
+
 /// The `LeaderChangeMessage` data type: versions 0-1, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct LeaderChangeMessage {
@@ -25,6 +27,38 @@ pub struct LeaderChangeMessage {
     pub granting_voters: Vec<Voter>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl LeaderChangeMessage {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<LeaderChangeMessage, crate::DecodeError> {
+        let mut value = LeaderChangeMessage::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.version = reader.read_i16().within("Version")?;
+        self.leader_id = reader.read_i32().within("LeaderId")?;
+        self.voters = reader
+            .read_array(crate::Framing::Compact, |reader| Voter::read(reader, version))
+            .within("Voters")?;
+        self.granting_voters = reader
+            .read_array(crate::Framing::Compact, |reader| Voter::read(reader, version))
+            .within("GrantingVoters")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// `Voter`, a struct several fields share.
@@ -52,6 +86,31 @@ impl Default for Voter {
     }
 }
 
+impl Voter {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<Voter, crate::DecodeError> {
+        let mut value = Voter::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.voter_id = reader.read_i32().within("VoterId")?;
+        if version >= 1 {
+            self.voter_directory_id = reader.read_uuid().within("VoterDirectoryId")?;
+        }
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl LeaderChangeMessage {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 1);
@@ -59,4 +118,15 @@ impl LeaderChangeMessage {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for LeaderChangeMessage {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<LeaderChangeMessage, crate::DecodeError> {
+        if !LeaderChangeMessage::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("LeaderChangeMessage", version));
+        }
+        LeaderChangeMessage::read(reader, version)
+    }
 }

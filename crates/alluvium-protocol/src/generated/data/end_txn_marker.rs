@@ -4,6 +4,8 @@
 
 //! The `EndTxnMarker` data type.
 
+use crate::WithinField as _;
+
 /// The `EndTxnMarker` data type: versions 0, flexible versions none.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct EndTxnMarker {
@@ -14,10 +16,38 @@ pub struct EndTxnMarker {
 }
 
 impl EndTxnMarker {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<EndTxnMarker, crate::DecodeError> {
+        let mut value = EndTxnMarker::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.coordinator_epoch = reader.read_i32().within("CoordinatorEpoch")?;
+        Ok(())
+    }
+}
+
+impl EndTxnMarker {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 0);
     /// The versions that use the flexible encoding.
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::NONE;
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for EndTxnMarker {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<EndTxnMarker, crate::DecodeError> {
+        if !EndTxnMarker::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("EndTxnMarker", version));
+        }
+        EndTxnMarker::read(reader, version)
+    }
 }

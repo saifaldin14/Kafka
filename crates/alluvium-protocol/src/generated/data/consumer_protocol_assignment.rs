@@ -5,6 +5,8 @@
 
 //! The `ConsumerProtocolAssignment` data type.
 
+use crate::WithinField as _;
+
 /// The `ConsumerProtocolAssignment` data type: versions 0-3, flexible versions none.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ConsumerProtocolAssignment {
@@ -16,6 +18,29 @@ pub struct ConsumerProtocolAssignment {
     ///
     /// Versions 0+, nullable 0+.
     pub user_data: Option<bytes::Bytes>,
+}
+
+impl ConsumerProtocolAssignment {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ConsumerProtocolAssignment, crate::DecodeError> {
+        let mut value = ConsumerProtocolAssignment::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.assigned_partitions = reader
+            .read_array(crate::Framing::Classic, |reader| TopicPartition::read(reader, version))
+            .within("AssignedPartitions")?;
+        self.user_data = reader.read_nullable_bytes(crate::Framing::Classic).within("UserData")?;
+        Ok(())
+    }
 }
 
 /// An element of `ConsumerProtocolAssignment`'s `AssignedPartitions` array.
@@ -42,9 +67,30 @@ impl TopicPartition {
         elements: &'a [TopicPartition],
         topic: &str,
     ) -> impl Iterator<Item = &'a TopicPartition> {
-        elements
-            .iter()
-            .filter(move |element| element.topic == topic)
+        elements.iter().filter(move |element| element.topic == topic)
+    }
+}
+
+impl TopicPartition {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TopicPartition, crate::DecodeError> {
+        let mut value = TopicPartition::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic = reader.read_string(crate::Framing::Classic).within("Topic")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Classic, crate::Reader::read_i32)
+            .within("Partitions")?;
+        Ok(())
     }
 }
 
@@ -55,4 +101,15 @@ impl ConsumerProtocolAssignment {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::NONE;
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for ConsumerProtocolAssignment {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ConsumerProtocolAssignment, crate::DecodeError> {
+        if !ConsumerProtocolAssignment::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ConsumerProtocolAssignment", version));
+        }
+        ConsumerProtocolAssignment::read(reader, version)
+    }
 }

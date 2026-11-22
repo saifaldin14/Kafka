@@ -32,14 +32,29 @@ impl Reader {
     ///
     /// # Errors
     ///
+    /// As [`Reader::read_tagged_field_count`] and [`Reader::read_tagged_field_header`],
+    /// and [`DecodeErrorKind::Truncated`] if the input ends inside the section.
+    pub fn read_tagged_fields(&mut self) -> Result<Vec<RawTaggedField>, DecodeError> {
+        let start = self.offset();
+        let count = self.read_tagged_field_count()?;
+        self.read_elements(start, count, |reader| {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            Ok(RawTaggedField {
+                tag,
+                data: reader.take(size)?,
+            })
+        })
+    }
+
+    /// The field count that starts a tagged-field section.
+    ///
+    /// # Errors
+    ///
     /// [`DecodeErrorKind::NegativeTaggedFieldCount`],
     /// [`DecodeErrorKind::TaggedFieldCountExceedsInput`] or
-    /// [`DecodeErrorKind::LimitExceeded`] for a count that can't be real or would exceed
-    /// the allocation budget,
-    /// [`DecodeErrorKind::NegativeTaggedFieldSize`] for an impossible size, and
-    /// [`DecodeErrorKind::Truncated`] if the input ends inside the section.
+    /// [`DecodeErrorKind::LimitExceeded`] for a count that can't be real.
     // Parity: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java@4.4.0 MessageDataGenerator.generateClassReader
-    pub fn read_tagged_fields(&mut self) -> Result<Vec<RawTaggedField>, DecodeError> {
+    pub fn read_tagged_field_count(&mut self) -> Result<usize, DecodeError> {
         let start = self.offset();
         let count = self.read_unsigned_varint()?.cast_signed();
         let count = usize::try_from(count).map_err(|_| {
@@ -64,21 +79,104 @@ impl Reader {
                 },
             ));
         }
-        self.read_elements(start, count, |reader| {
-            let field_start = reader.offset();
-            let tag = reader.read_unsigned_varint()?;
-            let size = reader.read_unsigned_varint()?.cast_signed();
-            let size = usize::try_from(size).map_err(|_| {
-                Reader::error_at(
-                    field_start,
-                    DecodeErrorKind::NegativeTaggedFieldSize { tag, size },
-                )
-            })?;
-            Ok(RawTaggedField {
-                tag,
-                data: reader.take(size)?,
-            })
-        })
+        Ok(count)
+    }
+
+    /// One tagged field's tag and size; its value follows.
+    ///
+    /// # Errors
+    ///
+    /// [`DecodeErrorKind::NegativeTaggedFieldSize`] for an impossible size.
+    pub fn read_tagged_field_header(&mut self) -> Result<(u32, usize), DecodeError> {
+        let start = self.offset();
+        let tag = self.read_unsigned_varint()?;
+        let size = self.read_unsigned_varint()?.cast_signed();
+        let size = usize::try_from(size).map_err(|_| {
+            Reader::error_at(
+                start,
+                DecodeErrorKind::NegativeTaggedFieldSize { tag, size },
+            )
+        })?;
+        Ok((tag, size))
+    }
+
+    /// The value of the known tagged field `tag`, read by `read` from exactly the `size`
+    /// bytes its header declared.
+    ///
+    /// `read` gets a reader over just those bytes, so it can't read into the next field,
+    /// and it shares this reader's offsets and allocation budget.
+    ///
+    /// # Errors
+    ///
+    /// [`DecodeErrorKind::Truncated`] if fewer than `size` bytes remain, any error of
+    /// `read`, and [`DecodeErrorKind::TaggedFieldSizeMismatch`] if `read` leaves bytes
+    /// unread.
+    pub fn read_tagged_value<T>(
+        &mut self,
+        tag: u32,
+        size: usize,
+        read: impl FnOnce(&mut Reader) -> Result<T, DecodeError>,
+    ) -> Result<T, DecodeError> {
+        let start = self.offset();
+        let mut value_reader = Reader {
+            buf: self.take(size)?,
+            total: start.saturating_add(size),
+            limits: self.limits,
+            budget_left: self.budget_left,
+        };
+        let value = read(&mut value_reader);
+        self.budget_left = value_reader.budget_left;
+        let value = value?;
+        if value_reader.remaining() > 0 {
+            return Err(Reader::error_at(
+                start,
+                DecodeErrorKind::TaggedFieldSizeMismatch {
+                    tag,
+                    declared: size,
+                    read: size.saturating_sub(value_reader.remaining()),
+                },
+            ));
+        }
+        Ok(value)
+    }
+
+    /// Keeps the tagged field `tag`, whose `size` bytes come next, raw in `fields`.
+    ///
+    /// # Errors
+    ///
+    /// [`DecodeErrorKind::Truncated`] if fewer than `size` bytes remain, and
+    /// [`DecodeErrorKind::LimitExceeded`] if keeping it would exceed the allocation
+    /// budget.
+    // Parity: clients/src/main/java/org/apache/kafka/common/protocol/Readable.java@4.4.0 Readable.readUnknownTaggedField
+    pub fn read_unknown_tagged_field(
+        &mut self,
+        tag: u32,
+        size: usize,
+        fields: &mut Vec<RawTaggedField>,
+    ) -> Result<(), DecodeError> {
+        let start = self.offset();
+        let data = self.take(size)?;
+        if fields.len() == fields.capacity() {
+            // Grow as `Vec` would, doubling, but charge the new capacity before it is
+            // allocated, so the budget covers every slot and growth stays amortized.
+            let additional = fields.capacity().max(1);
+            self.charge(
+                start,
+                additional.saturating_mul(size_of::<RawTaggedField>()),
+            )?;
+            fields.reserve_exact(additional);
+        }
+        fields.push(RawTaggedField { tag, data });
+        Ok(())
+    }
+
+    /// The error for a known tag in a version where its field isn't tagged, at the
+    /// current offset: Kafka's "Tag N is not valid for version V".
+    pub fn tag_not_valid(&self, tag: u32, version: i16) -> DecodeError {
+        Reader::error_at(
+            self.offset(),
+            DecodeErrorKind::TagNotValidForVersion { tag, version },
+        )
     }
 }
 

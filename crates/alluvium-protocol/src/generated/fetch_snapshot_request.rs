@@ -4,6 +4,8 @@
 
 //! The `FetchSnapshotRequest` request.
 
+use crate::WithinField as _;
+
 /// The `FetchSnapshotRequest` request, API key 59: versions 0-1, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FetchSnapshotRequest {
@@ -40,6 +42,43 @@ impl Default for FetchSnapshotRequest {
     }
 }
 
+impl FetchSnapshotRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<FetchSnapshotRequest, crate::DecodeError> {
+        let mut value = FetchSnapshotRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.replica_id = reader.read_i32().within("ReplicaId")?;
+        self.max_bytes = reader.read_i32().within("MaxBytes")?;
+        self.topics = reader
+            .read_array(crate::Framing::Compact, |reader| TopicSnapshot::read(reader, version))
+            .within("Topics")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            if tag == 0 {
+                self.cluster_id = reader
+                    .read_tagged_value(tag, size, |reader| {
+                        reader.read_nullable_string(crate::Framing::Compact)
+                    })
+                    .within("ClusterId")?;
+            } else {
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `FetchSnapshotRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopicSnapshot {
@@ -53,6 +92,31 @@ pub struct TopicSnapshot {
     pub partitions: Vec<PartitionSnapshot>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl TopicSnapshot {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<TopicSnapshot, crate::DecodeError> {
+        let mut value = TopicSnapshot::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, |reader| PartitionSnapshot::read(reader, version))
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `TopicSnapshot`'s `Partitions` array.
@@ -95,6 +159,42 @@ impl Default for PartitionSnapshot {
     }
 }
 
+impl PartitionSnapshot {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<PartitionSnapshot, crate::DecodeError> {
+        let mut value = PartitionSnapshot::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition = reader.read_i32().within("Partition")?;
+        self.current_leader_epoch = reader.read_i32().within("CurrentLeaderEpoch")?;
+        self.snapshot_id = SnapshotId::read(reader, version).within("SnapshotId")?;
+        self.position = reader.read_i64().within("Position")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            if tag == 0 && version == 1 {
+                self.replica_directory_id = reader
+                    .read_tagged_value(tag, size, crate::Reader::read_uuid)
+                    .within("ReplicaDirectoryId")?;
+            } else if tag == 0 {
+                return Err(reader.tag_not_valid(tag, version).within("ReplicaDirectoryId"));
+            } else {
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// The `SnapshotId` field of `PartitionSnapshot`.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct SnapshotId {
@@ -110,6 +210,29 @@ pub struct SnapshotId {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl SnapshotId {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<SnapshotId, crate::DecodeError> {
+        let mut value = SnapshotId::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.end_offset = reader.read_i64().within("EndOffset")?;
+        self.epoch = reader.read_i32().within("Epoch")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl FetchSnapshotRequest {
     /// The API key.
     pub const API_KEY: i16 = 59;
@@ -122,4 +245,15 @@ impl FetchSnapshotRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for FetchSnapshotRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<FetchSnapshotRequest, crate::DecodeError> {
+        if !FetchSnapshotRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("FetchSnapshotRequest", version));
+        }
+        FetchSnapshotRequest::read(reader, version)
+    }
 }

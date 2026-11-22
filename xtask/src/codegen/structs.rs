@@ -24,9 +24,9 @@ use std::fmt::Write as _;
 
 use alluvium_types::Uuid;
 
-use super::docs;
 use super::names::{self, UNKNOWN_TAGGED_FIELDS};
 use super::overlays::{self, Overlays};
+use super::{decode, docs};
 use crate::message_spec::{
     FieldDefault, FieldSpec, FieldType, MessageKind, MessageSpec, StructRegistry, Versions,
 };
@@ -109,8 +109,20 @@ pub(crate) fn module(
             render_find(&mut source, item)?;
         }
         render_known_values(&mut source, item, overlays, runtime);
+        decode::render_read(
+            &mut source,
+            item.name,
+            item.fields,
+            item.versions,
+            message,
+            runtime,
+        )?;
     }
     render_constants(&mut source, message, runtime);
+    decode::render_message(&mut source, message, runtime);
+    if source.contains(".within(") {
+        source.insert_str(0, &format!("use {runtime}::WithinField as _;\n\n"));
+    }
     Ok(Module { source, depth })
 }
 
@@ -177,7 +189,7 @@ fn message_doc(message: &MessageSpec) -> String {
 
 /// Whether a field is `Option<T>`: nullable in any of its versions, or a `records`
 /// field, which Kafka always defaults to null.
-fn is_nullable(field: &FieldSpec) -> bool {
+pub(crate) fn is_nullable(field: &FieldSpec) -> bool {
     field.field_type == FieldType::Records
         || !field.nullable_versions.intersect(field.versions).is_empty()
 }
@@ -214,7 +226,7 @@ pub(crate) fn field_type(field: &FieldSpec, runtime: &str) -> String {
 
 /// `field`'s default as a Rust expression, and whether it equals the Rust type's own
 /// `Default`, so that a struct whose fields all do can derive it.
-fn default(field: &FieldSpec) -> (String, bool) {
+pub(crate) fn default(field: &FieldSpec) -> (String, bool) {
     let nullable = is_nullable(field);
     let wrap = |value: String| {
         if nullable {

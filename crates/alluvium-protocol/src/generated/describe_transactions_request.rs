@@ -5,6 +5,8 @@
 
 //! The `DescribeTransactionsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `DescribeTransactionsRequest` request, API key 65: versions 0, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DescribeTransactionsRequest {
@@ -15,6 +17,35 @@ pub struct DescribeTransactionsRequest {
     pub transactional_ids: Vec<String>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl DescribeTransactionsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeTransactionsRequest, crate::DecodeError> {
+        let mut value = DescribeTransactionsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.transactional_ids = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                reader.read_string(crate::Framing::Compact)
+            })
+            .within("TransactionalIds")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 impl DescribeTransactionsRequest {
@@ -29,4 +60,15 @@ impl DescribeTransactionsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for DescribeTransactionsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeTransactionsRequest, crate::DecodeError> {
+        if !DescribeTransactionsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DescribeTransactionsRequest", version));
+        }
+        DescribeTransactionsRequest::read(reader, version)
+    }
 }

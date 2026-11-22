@@ -5,6 +5,8 @@
 
 //! The `AllocateProducerIdsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `AllocateProducerIdsRequest` request, API key 67: versions 0, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AllocateProducerIdsRequest {
@@ -31,6 +33,32 @@ impl Default for AllocateProducerIdsRequest {
 }
 
 impl AllocateProducerIdsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AllocateProducerIdsRequest, crate::DecodeError> {
+        let mut value = AllocateProducerIdsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.broker_id = reader.read_i32().within("BrokerId")?;
+        self.broker_epoch = reader.read_i64().within("BrokerEpoch")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
+impl AllocateProducerIdsRequest {
     /// The API key.
     pub const API_KEY: i16 = 67;
     /// The versions of this message.
@@ -42,4 +70,15 @@ impl AllocateProducerIdsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for AllocateProducerIdsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AllocateProducerIdsRequest, crate::DecodeError> {
+        if !AllocateProducerIdsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("AllocateProducerIdsRequest", version));
+        }
+        AllocateProducerIdsRequest::read(reader, version)
+    }
 }

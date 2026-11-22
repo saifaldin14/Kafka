@@ -5,6 +5,8 @@
 
 //! The `DescribeProducersRequest` request.
 
+use crate::WithinField as _;
+
 /// The `DescribeProducersRequest` request, API key 61: versions 0, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DescribeProducersRequest {
@@ -14,6 +16,33 @@ pub struct DescribeProducersRequest {
     pub topics: Vec<TopicRequest>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl DescribeProducersRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeProducersRequest, crate::DecodeError> {
+        let mut value = DescribeProducersRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topics = reader
+            .read_array(crate::Framing::Compact, |reader| TopicRequest::read(reader, version))
+            .within("Topics")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `DescribeProducersRequest`'s `Topics` array.
@@ -46,6 +75,31 @@ impl TopicRequest {
     }
 }
 
+impl TopicRequest {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<TopicRequest, crate::DecodeError> {
+        let mut value = TopicRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        self.partition_indexes = reader
+            .read_array(crate::Framing::Compact, crate::Reader::read_i32)
+            .within("PartitionIndexes")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl DescribeProducersRequest {
     /// The API key.
     pub const API_KEY: i16 = 61;
@@ -58,4 +112,15 @@ impl DescribeProducersRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for DescribeProducersRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeProducersRequest, crate::DecodeError> {
+        if !DescribeProducersRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DescribeProducersRequest", version));
+        }
+        DescribeProducersRequest::read(reader, version)
+    }
 }

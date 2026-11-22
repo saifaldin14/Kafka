@@ -5,6 +5,8 @@
 
 //! The `AddPartitionsToTxnResponse` response.
 
+use crate::WithinField as _;
+
 /// The `AddPartitionsToTxnResponse` response, API key 24: versions 0-5, flexible versions
 /// 3+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -42,6 +44,49 @@ impl AddPartitionsToTxnResponse {
     }
 }
 
+impl AddPartitionsToTxnResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AddPartitionsToTxnResponse, crate::DecodeError> {
+        let mut value = AddPartitionsToTxnResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        if version >= 4 {
+            self.error_code = reader.read_i16().within("ErrorCode")?;
+            self.results_by_transaction = reader
+                .read_array(crate::Framing::Compact, |reader| {
+                    AddPartitionsToTxnResult::read(reader, version)
+                })
+                .within("ResultsByTransaction")?;
+        }
+        if version <= 3 {
+            self.results_by_topic_v3_and_below = reader
+                .read_array(
+                    if version == 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+                    |reader| AddPartitionsToTxnTopicResult::read(reader, version),
+                )
+                .within("ResultsByTopicV3AndBelow")?;
+        }
+        if version >= 3 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `AddPartitionsToTxnResponse`'s `ResultsByTransaction` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AddPartitionsToTxnResult {
@@ -64,9 +109,7 @@ impl AddPartitionsToTxnResult {
         elements: &'a [AddPartitionsToTxnResult],
         transactional_id: &str,
     ) -> Option<&'a AddPartitionsToTxnResult> {
-        elements
-            .iter()
-            .find(|element| element.transactional_id == transactional_id)
+        elements.iter().find(|element| element.transactional_id == transactional_id)
     }
 
     /// Every element of `elements` whose key (`TransactionalId`) equals the arguments, in
@@ -75,9 +118,38 @@ impl AddPartitionsToTxnResult {
         elements: &'a [AddPartitionsToTxnResult],
         transactional_id: &str,
     ) -> impl Iterator<Item = &'a AddPartitionsToTxnResult> {
-        elements
-            .iter()
-            .filter(move |element| element.transactional_id == transactional_id)
+        elements.iter().filter(move |element| element.transactional_id == transactional_id)
+    }
+}
+
+impl AddPartitionsToTxnResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AddPartitionsToTxnResult, crate::DecodeError> {
+        let mut value = AddPartitionsToTxnResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.transactional_id =
+            reader.read_string(crate::Framing::Compact).within("TransactionalId")?;
+        self.topic_results = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                AddPartitionsToTxnTopicResult::read(reader, version)
+            })
+            .within("TopicResults")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -114,6 +186,45 @@ impl AddPartitionsToTxnTopicResult {
     }
 }
 
+impl AddPartitionsToTxnTopicResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AddPartitionsToTxnTopicResult, crate::DecodeError> {
+        let mut value = AddPartitionsToTxnTopicResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader
+            .read_string(if version >= 3 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Name")?;
+        self.results_by_partition = reader
+            .read_array(
+                if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| AddPartitionsToTxnPartitionResult::read(reader, version),
+            )
+            .within("ResultsByPartition")?;
+        if version >= 3 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// `AddPartitionsToTxnPartitionResult`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AddPartitionsToTxnPartitionResult {
@@ -136,9 +247,7 @@ impl AddPartitionsToTxnPartitionResult {
         elements: &[AddPartitionsToTxnPartitionResult],
         partition_index: i32,
     ) -> Option<&AddPartitionsToTxnPartitionResult> {
-        elements
-            .iter()
-            .find(|element| element.partition_index == partition_index)
+        elements.iter().find(|element| element.partition_index == partition_index)
     }
 
     /// Every element of `elements` whose key (`PartitionIndex`) equals the arguments, in
@@ -147,9 +256,7 @@ impl AddPartitionsToTxnPartitionResult {
         elements: &[AddPartitionsToTxnPartitionResult],
         partition_index: i32,
     ) -> impl Iterator<Item = &AddPartitionsToTxnPartitionResult> {
-        elements
-            .iter()
-            .filter(move |element| element.partition_index == partition_index)
+        elements.iter().filter(move |element| element.partition_index == partition_index)
     }
 }
 
@@ -165,6 +272,34 @@ impl AddPartitionsToTxnPartitionResult {
     }
 }
 
+impl AddPartitionsToTxnPartitionResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AddPartitionsToTxnPartitionResult, crate::DecodeError> {
+        let mut value = AddPartitionsToTxnPartitionResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.partition_error_code = reader.read_i16().within("PartitionErrorCode")?;
+        if version >= 3 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl AddPartitionsToTxnResponse {
     /// The API key.
     pub const API_KEY: i16 = 24;
@@ -174,4 +309,15 @@ impl AddPartitionsToTxnResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(3, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for AddPartitionsToTxnResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AddPartitionsToTxnResponse, crate::DecodeError> {
+        if !AddPartitionsToTxnResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("AddPartitionsToTxnResponse", version));
+        }
+        AddPartitionsToTxnResponse::read(reader, version)
+    }
 }

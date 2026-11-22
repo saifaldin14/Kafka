@@ -4,6 +4,8 @@
 
 //! The `ShareFetchResponse` response.
 
+use crate::WithinField as _;
+
 /// The `ShareFetchResponse` response, API key 78: versions 1-2, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ShareFetchResponse {
@@ -49,6 +51,43 @@ impl ShareFetchResponse {
     }
 }
 
+impl ShareFetchResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ShareFetchResponse, crate::DecodeError> {
+        let mut value = ShareFetchResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message =
+            reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        self.acquisition_lock_timeout_ms = reader.read_i32().within("AcquisitionLockTimeoutMs")?;
+        self.responses = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                ShareFetchableTopicResponse::read(reader, version)
+            })
+            .within("Responses")?;
+        self.node_endpoints = reader
+            .read_array(crate::Framing::Compact, |reader| NodeEndpoint::read(reader, version))
+            .within("NodeEndpoints")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `ShareFetchResponse`'s `Responses` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ShareFetchableTopicResponse {
@@ -89,9 +128,35 @@ impl ShareFetchableTopicResponse {
         elements: &[ShareFetchableTopicResponse],
         topic_id: alluvium_types::Uuid,
     ) -> impl Iterator<Item = &ShareFetchableTopicResponse> {
-        elements
-            .iter()
-            .filter(move |element| element.topic_id == topic_id)
+        elements.iter().filter(move |element| element.topic_id == topic_id)
+    }
+}
+
+impl ShareFetchableTopicResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ShareFetchableTopicResponse, crate::DecodeError> {
+        let mut value = ShareFetchableTopicResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_id = reader.read_uuid().within("TopicId")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, |reader| PartitionData::read(reader, version))
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -156,6 +221,44 @@ impl PartitionData {
     }
 }
 
+impl PartitionData {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<PartitionData, crate::DecodeError> {
+        let mut value = PartitionData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message =
+            reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        self.acknowledge_error_code = reader.read_i16().within("AcknowledgeErrorCode")?;
+        self.acknowledge_error_message = reader
+            .read_nullable_string(crate::Framing::Compact)
+            .within("AcknowledgeErrorMessage")?;
+        self.current_leader = LeaderIdAndEpoch::read(reader, version).within("CurrentLeader")?;
+        self.records = reader
+            .read_bytes(crate::Framing::Compact)
+            .map(crate::RecordsField::new)
+            .map(Some)
+            .within("Records")?;
+        self.acquired_records = reader
+            .read_array(crate::Framing::Compact, |reader| AcquiredRecords::read(reader, version))
+            .within("AcquiredRecords")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// The `CurrentLeader` field of `PartitionData`.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct LeaderIdAndEpoch {
@@ -169,6 +272,32 @@ pub struct LeaderIdAndEpoch {
     pub leader_epoch: i32,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl LeaderIdAndEpoch {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<LeaderIdAndEpoch, crate::DecodeError> {
+        let mut value = LeaderIdAndEpoch::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.leader_id = reader.read_i32().within("LeaderId")?;
+        self.leader_epoch = reader.read_i32().within("LeaderEpoch")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `PartitionData`'s `AcquiredRecords` array.
@@ -188,6 +317,33 @@ pub struct AcquiredRecords {
     pub delivery_count: i16,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl AcquiredRecords {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AcquiredRecords, crate::DecodeError> {
+        let mut value = AcquiredRecords::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.first_offset = reader.read_i64().within("FirstOffset")?;
+        self.last_offset = reader.read_i64().within("LastOffset")?;
+        self.delivery_count = reader.read_i16().within("DeliveryCount")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `ShareFetchResponse`'s `NodeEndpoints` array.
@@ -225,9 +381,32 @@ impl NodeEndpoint {
         elements: &[NodeEndpoint],
         node_id: i32,
     ) -> impl Iterator<Item = &NodeEndpoint> {
-        elements
-            .iter()
-            .filter(move |element| element.node_id == node_id)
+        elements.iter().filter(move |element| element.node_id == node_id)
+    }
+}
+
+impl NodeEndpoint {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<NodeEndpoint, crate::DecodeError> {
+        let mut value = NodeEndpoint::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.node_id = reader.read_i32().within("NodeId")?;
+        self.host = reader.read_string(crate::Framing::Compact).within("Host")?;
+        self.port = reader.read_i32().within("Port")?;
+        self.rack = reader.read_nullable_string(crate::Framing::Compact).within("Rack")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -240,4 +419,15 @@ impl ShareFetchResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for ShareFetchResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ShareFetchResponse, crate::DecodeError> {
+        if !ShareFetchResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ShareFetchResponse", version));
+        }
+        ShareFetchResponse::read(reader, version)
+    }
 }

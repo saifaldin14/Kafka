@@ -5,6 +5,8 @@
 
 //! The `UpdateRaftVoterResponse` response.
 
+use crate::WithinField as _;
+
 /// The `UpdateRaftVoterResponse` response, API key 82: versions 0, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct UpdateRaftVoterResponse {
@@ -34,6 +36,38 @@ impl UpdateRaftVoterResponse {
     /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
     pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
         crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
+impl UpdateRaftVoterResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<UpdateRaftVoterResponse, crate::DecodeError> {
+        let mut value = UpdateRaftVoterResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            if tag == 0 {
+                self.current_leader = reader
+                    .read_tagged_value(tag, size, |reader| CurrentLeader::read(reader, version))
+                    .within("CurrentLeader")?;
+            } else {
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -72,6 +106,31 @@ impl Default for CurrentLeader {
     }
 }
 
+impl CurrentLeader {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<CurrentLeader, crate::DecodeError> {
+        let mut value = CurrentLeader::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.leader_id = reader.read_i32().within("LeaderId")?;
+        self.leader_epoch = reader.read_i32().within("LeaderEpoch")?;
+        self.host = reader.read_string(crate::Framing::Compact).within("Host")?;
+        self.port = reader.read_i32().within("Port")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl UpdateRaftVoterResponse {
     /// The API key.
     pub const API_KEY: i16 = 82;
@@ -81,4 +140,15 @@ impl UpdateRaftVoterResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for UpdateRaftVoterResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<UpdateRaftVoterResponse, crate::DecodeError> {
+        if !UpdateRaftVoterResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("UpdateRaftVoterResponse", version));
+        }
+        UpdateRaftVoterResponse::read(reader, version)
+    }
 }

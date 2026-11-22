@@ -16,6 +16,7 @@ The generator is [`xtask/src/codegen.rs`](../../xtask/src/codegen.rs). It reads 
   - A run writes only the files whose contents changed, and removes files it no longer generates.
 - **Error codes too.** `generated::error_code` holds `ErrorCode`, one variant per constant of Kafka's `Errors.java`, and [docs/errors.md](../errors.md) lists every code. `xtask/src/codegen/errors.rs` reads the Java source, and a golden test compares the result with the table Kafka's client jar reports at runtime (`cargo xtask schemas dump-errors`).
 - **Golden output for Kafka's test schemas.** The six schemas Kafka's own generator tests use (`schemas/kafka-4.4.0/clients-test/`) generate into `crates/alluvium-protocol/src/test_messages/`, compiled only for tests. Together they use every schema feature: each field type, nullable and tagged fields with defaults, nullable structs, keyed arrays and records. A generator change shows as a reviewable diff of these files, and the tests of the generated code use them.
+- **Compact formatting.** Generated modules are formatted by rustfmt with every width heuristic at the full line width, so a field's read fits on one line. `cargo fmt` skips them (`#[rustfmt::skip]` where they are declared), and `codegen --check` keeps them exact.
 - **Checked in CI.** `cargo xtask codegen --check` fails, naming the file and line, when committed output differs from what the generator writes.
 - **Usable as a library.** `codegen::generate(inputs, out_dir, filter)` takes the schema directories, the output directory and a filter of message kinds. The metadata record generator (META-F01) reuses it.
 
@@ -103,6 +104,35 @@ Each message struct has:
 | `LATEST_VERSION_UNSTABLE: bool` | Requests only: whether the highest version is served only when unstable versions are enabled |
 
 `Versions` is an inclusive range of versions, which may be empty (`Versions::NONE`).
+
+## Decoding
+
+Every message implements `Message::decode(reader, version)`, which mirrors Kafka's generated `read`.
+
+**Version check.** A version outside `VERSIONS` fails as `UnsupportedVersion` ("can't read version V of M"). Kafka's callers make this check before reading; here `decode` makes it, so nested structs never see a version their message lacks.
+
+**Fields.** The value starts at its `Default`, and each field present in the version is read over its default, in schema order. A field absent from the version keeps its default.
+
+The versions a field is present, nullable, flexible or tagged in become conditions on `version`. A condition is written only where it varies within the struct's versions, so a field present in every version reads unconditionally. Adjacent fields present in the same versions read in one block.
+
+**Strings, bytes, records and arrays.**
+- Their length prefix is compact (an unsigned varint plus one) in the field's flexible versions, and classic elsewhere.
+- In a version where the field isn't nullable, a null fails as `UnexpectedNull`, naming the field: Kafka's "non-nullable field … was serialized as null".
+- Array elements are never null.
+
+**Structs.**
+- A nullable struct is preceded by a marker: an `int8`, negative for null, or in a tagged field an unsigned varint, zero for null.
+- Struct arrays are read through `Reader::read_array`, so a lying count fails before anything is allocated.
+
+**Tagged fields.** In a flexible version, a tagged-field section follows the struct's fields:
+- A known tag is read from exactly its declared bytes ([ADR-0020](../adr/0020-known-tagged-fields-read-within-their-declared-size.md)).
+- A known tag outside its tagged versions fails as `TagNotValidForVersion`.
+- A repeated known tag keeps its last value.
+- Every unknown tag is kept, in order, in `unknown_tagged_fields`.
+
+**Errors.** Every error names the path of the field it happened in, such as `TopicData.Name`.
+
+**No panics.** A property test decodes arbitrary input as every message at every version (`DECODE_EVERY_VERSION`, generated for tests) and requires each decode to return.
 
 ## Keyed arrays
 

@@ -5,6 +5,8 @@
 
 //! The `DescribeShareGroupOffsetsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `DescribeShareGroupOffsetsResponse` response, API key 90: versions 0-1, flexible
 /// versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -20,6 +22,36 @@ pub struct DescribeShareGroupOffsetsResponse {
     pub groups: Vec<DescribeShareGroupOffsetsResponseGroup>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl DescribeShareGroupOffsetsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeShareGroupOffsetsResponse, crate::DecodeError> {
+        let mut value = DescribeShareGroupOffsetsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.groups = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                DescribeShareGroupOffsetsResponseGroup::read(reader, version)
+            })
+            .within("Groups")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `DescribeShareGroupOffsetsResponse`'s `Groups` array.
@@ -57,6 +89,39 @@ impl DescribeShareGroupOffsetsResponseGroup {
     }
 }
 
+impl DescribeShareGroupOffsetsResponseGroup {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeShareGroupOffsetsResponseGroup, crate::DecodeError> {
+        let mut value = DescribeShareGroupOffsetsResponseGroup::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.group_id = reader.read_string(crate::Framing::Compact).within("GroupId")?;
+        self.topics = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                DescribeShareGroupOffsetsResponseTopic::read(reader, version)
+            })
+            .within("Topics")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message =
+            reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribeShareGroupOffsetsResponseGroup`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DescribeShareGroupOffsetsResponseTopic {
@@ -84,6 +149,37 @@ impl Default for DescribeShareGroupOffsetsResponseTopic {
             partitions: Vec::new(),
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl DescribeShareGroupOffsetsResponseTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeShareGroupOffsetsResponseTopic, crate::DecodeError> {
+        let mut value = DescribeShareGroupOffsetsResponseTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_name = reader.read_string(crate::Framing::Compact).within("TopicName")?;
+        self.topic_id = reader.read_uuid().within("TopicId")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                DescribeShareGroupOffsetsResponsePartition::read(reader, version)
+            })
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -144,6 +240,39 @@ impl DescribeShareGroupOffsetsResponsePartition {
     }
 }
 
+impl DescribeShareGroupOffsetsResponsePartition {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeShareGroupOffsetsResponsePartition, crate::DecodeError> {
+        let mut value = DescribeShareGroupOffsetsResponsePartition::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.start_offset = reader.read_i64().within("StartOffset")?;
+        self.leader_epoch = reader.read_i32().within("LeaderEpoch")?;
+        if version == 1 {
+            self.lag = reader.read_i64().within("Lag")?;
+        }
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message =
+            reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl DescribeShareGroupOffsetsResponse {
     /// The API key.
     pub const API_KEY: i16 = 90;
@@ -153,4 +282,15 @@ impl DescribeShareGroupOffsetsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for DescribeShareGroupOffsetsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeShareGroupOffsetsResponse, crate::DecodeError> {
+        if !DescribeShareGroupOffsetsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DescribeShareGroupOffsetsResponse", version));
+        }
+        DescribeShareGroupOffsetsResponse::read(reader, version)
+    }
 }

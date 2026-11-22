@@ -5,6 +5,8 @@
 
 //! The `DescribeGroupsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `DescribeGroupsRequest` request, API key 15: versions 0-6, flexible versions 5+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DescribeGroupsRequest {
@@ -21,6 +23,48 @@ pub struct DescribeGroupsRequest {
 }
 
 impl DescribeGroupsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeGroupsRequest, crate::DecodeError> {
+        let mut value = DescribeGroupsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.groups = reader
+            .read_array(
+                if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| {
+                    reader.read_string(if version >= 5 {
+                        crate::Framing::Compact
+                    } else {
+                        crate::Framing::Classic
+                    })
+                },
+            )
+            .within("Groups")?;
+        if version >= 3 {
+            self.include_authorized_operations =
+                reader.read_bool().within("IncludeAuthorizedOperations")?;
+        }
+        if version >= 5 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl DescribeGroupsRequest {
     /// The API key.
     pub const API_KEY: i16 = 15;
     /// The versions of this message.
@@ -32,4 +76,15 @@ impl DescribeGroupsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for DescribeGroupsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeGroupsRequest, crate::DecodeError> {
+        if !DescribeGroupsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DescribeGroupsRequest", version));
+        }
+        DescribeGroupsRequest::read(reader, version)
+    }
 }

@@ -34,6 +34,20 @@ impl DecodeError {
     }
 }
 
+/// Names the field a decode error happened in, as generated decoders do after each
+/// read: `reader.read_i32().within("PartitionIndex")?`.
+pub trait WithinField {
+    /// The same result, with `field` added to the front of an error's field path.
+    #[must_use]
+    fn within(self, field: &'static str) -> Self;
+}
+
+impl<T> WithinField for Result<T, DecodeError> {
+    fn within(self, field: &'static str) -> Self {
+        self.map_err(|error| error.within(field))
+    }
+}
+
 /// What went wrong while decoding.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
@@ -96,6 +110,34 @@ pub enum DecodeErrorKind {
         tag: u32,
         /// The size, as Kafka reads it.
         size: i32,
+    },
+    /// A version the message doesn't have.
+    #[error("can't read version {version} of {message}")]
+    UnsupportedVersion {
+        /// The message, as Kafka's schemas name it.
+        message: &'static str,
+        /// The version asked for.
+        version: i16,
+    },
+    /// A tag the struct defines, in a version where that field isn't tagged.
+    #[error("tag {tag} is not valid for version {version}")]
+    TagNotValidForVersion {
+        /// The tag.
+        tag: u32,
+        /// The version being read.
+        version: i16,
+    },
+    /// A known tagged field whose value didn't take exactly its declared size. Kafka
+    /// reads past or short of the declared size and fails later or not at all; this
+    /// fails where the field is, and only for malformed input.
+    #[error("tagged field {tag} declares {declared} byte(s), but its value took {read}")]
+    TaggedFieldSizeMismatch {
+        /// The field's tag.
+        tag: u32,
+        /// The size its header declared.
+        declared: usize,
+        /// The bytes its value took.
+        read: usize,
     },
 }
 

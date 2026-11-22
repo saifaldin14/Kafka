@@ -5,6 +5,8 @@
 
 //! The `InitProducerIdRequest` request.
 
+use crate::WithinField as _;
+
 /// The `InitProducerIdRequest` request, API key 22: versions 0-6, flexible versions 2+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct InitProducerIdRequest {
@@ -55,6 +57,48 @@ impl Default for InitProducerIdRequest {
 }
 
 impl InitProducerIdRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<InitProducerIdRequest, crate::DecodeError> {
+        let mut value = InitProducerIdRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.transactional_id = reader
+            .read_nullable_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("TransactionalId")?;
+        self.transaction_timeout_ms = reader.read_i32().within("TransactionTimeoutMs")?;
+        if version >= 3 {
+            self.producer_id = reader.read_i64().within("ProducerId")?;
+            self.producer_epoch = reader.read_i16().within("ProducerEpoch")?;
+        }
+        if version == 6 {
+            self.enable2_pc = reader.read_bool().within("Enable2Pc")?;
+            self.keep_prepared_txn = reader.read_bool().within("KeepPreparedTxn")?;
+        }
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl InitProducerIdRequest {
     /// The API key.
     pub const API_KEY: i16 = 22;
     /// The versions of this message.
@@ -66,4 +110,15 @@ impl InitProducerIdRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = true;
+}
+impl crate::Message for InitProducerIdRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<InitProducerIdRequest, crate::DecodeError> {
+        if !InitProducerIdRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("InitProducerIdRequest", version));
+        }
+        InitProducerIdRequest::read(reader, version)
+    }
 }

@@ -5,6 +5,8 @@
 
 //! The `ConsumerGroupHeartbeatRequest` request.
 
+use crate::WithinField as _;
+
 /// The `ConsumerGroupHeartbeatRequest` request, API key 68: versions 0-1, flexible versions
 /// 0+.
 #[derive(Debug, Clone, PartialEq)]
@@ -80,6 +82,54 @@ impl Default for ConsumerGroupHeartbeatRequest {
     }
 }
 
+impl ConsumerGroupHeartbeatRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ConsumerGroupHeartbeatRequest, crate::DecodeError> {
+        let mut value = ConsumerGroupHeartbeatRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.group_id = reader.read_string(crate::Framing::Compact).within("GroupId")?;
+        self.member_id = reader.read_string(crate::Framing::Compact).within("MemberId")?;
+        self.member_epoch = reader.read_i32().within("MemberEpoch")?;
+        self.instance_id =
+            reader.read_nullable_string(crate::Framing::Compact).within("InstanceId")?;
+        self.rack_id = reader.read_nullable_string(crate::Framing::Compact).within("RackId")?;
+        self.rebalance_timeout_ms = reader.read_i32().within("RebalanceTimeoutMs")?;
+        self.subscribed_topic_names = reader
+            .read_nullable_array(crate::Framing::Compact, |reader| {
+                reader.read_string(crate::Framing::Compact)
+            })
+            .within("SubscribedTopicNames")?;
+        if version == 1 {
+            self.subscribed_topic_regex = reader
+                .read_nullable_string(crate::Framing::Compact)
+                .within("SubscribedTopicRegex")?;
+        }
+        self.server_assignor =
+            reader.read_nullable_string(crate::Framing::Compact).within("ServerAssignor")?;
+        self.topic_partitions = reader
+            .read_nullable_array(crate::Framing::Compact, |reader| {
+                TopicPartitions::read(reader, version)
+            })
+            .within("TopicPartitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `ConsumerGroupHeartbeatRequest`'s `TopicPartitions` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TopicPartitions {
@@ -105,6 +155,34 @@ impl Default for TopicPartitions {
     }
 }
 
+impl TopicPartitions {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TopicPartitions, crate::DecodeError> {
+        let mut value = TopicPartitions::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_id = reader.read_uuid().within("TopicId")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, crate::Reader::read_i32)
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl ConsumerGroupHeartbeatRequest {
     /// The API key.
     pub const API_KEY: i16 = 68;
@@ -117,4 +195,15 @@ impl ConsumerGroupHeartbeatRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for ConsumerGroupHeartbeatRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ConsumerGroupHeartbeatRequest, crate::DecodeError> {
+        if !ConsumerGroupHeartbeatRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ConsumerGroupHeartbeatRequest", version));
+        }
+        ConsumerGroupHeartbeatRequest::read(reader, version)
+    }
 }

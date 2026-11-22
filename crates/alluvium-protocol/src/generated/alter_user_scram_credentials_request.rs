@@ -5,6 +5,8 @@
 
 //! The `AlterUserScramCredentialsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `AlterUserScramCredentialsRequest` request, API key 51: versions 0, flexible
 /// versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -21,6 +23,40 @@ pub struct AlterUserScramCredentialsRequest {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl AlterUserScramCredentialsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterUserScramCredentialsRequest, crate::DecodeError> {
+        let mut value = AlterUserScramCredentialsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.deletions = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                ScramCredentialDeletion::read(reader, version)
+            })
+            .within("Deletions")?;
+        self.upsertions = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                ScramCredentialUpsertion::read(reader, version)
+            })
+            .within("Upsertions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `AlterUserScramCredentialsRequest`'s `Deletions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ScramCredentialDeletion {
@@ -34,6 +70,32 @@ pub struct ScramCredentialDeletion {
     pub mechanism: i8,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl ScramCredentialDeletion {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ScramCredentialDeletion, crate::DecodeError> {
+        let mut value = ScramCredentialDeletion::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        self.mechanism = reader.read_i8().within("Mechanism")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `AlterUserScramCredentialsRequest`'s `Upsertions` array.
@@ -76,6 +138,36 @@ impl std::fmt::Debug for ScramCredentialUpsertion {
     }
 }
 
+impl ScramCredentialUpsertion {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ScramCredentialUpsertion, crate::DecodeError> {
+        let mut value = ScramCredentialUpsertion::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        self.mechanism = reader.read_i8().within("Mechanism")?;
+        self.iterations = reader.read_i32().within("Iterations")?;
+        self.salt = reader.read_bytes(crate::Framing::Compact).within("Salt")?;
+        self.salted_password =
+            reader.read_bytes(crate::Framing::Compact).within("SaltedPassword")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl AlterUserScramCredentialsRequest {
     /// The API key.
     pub const API_KEY: i16 = 51;
@@ -88,4 +180,15 @@ impl AlterUserScramCredentialsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for AlterUserScramCredentialsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterUserScramCredentialsRequest, crate::DecodeError> {
+        if !AlterUserScramCredentialsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("AlterUserScramCredentialsRequest", version));
+        }
+        AlterUserScramCredentialsRequest::read(reader, version)
+    }
 }

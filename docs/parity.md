@@ -134,3 +134,4 @@ Each deviation has an ADR. None changes the protocol behavior that clients obser
 | Metrics | JMX | Prometheus, with a documented name mapping | [0005](adr/0005-observability-model.md), [0010](adr/0010-alluvium-is-its-own-platform.md) |
 | On-disk layout (beyond record batches) | Kafka's segment and index formats | Alluvium's documented formats; Kafka log directories can't be mounted | [0007](adr/0007-record-batches-stored-in-wire-format.md) |
 | Features beyond Kafka | — | Available only when enabled; off by default | [0010](adr/0010-alluvium-is-its-own-platform.md) |
+| A known tagged field whose value doesn't fill its declared size (malformed input only) | Read past or short of the declared size, failing later or not at all | Fails at that field with `TaggedFieldSizeMismatch` or `Truncated` | [0020](adr/0020-known-tagged-fields-read-within-their-declared-size.md) |

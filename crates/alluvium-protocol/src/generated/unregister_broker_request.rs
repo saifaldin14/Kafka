@@ -5,6 +5,8 @@
 
 //! The `UnregisterBrokerRequest` request.
 
+use crate::WithinField as _;
+
 /// The `UnregisterBrokerRequest` request, API key 64: versions 0, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct UnregisterBrokerRequest {
@@ -14,6 +16,31 @@ pub struct UnregisterBrokerRequest {
     pub broker_id: i32,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl UnregisterBrokerRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<UnregisterBrokerRequest, crate::DecodeError> {
+        let mut value = UnregisterBrokerRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.broker_id = reader.read_i32().within("BrokerId")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 impl UnregisterBrokerRequest {
@@ -28,4 +55,15 @@ impl UnregisterBrokerRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for UnregisterBrokerRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<UnregisterBrokerRequest, crate::DecodeError> {
+        if !UnregisterBrokerRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("UnregisterBrokerRequest", version));
+        }
+        UnregisterBrokerRequest::read(reader, version)
+    }
 }

@@ -4,6 +4,8 @@
 
 //! The `SaslHandshakeRequest` request.
 
+use crate::WithinField as _;
+
 /// The `SaslHandshakeRequest` request, API key 17: versions 0-1, flexible versions none.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct SaslHandshakeRequest {
@@ -11,6 +13,26 @@ pub struct SaslHandshakeRequest {
     ///
     /// Versions 0+.
     pub mechanism: String,
+}
+
+impl SaslHandshakeRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<SaslHandshakeRequest, crate::DecodeError> {
+        let mut value = SaslHandshakeRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.mechanism = reader.read_string(crate::Framing::Classic).within("Mechanism")?;
+        Ok(())
+    }
 }
 
 impl SaslHandshakeRequest {
@@ -25,4 +47,15 @@ impl SaslHandshakeRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for SaslHandshakeRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<SaslHandshakeRequest, crate::DecodeError> {
+        if !SaslHandshakeRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("SaslHandshakeRequest", version));
+        }
+        SaslHandshakeRequest::read(reader, version)
+    }
 }

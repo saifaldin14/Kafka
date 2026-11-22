@@ -4,6 +4,8 @@
 
 //! The `AddRaftVoterRequest` request.
 
+use crate::WithinField as _;
+
 /// The `AddRaftVoterRequest` request, API key 80: versions 0-1, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AddRaftVoterRequest {
@@ -50,6 +52,41 @@ impl Default for AddRaftVoterRequest {
     }
 }
 
+impl AddRaftVoterRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AddRaftVoterRequest, crate::DecodeError> {
+        let mut value = AddRaftVoterRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.cluster_id =
+            reader.read_nullable_string(crate::Framing::Compact).within("ClusterId")?;
+        self.timeout_ms = reader.read_i32().within("TimeoutMs")?;
+        self.voter_id = reader.read_i32().within("VoterId")?;
+        self.voter_directory_id = reader.read_uuid().within("VoterDirectoryId")?;
+        self.listeners = reader
+            .read_array(crate::Framing::Compact, |reader| Listener::read(reader, version))
+            .within("Listeners")?;
+        if version == 1 {
+            self.ack_when_committed = reader.read_bool().within("AckWhenCommitted")?;
+        }
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `AddRaftVoterRequest`'s `Listeners` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Listener {
@@ -84,6 +121,30 @@ impl Listener {
     }
 }
 
+impl Listener {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<Listener, crate::DecodeError> {
+        let mut value = Listener::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        self.host = reader.read_string(crate::Framing::Compact).within("Host")?;
+        self.port = reader.read_u16().within("Port")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl AddRaftVoterRequest {
     /// The API key.
     pub const API_KEY: i16 = 80;
@@ -96,4 +157,15 @@ impl AddRaftVoterRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for AddRaftVoterRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AddRaftVoterRequest, crate::DecodeError> {
+        if !AddRaftVoterRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("AddRaftVoterRequest", version));
+        }
+        AddRaftVoterRequest::read(reader, version)
+    }
 }

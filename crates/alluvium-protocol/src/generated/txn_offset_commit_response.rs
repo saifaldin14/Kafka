@@ -5,6 +5,8 @@
 
 //! The `TxnOffsetCommitResponse` response.
 
+use crate::WithinField as _;
+
 /// The `TxnOffsetCommitResponse` response, API key 28: versions 0-6, flexible versions 3+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TxnOffsetCommitResponse {
@@ -19,6 +21,39 @@ pub struct TxnOffsetCommitResponse {
     pub topics: Vec<TxnOffsetCommitResponseTopic>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl TxnOffsetCommitResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TxnOffsetCommitResponse, crate::DecodeError> {
+        let mut value = TxnOffsetCommitResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.topics = reader
+            .read_array(
+                if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| TxnOffsetCommitResponseTopic::read(reader, version),
+            )
+            .within("Topics")?;
+        if version >= 3 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `TxnOffsetCommitResponse`'s `Topics` array.
@@ -51,6 +86,50 @@ impl Default for TxnOffsetCommitResponseTopic {
     }
 }
 
+impl TxnOffsetCommitResponseTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TxnOffsetCommitResponseTopic, crate::DecodeError> {
+        let mut value = TxnOffsetCommitResponseTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version <= 5 {
+            self.name = reader
+                .read_string(if version >= 3 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("Name")?;
+        }
+        if version == 6 {
+            self.topic_id = reader.read_uuid().within("TopicId")?;
+        }
+        self.partitions = reader
+            .read_array(
+                if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| TxnOffsetCommitResponsePartition::read(reader, version),
+            )
+            .within("Partitions")?;
+        if version >= 3 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `TxnOffsetCommitResponseTopic`'s `Partitions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TxnOffsetCommitResponsePartition {
@@ -78,6 +157,34 @@ impl TxnOffsetCommitResponsePartition {
     }
 }
 
+impl TxnOffsetCommitResponsePartition {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TxnOffsetCommitResponsePartition, crate::DecodeError> {
+        let mut value = TxnOffsetCommitResponsePartition::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        if version >= 3 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl TxnOffsetCommitResponse {
     /// The API key.
     pub const API_KEY: i16 = 28;
@@ -87,4 +194,15 @@ impl TxnOffsetCommitResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(3, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for TxnOffsetCommitResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TxnOffsetCommitResponse, crate::DecodeError> {
+        if !TxnOffsetCommitResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("TxnOffsetCommitResponse", version));
+        }
+        TxnOffsetCommitResponse::read(reader, version)
+    }
 }

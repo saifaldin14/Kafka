@@ -5,6 +5,8 @@
 
 //! The `AlterReplicaLogDirsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `AlterReplicaLogDirsResponse` response, API key 34: versions 1-2, flexible versions
 /// 2+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -22,6 +24,39 @@ pub struct AlterReplicaLogDirsResponse {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl AlterReplicaLogDirsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterReplicaLogDirsResponse, crate::DecodeError> {
+        let mut value = AlterReplicaLogDirsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.results = reader
+            .read_array(
+                if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| AlterReplicaLogDirTopicResult::read(reader, version),
+            )
+            .within("Results")?;
+        if version == 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `AlterReplicaLogDirsResponse`'s `Results` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AlterReplicaLogDirTopicResult {
@@ -35,6 +70,45 @@ pub struct AlterReplicaLogDirTopicResult {
     pub partitions: Vec<AlterReplicaLogDirPartitionResult>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl AlterReplicaLogDirTopicResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterReplicaLogDirTopicResult, crate::DecodeError> {
+        let mut value = AlterReplicaLogDirTopicResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_name = reader
+            .read_string(if version == 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("TopicName")?;
+        self.partitions = reader
+            .read_array(
+                if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| AlterReplicaLogDirPartitionResult::read(reader, version),
+            )
+            .within("Partitions")?;
+        if version == 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `AlterReplicaLogDirTopicResult`'s `Partitions` array.
@@ -64,6 +138,34 @@ impl AlterReplicaLogDirPartitionResult {
     }
 }
 
+impl AlterReplicaLogDirPartitionResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterReplicaLogDirPartitionResult, crate::DecodeError> {
+        let mut value = AlterReplicaLogDirPartitionResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        if version == 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl AlterReplicaLogDirsResponse {
     /// The API key.
     pub const API_KEY: i16 = 34;
@@ -73,4 +175,15 @@ impl AlterReplicaLogDirsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(2, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for AlterReplicaLogDirsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterReplicaLogDirsResponse, crate::DecodeError> {
+        if !AlterReplicaLogDirsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("AlterReplicaLogDirsResponse", version));
+        }
+        AlterReplicaLogDirsResponse::read(reader, version)
+    }
 }

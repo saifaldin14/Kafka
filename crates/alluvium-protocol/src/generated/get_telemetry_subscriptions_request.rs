@@ -5,6 +5,8 @@
 
 //! The `GetTelemetrySubscriptionsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `GetTelemetrySubscriptionsRequest` request, API key 71: versions 0, flexible
 /// versions 0+.
 #[derive(Debug, Clone, PartialEq)]
@@ -27,6 +29,31 @@ impl Default for GetTelemetrySubscriptionsRequest {
 }
 
 impl GetTelemetrySubscriptionsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<GetTelemetrySubscriptionsRequest, crate::DecodeError> {
+        let mut value = GetTelemetrySubscriptionsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.client_instance_id = reader.read_uuid().within("ClientInstanceId")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
+impl GetTelemetrySubscriptionsRequest {
     /// The API key.
     pub const API_KEY: i16 = 71;
     /// The versions of this message.
@@ -38,4 +65,15 @@ impl GetTelemetrySubscriptionsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for GetTelemetrySubscriptionsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<GetTelemetrySubscriptionsRequest, crate::DecodeError> {
+        if !GetTelemetrySubscriptionsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("GetTelemetrySubscriptionsRequest", version));
+        }
+        GetTelemetrySubscriptionsRequest::read(reader, version)
+    }
 }

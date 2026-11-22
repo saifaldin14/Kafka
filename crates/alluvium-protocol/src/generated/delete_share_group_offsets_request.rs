@@ -5,6 +5,8 @@
 
 //! The `DeleteShareGroupOffsetsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `DeleteShareGroupOffsetsRequest` request, API key 92: versions 0, flexible versions
 /// 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -21,6 +23,36 @@ pub struct DeleteShareGroupOffsetsRequest {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl DeleteShareGroupOffsetsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeleteShareGroupOffsetsRequest, crate::DecodeError> {
+        let mut value = DeleteShareGroupOffsetsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.group_id = reader.read_string(crate::Framing::Compact).within("GroupId")?;
+        self.topics = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                DeleteShareGroupOffsetsRequestTopic::read(reader, version)
+            })
+            .within("Topics")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DeleteShareGroupOffsetsRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DeleteShareGroupOffsetsRequestTopic {
@@ -30,6 +62,31 @@ pub struct DeleteShareGroupOffsetsRequestTopic {
     pub topic_name: String,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl DeleteShareGroupOffsetsRequestTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeleteShareGroupOffsetsRequestTopic, crate::DecodeError> {
+        let mut value = DeleteShareGroupOffsetsRequestTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_name = reader.read_string(crate::Framing::Compact).within("TopicName")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 impl DeleteShareGroupOffsetsRequest {
@@ -44,4 +101,15 @@ impl DeleteShareGroupOffsetsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for DeleteShareGroupOffsetsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeleteShareGroupOffsetsRequest, crate::DecodeError> {
+        if !DeleteShareGroupOffsetsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DeleteShareGroupOffsetsRequest", version));
+        }
+        DeleteShareGroupOffsetsRequest::read(reader, version)
+    }
 }

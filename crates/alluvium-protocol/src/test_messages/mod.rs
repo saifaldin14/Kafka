@@ -11,3 +11,25 @@ pub mod simple_arrays_message;
 pub mod simple_example_message;
 pub mod simple_keyed_arrays_message;
 pub mod simple_records_message;
+
+/// Functions that decode their input as one message at each of its versions, for the test
+/// that no input makes a decoder panic.
+#[cfg(test)]
+pub(crate) const DECODE_EVERY_VERSION: &[fn(&bytes::Bytes)] = &[
+    decode_at_every_version::<all_type_message::AllTypeMessage, 0, 1>,
+    decode_at_every_version::<nullable_struct_message::NullableStructMessage, 0, 2>,
+    decode_at_every_version::<simple_arrays_message::SimpleArraysMessage, 0, 2>,
+    decode_at_every_version::<simple_example_message::SimpleExampleMessage, 0, 2>,
+    decode_at_every_version::<simple_keyed_arrays_message::SimpleKeyedArraysMessage, 0, 2>,
+    decode_at_every_version::<simple_records_message::SimpleRecordsMessage, 0, 1>,
+];
+
+#[cfg(test)]
+fn decode_at_every_version<M: crate::Message, const LOWEST: i16, const HIGHEST: i16>(
+    input: &bytes::Bytes,
+) {
+    for version in LOWEST..=HIGHEST {
+        // Any result will do: the test is that decoding returns.
+        let _ = M::decode(&mut crate::Reader::new(input.clone()), version);
+    }
+}
