@@ -36,10 +36,11 @@ All work is planned in **[docs/backlog/](docs/backlog/README.md)**: epics, featu
 | `.agents/skills/alluvium-engineering/` | The engineering skill (start here) |
 | `docs/architecture.md` | System design, crate map, layering, runtime model, invariants |
 | `docs/standards/` | Rust, debuggability, security and testing standards |
-| `docs/guides/` | How to add a Kafka feature, how to debug |
+| `docs/guides/` | How to add a Kafka feature, debug, and update the vendored Kafka schemas |
 | `docs/crates/` | Per-crate deep dives: state machines, invariants, tests, debugging |
 | `docs/adr/` | Architecture decision records |
 | `docs/backlog/` | Every planned task with status, dependencies and milestones; `cargo xtask backlog next` picks the next task |
 | `docs/parity.md` | Kafka 4.4.0 API scope and version ranges |
 | `docs/glossary.md` | Kafka and Alluvium terms |
+| `schemas/kafka-4.4.0/` | Kafka's message schemas, vendored unmodified; the protocol code is generated from them |
 | `CONTRIBUTING.md` | Onboarding, setup, workflow |
