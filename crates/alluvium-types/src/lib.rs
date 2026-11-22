@@ -44,7 +44,8 @@
 //! - [`MonotonicInstant`] and [`WallTime`]: points in time for deadlines and for
 //!   timestamps, never converted into each other ([`TimeError`] when out of range).
 //! - [`Clock`]: reads both, passed as `Arc<dyn Clock>`. [`SystemClock`] reads the
-//!   operating system ([`WallClockError`] when its wall clock is out of range).
+//!   operating system ([`WallClockError`] when its wall clock is out of range);
+//!   [`ManualClock`] moves only when told to, for tests and simulation.
 //! - [`IdError`]: why a value was rejected.
 //! - [`Secret`]: a value that is never printed and is zeroized on drop.
 //! - [`PayloadSummary`]: how record payloads are printed (length and CRC32C only).
@@ -65,7 +66,7 @@ mod secret;
 pub mod strategies;
 mod time;
 
-pub use clock::{Clock, SystemClock, WallClockError};
+pub use clock::{Clock, ManualClock, SystemClock, WallClockError};
 pub use epoch::{BrokerEpoch, GenerationId, LeaderEpoch, MemberEpoch, PositiveEpoch};
 pub use id::{BrokerId, CorrelationId, IdError, IdKind, NodeId, PartitionIndex};
 pub use offset::{Offset, OffsetError, OffsetRange, OffsetSpec};

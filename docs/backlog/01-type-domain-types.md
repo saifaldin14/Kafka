@@ -129,7 +129,7 @@ Done when: Adding a `Duration` to either type is checked and returns an error at
 P0 · M0 · Task · deps: TYPE-0024 · ref: clients/src/main/java/org/apache/kafka/common/utils/SystemTime.java @4.4.0
 Done when: A grep check in the test suite finds no other `#[expect(clippy::disallowed_methods` for time functions in the workspace except `xtask`'s `Stopwatch` (the dev-tool exception in ADR-0011); `SystemClock` can convert a `MonotonicInstant` back to a `std::time::Instant` (for `TokioTimer`); a wall clock before the Unix epoch returns a typed error instead of panicking; `Clock` is `Send + Sync + Debug`; the module doc links to the ADR.
 
-### [To Do] TYPE-0026 `ManualClock` for tests and simulation: starts at a given monotonic and wall time, `advance(Duration)` moves both, and `set_wall(…)` makes the wall clock jump forwards or backwards without touching monotonic time
+### [Done] TYPE-0026 `ManualClock` for tests and simulation: starts at a given monotonic and wall time, `advance(Duration)` moves both, and `set_wall(…)` makes the wall clock jump forwards or backwards without touching monotonic time
 P0 · M0 · Task · deps: TYPE-0025 · labels: test · ref: clients/src/testFixtures/java/org/apache/kafka/common/utils/MockTime.java @4.4.0
 Done when: Tests show the monotonic reading never decreases under any sequence of `advance`/`set_wall` (a property test), that wall jumps are visible, and that clones share state; it is usable from other crates' tests without enabling a feature, and the doc explains why it is not test-gated (the simulation in `alluvium-testkit` builds on it).
 
