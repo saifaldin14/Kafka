@@ -204,11 +204,11 @@ Done when: Property tests over the validation rules pass; `DEFAULT` round-trips 
 P1 · M0 · Task · deps: TYPE-0037 · labels: foundation-for:X-TENANT
 Done when: A property test over all valid `TopicName`, `GroupId` and `TransactionalId` values shows the round-trip is the identity and the display of a default-namespace name equals the plain Kafka name; non-default names can't be converted to a plain Kafka name without an explicit call that returns a typed error.
 
-## [To Do] TYPE-F11 Key hash space and key ranges
+## [In Progress] TYPE-F11 Key hash space and key ranges
 P1 · M0 · Feature · deps: FND-F02 · labels: foundation-for:X-ELASTIC
 Scope: `KeyHash`, `KeyRange`, range arithmetic (split/merge/contains), murmur2-compatible hashing for Kafka partitioners.
 
-### [To Do] TYPE-0039 `murmur2(&[u8]) -> i32`: a port of Kafka's `Utils.murmur2` (seed `0x9747b28c`, `m = 0x5bd1e995`, `r = 24`, little-endian 4-byte blocks, tail of 1-3 bytes, final mix) with wrapping arithmetic
+### [Done] TYPE-0039 `murmur2(&[u8]) -> i32`: a port of Kafka's `Utils.murmur2` (seed `0x9747b28c`, `m = 0x5bd1e995`, `r = 24`, little-endian 4-byte blocks, tail of 1-3 bytes, final mix) with wrapping arithmetic
 P1 · M0 · Task · deps: TYPE-0001 · labels: foundation-for:X-ELASTIC · ref: clients/src/main/java/org/apache/kafka/common/utils/Utils.java murmur2 @4.4.0
 Done when: The `UtilsTest.testMurmur2` vectors pass (`"21"` → -973932308, `"foobar"` → -790332482, `"a-little-bit-long-string"` → -985981536, `"a-little-bit-longer-string"` → -1486304829, `"lkjh234lh9fiuh90y23oiuhsafujhadof229phr9h19h89h8"` → -58897971, `[a,b,c]` → 479470107); a golden file of 10,000 random inputs of length 0-1024 hashed by Kafka 4.4.0 matches, and its generator script (JShell against `kafka-clients` 4.4.0 in a digest-pinned image) is committed; no panic on any input; the file header carries the attribution required for a close port.
 
