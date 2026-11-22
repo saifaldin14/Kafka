@@ -29,11 +29,11 @@ Done when: the command sparse-clones the tag into `target/`, replaces `schemas/k
 P2 · M1 · Task · deps: PROTO-0004 · labels: docs
 Done when: the guide covers vendoring, manifest, reviewing the generated diff, regenerating golden vectors, updating docs/parity.md and when an ADR is needed; linked from ADR-0008 and docs/parity.md.
 
-## [To Do] PROTO-F02 Schema parser and model
+## [In Progress] PROTO-F02 Schema parser and model
 P0 · M1 · Feature · deps: PROTO-F01, FND-F04
 Scope: Parse Kafka's JSON-with-comments schemas into a typed model: versions, flexible/tagged/nullable versions, defaults, map keys, common structs, entity types, `latestVersionUnstable`.
 
-### [To Do] PROTO-0006 Schema loader for Kafka's JSON-with-comments files: strip `//` and `/* */` comments, reject trailing tokens, typed `SchemaError` with file, line and JSON pointer
+### [Done] PROTO-0006 Schema loader for Kafka's JSON-with-comments files: strip `//` and `/* */` comments, reject trailing tokens, typed `SchemaError` with file, line and JSON pointer
 P0 · M1 · Task · deps: none · ref: generator/src/main/java/org/apache/kafka/message/MessageGenerator.java JSON_SERDE (ALLOW_COMMENTS, FAIL_ON_TRAILING_TOKENS) @4.4.0
 Done when: comment markers inside string literals are preserved; unterminated block comments and trailing tokens are errors with file:line:column; every vendored file loads; unit tests cover each case.
 

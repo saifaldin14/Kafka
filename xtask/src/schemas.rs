@@ -10,7 +10,8 @@
 //! listed.
 //!
 //! Hashes come from one `shasum -a 256` run per directory, the tool `tools install`
-//! already relies on, so no hashing crate is needed.
+//! already relies on, so no hashing crate is needed. Then every `.json` file is loaded
+//! as a schema (`message_spec`), so a file the code generator couldn't read fails here.
 //!
 //! `vendor` sparse-clones the tag into `target/`, copies [`SOURCES`] and Kafka's
 //! `LICENSE` and `NOTICE` into a staging directory, and compares it with the vendored
@@ -24,6 +25,7 @@ use std::path::Path;
 use std::process::Command;
 
 use crate::Exit;
+use crate::message_spec;
 use crate::output;
 
 /// Where the vendored directories live, relative to the repository root.
@@ -233,7 +235,18 @@ pub(crate) fn verify_dir(dir: &Path, label: &str) -> Result<Vec<String>, String>
             manifest.tag, manifest.tag
         ));
     }
-    for change in compare(&manifest.hashes, &hash_tree(dir)?) {
+    let actual = hash_tree(dir)?;
+    for path in actual
+        .keys()
+        .filter(|path| Path::new(path).extension().is_some_and(|ext| ext == "json"))
+    {
+        let text = std::fs::read_to_string(dir.join(path))
+            .map_err(|error| format!("could not read {label}/{path}: {error}"))?;
+        if let Err(error) = message_spec::load(&format!("{label}/{path}"), &text) {
+            problems.push(error.to_string());
+        }
+    }
+    for change in compare(&manifest.hashes, &actual) {
         problems.push(match change {
             Change::Added(path) => format!(
                 "{label}/{path}: not in {MANIFEST}; vendored files come only from \

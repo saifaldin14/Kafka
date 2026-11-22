@@ -47,6 +47,7 @@ mod hooks;
 mod install;
 mod layers;
 mod lint_canary;
+mod message_spec;
 mod output;
 mod schemas;
 mod steps;
