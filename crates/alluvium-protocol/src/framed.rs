@@ -7,11 +7,12 @@
 //!
 //! Lengths are computed as Kafka's generated decoders compute them, with Java `int`
 //! arithmetic: any negative length is null, and a compact prefix of `0x80000000` wraps to
-//! `i32::MAX` and then fails as truncated.
+//! `i32::MAX`, which then fails as too long for a string or as truncated otherwise.
 
 use bytes::Bytes;
 
 use crate::error::{DecodeError, DecodeErrorKind, EncodeError};
+use crate::limits::Limit;
 use crate::reader::Reader;
 use crate::writer::Writer;
 
@@ -33,7 +34,8 @@ pub(crate) enum Width {
     Int,
 }
 
-/// The longest string Kafka encodes or decodes, in UTF-8 bytes.
+/// The longest string Kafka encodes or decodes, in UTF-8 bytes. A classic `int16`
+/// prefix can't exceed it; a compact one can, and is rejected before it is read.
 const MAX_STRING_LENGTH: usize = 0x7fff;
 
 // Parity: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java@4.4.0 MessageDataGenerator.generateVariableLengthReader
@@ -68,9 +70,19 @@ impl Reader {
             .ok_or_else(|| Reader::error_at(start, DecodeErrorKind::UnexpectedNull))
     }
 
-    /// The UTF-8 text of `length` bytes. Invalid sequences become U+FFFD, as Java's
-    /// `new String(bytes, UTF_8)` does.
-    fn read_utf8(&mut self, length: usize) -> Result<String, DecodeError> {
+    /// The UTF-8 text of `length` bytes, whose length prefix started at `start`.
+    /// Invalid sequences become U+FFFD, as Java's `new String(bytes, UTF_8)` does.
+    fn read_utf8(&mut self, start: usize, length: usize) -> Result<String, DecodeError> {
+        if length > MAX_STRING_LENGTH {
+            return Err(Reader::error_at(
+                start,
+                DecodeErrorKind::LimitExceeded {
+                    limit: Limit::StringLength,
+                    requested: length,
+                    allowed: MAX_STRING_LENGTH,
+                },
+            ));
+        }
         Ok(String::from_utf8_lossy(&self.take(length)?).into_owned())
     }
 
@@ -78,24 +90,28 @@ impl Reader {
     ///
     /// # Errors
     ///
-    /// [`DecodeErrorKind::UnexpectedNull`] for a null length, and
+    /// [`DecodeErrorKind::UnexpectedNull`] for a null length,
+    /// [`DecodeErrorKind::LimitExceeded`] for a length over 32767 bytes, and
     /// [`DecodeErrorKind::Truncated`] if the input ends inside it.
     pub fn read_string(&mut self, framing: Framing) -> Result<String, DecodeError> {
+        let start = self.offset();
         let length = self.read_present_length(framing, Width::Short)?;
-        self.read_utf8(length)
+        self.read_utf8(start, length)
     }
 
     /// A nullable `string`: any negative length is null.
     ///
     /// # Errors
     ///
+    /// [`DecodeErrorKind::LimitExceeded`] for a length over 32767 bytes, and
     /// [`DecodeErrorKind::Truncated`] if the input ends inside it.
     pub fn read_nullable_string(
         &mut self,
         framing: Framing,
     ) -> Result<Option<String>, DecodeError> {
+        let start = self.offset();
         match self.read_nullable_length(framing, Width::Short)? {
-            Some(length) => self.read_utf8(length).map(Some),
+            Some(length) => self.read_utf8(start, length).map(Some),
             None => Ok(None),
         }
     }
@@ -273,6 +289,7 @@ mod tests {
 
     use super::Framing::{self, Classic, Compact};
     use crate::error::{DecodeError, DecodeErrorKind, EncodeError};
+    use crate::limits::Limit;
     use crate::reader::Reader;
     use crate::writer::Writer;
 
@@ -370,9 +387,49 @@ mod tests {
         }
         // 0x80000000 - 1 wraps to i32::MAX: not null, and far too long.
         let bytes = compact_prefix(0x8000_0000);
+        let wrapped = i32::MAX.cast_unsigned() as usize;
+        assert_eq!(
+            reader(&bytes).read_bytes(Compact),
+            Err(truncated(5, wrapped, 0))
+        );
         assert_eq!(
             reader(&bytes).read_string(Compact),
-            Err(truncated(5, i32::MAX.cast_unsigned() as usize, 0))
+            Err(error(
+                0,
+                DecodeErrorKind::LimitExceeded {
+                    limit: Limit::StringLength,
+                    requested: wrapped,
+                    allowed: 0x7fff
+                }
+            ))
+        );
+    }
+
+    #[test]
+    fn strings_over_32767_bytes_fail_before_they_are_read() {
+        let too_long = error(
+            0,
+            DecodeErrorKind::LimitExceeded {
+                limit: Limit::StringLength,
+                requested: 40_000,
+                allowed: 0x7fff,
+            },
+        );
+        // Only the prefix is present: the length is rejected, not found truncated.
+        let declared = compact_prefix(40_001);
+        assert_eq!(
+            reader(&declared).read_string(Compact),
+            Err(too_long.clone())
+        );
+        assert_eq!(
+            reader(&declared).read_nullable_string(Compact),
+            Err(too_long)
+        );
+        let mut longest = compact_prefix(0x8000);
+        longest.extend(std::iter::repeat_n(b'x', 0x7fff));
+        assert_eq!(
+            reader(&longest).read_string(Compact).map(|s| s.len()),
+            Ok(0x7fff)
         );
     }
 

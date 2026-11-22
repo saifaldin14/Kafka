@@ -34,12 +34,16 @@ impl Default for DecodeLimits {
 pub enum Limit {
     /// [`DecodeLimits::max_array_length`].
     ArrayLength,
+    /// Kafka's 32767-byte string length. It is a rule of the format, which no
+    /// encoder exceeds, so it is not one of the caller's limits.
+    StringLength,
 }
 
 impl fmt::Display for Limit {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
             Limit::ArrayLength => "array length",
+            Limit::StringLength => "string length",
         })
     }
 }
