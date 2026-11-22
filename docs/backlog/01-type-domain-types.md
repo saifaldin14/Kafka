@@ -133,7 +133,7 @@ Done when: A grep check in the test suite finds no other `#[expect(clippy::disal
 P0 · M0 · Task · deps: TYPE-0025 · labels: test · ref: clients/src/testFixtures/java/org/apache/kafka/common/utils/MockTime.java @4.4.0
 Done when: Tests show the monotonic reading never decreases under any sequence of `advance`/`set_wall` (a property test), that wall jumps are visible, and that clones share state; it is usable from other crates' tests without enabling a feature, and the doc explains why it is not test-gated (the simulation in `alluvium-testkit` builds on it).
 
-### [To Do] TYPE-0027 `Deadline`: a monotonic instant plus a timeout with saturating construction (a timeout that overflows means "never"), `remaining(now)` and `is_expired(now)`, as Kafka's `Timer` saturates
+### [Done] TYPE-0027 `Deadline`: a monotonic instant plus a timeout with saturating construction (a timeout that overflows means "never"), `remaining(now)` and `is_expired(now)`, as Kafka's `Timer` saturates
 P0 · M0 · Task · deps: TYPE-0024 · ref: clients/src/main/java/org/apache/kafka/common/utils/Timer.java @4.4.0
 Done when: Tests cover a zero timeout, `Duration::MAX`, an expired deadline, and `remaining` at and after expiry (zero, never negative); `// Parity:` cites `Timer`; the doc ties it to the rule "every network wait has a timeout".
 

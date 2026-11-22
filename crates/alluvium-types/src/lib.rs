@@ -18,8 +18,8 @@
 //!   `JoinGroupRequest.java` (member epoch and generation sentinels);
 //! - `clients/.../common/requests/OffsetFetchResponse.java` and `ListOffsetsRequest.java`
 //!   (offset sentinels and `ListOffsets` special timestamps);
-//! - `clients/.../common/utils/Time.java` and `SystemTime.java` (wall-clock and monotonic
-//!   readings);
+//! - `clients/.../common/utils/Time.java`, `SystemTime.java` and `Timer.java` (wall-clock
+//!   and monotonic readings, saturating deadlines);
 //! - `clients/.../common/config/types/Password.java` and
 //!   `clients/.../common/utils/internals/Crc32C.java`.
 //!
@@ -46,6 +46,7 @@
 //! - [`Clock`]: reads both, passed as `Arc<dyn Clock>`. [`SystemClock`] reads the
 //!   operating system ([`WallClockError`] when its wall clock is out of range);
 //!   [`ManualClock`] moves only when told to, for tests and simulation.
+//! - [`Deadline`]: when a wait must end; a timeout too long to represent saturates.
 //! - [`IdError`]: why a value was rejected.
 //! - [`Secret`]: a value that is never printed and is zeroized on drop.
 //! - [`PayloadSummary`]: how record payloads are printed (length and CRC32C only).
@@ -56,6 +57,7 @@
 //! came from, so the decoder or handler that rejects it maps it.
 
 mod clock;
+mod deadline;
 mod epoch;
 mod id;
 mod offset;
@@ -67,6 +69,7 @@ pub mod strategies;
 mod time;
 
 pub use clock::{Clock, ManualClock, SystemClock, WallClockError};
+pub use deadline::Deadline;
 pub use epoch::{BrokerEpoch, GenerationId, LeaderEpoch, MemberEpoch, PositiveEpoch};
 pub use id::{BrokerId, CorrelationId, IdError, IdKind, NodeId, PartitionIndex};
 pub use offset::{Offset, OffsetError, OffsetRange, OffsetSpec};
