@@ -16,9 +16,9 @@ use proptest::sample::{Index, select};
 
 use crate::{
     BrokerEpoch, BrokerId, ClientId, CorrelationId, GenerationId, GroupId, GroupInstanceId,
-    LeaderEpoch, MemberEpoch, MonotonicInstant, NodeId, Offset, OffsetRange, OffsetSpec,
-    PartitionIndex, ProducerEpoch, ProducerId, Sequence, TopicId, TopicIdPartition, TopicName,
-    TopicPartition, TransactionalId, Uuid, WallTime,
+    KeyHash, KeyRange, LeaderEpoch, MemberEpoch, MonotonicInstant, NamespaceId, NodeId, Offset,
+    OffsetRange, OffsetSpec, PartitionIndex, ProducerEpoch, ProducerId, Sequence, TopicId,
+    TopicIdPartition, TopicName, TopicPartition, TransactionalId, Uuid, WallTime,
 };
 
 /// Non-negative `i32` values, with extra weight on 0, 1 and `i32::MAX`.
@@ -333,4 +333,95 @@ pub fn topic_id_partition() -> impl Strategy<Value = TopicIdPartition> {
             topic,
         },
     )
+}
+
+/// `isolation_level` wire values: the valid 0 and 1, their neighbours, the extremes and
+/// any other `i8`.
+pub fn isolation_level_wire_value() -> impl Strategy<Value = i8> {
+    prop_oneof![
+        4 => 0..=1_i8,
+        1 => Just(-1),
+        1 => Just(2),
+        1 => Just(i8::MIN),
+        1 => Just(i8::MAX),
+        2 => any::<i8>(),
+    ]
+}
+
+/// `acks` wire values: the valid -1, 0 and 1, their neighbours, the extremes and any
+/// other `i16`.
+pub fn acks_wire_value() -> impl Strategy<Value = i16> {
+    prop_oneof![
+        4 => -1..=1_i16,
+        1 => Just(-2),
+        1 => Just(2),
+        1 => Just(i16::MIN),
+        1 => Just(i16::MAX),
+        2 => any::<i16>(),
+    ]
+}
+
+/// Boundary values of the key hash space, `[0, 2^31]`, biased towards both ends.
+fn key_space_point() -> impl Strategy<Value = u32> {
+    prop_oneof![
+        1 => Just(0_u32),
+        1 => Just(1),
+        1 => Just((1 << 31) - 1),
+        1 => Just(1 << 31),
+        6 => 0..=(1_u32 << 31),
+    ]
+}
+
+/// [`KeyHash`]es over the whole space, biased towards 0, 1 and `2^31 - 1`.
+pub fn key_hash() -> impl Strategy<Value = KeyHash> {
+    key_space_point().prop_filter_map("inside the space", |value| KeyHash::try_from(value).ok())
+}
+
+/// [`KeyRange`]s: empty, small, large and the full space.
+pub fn key_range() -> impl Strategy<Value = KeyRange> {
+    prop_oneof![
+        1 => Just(KeyRange::FULL),
+        2 => (0..(1_u32 << 31), 0..64_u32).prop_filter_map("inside the space", |(start, length)| {
+            KeyRange::new(start, start.checked_add(length)?).ok()
+        }),
+        7 => (key_space_point(), key_space_point())
+            .prop_filter_map("ordered", |(a, b)| KeyRange::new(a.min(b), a.max(b)).ok()),
+    ]
+}
+
+/// Sets of up to 17 non-empty [`KeyRange`]s that partition the hash space exactly, in
+/// random order: [`KeyRange::FULL`] split at random interior points.
+pub fn key_space_partition() -> impl Strategy<Value = Vec<KeyRange>> {
+    vec((any::<Index>(), any::<Index>()), 0..16)
+        .prop_map(|splits| {
+            let mut ranges = vec![KeyRange::FULL];
+            for (pick, point) in splits {
+                let index = pick.index(ranges.len());
+                let range = ranges[index];
+                let interior = usize::try_from(range.end() - range.start() - 1).unwrap_or(0);
+                if interior == 0 {
+                    continue;
+                }
+                let offset = u32::try_from(point.index(interior)).unwrap_or(0) + 1;
+                let at = KeyHash::try_from(range.start() + offset);
+                if let Ok((low, high)) = at.and_then(|at| range.split_at(at)) {
+                    ranges[index] = low;
+                    ranges.push(high);
+                }
+            }
+            ranges
+        })
+        .prop_shuffle()
+}
+
+/// Valid [`NamespaceId`]s, biased towards the default namespace and the 1- and
+/// 63-character limits.
+pub fn namespace_id() -> impl Strategy<Value = NamespaceId> {
+    prop_oneof![
+        2 => Just("default".to_owned()),
+        1 => Just("a".to_owned()),
+        1 => "[a-z][a-z0-9-]{61}[a-z0-9]",
+        6 => "[a-z]([a-z0-9-]{0,61}[a-z0-9])?",
+    ]
+    .prop_filter_map("valid", |id| id.parse().ok())
 }

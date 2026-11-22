@@ -20,8 +20,13 @@ thiserror = { workspace = true }
 zeroize = { workspace = true }
 
 [dev-dependencies]
+criterion = { workspace = true }
 proptest = { workspace = true }
 tracing = { workspace = true }
+
+[[bench]]
+name = "types"
+harness = false
 
 [lints]
 workspace = true

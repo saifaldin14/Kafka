@@ -176,7 +176,7 @@ Done when: For random secret values (a property test), none of the outputs conta
 P0 · M0 · Task · deps: TYPE-0031 · labels: security, test · ref: docs/standards/security.md#secrets
 Done when: The test fails if `Drop` stops calling `zeroize` (shown in the PR by temporarily removing it); no `unsafe` and no memory inspection are used.
 
-## [In Progress] TYPE-F09 Payload display
+## [Done] TYPE-F09 Payload display
 P1 · M0 · Feature · deps: FND-F02
 Scope: `PayloadSummary` that prints length and CRC32C instead of bytes, for logging payload-bearing types.
 
@@ -184,66 +184,69 @@ Scope: `PayloadSummary` that prints length and CRC32C instead of bytes, for logg
 P1 · M0 · Task · deps: TYPE-0001 · labels: security · ref: docs/standards/debuggability.md#printing-values
 Done when: `crc32c` is added to `[workspace.dependencies]` (it is in rust.md's preferred list); the CRC of `b"123456789"` is `0xe3069283`, checked with a `// Parity:` citation of `clients/src/main/java/org/apache/kafka/common/utils/internals/Crc32C.java`; the empty payload prints `len: 0`; the doc tells engineers to wrap every payload-bearing field in log output with it.
 
-### [To Do] TYPE-0035 Payload non-disclosure tests: for random payloads, the summary output never contains the payload bytes as text, hex or base64, and formatting a 1 MiB payload stays within a time budget set by a criterion benchmark
+### [Done] TYPE-0035 Payload non-disclosure tests: for random payloads, the summary output never contains the payload bytes as text, hex or base64, and formatting a 1 MiB payload stays within a time budget set by a criterion benchmark
 P1 · M0 · Task · deps: TYPE-0034 · labels: security, test · ref: docs/standards/debuggability.md#printing-values
 Done when: The property test covers ASCII, UTF-8 and binary payloads; the benchmark result is in the PR; debuggability.md links to `PayloadSummary` instead of describing the format a second time.
+Notes: The benchmark uses the criterion setup and conventions from TEST-0094 (pulled into M0 for this task), which lands first; the backlog can't express a task-level dependency across epics.
 
-## [To Do] TYPE-F10 Namespace identity
+## [Done] TYPE-F10 Namespace identity
 P1 · M0 · Feature · deps: TYPE-F04 · labels: foundation-for:X-TENANT
 Scope: `NamespaceId`, namespace-qualified names and the default-namespace mapping that keeps plain Kafka names valid.
 
-### [To Do] TYPE-0036 Spike: namespace identity ADR, limited to the types
+### [Done] TYPE-0036 Spike: namespace identity ADR, limited to the types
 P1 · M0 · Spike · deps: none · labels: foundation-for:X-TENANT · ref: ADR-0010
 Done when: Scope: `NamespaceId` representation and validation, the default namespace, how a namespace-qualified topic, group or transactional id relates to Kafka's 249-character limit, and the promise that every valid Kafka name is valid unchanged in the default namespace. An accepted ADR "Namespace identity" records these decisions and states that X-TENANT-F01 owns the full tenancy model and may supersede it; nothing in it changes behavior visible to Kafka clients (ADR-0010).
+Notes: Accepted as [ADR-0014](../adr/0014-namespace-identity.md): `NamespaceId` is 1–63 characters of `[a-z0-9-]` (DNS-label shape), `default` is implicit and never stored, and a qualified name is a `(NamespaceId, name)` pair, never a prefix, so Kafka's 249-character limit is untouched.
 
-### [To Do] TYPE-0037 `NamespaceId` type per the ADR, with `NamespaceId::DEFAULT`, validated construction, a typed error and log-safe display
+### [Done] TYPE-0037 `NamespaceId` type per the ADR, with `NamespaceId::DEFAULT`, validated construction, a typed error and log-safe display
 P1 · M0 · Task · deps: TYPE-0036 · labels: foundation-for:X-TENANT
 Done when: Property tests over the validation rules pass; `DEFAULT` round-trips through `Display`/`FromStr`; META-F07 can use the type unchanged (its record fields are listed in the PR).
 
-### [To Do] TYPE-0038 `NamespacedName` for topics, groups and transactional ids, with the default-namespace mapping: a plain Kafka name maps to `(DEFAULT, name)` and back without loss
+### [Done] TYPE-0038 `NamespacedName` for topics, groups and transactional ids, with the default-namespace mapping: a plain Kafka name maps to `(DEFAULT, name)` and back without loss
 P1 · M0 · Task · deps: TYPE-0037 · labels: foundation-for:X-TENANT
 Done when: A property test over all valid `TopicName`, `GroupId` and `TransactionalId` values shows the round-trip is the identity and the display of a default-namespace name equals the plain Kafka name; non-default names can't be converted to a plain Kafka name without an explicit call that returns a typed error.
 
-## [To Do] TYPE-F11 Key hash space and key ranges
+## [Done] TYPE-F11 Key hash space and key ranges
 P1 · M0 · Feature · deps: FND-F02 · labels: foundation-for:X-ELASTIC
 Scope: `KeyHash`, `KeyRange`, range arithmetic (split/merge/contains), murmur2-compatible hashing for Kafka partitioners.
 
-### [To Do] TYPE-0039 `murmur2(&[u8]) -> i32`: a port of Kafka's `Utils.murmur2` (seed `0x9747b28c`, `m = 0x5bd1e995`, `r = 24`, little-endian 4-byte blocks, tail of 1-3 bytes, final mix) with wrapping arithmetic
+### [Done] TYPE-0039 `murmur2(&[u8]) -> i32`: a port of Kafka's `Utils.murmur2` (seed `0x9747b28c`, `m = 0x5bd1e995`, `r = 24`, little-endian 4-byte blocks, tail of 1-3 bytes, final mix) with wrapping arithmetic
 P1 · M0 · Task · deps: TYPE-0001 · labels: foundation-for:X-ELASTIC · ref: clients/src/main/java/org/apache/kafka/common/utils/Utils.java murmur2 @4.4.0
 Done when: The `UtilsTest.testMurmur2` vectors pass (`"21"` → -973932308, `"foobar"` → -790332482, `"a-little-bit-long-string"` → -985981536, `"a-little-bit-longer-string"` → -1486304829, `"lkjh234lh9fiuh90y23oiuhsafujhadof229phr9h19h89h8"` → -58897971, `[a,b,c]` → 479470107); a golden file of 10,000 random inputs of length 0-1024 hashed by Kafka 4.4.0 matches, and its generator script (JShell against `kafka-clients` 4.4.0 in a digest-pinned image) is committed; no panic on any input; the file header carries the attribution required for a close port.
 
-### [To Do] TYPE-0040 `partition_for_key(key, num_partitions: NonZeroU32) -> PartitionIndex` = `toPositive(murmur2(key)) % num_partitions`, where `toPositive(x) = x & 0x7fffffff` (`Utils.toPositive`)
+### [Done] TYPE-0040 `partition_for_key(key, num_partitions: NonZeroU32) -> PartitionIndex` = `toPositive(murmur2(key)) % num_partitions`, where `toPositive(x) = x & 0x7fffffff` (`Utils.toPositive`)
 P1 · M0 · Task · deps: TYPE-0039 · labels: foundation-for:X-ELASTIC · ref: clients/src/main/java/org/apache/kafka/clients/producer/internals/BuiltInPartitioner.java partitionForKey @4.4.0
 Done when: A golden file of 10,000 (key, partition count 1-64) pairs computed by Kafka 4.4.0's `BuiltInPartitioner.partitionForKey` matches; tests cover the empty key and `i32::MIN` hashes; the doc says keyless records use the client's sticky partitioner and are never hashed; `// Parity:` cites both Kafka methods.
 
-### [To Do] TYPE-0041 Spike: key hash space ADR
+### [Done] TYPE-0041 Spike: key hash space ADR
 P1 · M0 · Spike · deps: TYPE-0040 · labels: foundation-for:X-ELASTIC · ref: ADR-0010
 Done when: Options: `KeyHash` as Kafka's positive murmur2 (31 bits, `[0, 2^31)`) so key ranges line up with `partitionForKey`, or a wider hash; also how null keys are handled and how ranges map to a fixed Kafka partition count for the virtual partition view (X-ELASTIC-F10). An accepted ADR "Key hash space" fixes the hash function, the space bounds, and the compatibility argument, and states that X-ELASTIC-F01 may extend it but not change the hash.
+Notes: Accepted as [ADR-0013](../adr/0013-key-hash-space.md): `KeyHash` is Kafka's `toPositive(murmur2)` over `[0, 2^31)`, null keys are never hashed, and because Kafka partitions by modulo, the virtual partition view maps partition indexes, not hash ranges.
 
-### [To Do] TYPE-0042 `KeyHash` (a value in the ADR's hash space, `KeyHash::of(key)`) and `KeyRange` (half-open over the hash space) with `contains`, `split_at`, `merge` of adjacent ranges, `is_adjacent` and `FULL`
+### [Done] TYPE-0042 `KeyHash` (a value in the ADR's hash space, `KeyHash::of(key)`) and `KeyRange` (half-open over the hash space) with `contains`, `split_at`, `merge` of adjacent ranges, `is_adjacent` and `FULL`
 P1 · M0 · Task · deps: TYPE-0041 · labels: foundation-for:X-ELASTIC
 Done when: Property tests show `split_at` followed by `merge` is the identity, that `split_at` rejects split points outside the range or at its ends, that `merge` of non-adjacent ranges returns a typed error, and that exactly one of two split halves contains any hash.
 
-### [To Do] TYPE-0043 Key range coverage validation: check that a set of `KeyRange`s partitions the hash space exactly, and report the first gap or overlap with its bounds
+### [Done] TYPE-0043 Key range coverage validation: check that a set of `KeyRange`s partitions the hash space exactly, and report the first gap or overlap with its bounds
 P1 · M0 · Task · deps: TYPE-0042 · labels: foundation-for:X-ELASTIC
 Done when: Property tests generate valid partitions by random splits (accepted) and then remove, duplicate or shift one range (rejected with the right gap or overlap); META-F08 can call it to validate key-range mapping records.
 
-## [To Do] TYPE-F12 Small domain enums and size types
+## [Done] TYPE-F12 Small domain enums and size types
 P1 · M0 · Feature · deps: FND-F02
 Scope: `IsolationLevel`, `Acks`, `TimestampType`, `CompressionType`, `CleanupPolicy`, `ByteSize`, with Kafka wire values.
 
-### [To Do] TYPE-0044 `IsolationLevel` (`ReadUncommitted` = 0, `ReadCommitted` = 1, wire `i8`) and `Acks` (`None` = 0, `Leader` = 1, `All` = -1, wire `i16`)
+### [Done] TYPE-0044 `IsolationLevel` (`ReadUncommitted` = 0, `ReadCommitted` = 1, wire `i8`) and `Acks` (`None` = 0, `Leader` = 1, `All` = -1, wire `i16`)
 P1 · M0 · Task · deps: TYPE-0002 · ref: core/src/main/scala/kafka/server/ReplicaManager.scala isValidRequiredAcks @4.4.0
 Done when: Tests over every `i8`/`i16` value show only the listed values decode and all others return typed errors (the produce handler maps an invalid `acks` to `INVALID_REQUIRED_ACKS`, citing `ReplicaManager.isValidRequiredAcks`); `// Parity:` cites `IsolationLevel.forId`; strategies include the invalid values.
 
-### [To Do] TYPE-0045 `TimestampType` (`CreateTime` = 0, `LogAppendTime` = 1, with Kafka's names `CreateTime`/`LogAppendTime`) and `CompressionType` (`None` = 0, `Gzip` = 1, `Snappy` = 2, `Lz4` = 3, `Zstd` = 4, with the names `none`, `gzip`, `snappy`, `lz4`, `zstd`)
+### [Done] TYPE-0045 `TimestampType` (`CreateTime` = 0, `LogAppendTime` = 1, with Kafka's names `CreateTime`/`LogAppendTime`) and `CompressionType` (`None` = 0, `Gzip` = 1, `Snappy` = 2, `Lz4` = 3, `Zstd` = 4, with the names `none`, `gzip`, `snappy`, `lz4`, `zstd`)
 P1 · M0 · Task · deps: TYPE-0002 · ref: clients/src/main/java/org/apache/kafka/common/record/internal/CompressionType.java forId/forName @4.4.0
 Done when: Id and name round-trips are tested for every variant; unknown ids and names return typed errors; the doc states that Kafka's `NO_TIMESTAMP_TYPE` (message formats v0/v1, not supported) is `Option::None` where it can appear, and that the topic-level `producer` compression value belongs to CFG; `// Parity:` cites `TimestampType` and `CompressionType`.
 
-### [To Do] TYPE-0046 `CleanupPolicy`: the set of `{Delete, Compact}` built from a list of tokens (`delete`, `compact`, both in either order, or an empty list meaning no cleanup) with a canonical `Display`
+### [Done] TYPE-0046 `CleanupPolicy`: the set of `{Delete, Compact}` built from a list of tokens (`delete`, `compact`, both in either order, or an empty list meaning no cleanup) with a canonical `Display`
 P1 · M0 · Task · deps: TYPE-0002 · ref: storage/src/main/java/org/apache/kafka/storage/internals/log/LogConfig.java @4.4.0
 Done when: Tests cover each accepted list, unknown tokens (rejected with the token named), duplicates handled as Kafka's `ConfigDef.ValidList` does at 4.4.0, and the empty list (infinite retention, per `TopicConfig.CLEANUP_POLICY_DOC`); parsing the config string into tokens is CFG's job.
 
-### [To Do] TYPE-0047 `ByteSize(u64)` with checked arithmetic, checked conversion from Kafka's `i32`/`i64` size fields (negative values rejected), and `Display` as exact bytes plus an IEC approximation (`1048576 (1 MiB)`)
+### [Done] TYPE-0047 `ByteSize(u64)` with checked arithmetic, checked conversion from Kafka's `i32`/`i64` size fields (negative values rejected), and `Display` as exact bytes plus an IEC approximation (`1048576 (1 MiB)`)
 P1 · M0 · Task · deps: TYPE-0002
 Done when: Property tests show conversions never panic and reject exactly the negative inputs; arithmetic overflow returns a typed error; the doc states that config keys keep Kafka's plain byte numbers (no unit suffixes) for compatibility.
