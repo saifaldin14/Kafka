@@ -313,7 +313,7 @@ Scope: CODEOWNERS, issue templates, labels, branch protection settings documente
 P2 · M0 · Task · deps: none · labels: security
 Done when: GitHub validates the file without errors (CODEOWNERS errors view is clean); a PR that touches `deny.toml` requests review from its owner.
 
-### [To Do] FND-0059 Issue forms in `.github/ISSUE_TEMPLATE/` for bugs, parity gaps, design proposals and flaky tests
+### [Done] FND-0059 Issue forms in `.github/ISSUE_TEMPLATE/` for bugs, parity gaps, design proposals and flaky tests
 P2 · M0 · Task · deps: none · labels: docs
 Done when: Bug: version, reproduction or simulation seed with the replay command, Kafka 4.4.0 behavior compared, redacted logs; parity gap: Kafka path at 4.4.0 or KIP, client and version; design/ADR proposal; flaky test: test name, seed, quarantine issue; `config.yml` disables blank issues. Each form renders on GitHub with its required fields marked; the bug form tells reporters to never paste record payloads or credentials (debuggability.md); the flaky form matches testing.md rule 7.
 
