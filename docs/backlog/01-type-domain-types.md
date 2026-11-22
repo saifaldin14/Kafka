@@ -221,7 +221,7 @@ P1 · M0 · Spike · deps: TYPE-0040 · labels: foundation-for:X-ELASTIC · ref:
 Done when: Options: `KeyHash` as Kafka's positive murmur2 (31 bits, `[0, 2^31)`) so key ranges line up with `partitionForKey`, or a wider hash; also how null keys are handled and how ranges map to a fixed Kafka partition count for the virtual partition view (X-ELASTIC-F10). An accepted ADR "Key hash space" fixes the hash function, the space bounds, and the compatibility argument, and states that X-ELASTIC-F01 may extend it but not change the hash.
 Notes: Accepted as [ADR-0013](../adr/0013-key-hash-space.md): `KeyHash` is Kafka's `toPositive(murmur2)` over `[0, 2^31)`, null keys are never hashed, and because Kafka partitions by modulo, the virtual partition view maps partition indexes, not hash ranges.
 
-### [To Do] TYPE-0042 `KeyHash` (a value in the ADR's hash space, `KeyHash::of(key)`) and `KeyRange` (half-open over the hash space) with `contains`, `split_at`, `merge` of adjacent ranges, `is_adjacent` and `FULL`
+### [Done] TYPE-0042 `KeyHash` (a value in the ADR's hash space, `KeyHash::of(key)`) and `KeyRange` (half-open over the hash space) with `contains`, `split_at`, `merge` of adjacent ranges, `is_adjacent` and `FULL`
 P1 · M0 · Task · deps: TYPE-0041 · labels: foundation-for:X-ELASTIC
 Done when: Property tests show `split_at` followed by `merge` is the identity, that `split_at` rejects split points outside the range or at its ends, that `merge` of non-adjacent ranges returns a typed error, and that exactly one of two split halves contains any hash.
 

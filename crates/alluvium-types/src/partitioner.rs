@@ -81,7 +81,7 @@ pub fn partition_for_key(key: &[u8], partitions: NonZeroU32) -> PartitionIndex {
 /// Kafka's `Utils.toPositive`: clears the sign bit rather than taking the absolute
 /// value, so `i32::MIN` becomes 0 instead of overflowing.
 // Parity: clients/src/main/java/org/apache/kafka/common/utils/Utils.java@4.4.0 Utils.toPositive
-fn to_positive(hash: i32) -> u32 {
+pub(crate) fn to_positive(hash: i32) -> u32 {
     hash.cast_unsigned() & 0x7fff_ffff
 }
 

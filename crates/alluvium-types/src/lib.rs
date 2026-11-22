@@ -78,6 +78,9 @@
 //!   and name ([`AttributeError`] for others).
 //! - [`murmur2`] and [`partition_for_key`]: Kafka's key hash, and the partition a
 //!   producer picks with it.
+//! - [`KeyHash`] and [`KeyRange`]: a key's place in the hash space and half-open
+//!   ranges of it, for elastic partitions
+//!   ([ADR-0013](../../../docs/adr/0013-key-hash-space.md); [`KeyRangeError`]).
 //! - [`CleanupPolicy`]: delete, compact, both or neither ([`CleanupPolicyError`]).
 //! - [`ByteSize`]: a non-negative size, printed with an IEC approximation
 //!   ([`ByteSizeError`]).
@@ -105,6 +108,7 @@ mod deadline;
 mod delivery;
 mod epoch;
 mod id;
+mod key_range;
 mod listener;
 mod log_safe;
 mod offset;
@@ -129,6 +133,7 @@ pub use deadline::Deadline;
 pub use delivery::{Acks, DeliveryError, IsolationLevel};
 pub use epoch::{BrokerEpoch, GenerationId, LeaderEpoch, MemberEpoch, PositiveEpoch};
 pub use id::{BrokerId, CorrelationId, IdError, IdKind, NodeId, PartitionIndex};
+pub use key_range::{KeyHash, KeyRange, KeyRangeError};
 pub use listener::{BlankListenerName, ListenerName};
 pub use log_safe::LogSafe;
 pub use offset::{Offset, OffsetError, OffsetRange, OffsetSpec};
