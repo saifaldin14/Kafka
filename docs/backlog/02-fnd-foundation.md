@@ -12,7 +12,7 @@ Scope: Root `Cargo.toml` workspace, `rust-toolchain.toml`, release/dev profiles,
 P0 · M0 · Task · deps: none · ref: docs/standards/rust.md
 Done when: `Cargo.toml` has `[workspace]` with `resolver = "3"` and `members = []`, `[workspace.package]` (edition 2024, `rust-version = "1.99"`, `publish = false`) and an empty `[workspace.dependencies]`; `rustup show active-toolchain` in the repo reports 1.99.0 with rustfmt and clippy installed; `cargo generate-lockfile` produces the committed `Cargo.lock` (format version 4) with no diff; `[profile.release]` has exactly `panic = "abort"`, `overflow-checks = true`, `debug = "line-tables-only"`, `lto = "thin"`; members are listed explicitly because Cargo rejects a `crates/*` glob that matches nothing (the first crate switches to the glob); `.gitignore` still ignores `/target`.
 
-## [In Progress] FND-F02 Lint configuration
+## [Done] FND-F02 Lint configuration
 P0 · M0 · Feature · deps: FND-F01
 Scope: `[workspace.lints]`, `clippy.toml` and rustfmt exactly as in docs/standards/rust.md, plus smoke tests proving each disallowed item is rejected.
 
@@ -54,7 +54,7 @@ Done when: `disallowed-methods` gains `std::time::Instant::elapsed`, `std::time:
 P0 · M0 · Task · deps: FND-0003, FND-0018 · labels: docs · ref: docs/standards/rust.md#workspace-configuration
 Done when: Unit tests with fixture manifests cover: a changed lint level, an added or removed disallowed method, and a member without `[lints] workspace = true`; each fails with a message naming the file and the differing key; the real repository passes; the command is registered as the `manifests` step of `cargo xtask ci`.
 
-### [To Do] FND-0008 `check-manifests` rule: `alluvium-protocol` and `alluvium-records` `lib.rs`, and `alluvium-storage` decoding modules listed in the rule, start with `#![deny(clippy::indexing_slicing, clippy::arithmetic_side_effects)]`
+### [Done] FND-0008 `check-manifests` rule: `alluvium-protocol` and `alluvium-records` `lib.rs`, and `alluvium-storage` decoding modules listed in the rule, start with `#![deny(clippy::indexing_slicing, clippy::arithmetic_side_effects)]`
 P2 · M1 · Task · deps: FND-0007 · labels: decoder, security · ref: docs/standards/rust.md#workspace-configuration
 Done when: The rule applies only to crates present in the workspace; fixture tests show a decoder crate without the attribute is rejected, with a message pointing to rust.md; the rule passes once `alluvium-protocol` exists (M1).
 
