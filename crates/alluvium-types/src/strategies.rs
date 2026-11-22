@@ -14,9 +14,10 @@ use proptest::prelude::{Just, Strategy, any, prop_oneof};
 use proptest::sample::{Index, select};
 
 use crate::{
-    BrokerEpoch, BrokerId, CorrelationId, GenerationId, GroupId, GroupInstanceId, LeaderEpoch,
-    MemberEpoch, MonotonicInstant, NodeId, Offset, OffsetRange, OffsetSpec, PartitionIndex,
-    ProducerEpoch, ProducerId, Sequence, TopicId, TopicName, Uuid, WallTime,
+    BrokerEpoch, BrokerId, ClientId, CorrelationId, GenerationId, GroupId, GroupInstanceId,
+    LeaderEpoch, MemberEpoch, MonotonicInstant, NodeId, Offset, OffsetRange, OffsetSpec,
+    PartitionIndex, ProducerEpoch, ProducerId, Sequence, TopicId, TopicName, TransactionalId, Uuid,
+    WallTime,
 };
 
 /// Non-negative `i32` values, with extra weight on 0, 1 and `i32::MAX`.
@@ -278,4 +279,24 @@ pub fn group_instance_id() -> impl Strategy<Value = GroupInstanceId> {
     topic_name().prop_filter_map("valid", |name| {
         GroupInstanceId::try_from(name.as_str()).ok()
     })
+}
+
+/// [`TransactionalId`]s: any non-empty string, biased towards characters that need
+/// escaping in logs.
+pub fn transactional_id() -> impl Strategy<Value = TransactionalId> {
+    prop_oneof![
+        1 => Just("tx\r\nforged".to_owned()),
+        9 => any::<String>(),
+    ]
+    .prop_filter_map("non-empty", |id| TransactionalId::try_from(id).ok())
+}
+
+/// [`ClientId`]s: any string, biased towards the empty one and control characters.
+pub fn client_id() -> impl Strategy<Value = ClientId> {
+    prop_oneof![
+        1 => Just(String::new()),
+        1 => Just("client\u{0}\n".to_owned()),
+        8 => any::<String>(),
+    ]
+    .prop_map(ClientId::from)
 }
