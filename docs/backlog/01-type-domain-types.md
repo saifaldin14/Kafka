@@ -189,7 +189,7 @@ P1 · M0 · Task · deps: TYPE-0034 · labels: security, test · ref: docs/stand
 Done when: The property test covers ASCII, UTF-8 and binary payloads; the benchmark result is in the PR; debuggability.md links to `PayloadSummary` instead of describing the format a second time.
 Notes: The benchmark uses the criterion setup and conventions from TEST-0094 (pulled into M0 for this task), which lands first; the backlog can't express a task-level dependency across epics.
 
-## [In Progress] TYPE-F10 Namespace identity
+## [Done] TYPE-F10 Namespace identity
 P1 · M0 · Feature · deps: TYPE-F04 · labels: foundation-for:X-TENANT
 Scope: `NamespaceId`, namespace-qualified names and the default-namespace mapping that keeps plain Kafka names valid.
 
@@ -202,7 +202,7 @@ Notes: Accepted as [ADR-0014](../adr/0014-namespace-identity.md): `NamespaceId` 
 P1 · M0 · Task · deps: TYPE-0036 · labels: foundation-for:X-TENANT
 Done when: Property tests over the validation rules pass; `DEFAULT` round-trips through `Display`/`FromStr`; META-F07 can use the type unchanged (its record fields are listed in the PR).
 
-### [To Do] TYPE-0038 `NamespacedName` for topics, groups and transactional ids, with the default-namespace mapping: a plain Kafka name maps to `(DEFAULT, name)` and back without loss
+### [Done] TYPE-0038 `NamespacedName` for topics, groups and transactional ids, with the default-namespace mapping: a plain Kafka name maps to `(DEFAULT, name)` and back without loss
 P1 · M0 · Task · deps: TYPE-0037 · labels: foundation-for:X-TENANT
 Done when: A property test over all valid `TopicName`, `GroupId` and `TransactionalId` values shows the round-trip is the identity and the display of a default-namespace name equals the plain Kafka name; non-default names can't be converted to a plain Kafka name without an explicit call that returns a typed error.
 
