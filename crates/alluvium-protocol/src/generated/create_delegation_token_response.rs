@@ -159,6 +159,65 @@ impl CreateDelegationTokenResponse {
 }
 
 impl CreateDelegationTokenResponse {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 3 {
+            check(!self.token_requester_principal_type.is_empty(), "TokenRequesterPrincipalType")?;
+            check(!self.token_requester_principal_name.is_empty(), "TokenRequesterPrincipalName")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_i16(self.error_code);
+        writer.write_string(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.principal_type,
+        )?;
+        writer.write_string(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.principal_name,
+        )?;
+        if version == 3 {
+            writer.write_string(crate::Framing::Compact, &self.token_requester_principal_type)?;
+            writer.write_string(crate::Framing::Compact, &self.token_requester_principal_name)?;
+        }
+        writer.write_i64(self.issue_timestamp_ms);
+        writer.write_i64(self.expiry_timestamp_ms);
+        writer.write_i64(self.max_timestamp_ms);
+        writer.write_string(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.token_id,
+        )?;
+        writer.write_bytes(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.hmac,
+        )?;
+        writer.write_i32(self.throttle_time_ms);
+        if version >= 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
+impl CreateDelegationTokenResponse {
     /// The API key.
     pub const API_KEY: i16 = 38;
     /// The versions of this message.
@@ -177,5 +236,15 @@ impl crate::Message for CreateDelegationTokenResponse {
             return Err(reader.unsupported_version("CreateDelegationTokenResponse", version));
         }
         CreateDelegationTokenResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !CreateDelegationTokenResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "CreateDelegationTokenResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

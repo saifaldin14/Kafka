@@ -68,6 +68,42 @@ impl UpdateFeaturesRequest {
     }
 }
 
+impl UpdateFeaturesRequest {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 1 {
+            check(self.validate_only, "ValidateOnly")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_i32(self.timeout_ms);
+        writer.write_array_length(crate::Framing::Compact, self.feature_updates.len())?;
+        for value in &self.feature_updates {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 1 {
+            writer.write_bool(self.validate_only);
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `UpdateFeaturesRequest`'s `FeatureUpdates` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FeatureUpdateKey {
@@ -160,6 +196,45 @@ impl FeatureUpdateKey {
     }
 }
 
+impl FeatureUpdateKey {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version > 0 {
+            check(self.allow_downgrade, "AllowDowngrade")?;
+        }
+        if version < 1 {
+            check(self.upgrade_type != 1, "UpgradeType")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_string(crate::Framing::Compact, &self.feature)?;
+        writer.write_i16(self.max_version_level);
+        if version == 0 {
+            writer.write_bool(self.allow_downgrade);
+        }
+        if version >= 1 {
+            writer.write_i8(self.upgrade_type);
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl UpdateFeaturesRequest {
     /// The API key.
     pub const API_KEY: i16 = 57;
@@ -182,5 +257,15 @@ impl crate::Message for UpdateFeaturesRequest {
             return Err(reader.unsupported_version("UpdateFeaturesRequest", version));
         }
         UpdateFeaturesRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !UpdateFeaturesRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "UpdateFeaturesRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

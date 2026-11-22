@@ -66,6 +66,22 @@ impl RemoveRaftVoterRequest {
 }
 
 impl RemoveRaftVoterRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_nullable_string(crate::Framing::Compact, self.cluster_id.as_deref())?;
+        writer.write_i32(self.voter_id);
+        writer.write_uuid(self.voter_directory_id);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
+impl RemoveRaftVoterRequest {
     /// The API key.
     pub const API_KEY: i16 = 81;
     /// The versions of this message.
@@ -87,5 +103,15 @@ impl crate::Message for RemoveRaftVoterRequest {
             return Err(reader.unsupported_version("RemoveRaftVoterRequest", version));
         }
         RemoveRaftVoterRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !RemoveRaftVoterRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "RemoveRaftVoterRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

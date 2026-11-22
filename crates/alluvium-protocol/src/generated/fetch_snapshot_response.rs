@@ -84,6 +84,59 @@ impl FetchSnapshotResponse {
     }
 }
 
+impl FetchSnapshotResponse {
+    fn write_tagged_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        let wanted_0 = version == 1 && !self.node_endpoints.is_empty();
+        writer.write_tagged_field_count(
+            [wanted_0].into_iter().filter(|wanted| *wanted).count().saturating_add(raw.len()),
+        )?;
+        raw.write_known(writer, 0, wanted_0, |writer| {
+            writer.write_array_length(crate::Framing::Compact, self.node_endpoints.len())?;
+            for value in &self.node_endpoints {
+                value.write_fields(writer, version)?;
+            }
+            Ok(())
+        })?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 1 {
+            check(!self.node_endpoints.is_empty(), "NodeEndpoints")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_i32(self.throttle_time_ms);
+        writer.write_i16(self.error_code);
+        writer.write_array_length(crate::Framing::Compact, self.topics.len())?;
+        for value in &self.topics {
+            value.write_fields(writer, version)?;
+        }
+        self.write_tagged_fields(writer, version)?;
+        Ok(())
+    }
+}
+
 /// An element of `FetchSnapshotResponse`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopicSnapshot {
@@ -120,6 +173,24 @@ impl TopicSnapshot {
             let (tag, size) = reader.read_tagged_field_header()?;
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
+    }
+}
+
+impl TopicSnapshot {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.name)?;
+        writer.write_array_length(crate::Framing::Compact, self.partitions.len())?;
+        for value in &self.partitions {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
         Ok(())
     }
 }
@@ -211,6 +282,47 @@ impl PartitionSnapshot {
     }
 }
 
+impl PartitionSnapshot {
+    fn write_tagged_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        let wanted_0 = self.current_leader != LeaderIdAndEpoch::default();
+        writer.write_tagged_field_count(
+            [wanted_0].into_iter().filter(|wanted| *wanted).count().saturating_add(raw.len()),
+        )?;
+        raw.write_known(writer, 0, wanted_0, |writer| {
+            self.current_leader.write_fields(writer, version)?;
+            Ok(())
+        })?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.index);
+        writer.write_i16(self.error_code);
+        self.snapshot_id.write_fields(writer, version)?;
+        writer.write_i64(self.size);
+        writer.write_i64(self.position);
+        {
+            let value = self
+                .unaligned_records
+                .as_ref()
+                .ok_or(crate::EncodeError::NullForNonNullable { field: "UnalignedRecords" })?;
+            writer.write_records(crate::Framing::Compact, Some(value))?;
+        }
+        self.write_tagged_fields(writer, version)?;
+        Ok(())
+    }
+}
+
 /// The `SnapshotId` field of `PartitionSnapshot`.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct SnapshotId {
@@ -245,6 +357,21 @@ impl SnapshotId {
             let (tag, size) = reader.read_tagged_field_header()?;
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
+    }
+}
+
+impl SnapshotId {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i64(self.end_offset);
+        writer.write_i32(self.epoch);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
         Ok(())
     }
 }
@@ -286,6 +413,21 @@ impl LeaderIdAndEpoch {
             let (tag, size) = reader.read_tagged_field_header()?;
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
+    }
+}
+
+impl LeaderIdAndEpoch {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.leader_id);
+        writer.write_i32(self.leader_epoch);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
         Ok(())
     }
 }
@@ -349,6 +491,22 @@ impl NodeEndpoint {
     }
 }
 
+impl NodeEndpoint {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.node_id);
+        writer.write_string(crate::Framing::Compact, &self.host)?;
+        writer.write_u16(self.port);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl FetchSnapshotResponse {
     /// The API key.
     pub const API_KEY: i16 = 59;
@@ -368,5 +526,15 @@ impl crate::Message for FetchSnapshotResponse {
             return Err(reader.unsupported_version("FetchSnapshotResponse", version));
         }
         FetchSnapshotResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !FetchSnapshotResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "FetchSnapshotResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

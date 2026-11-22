@@ -51,6 +51,24 @@ impl ShareGroupDescribeResponse {
     }
 }
 
+impl ShareGroupDescribeResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.throttle_time_ms);
+        writer.write_array_length(crate::Framing::Compact, self.groups.len())?;
+        for value in &self.groups {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `ShareGroupDescribeResponse`'s `Groups` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DescribedGroup {
@@ -159,6 +177,31 @@ impl DescribedGroup {
     }
 }
 
+impl DescribedGroup {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i16(self.error_code);
+        writer.write_nullable_string(crate::Framing::Compact, self.error_message.as_deref())?;
+        writer.write_string(crate::Framing::Compact, &self.group_id)?;
+        writer.write_string(crate::Framing::Compact, &self.group_state)?;
+        writer.write_i32(self.group_epoch);
+        writer.write_i32(self.assignment_epoch);
+        writer.write_string(crate::Framing::Compact, &self.assignor_name)?;
+        writer.write_array_length(crate::Framing::Compact, self.members.len())?;
+        for value in &self.members {
+            value.write_fields(writer, version)?;
+        }
+        writer.write_i32(self.authorized_operations);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `DescribedGroup`'s `Members` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Member {
@@ -226,6 +269,29 @@ impl Member {
     }
 }
 
+impl Member {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.member_id)?;
+        writer.write_nullable_string(crate::Framing::Compact, self.rack_id.as_deref())?;
+        writer.write_i32(self.member_epoch);
+        writer.write_string(crate::Framing::Compact, &self.client_id)?;
+        writer.write_string(crate::Framing::Compact, &self.client_host)?;
+        writer.write_array_length(crate::Framing::Compact, self.subscribed_topic_names.len())?;
+        for value in &self.subscribed_topic_names {
+            writer.write_string(crate::Framing::Compact, value)?;
+        }
+        self.assignment.write_fields(writer, version)?;
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// `Assignment`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Assignment {
@@ -257,6 +323,23 @@ impl Assignment {
             let (tag, size) = reader.read_tagged_field_header()?;
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
+    }
+}
+
+impl Assignment {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_array_length(crate::Framing::Compact, self.topic_partitions.len())?;
+        for value in &self.topic_partitions {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
         Ok(())
     }
 }
@@ -320,6 +403,25 @@ impl TopicPartitions {
     }
 }
 
+impl TopicPartitions {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_uuid(self.topic_id);
+        writer.write_string(crate::Framing::Compact, &self.topic_name)?;
+        writer.write_array_length(crate::Framing::Compact, self.partitions.len())?;
+        for value in &self.partitions {
+            writer.write_i32(*value);
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl ShareGroupDescribeResponse {
     /// The API key.
     pub const API_KEY: i16 = 77;
@@ -339,5 +441,15 @@ impl crate::Message for ShareGroupDescribeResponse {
             return Err(reader.unsupported_version("ShareGroupDescribeResponse", version));
         }
         ShareGroupDescribeResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !ShareGroupDescribeResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "ShareGroupDescribeResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

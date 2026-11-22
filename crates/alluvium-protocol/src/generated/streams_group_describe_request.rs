@@ -64,6 +64,42 @@ impl StreamsGroupDescribeRequest {
 }
 
 impl StreamsGroupDescribeRequest {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 1 {
+            check(self.include_topology_description, "IncludeTopologyDescription")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_array_length(crate::Framing::Compact, self.group_ids.len())?;
+        for value in &self.group_ids {
+            writer.write_string(crate::Framing::Compact, value)?;
+        }
+        writer.write_bool(self.include_authorized_operations);
+        if version == 1 {
+            writer.write_bool(self.include_topology_description);
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
+impl StreamsGroupDescribeRequest {
     /// The API key.
     pub const API_KEY: i16 = 89;
     /// The versions of this message.
@@ -85,5 +121,15 @@ impl crate::Message for StreamsGroupDescribeRequest {
             return Err(reader.unsupported_version("StreamsGroupDescribeRequest", version));
         }
         StreamsGroupDescribeRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !StreamsGroupDescribeRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "StreamsGroupDescribeRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

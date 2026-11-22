@@ -90,6 +90,26 @@ impl DescribeUserScramCredentialsResponse {
     }
 }
 
+impl DescribeUserScramCredentialsResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.throttle_time_ms);
+        writer.write_i16(self.error_code);
+        writer.write_nullable_string(crate::Framing::Compact, self.error_message.as_deref())?;
+        writer.write_array_length(crate::Framing::Compact, self.results.len())?;
+        for value in &self.results {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `DescribeUserScramCredentialsResponse`'s `Results` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DescribeUserScramCredentialsResult {
@@ -168,6 +188,26 @@ impl DescribeUserScramCredentialsResult {
     }
 }
 
+impl DescribeUserScramCredentialsResult {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.user)?;
+        writer.write_i16(self.error_code);
+        writer.write_nullable_string(crate::Framing::Compact, self.error_message.as_deref())?;
+        writer.write_array_length(crate::Framing::Compact, self.credential_infos.len())?;
+        for value in &self.credential_infos {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `DescribeUserScramCredentialsResult`'s `CredentialInfos` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CredentialInfo {
@@ -209,6 +249,21 @@ impl CredentialInfo {
     }
 }
 
+impl CredentialInfo {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i8(self.mechanism);
+        writer.write_i32(self.iterations);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl DescribeUserScramCredentialsResponse {
     /// The API key.
     pub const API_KEY: i16 = 50;
@@ -228,5 +283,15 @@ impl crate::Message for DescribeUserScramCredentialsResponse {
             return Err(reader.unsupported_version("DescribeUserScramCredentialsResponse", version));
         }
         DescribeUserScramCredentialsResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !DescribeUserScramCredentialsResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "DescribeUserScramCredentialsResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

@@ -43,6 +43,22 @@ impl ConsumerProtocolAssignment {
     }
 }
 
+impl ConsumerProtocolAssignment {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_array_length(crate::Framing::Classic, self.assigned_partitions.len())?;
+        for value in &self.assigned_partitions {
+            value.write_fields(writer, version)?;
+        }
+        writer
+            .write_nullable_zero_copy_bytes(crate::Framing::Classic, self.user_data.as_deref())?;
+        Ok(())
+    }
+}
+
 /// An element of `ConsumerProtocolAssignment`'s `AssignedPartitions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopicPartition {
@@ -94,6 +110,21 @@ impl TopicPartition {
     }
 }
 
+impl TopicPartition {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Classic, &self.topic)?;
+        writer.write_array_length(crate::Framing::Classic, self.partitions.len())?;
+        for value in &self.partitions {
+            writer.write_i32(*value);
+        }
+        Ok(())
+    }
+}
+
 impl ConsumerProtocolAssignment {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 3);
@@ -111,5 +142,15 @@ impl crate::Message for ConsumerProtocolAssignment {
             return Err(reader.unsupported_version("ConsumerProtocolAssignment", version));
         }
         ConsumerProtocolAssignment::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !ConsumerProtocolAssignment::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "ConsumerProtocolAssignment",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

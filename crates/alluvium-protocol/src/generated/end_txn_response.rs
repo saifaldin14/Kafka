@@ -87,6 +87,30 @@ impl EndTxnResponse {
 }
 
 impl EndTxnResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.throttle_time_ms);
+        writer.write_i16(self.error_code);
+        if version == 5 {
+            writer.write_i64(self.producer_id);
+            writer.write_i16(self.producer_epoch);
+        }
+        if version >= 3 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 3 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
+impl EndTxnResponse {
     /// The API key.
     pub const API_KEY: i16 = 26;
     /// The versions of this message.
@@ -105,5 +129,15 @@ impl crate::Message for EndTxnResponse {
             return Err(reader.unsupported_version("EndTxnResponse", version));
         }
         EndTxnResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !EndTxnResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "EndTxnResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

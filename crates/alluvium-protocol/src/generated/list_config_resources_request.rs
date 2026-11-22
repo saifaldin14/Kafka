@@ -50,6 +50,40 @@ impl ListConfigResourcesRequest {
 }
 
 impl ListConfigResourcesRequest {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 1 {
+            check(!self.resource_types.is_empty(), "ResourceTypes")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        if version == 1 {
+            writer.write_array_length(crate::Framing::Compact, self.resource_types.len())?;
+            for value in &self.resource_types {
+                writer.write_i8(*value);
+            }
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
+impl ListConfigResourcesRequest {
     /// The API key.
     pub const API_KEY: i16 = 74;
     /// The versions of this message.
@@ -71,5 +105,15 @@ impl crate::Message for ListConfigResourcesRequest {
             return Err(reader.unsupported_version("ListConfigResourcesRequest", version));
         }
         ListConfigResourcesRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !ListConfigResourcesRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "ListConfigResourcesRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

@@ -45,6 +45,25 @@ impl ResponseHeader {
 }
 
 impl ResponseHeader {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.correlation_id);
+        if version == 1 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 1 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
+impl ResponseHeader {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 1);
     /// The versions that use the flexible encoding.
@@ -61,5 +80,15 @@ impl crate::Message for ResponseHeader {
             return Err(reader.unsupported_version("ResponseHeader", version));
         }
         ResponseHeader::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !ResponseHeader::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "ResponseHeader",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

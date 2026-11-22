@@ -95,6 +95,37 @@ impl DescribeAclsResponse {
     }
 }
 
+impl DescribeAclsResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.throttle_time_ms);
+        writer.write_i16(self.error_code);
+        writer.write_nullable_string(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.error_message.as_deref(),
+        )?;
+        writer.write_array_length(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.resources.len(),
+        )?;
+        for value in &self.resources {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribeAclsResponse`'s `Resources` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DescribeAclsResource {
@@ -171,6 +202,37 @@ impl DescribeAclsResource {
     }
 }
 
+impl DescribeAclsResource {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i8(self.resource_type);
+        writer.write_string(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.resource_name,
+        )?;
+        writer.write_i8(self.pattern_type);
+        writer.write_array_length(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.acls.len(),
+        )?;
+        for value in &self.acls {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribeAclsResource`'s `Acls` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AclDescription {
@@ -236,6 +298,34 @@ impl AclDescription {
     }
 }
 
+impl AclDescription {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.principal,
+        )?;
+        writer.write_string(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.host,
+        )?;
+        writer.write_i8(self.operation);
+        writer.write_i8(self.permission_type);
+        if version >= 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl DescribeAclsResponse {
     /// The API key.
     pub const API_KEY: i16 = 29;
@@ -255,5 +345,15 @@ impl crate::Message for DescribeAclsResponse {
             return Err(reader.unsupported_version("DescribeAclsResponse", version));
         }
         DescribeAclsResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !DescribeAclsResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "DescribeAclsResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

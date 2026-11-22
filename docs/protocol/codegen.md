@@ -134,6 +134,33 @@ The versions a field is present, nullable, flexible or tagged in become conditio
 
 **No panics.** A property test decodes arbitrary input as every message at every version (`DECODE_EVERY_VERSION`, generated for tests) and requires each decode to return.
 
+## Encoding
+
+Every message implements `Message::encode(writer, version)`, which mirrors Kafka's generated `write`, and `Message::encoded_size(version)`.
+
+**Version check.** A version outside `VERSIONS` fails as `UnsupportedVersion` ("can't write version V of M").
+
+**Absent fields.** A field the version doesn't have must hold its default unless it is `ignorable`; otherwise writing would lose it, and the encode fails as `NonDefaultFieldUnsupported` ("attempted to write a non-default F at version V").
+- These checks run first, in `check_absent_fields`, so a failed encode writes nothing.
+- An `ignorable` field the version lacks is dropped. ProduceResponse's `RecordErrors` before v8 is an example.
+- As in Kafka, a null counts as non-default unless the field's default is null.
+
+**Present fields** are written in schema order, framed as in decoding. A `None` where the version needs a value fails as `NullForNonNullable`, naming the field. Nullable structs get the same markers as in decoding.
+
+**Tagged fields** are written only when they differ from their defaults.
+- `RawTaggedFieldWriter` writes the unknown ones between them, so the section is in ascending tag order.
+- An unknown field that reuses a tag the struct defines fails as `RawTagIsDefined`.
+- Unknown fields in a version without tagged fields fail as `TaggedFieldsUnsupported`.
+- A decoded message re-encodes to the same bytes, unknown tags included, at every level.
+
+**Size.** `encoded_size` encodes into a counting `Writer`, which stores nothing, so it always equals the length `encode` writes. It also reports the bytes of records and `zeroCopy` byte fields, which a frame can share rather than copy.
+
+**Infallible structs.** A struct whose encoding can't fail, because it has only fixed-size fields that are present in every version, gets a `write_fields` that returns nothing.
+
+**Data types.** `encode_version_prefixed` and `decode_version_prefixed` write and read an `int16` version before the body, as Kafka's `MessageUtil.toVersionPrefixedBytes` does for control record keys and consumer protocol payloads.
+
+**Tests.** A generated table encodes every message's default at every version, checks its size, and decodes it back.
+
 ## Keyed arrays
 
 A struct with `mapKey` fields makes every array of it keyed. Kafka generates a collection class for such an array, with `find` and `findAll` taking the key fields.

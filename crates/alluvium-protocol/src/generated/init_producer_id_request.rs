@@ -99,6 +99,57 @@ impl InitProducerIdRequest {
 }
 
 impl InitProducerIdRequest {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 3 {
+            check(self.producer_id != -1, "ProducerId")?;
+            check(self.producer_epoch != -1, "ProducerEpoch")?;
+        }
+        if version < 6 {
+            check(self.enable2_pc, "Enable2Pc")?;
+            check(self.keep_prepared_txn, "KeepPreparedTxn")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_nullable_string(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.transactional_id.as_deref(),
+        )?;
+        writer.write_i32(self.transaction_timeout_ms);
+        if version >= 3 {
+            writer.write_i64(self.producer_id);
+            writer.write_i16(self.producer_epoch);
+        }
+        if version == 6 {
+            writer.write_bool(self.enable2_pc);
+            writer.write_bool(self.keep_prepared_txn);
+        }
+        if version >= 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
+impl InitProducerIdRequest {
     /// The API key.
     pub const API_KEY: i16 = 22;
     /// The versions of this message.
@@ -120,5 +171,15 @@ impl crate::Message for InitProducerIdRequest {
             return Err(reader.unsupported_version("InitProducerIdRequest", version));
         }
         InitProducerIdRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !InitProducerIdRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "InitProducerIdRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

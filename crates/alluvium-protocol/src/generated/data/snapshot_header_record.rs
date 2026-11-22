@@ -49,6 +49,21 @@ impl SnapshotHeaderRecord {
 }
 
 impl SnapshotHeaderRecord {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i16(self.version);
+        writer.write_i64(self.last_contained_log_timestamp);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
+impl SnapshotHeaderRecord {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 0);
     /// The versions that use the flexible encoding.
@@ -65,5 +80,15 @@ impl crate::Message for SnapshotHeaderRecord {
             return Err(reader.unsupported_version("SnapshotHeaderRecord", version));
         }
         SnapshotHeaderRecord::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !SnapshotHeaderRecord::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "SnapshotHeaderRecord",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

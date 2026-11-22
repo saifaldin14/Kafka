@@ -46,6 +46,24 @@ impl VotersRecord {
     }
 }
 
+impl VotersRecord {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i16(self.version);
+        writer.write_array_length(crate::Framing::Compact, self.voters.len())?;
+        for value in &self.voters {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `VotersRecord`'s `Voters` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Voter {
@@ -109,6 +127,26 @@ impl Voter {
     }
 }
 
+impl Voter {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.voter_id);
+        writer.write_uuid(self.voter_directory_id);
+        writer.write_array_length(crate::Framing::Compact, self.endpoints.len())?;
+        for value in &self.endpoints {
+            value.write_fields(writer, version)?;
+        }
+        self.k_raft_version_feature.write_fields(writer, version)?;
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `Voter`'s `Endpoints` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Endpoint {
@@ -167,6 +205,22 @@ impl Endpoint {
     }
 }
 
+impl Endpoint {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.name)?;
+        writer.write_string(crate::Framing::Compact, &self.host)?;
+        writer.write_u16(self.port);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// The `KRaftVersionFeature` field of `Voter`.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct KRaftVersionFeature {
@@ -208,6 +262,21 @@ impl KRaftVersionFeature {
     }
 }
 
+impl KRaftVersionFeature {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i16(self.min_supported_version);
+        writer.write_i16(self.max_supported_version);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl VotersRecord {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 0);
@@ -225,5 +294,15 @@ impl crate::Message for VotersRecord {
             return Err(reader.unsupported_version("VotersRecord", version));
         }
         VotersRecord::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !VotersRecord::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "VotersRecord",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

@@ -93,6 +93,80 @@ impl MetadataRequest {
     }
 }
 
+impl MetadataRequest {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 4 {
+            check(!self.allow_auto_topic_creation, "AllowAutoTopicCreation")?;
+        }
+        if !(8..=10).contains(&version) {
+            check(
+                self.include_cluster_authorized_operations,
+                "IncludeClusterAuthorizedOperations",
+            )?;
+        }
+        if version < 8 {
+            check(self.include_topic_authorized_operations, "IncludeTopicAuthorizedOperations")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        if version >= 1 {
+            writer.write_nullable_array_length(
+                if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+                self.topics.as_ref().map(Vec::len),
+            )?;
+            if let Some(values) = &self.topics {
+                for value in values {
+                    value.write_fields(writer, version)?;
+                }
+            }
+        } else {
+            let value = self
+                .topics
+                .as_ref()
+                .ok_or(crate::EncodeError::NullForNonNullable { field: "Topics" })?;
+            writer.write_array_length(
+                if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+                value.len(),
+            )?;
+            for value in value {
+                value.write_fields(writer, version)?;
+            }
+        }
+        if version >= 4 {
+            writer.write_bool(self.allow_auto_topic_creation);
+        }
+        if (8..=10).contains(&version) {
+            writer.write_bool(self.include_cluster_authorized_operations);
+        }
+        if version >= 8 {
+            writer.write_bool(self.include_topic_authorized_operations);
+        }
+        if version >= 9 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 9 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `MetadataRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct MetadataRequestTopic {
@@ -163,6 +237,42 @@ impl MetadataRequestTopic {
     }
 }
 
+impl MetadataRequestTopic {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        if version >= 10 {
+            writer.write_uuid(self.topic_id);
+        }
+        if version >= 10 {
+            writer.write_nullable_string(
+                if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+                self.name.as_deref(),
+            )?;
+        } else {
+            let value = self
+                .name
+                .as_ref()
+                .ok_or(crate::EncodeError::NullForNonNullable { field: "Name" })?;
+            writer.write_string(
+                if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+                value,
+            )?;
+        }
+        if version >= 9 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 9 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl MetadataRequest {
     /// The API key.
     pub const API_KEY: i16 = 3;
@@ -185,5 +295,15 @@ impl crate::Message for MetadataRequest {
             return Err(reader.unsupported_version("MetadataRequest", version));
         }
         MetadataRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !MetadataRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "MetadataRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

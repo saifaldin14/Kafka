@@ -90,6 +90,28 @@ impl UpdateFeaturesResponse {
     }
 }
 
+impl UpdateFeaturesResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.throttle_time_ms);
+        writer.write_i16(self.error_code);
+        writer.write_nullable_string(crate::Framing::Compact, self.error_message.as_deref())?;
+        if version <= 1 {
+            writer.write_array_length(crate::Framing::Compact, self.results.len())?;
+            for value in &self.results {
+                value.write_fields(writer, version)?;
+            }
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `UpdateFeaturesResponse`'s `Results` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct UpdatableFeatureResult {
@@ -179,6 +201,22 @@ impl UpdatableFeatureResult {
     }
 }
 
+impl UpdatableFeatureResult {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.feature)?;
+        writer.write_i16(self.error_code);
+        writer.write_nullable_string(crate::Framing::Compact, self.error_message.as_deref())?;
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl UpdateFeaturesResponse {
     /// The API key.
     pub const API_KEY: i16 = 57;
@@ -198,5 +236,15 @@ impl crate::Message for UpdateFeaturesResponse {
             return Err(reader.unsupported_version("UpdateFeaturesResponse", version));
         }
         UpdateFeaturesResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !UpdateFeaturesResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "UpdateFeaturesResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

@@ -75,6 +75,50 @@ impl ElectLeadersResponse {
     }
 }
 
+impl ElectLeadersResponse {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 1 {
+            check(self.error_code != 0, "ErrorCode")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_i32(self.throttle_time_ms);
+        if version >= 1 {
+            writer.write_i16(self.error_code);
+        }
+        writer.write_array_length(
+            if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.replica_election_results.len(),
+        )?;
+        for value in &self.replica_election_results {
+            value.write_fields(writer, version)?;
+        }
+        if version == 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `ElectLeadersResponse`'s `ReplicaElectionResults` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ReplicaElectionResult {
@@ -124,6 +168,35 @@ impl ReplicaElectionResult {
                 let (tag, size) = reader.read_tagged_field_header()?;
                 reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
             }
+        }
+        Ok(())
+    }
+}
+
+impl ReplicaElectionResult {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.topic,
+        )?;
+        writer.write_array_length(
+            if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.partition_result.len(),
+        )?;
+        for value in &self.partition_result {
+            value.write_fields(writer, version)?;
+        }
+        if version == 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
         }
         Ok(())
     }
@@ -206,6 +279,30 @@ impl PartitionResult {
     }
 }
 
+impl PartitionResult {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.partition_id);
+        writer.write_i16(self.error_code);
+        writer.write_nullable_string(
+            if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.error_message.as_deref(),
+        )?;
+        if version == 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl ElectLeadersResponse {
     /// The API key.
     pub const API_KEY: i16 = 43;
@@ -225,5 +322,15 @@ impl crate::Message for ElectLeadersResponse {
             return Err(reader.unsupported_version("ElectLeadersResponse", version));
         }
         ElectLeadersResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !ElectLeadersResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "ElectLeadersResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

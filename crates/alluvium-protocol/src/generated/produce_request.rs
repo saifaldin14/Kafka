@@ -84,6 +84,37 @@ impl ProduceRequest {
     }
 }
 
+impl ProduceRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_nullable_string(
+            if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.transactional_id.as_deref(),
+        )?;
+        writer.write_i16(self.acks);
+        writer.write_i32(self.timeout_ms);
+        writer.write_array_length(
+            if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.topic_data.len(),
+        )?;
+        for value in &self.topic_data {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 9 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 9 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `ProduceRequest`'s `TopicData` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TopicProduceData {
@@ -180,6 +211,40 @@ impl TopicProduceData {
     }
 }
 
+impl TopicProduceData {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        if version <= 12 {
+            writer.write_string(
+                if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+                &self.name,
+            )?;
+        }
+        if version == 13 {
+            writer.write_uuid(self.topic_id);
+        }
+        writer.write_array_length(
+            if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.partition_data.len(),
+        )?;
+        for value in &self.partition_data {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 9 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 9 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `TopicProduceData`'s `PartitionData` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct PartitionProduceData {
@@ -229,6 +294,29 @@ impl PartitionProduceData {
     }
 }
 
+impl PartitionProduceData {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.index);
+        writer.write_records(
+            if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.records.as_ref(),
+        )?;
+        if version >= 9 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 9 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl ProduceRequest {
     /// The API key.
     pub const API_KEY: i16 = 0;
@@ -251,5 +339,15 @@ impl crate::Message for ProduceRequest {
             return Err(reader.unsupported_version("ProduceRequest", version));
         }
         ProduceRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !ProduceRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "ProduceRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

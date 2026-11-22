@@ -54,6 +54,22 @@ impl DefaultPrincipalData {
 }
 
 impl DefaultPrincipalData {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.type_)?;
+        writer.write_string(crate::Framing::Compact, &self.name)?;
+        writer.write_bool(self.token_authenticated);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
+impl DefaultPrincipalData {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 0);
     /// The versions that use the flexible encoding.
@@ -70,5 +86,15 @@ impl crate::Message for DefaultPrincipalData {
             return Err(reader.unsupported_version("DefaultPrincipalData", version));
         }
         DefaultPrincipalData::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !DefaultPrincipalData::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "DefaultPrincipalData",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

@@ -81,6 +81,44 @@ impl ShareAcknowledgeRequest {
     }
 }
 
+impl ShareAcknowledgeRequest {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 2 {
+            check(self.is_renew_ack, "IsRenewAck")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_nullable_string(crate::Framing::Compact, self.group_id.as_deref())?;
+        writer.write_nullable_string(crate::Framing::Compact, self.member_id.as_deref())?;
+        writer.write_i32(self.share_session_epoch);
+        if version == 2 {
+            writer.write_bool(self.is_renew_ack);
+        }
+        writer.write_array_length(crate::Framing::Compact, self.topics.len())?;
+        for value in &self.topics {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `ShareAcknowledgeRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AcknowledgeTopic {
@@ -155,6 +193,24 @@ impl AcknowledgeTopic {
     }
 }
 
+impl AcknowledgeTopic {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_uuid(self.topic_id);
+        writer.write_array_length(crate::Framing::Compact, self.partitions.len())?;
+        for value in &self.partitions {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `AcknowledgeTopic`'s `Partitions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AcknowledgePartition {
@@ -220,6 +276,24 @@ impl AcknowledgePartition {
     }
 }
 
+impl AcknowledgePartition {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.partition_index);
+        writer.write_array_length(crate::Framing::Compact, self.acknowledgement_batches.len())?;
+        for value in &self.acknowledgement_batches {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `AcknowledgePartition`'s `AcknowledgementBatches` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AcknowledgementBatch {
@@ -268,6 +342,25 @@ impl AcknowledgementBatch {
     }
 }
 
+impl AcknowledgementBatch {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i64(self.first_offset);
+        writer.write_i64(self.last_offset);
+        writer.write_array_length(crate::Framing::Compact, self.acknowledge_types.len())?;
+        for value in &self.acknowledge_types {
+            writer.write_i8(*value);
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl ShareAcknowledgeRequest {
     /// The API key.
     pub const API_KEY: i16 = 79;
@@ -290,5 +383,15 @@ impl crate::Message for ShareAcknowledgeRequest {
             return Err(reader.unsupported_version("ShareAcknowledgeRequest", version));
         }
         ShareAcknowledgeRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !ShareAcknowledgeRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "ShareAcknowledgeRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

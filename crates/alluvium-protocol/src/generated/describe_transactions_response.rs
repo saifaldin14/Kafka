@@ -52,6 +52,24 @@ impl DescribeTransactionsResponse {
     }
 }
 
+impl DescribeTransactionsResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.throttle_time_ms);
+        writer.write_array_length(crate::Framing::Compact, self.transaction_states.len())?;
+        for value in &self.transaction_states {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `DescribeTransactionsResponse`'s `TransactionStates` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TransactionState {
@@ -141,6 +159,30 @@ impl TransactionState {
     }
 }
 
+impl TransactionState {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i16(self.error_code);
+        writer.write_string(crate::Framing::Compact, &self.transactional_id)?;
+        writer.write_string(crate::Framing::Compact, &self.transaction_state)?;
+        writer.write_i32(self.transaction_timeout_ms);
+        writer.write_i64(self.transaction_start_time_ms);
+        writer.write_i64(self.producer_id);
+        writer.write_i16(self.producer_epoch);
+        writer.write_array_length(crate::Framing::Compact, self.topics.len())?;
+        for value in &self.topics {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `TransactionState`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopicData {
@@ -196,6 +238,24 @@ impl TopicData {
     }
 }
 
+impl TopicData {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.topic)?;
+        writer.write_array_length(crate::Framing::Compact, self.partitions.len())?;
+        for value in &self.partitions {
+            writer.write_i32(*value);
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl DescribeTransactionsResponse {
     /// The API key.
     pub const API_KEY: i16 = 65;
@@ -215,5 +275,15 @@ impl crate::Message for DescribeTransactionsResponse {
             return Err(reader.unsupported_version("DescribeTransactionsResponse", version));
         }
         DescribeTransactionsResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !DescribeTransactionsResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "DescribeTransactionsResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

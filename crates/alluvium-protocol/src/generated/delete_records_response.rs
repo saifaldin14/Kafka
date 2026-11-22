@@ -56,6 +56,32 @@ impl DeleteRecordsResponse {
     }
 }
 
+impl DeleteRecordsResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.throttle_time_ms);
+        writer.write_array_length(
+            if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.topics.len(),
+        )?;
+        for value in &self.topics {
+            value.write_fields(writer, version)?;
+        }
+        if version == 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DeleteRecordsResponse`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DeleteRecordsTopicResult {
@@ -123,6 +149,35 @@ impl DeleteRecordsTopicResult {
                 let (tag, size) = reader.read_tagged_field_header()?;
                 reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
             }
+        }
+        Ok(())
+    }
+}
+
+impl DeleteRecordsTopicResult {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.name,
+        )?;
+        writer.write_array_length(
+            if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.partitions.len(),
+        )?;
+        for value in &self.partitions {
+            value.write_fields(writer, version)?;
+        }
+        if version == 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
         }
         Ok(())
     }
@@ -208,6 +263,27 @@ impl DeleteRecordsPartitionResult {
     }
 }
 
+impl DeleteRecordsPartitionResult {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.partition_index);
+        writer.write_i64(self.low_watermark);
+        writer.write_i16(self.error_code);
+        if version == 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl DeleteRecordsResponse {
     /// The API key.
     pub const API_KEY: i16 = 21;
@@ -227,5 +303,15 @@ impl crate::Message for DeleteRecordsResponse {
             return Err(reader.unsupported_version("DeleteRecordsResponse", version));
         }
         DeleteRecordsResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !DeleteRecordsResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "DeleteRecordsResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

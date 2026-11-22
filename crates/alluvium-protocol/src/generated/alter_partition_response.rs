@@ -68,6 +68,25 @@ impl AlterPartitionResponse {
     }
 }
 
+impl AlterPartitionResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.throttle_time_ms);
+        writer.write_i16(self.error_code);
+        writer.write_array_length(crate::Framing::Compact, self.topics.len())?;
+        for value in &self.topics {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `AlterPartitionResponse`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TopicData {
@@ -114,6 +133,24 @@ impl TopicData {
             let (tag, size) = reader.read_tagged_field_header()?;
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
+    }
+}
+
+impl TopicData {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_uuid(self.topic_id);
+        writer.write_array_length(crate::Framing::Compact, self.partitions.len())?;
+        for value in &self.partitions {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
         Ok(())
     }
 }
@@ -194,6 +231,29 @@ impl PartitionData {
     }
 }
 
+impl PartitionData {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.partition_index);
+        writer.write_i16(self.error_code);
+        writer.write_i32(self.leader_id);
+        writer.write_i32(self.leader_epoch);
+        writer.write_array_length(crate::Framing::Compact, self.isr.len())?;
+        for value in &self.isr {
+            writer.write_i32(*value);
+        }
+        writer.write_i8(self.leader_recovery_state);
+        writer.write_i32(self.partition_epoch);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl AlterPartitionResponse {
     /// The API key.
     pub const API_KEY: i16 = 56;
@@ -213,5 +273,15 @@ impl crate::Message for AlterPartitionResponse {
             return Err(reader.unsupported_version("AlterPartitionResponse", version));
         }
         AlterPartitionResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !AlterPartitionResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "AlterPartitionResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

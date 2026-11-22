@@ -49,6 +49,23 @@ impl DescribeTransactionsRequest {
 }
 
 impl DescribeTransactionsRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_array_length(crate::Framing::Compact, self.transactional_ids.len())?;
+        for value in &self.transactional_ids {
+            writer.write_string(crate::Framing::Compact, value)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
+impl DescribeTransactionsRequest {
     /// The API key.
     pub const API_KEY: i16 = 65;
     /// The versions of this message.
@@ -70,5 +87,15 @@ impl crate::Message for DescribeTransactionsRequest {
             return Err(reader.unsupported_version("DescribeTransactionsRequest", version));
         }
         DescribeTransactionsRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !DescribeTransactionsRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "DescribeTransactionsRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

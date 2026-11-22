@@ -70,6 +70,27 @@ impl RenewDelegationTokenResponse {
 }
 
 impl RenewDelegationTokenResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i16(self.error_code);
+        writer.write_i64(self.expiry_timestamp_ms);
+        writer.write_i32(self.throttle_time_ms);
+        if version == 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
+impl RenewDelegationTokenResponse {
     /// The API key.
     pub const API_KEY: i16 = 39;
     /// The versions of this message.
@@ -88,5 +109,15 @@ impl crate::Message for RenewDelegationTokenResponse {
             return Err(reader.unsupported_version("RenewDelegationTokenResponse", version));
         }
         RenewDelegationTokenResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !RenewDelegationTokenResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "RenewDelegationTokenResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

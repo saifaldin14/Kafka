@@ -71,6 +71,37 @@ impl UpdateRaftVoterResponse {
     }
 }
 
+impl UpdateRaftVoterResponse {
+    fn write_tagged_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        let wanted_0 = self.current_leader != CurrentLeader::default();
+        writer.write_tagged_field_count(
+            [wanted_0].into_iter().filter(|wanted| *wanted).count().saturating_add(raw.len()),
+        )?;
+        raw.write_known(writer, 0, wanted_0, |writer| {
+            self.current_leader.write_fields(writer, version)?;
+            Ok(())
+        })?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.throttle_time_ms);
+        writer.write_i16(self.error_code);
+        self.write_tagged_fields(writer, version)?;
+        Ok(())
+    }
+}
+
 /// The `CurrentLeader` field of `UpdateRaftVoterResponse`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CurrentLeader {
@@ -131,6 +162,23 @@ impl CurrentLeader {
     }
 }
 
+impl CurrentLeader {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.leader_id);
+        writer.write_i32(self.leader_epoch);
+        writer.write_string(crate::Framing::Compact, &self.host)?;
+        writer.write_i32(self.port);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl UpdateRaftVoterResponse {
     /// The API key.
     pub const API_KEY: i16 = 82;
@@ -150,5 +198,15 @@ impl crate::Message for UpdateRaftVoterResponse {
             return Err(reader.unsupported_version("UpdateRaftVoterResponse", version));
         }
         UpdateRaftVoterResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !UpdateRaftVoterResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "UpdateRaftVoterResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

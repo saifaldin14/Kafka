@@ -63,6 +63,23 @@ impl StreamsGroupTopologyDescriptionUpdateRequest {
     }
 }
 
+impl StreamsGroupTopologyDescriptionUpdateRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.group_id)?;
+        writer.write_string(crate::Framing::Compact, &self.member_id)?;
+        writer.write_i32(self.topology_epoch);
+        self.topology_description.write_fields(writer, version)?;
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// `TopologyDescription`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopologyDescription {
@@ -112,6 +129,27 @@ impl TopologyDescription {
     }
 }
 
+impl TopologyDescription {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_array_length(crate::Framing::Compact, self.subtopologies.len())?;
+        for value in &self.subtopologies {
+            value.write_fields(writer, version)?;
+        }
+        writer.write_array_length(crate::Framing::Compact, self.global_stores.len())?;
+        for value in &self.global_stores {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// `TopologyDescriptionSubtopology`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopologyDescriptionSubtopology {
@@ -154,6 +192,24 @@ impl TopologyDescriptionSubtopology {
             let (tag, size) = reader.read_tagged_field_header()?;
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
+    }
+}
+
+impl TopologyDescriptionSubtopology {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.subtopology_id)?;
+        writer.write_array_length(crate::Framing::Compact, self.nodes.len())?;
+        for value in &self.nodes {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
         Ok(())
     }
 }
@@ -235,6 +291,34 @@ impl TopologyDescriptionNode {
     }
 }
 
+impl TopologyDescriptionNode {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.name)?;
+        writer.write_i8(self.node_type);
+        writer.write_array_length(crate::Framing::Compact, self.source_topics.len())?;
+        for value in &self.source_topics {
+            writer.write_string(crate::Framing::Compact, value)?;
+        }
+        writer.write_nullable_string(crate::Framing::Compact, self.sink_topic.as_deref())?;
+        writer.write_array_length(crate::Framing::Compact, self.stores.len())?;
+        for value in &self.stores {
+            writer.write_string(crate::Framing::Compact, value)?;
+        }
+        writer.write_array_length(crate::Framing::Compact, self.successors.len())?;
+        for value in &self.successors {
+            writer.write_string(crate::Framing::Compact, value)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// `TopologyDescriptionGlobalStore`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopologyDescriptionGlobalStore {
@@ -276,6 +360,21 @@ impl TopologyDescriptionGlobalStore {
     }
 }
 
+impl TopologyDescriptionGlobalStore {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.source.write_fields(writer, version)?;
+        self.processor.write_fields(writer, version)?;
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl StreamsGroupTopologyDescriptionUpdateRequest {
     /// The API key.
     pub const API_KEY: i16 = 93;
@@ -300,5 +399,15 @@ impl crate::Message for StreamsGroupTopologyDescriptionUpdateRequest {
             );
         }
         StreamsGroupTopologyDescriptionUpdateRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !StreamsGroupTopologyDescriptionUpdateRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "StreamsGroupTopologyDescriptionUpdateRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

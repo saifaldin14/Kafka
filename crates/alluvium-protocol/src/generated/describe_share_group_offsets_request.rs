@@ -48,6 +48,23 @@ impl DescribeShareGroupOffsetsRequest {
     }
 }
 
+impl DescribeShareGroupOffsetsRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_array_length(crate::Framing::Compact, self.groups.len())?;
+        for value in &self.groups {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `DescribeShareGroupOffsetsRequest`'s `Groups` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DescribeShareGroupOffsetsRequestGroup {
@@ -103,6 +120,29 @@ impl DescribeShareGroupOffsetsRequestGroup {
     }
 }
 
+impl DescribeShareGroupOffsetsRequestGroup {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.group_id)?;
+        writer.write_nullable_array_length(
+            crate::Framing::Compact,
+            self.topics.as_ref().map(Vec::len),
+        )?;
+        if let Some(values) = &self.topics {
+            for value in values {
+                value.write_fields(writer, version)?;
+            }
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `DescribeShareGroupOffsetsRequestGroup`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DescribeShareGroupOffsetsRequestTopic {
@@ -146,6 +186,24 @@ impl DescribeShareGroupOffsetsRequestTopic {
     }
 }
 
+impl DescribeShareGroupOffsetsRequestTopic {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.topic_name)?;
+        writer.write_array_length(crate::Framing::Compact, self.partitions.len())?;
+        for value in &self.partitions {
+            writer.write_i32(*value);
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl DescribeShareGroupOffsetsRequest {
     /// The API key.
     pub const API_KEY: i16 = 90;
@@ -168,5 +226,15 @@ impl crate::Message for DescribeShareGroupOffsetsRequest {
             return Err(reader.unsupported_version("DescribeShareGroupOffsetsRequest", version));
         }
         DescribeShareGroupOffsetsRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !DescribeShareGroupOffsetsRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "DescribeShareGroupOffsetsRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

@@ -15,7 +15,7 @@ use super::structs;
 use crate::message_spec::{FieldSpec, FieldType, MessageSpec, Versions};
 
 /// Whether something happens in a version, as Rust code over `version`.
-enum Condition {
+pub(super) enum Condition {
     Always,
     Never,
     When(String),
@@ -23,7 +23,7 @@ enum Condition {
 
 /// Whether a version of `possible` is in `versions`, as the simplest test that tells
 /// them apart.
-fn condition(versions: Versions, possible: Versions) -> Condition {
+pub(super) fn condition(versions: Versions, possible: Versions) -> Condition {
     let inside = versions.intersect(possible);
     if inside.is_empty() {
         return Condition::Never;
@@ -43,7 +43,7 @@ fn condition(versions: Versions, possible: Versions) -> Condition {
 }
 
 /// `then` when the condition holds and `otherwise` when it doesn't.
-fn choose(condition: &Condition, then: &str, otherwise: &str) -> String {
+pub(super) fn choose(condition: &Condition, then: &str, otherwise: &str) -> String {
     match condition {
         Condition::Always => then.to_owned(),
         Condition::Never => otherwise.to_owned(),
@@ -57,18 +57,21 @@ struct Context<'a> {
     message: &'a MessageSpec,
 }
 
-impl Context<'_> {
-    /// The framing of `field` in the `present` versions: compact where it is flexible.
-    fn framing(&self, field: &FieldSpec, present: Versions) -> String {
-        let flexible = field.flexible_versions(self.message.flexible_versions);
-        let runtime = self.runtime;
-        choose(
-            &condition(flexible, present),
-            &format!("{runtime}::Framing::Compact"),
-            &format!("{runtime}::Framing::Classic"),
-        )
-    }
+/// The framing of `field` in the `present` versions: compact where it is flexible.
+pub(super) fn framing(
+    runtime: &str,
+    message: &MessageSpec,
+    field: &FieldSpec,
+    present: Versions,
+) -> String {
+    choose(
+        &condition(field.flexible_versions(message.flexible_versions), present),
+        &format!("{runtime}::Framing::Compact"),
+        &format!("{runtime}::Framing::Classic"),
+    )
+}
 
+impl Context<'_> {
     /// A function or closure that reads one value of `field_type` from `reader`, for
     /// `read_array` and `read_tagged_value`.
     fn reader_function(&self, field_type: &FieldType, framing: &str) -> String {
@@ -134,7 +137,7 @@ impl Context<'_> {
     /// a null rejected in the versions where it isn't.
     // Parity: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java@4.4.0 MessageDataGenerator.generateVariableLengthReader
     fn read_field(&self, field: &FieldSpec, present: Versions, tagged: bool) -> String {
-        let framing = self.framing(field, present);
+        let framing = framing(self.runtime, self.message, field, present);
         let value = self.read(&field.field_type, &framing);
         if !structs::is_nullable(field) {
             return value;
@@ -328,7 +331,7 @@ fn tagged_function(context: &Context<'_>, field: &FieldSpec, valid: Versions) ->
 
 /// Whether `code` uses the variable `name`: a whole identifier that is neither a field
 /// access (`.name`) nor a field label (`name:`).
-fn uses(code: &str, name: &str) -> bool {
+pub(super) fn uses(code: &str, name: &str) -> bool {
     code.match_indices(name).any(|(at, _)| {
         let before = code.get(..at).and_then(|text| text.chars().next_back());
         let rest = code.get(at + name.len()..).unwrap_or_default();
@@ -340,7 +343,7 @@ fn uses(code: &str, name: &str) -> bool {
 
 /// `Message` for the message struct: the version check Kafka's callers make, then
 /// `read`.
-pub(crate) fn render_message(out: &mut String, message: &MessageSpec, runtime: &str) {
+pub(crate) fn render_message(out: &mut String, message: &MessageSpec, runtime: &str, encode: &str) {
     let name = &message.name;
     let _ = writeln!(
         out,
@@ -348,7 +351,7 @@ pub(crate) fn render_message(out: &mut String, message: &MessageSpec, runtime: &
          version: i16) -> Result<{name}, {runtime}::DecodeError> {{\n        if \
          !{name}::VERSIONS.contains(version) {{\n            return \
          Err(reader.unsupported_version({name:?}, version));\n        }}\n        \
-         {name}::read(reader, version)\n    }}\n}}\n"
+         {name}::read(reader, version)\n    }}\n\n{encode}}}\n"
     );
 }
 

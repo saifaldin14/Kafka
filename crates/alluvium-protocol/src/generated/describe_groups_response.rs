@@ -58,6 +58,34 @@ impl DescribeGroupsResponse {
     }
 }
 
+impl DescribeGroupsResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        if version >= 1 {
+            writer.write_i32(self.throttle_time_ms);
+        }
+        writer.write_array_length(
+            if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.groups.len(),
+        )?;
+        for value in &self.groups {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 5 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 5 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribeGroupsResponse`'s `Groups` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DescribedGroup {
@@ -193,6 +221,72 @@ impl DescribedGroup {
     }
 }
 
+impl DescribedGroup {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 6 {
+            check(self.error_message.is_some(), "ErrorMessage")?;
+        }
+        if version < 3 {
+            check(self.authorized_operations != -2_147_483_648, "AuthorizedOperations")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_i16(self.error_code);
+        if version == 6 {
+            writer.write_nullable_string(crate::Framing::Compact, self.error_message.as_deref())?;
+        }
+        writer.write_string(
+            if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.group_id,
+        )?;
+        writer.write_string(
+            if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.group_state,
+        )?;
+        writer.write_string(
+            if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.protocol_type,
+        )?;
+        writer.write_string(
+            if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.protocol_data,
+        )?;
+        writer.write_array_length(
+            if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.members.len(),
+        )?;
+        for value in &self.members {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 3 {
+            writer.write_i32(self.authorized_operations);
+        }
+        if version >= 5 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 5 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribedGroup`'s `Members` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DescribedGroupMember {
@@ -294,6 +388,50 @@ impl DescribedGroupMember {
     }
 }
 
+impl DescribedGroupMember {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.member_id,
+        )?;
+        if version >= 4 {
+            writer.write_nullable_string(
+                if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+                self.group_instance_id.as_deref(),
+            )?;
+        }
+        writer.write_string(
+            if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.client_id,
+        )?;
+        writer.write_string(
+            if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.client_host,
+        )?;
+        writer.write_bytes(
+            if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.member_metadata,
+        )?;
+        writer.write_bytes(
+            if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.member_assignment,
+        )?;
+        if version >= 5 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 5 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl DescribeGroupsResponse {
     /// The API key.
     pub const API_KEY: i16 = 15;
@@ -313,5 +451,15 @@ impl crate::Message for DescribeGroupsResponse {
             return Err(reader.unsupported_version("DescribeGroupsResponse", version));
         }
         DescribeGroupsResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !DescribeGroupsResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "DescribeGroupsResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

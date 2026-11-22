@@ -71,6 +71,42 @@ impl AlterPartitionReassignmentsRequest {
     }
 }
 
+impl AlterPartitionReassignmentsRequest {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 1 {
+            check(!self.allow_replication_factor_change, "AllowReplicationFactorChange")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_i32(self.timeout_ms);
+        if version == 1 {
+            writer.write_bool(self.allow_replication_factor_change);
+        }
+        writer.write_array_length(crate::Framing::Compact, self.topics.len())?;
+        for value in &self.topics {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `AlterPartitionReassignmentsRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ReassignableTopic {
@@ -112,6 +148,24 @@ impl ReassignableTopic {
             let (tag, size) = reader.read_tagged_field_header()?;
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
+    }
+}
+
+impl ReassignableTopic {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.name)?;
+        writer.write_array_length(crate::Framing::Compact, self.partitions.len())?;
+        for value in &self.partitions {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
         Ok(())
     }
 }
@@ -160,6 +214,29 @@ impl ReassignablePartition {
     }
 }
 
+impl ReassignablePartition {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.partition_index);
+        writer.write_nullable_array_length(
+            crate::Framing::Compact,
+            self.replicas.as_ref().map(Vec::len),
+        )?;
+        if let Some(values) = &self.replicas {
+            for value in values {
+                writer.write_i32(*value);
+            }
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl AlterPartitionReassignmentsRequest {
     /// The API key.
     pub const API_KEY: i16 = 45;
@@ -182,5 +259,15 @@ impl crate::Message for AlterPartitionReassignmentsRequest {
             return Err(reader.unsupported_version("AlterPartitionReassignmentsRequest", version));
         }
         AlterPartitionReassignmentsRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !AlterPartitionReassignmentsRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "AlterPartitionReassignmentsRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

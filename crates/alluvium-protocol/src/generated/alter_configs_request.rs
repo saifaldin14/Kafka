@@ -54,6 +54,32 @@ impl AlterConfigsRequest {
     }
 }
 
+impl AlterConfigsRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_array_length(
+            if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.resources.len(),
+        )?;
+        for value in &self.resources {
+            value.write_fields(writer, version)?;
+        }
+        writer.write_bool(self.validate_only);
+        if version == 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `AlterConfigsRequest`'s `Resources` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AlterConfigsResource {
@@ -139,6 +165,36 @@ impl AlterConfigsResource {
     }
 }
 
+impl AlterConfigsResource {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i8(self.resource_type);
+        writer.write_string(
+            if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.resource_name,
+        )?;
+        writer.write_array_length(
+            if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.configs.len(),
+        )?;
+        for value in &self.configs {
+            value.write_fields(writer, version)?;
+        }
+        if version == 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `AlterConfigsResource`'s `Configs` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AlterableConfig {
@@ -219,6 +275,32 @@ impl AlterableConfig {
     }
 }
 
+impl AlterableConfig {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.name,
+        )?;
+        writer.write_nullable_string(
+            if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.value.as_deref(),
+        )?;
+        if version == 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl AlterConfigsRequest {
     /// The API key.
     pub const API_KEY: i16 = 33;
@@ -241,5 +323,15 @@ impl crate::Message for AlterConfigsRequest {
             return Err(reader.unsupported_version("AlterConfigsRequest", version));
         }
         AlterConfigsRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !AlterConfigsRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "AlterConfigsRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

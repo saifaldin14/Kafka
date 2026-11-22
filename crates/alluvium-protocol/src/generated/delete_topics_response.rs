@@ -55,6 +55,32 @@ impl DeleteTopicsResponse {
     }
 }
 
+impl DeleteTopicsResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.throttle_time_ms);
+        writer.write_array_length(
+            if version >= 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.responses.len(),
+        )?;
+        for value in &self.responses {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 4 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 4 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DeleteTopicsResponse`'s `Responses` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeletableTopicResult {
@@ -170,6 +196,46 @@ impl DeletableTopicResult {
     }
 }
 
+impl DeletableTopicResult {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        if version == 6 {
+            writer.write_nullable_string(
+                if version >= 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+                self.name.as_deref(),
+            )?;
+        } else {
+            let value = self
+                .name
+                .as_ref()
+                .ok_or(crate::EncodeError::NullForNonNullable { field: "Name" })?;
+            writer.write_string(
+                if version >= 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+                value,
+            )?;
+        }
+        if version == 6 {
+            writer.write_uuid(self.topic_id);
+        }
+        writer.write_i16(self.error_code);
+        if version >= 5 {
+            writer.write_nullable_string(crate::Framing::Compact, self.error_message.as_deref())?;
+        }
+        if version >= 4 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 4 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl DeleteTopicsResponse {
     /// The API key.
     pub const API_KEY: i16 = 20;
@@ -189,5 +255,15 @@ impl crate::Message for DeleteTopicsResponse {
             return Err(reader.unsupported_version("DeleteTopicsResponse", version));
         }
         DeleteTopicsResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !DeleteTopicsResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "DeleteTopicsResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

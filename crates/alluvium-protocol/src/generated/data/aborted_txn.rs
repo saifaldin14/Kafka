@@ -48,6 +48,15 @@ impl AbortedTxn {
 }
 
 impl AbortedTxn {
+    fn write_fields(&self, writer: &mut crate::Writer, _version: i16) {
+        writer.write_i64(self.producer_id);
+        writer.write_i64(self.first_offset);
+        writer.write_i64(self.last_offset);
+        writer.write_i64(self.last_stable_offset);
+    }
+}
+
+impl AbortedTxn {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 0);
     /// The versions that use the flexible encoding.
@@ -61,5 +70,13 @@ impl crate::Message for AbortedTxn {
             return Err(reader.unsupported_version("AbortedTxn", version));
         }
         AbortedTxn::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !AbortedTxn::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion { message: "AbortedTxn", version });
+        }
+        self.write_fields(writer, version);
+        Ok(())
     }
 }

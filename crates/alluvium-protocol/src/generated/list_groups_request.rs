@@ -64,6 +64,54 @@ impl ListGroupsRequest {
 }
 
 impl ListGroupsRequest {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 4 {
+            check(!self.states_filter.is_empty(), "StatesFilter")?;
+        }
+        if version < 5 {
+            check(!self.types_filter.is_empty(), "TypesFilter")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        if version >= 4 {
+            writer.write_array_length(crate::Framing::Compact, self.states_filter.len())?;
+            for value in &self.states_filter {
+                writer.write_string(crate::Framing::Compact, value)?;
+            }
+        }
+        if version == 5 {
+            writer.write_array_length(crate::Framing::Compact, self.types_filter.len())?;
+            for value in &self.types_filter {
+                writer.write_string(crate::Framing::Compact, value)?;
+            }
+        }
+        if version >= 3 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 3 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
+impl ListGroupsRequest {
     /// The API key.
     pub const API_KEY: i16 = 16;
     /// The versions of this message.
@@ -85,5 +133,15 @@ impl crate::Message for ListGroupsRequest {
             return Err(reader.unsupported_version("ListGroupsRequest", version));
         }
         ListGroupsRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !ListGroupsRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "ListGroupsRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

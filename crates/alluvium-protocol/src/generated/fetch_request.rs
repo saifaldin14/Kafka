@@ -174,6 +174,103 @@ impl FetchRequest {
     }
 }
 
+impl FetchRequest {
+    fn write_tagged_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        let wanted_0 = self.cluster_id.is_some();
+        let wanted_1 = version >= 15 && self.replica_state != ReplicaState::default();
+        writer.write_tagged_field_count(
+            [wanted_0, wanted_1]
+                .into_iter()
+                .filter(|wanted| *wanted)
+                .count()
+                .saturating_add(raw.len()),
+        )?;
+        raw.write_known(writer, 0, wanted_0, |writer| {
+            writer.write_nullable_string(crate::Framing::Compact, self.cluster_id.as_deref())?;
+            Ok(())
+        })?;
+        raw.write_known(writer, 1, wanted_1, |writer| {
+            self.replica_state.write_fields(writer, version)?;
+            Ok(())
+        })?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version > 14 {
+            check(self.replica_id != -1, "ReplicaId")?;
+        }
+        if version < 15 {
+            check(self.replica_state != ReplicaState::default(), "ReplicaState")?;
+        }
+        if version < 7 {
+            check(!self.forgotten_topics_data.is_empty(), "ForgottenTopicsData")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        if version <= 14 {
+            writer.write_i32(self.replica_id);
+        }
+        writer.write_i32(self.max_wait_ms);
+        writer.write_i32(self.min_bytes);
+        writer.write_i32(self.max_bytes);
+        writer.write_i8(self.isolation_level);
+        if version >= 7 {
+            writer.write_i32(self.session_id);
+            writer.write_i32(self.session_epoch);
+        }
+        writer.write_array_length(
+            if version >= 12 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.topics.len(),
+        )?;
+        for value in &self.topics {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 7 {
+            writer.write_array_length(
+                if version >= 12 { crate::Framing::Compact } else { crate::Framing::Classic },
+                self.forgotten_topics_data.len(),
+            )?;
+            for value in &self.forgotten_topics_data {
+                value.write_fields(writer, version)?;
+            }
+        }
+        if version >= 11 {
+            writer.write_string(
+                if version >= 12 { crate::Framing::Compact } else { crate::Framing::Classic },
+                &self.rack_id,
+            )?;
+        }
+        if version >= 12 {
+            self.write_tagged_fields(writer, version)?;
+        }
+        if version < 12 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// The `ReplicaState` field of `FetchRequest`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ReplicaState {
@@ -214,6 +311,21 @@ impl ReplicaState {
             let (tag, size) = reader.read_tagged_field_header()?;
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
+    }
+}
+
+impl ReplicaState {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.replica_id);
+        writer.write_i64(self.replica_epoch);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
         Ok(())
     }
 }
@@ -284,6 +396,40 @@ impl FetchTopic {
                 let (tag, size) = reader.read_tagged_field_header()?;
                 reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
             }
+        }
+        Ok(())
+    }
+}
+
+impl FetchTopic {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        if version <= 12 {
+            writer.write_string(
+                if version == 12 { crate::Framing::Compact } else { crate::Framing::Classic },
+                &self.topic,
+            )?;
+        }
+        if version >= 13 {
+            writer.write_uuid(self.topic_id);
+        }
+        writer.write_array_length(
+            if version >= 12 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.partitions.len(),
+        )?;
+        for value in &self.partitions {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 12 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 12 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
         }
         Ok(())
     }
@@ -399,6 +545,76 @@ impl FetchPartition {
     }
 }
 
+impl FetchPartition {
+    fn write_tagged_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        let wanted_0 = version >= 17 && self.replica_directory_id != alluvium_types::Uuid::ZERO;
+        let wanted_1 = version == 18 && self.high_watermark != 9_223_372_036_854_775_807;
+        writer.write_tagged_field_count(
+            [wanted_0, wanted_1]
+                .into_iter()
+                .filter(|wanted| *wanted)
+                .count()
+                .saturating_add(raw.len()),
+        )?;
+        raw.write_known(writer, 0, wanted_0, |writer| {
+            writer.write_uuid(self.replica_directory_id);
+            Ok(())
+        })?;
+        raw.write_known(writer, 1, wanted_1, |writer| {
+            writer.write_i64(self.high_watermark);
+            Ok(())
+        })?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 12 {
+            check(self.last_fetched_epoch != -1, "LastFetchedEpoch")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_i32(self.partition);
+        if version >= 9 {
+            writer.write_i32(self.current_leader_epoch);
+        }
+        writer.write_i64(self.fetch_offset);
+        if version >= 12 {
+            writer.write_i32(self.last_fetched_epoch);
+        }
+        if version >= 5 {
+            writer.write_i64(self.log_start_offset);
+        }
+        writer.write_i32(self.partition_max_bytes);
+        if version >= 12 {
+            self.write_tagged_fields(writer, version)?;
+        }
+        if version < 12 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `FetchRequest`'s `ForgottenTopicsData` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ForgottenTopic {
@@ -473,6 +689,40 @@ impl ForgottenTopic {
     }
 }
 
+impl ForgottenTopic {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        if version <= 12 {
+            writer.write_string(
+                if version == 12 { crate::Framing::Compact } else { crate::Framing::Classic },
+                &self.topic,
+            )?;
+        }
+        if version >= 13 {
+            writer.write_uuid(self.topic_id);
+        }
+        writer.write_array_length(
+            if version >= 12 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.partitions.len(),
+        )?;
+        for value in &self.partitions {
+            writer.write_i32(*value);
+        }
+        if version >= 12 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 12 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl FetchRequest {
     /// The API key.
     pub const API_KEY: i16 = 1;
@@ -495,5 +745,15 @@ impl crate::Message for FetchRequest {
             return Err(reader.unsupported_version("FetchRequest", version));
         }
         FetchRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !FetchRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "FetchRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

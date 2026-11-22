@@ -55,6 +55,28 @@ impl DescribeUserScramCredentialsRequest {
     }
 }
 
+impl DescribeUserScramCredentialsRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_nullable_array_length(
+            crate::Framing::Compact,
+            self.users.as_ref().map(Vec::len),
+        )?;
+        if let Some(values) = &self.users {
+            for value in values {
+                value.write_fields(writer, version)?;
+            }
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `DescribeUserScramCredentialsRequest`'s `Users` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct UserName {
@@ -88,6 +110,20 @@ impl UserName {
     }
 }
 
+impl UserName {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.name)?;
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl DescribeUserScramCredentialsRequest {
     /// The API key.
     pub const API_KEY: i16 = 50;
@@ -110,5 +146,15 @@ impl crate::Message for DescribeUserScramCredentialsRequest {
             return Err(reader.unsupported_version("DescribeUserScramCredentialsRequest", version));
         }
         DescribeUserScramCredentialsRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !DescribeUserScramCredentialsRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "DescribeUserScramCredentialsRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

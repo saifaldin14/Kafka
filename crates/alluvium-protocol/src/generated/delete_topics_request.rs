@@ -73,6 +73,58 @@ impl DeleteTopicsRequest {
     }
 }
 
+impl DeleteTopicsRequest {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 6 {
+            check(!self.topics.is_empty(), "Topics")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        if version == 6 {
+            writer.write_array_length(crate::Framing::Compact, self.topics.len())?;
+            for value in &self.topics {
+                value.write_fields(writer, version)?;
+            }
+        }
+        if version <= 5 {
+            writer.write_array_length(
+                if version >= 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+                self.topic_names.len(),
+            )?;
+            for value in &self.topic_names {
+                writer.write_string(
+                    if version >= 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+                    value,
+                )?;
+            }
+        }
+        writer.write_i32(self.timeout_ms);
+        if version >= 4 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 4 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DeleteTopicsRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeleteTopicState {
@@ -124,6 +176,21 @@ impl DeleteTopicState {
     }
 }
 
+impl DeleteTopicState {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_nullable_string(crate::Framing::Compact, self.name.as_deref())?;
+        writer.write_uuid(self.topic_id);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl DeleteTopicsRequest {
     /// The API key.
     pub const API_KEY: i16 = 20;
@@ -146,5 +213,15 @@ impl crate::Message for DeleteTopicsRequest {
             return Err(reader.unsupported_version("DeleteTopicsRequest", version));
         }
         DeleteTopicsRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !DeleteTopicsRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "DeleteTopicsRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

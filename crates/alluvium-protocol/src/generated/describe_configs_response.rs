@@ -56,6 +56,32 @@ impl DescribeConfigsResponse {
     }
 }
 
+impl DescribeConfigsResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.throttle_time_ms);
+        writer.write_array_length(
+            if version == 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.results.len(),
+        )?;
+        for value in &self.results {
+            value.write_fields(writer, version)?;
+        }
+        if version == 4 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 4 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribeConfigsResponse`'s `Results` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DescribeConfigsResult {
@@ -152,6 +178,41 @@ impl DescribeConfigsResult {
                 let (tag, size) = reader.read_tagged_field_header()?;
                 reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
             }
+        }
+        Ok(())
+    }
+}
+
+impl DescribeConfigsResult {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i16(self.error_code);
+        writer.write_nullable_string(
+            if version == 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.error_message.as_deref(),
+        )?;
+        writer.write_i8(self.resource_type);
+        writer.write_string(
+            if version == 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.resource_name,
+        )?;
+        writer.write_array_length(
+            if version == 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.configs.len(),
+        )?;
+        for value in &self.configs {
+            value.write_fields(writer, version)?;
+        }
+        if version == 4 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 4 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
         }
         Ok(())
     }
@@ -272,6 +333,49 @@ impl DescribeConfigsResourceResult {
     }
 }
 
+impl DescribeConfigsResourceResult {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version == 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.name,
+        )?;
+        writer.write_nullable_string(
+            if version == 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.value.as_deref(),
+        )?;
+        writer.write_bool(self.read_only);
+        writer.write_i8(self.config_source);
+        writer.write_bool(self.is_sensitive);
+        writer.write_array_length(
+            if version == 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.synonyms.len(),
+        )?;
+        for value in &self.synonyms {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 3 {
+            writer.write_i8(self.config_type);
+            writer.write_nullable_string(
+                if version == 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+                self.documentation.as_deref(),
+            )?;
+        }
+        if version == 4 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 4 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribeConfigsResourceResult`'s `Synonyms` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DescribeConfigsSynonym {
@@ -343,6 +447,33 @@ impl DescribeConfigsSynonym {
     }
 }
 
+impl DescribeConfigsSynonym {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version == 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.name,
+        )?;
+        writer.write_nullable_string(
+            if version == 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.value.as_deref(),
+        )?;
+        writer.write_i8(self.source);
+        if version == 4 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 4 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl DescribeConfigsResponse {
     /// The API key.
     pub const API_KEY: i16 = 32;
@@ -362,5 +493,15 @@ impl crate::Message for DescribeConfigsResponse {
             return Err(reader.unsupported_version("DescribeConfigsResponse", version));
         }
         DescribeConfigsResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !DescribeConfigsResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "DescribeConfigsResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

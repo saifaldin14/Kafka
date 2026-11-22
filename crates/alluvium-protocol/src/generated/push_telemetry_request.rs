@@ -76,6 +76,24 @@ impl PushTelemetryRequest {
 }
 
 impl PushTelemetryRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_uuid(self.client_instance_id);
+        writer.write_i32(self.subscription_id);
+        writer.write_bool(self.terminating);
+        writer.write_i8(self.compression_type);
+        writer.write_zero_copy_bytes(crate::Framing::Compact, &self.metrics)?;
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
+impl PushTelemetryRequest {
     /// The API key.
     pub const API_KEY: i16 = 72;
     /// The versions of this message.
@@ -97,5 +115,15 @@ impl crate::Message for PushTelemetryRequest {
             return Err(reader.unsupported_version("PushTelemetryRequest", version));
         }
         PushTelemetryRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !PushTelemetryRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "PushTelemetryRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

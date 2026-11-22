@@ -68,6 +68,29 @@ impl ExpireDelegationTokenRequest {
 }
 
 impl ExpireDelegationTokenRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_bytes(
+            if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.hmac,
+        )?;
+        writer.write_i64(self.expiry_time_period_ms);
+        if version == 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
+impl ExpireDelegationTokenRequest {
     /// The API key.
     pub const API_KEY: i16 = 40;
     /// The versions of this message.
@@ -89,5 +112,15 @@ impl crate::Message for ExpireDelegationTokenRequest {
             return Err(reader.unsupported_version("ExpireDelegationTokenRequest", version));
         }
         ExpireDelegationTokenRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !ExpireDelegationTokenRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "ExpireDelegationTokenRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

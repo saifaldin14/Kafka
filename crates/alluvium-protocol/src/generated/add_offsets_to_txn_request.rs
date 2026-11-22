@@ -73,6 +73,34 @@ impl AddOffsetsToTxnRequest {
 }
 
 impl AddOffsetsToTxnRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.transactional_id,
+        )?;
+        writer.write_i64(self.producer_id);
+        writer.write_i16(self.producer_epoch);
+        writer.write_string(
+            if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.group_id,
+        )?;
+        if version >= 3 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 3 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
+impl AddOffsetsToTxnRequest {
     /// The API key.
     pub const API_KEY: i16 = 25;
     /// The versions of this message.
@@ -94,5 +122,15 @@ impl crate::Message for AddOffsetsToTxnRequest {
             return Err(reader.unsupported_version("AddOffsetsToTxnRequest", version));
         }
         AddOffsetsToTxnRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !AddOffsetsToTxnRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "AddOffsetsToTxnRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

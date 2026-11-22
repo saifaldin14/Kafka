@@ -55,6 +55,32 @@ impl CreateTopicsResponse {
     }
 }
 
+impl CreateTopicsResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.throttle_time_ms);
+        writer.write_array_length(
+            if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.topics.len(),
+        )?;
+        for value in &self.topics {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 5 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 5 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `CreateTopicsResponse`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CreatableTopicResult {
@@ -209,6 +235,65 @@ impl CreatableTopicResult {
     }
 }
 
+impl CreatableTopicResult {
+    fn write_tagged_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        let wanted_0 = self.topic_config_error_code != 0;
+        writer.write_tagged_field_count(
+            [wanted_0].into_iter().filter(|wanted| *wanted).count().saturating_add(raw.len()),
+        )?;
+        raw.write_known(writer, 0, wanted_0, |writer| {
+            writer.write_i16(self.topic_config_error_code);
+            Ok(())
+        })?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.name,
+        )?;
+        if version == 7 {
+            writer.write_uuid(self.topic_id);
+        }
+        writer.write_i16(self.error_code);
+        writer.write_nullable_string(
+            if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.error_message.as_deref(),
+        )?;
+        if version >= 5 {
+            writer.write_i32(self.num_partitions);
+            writer.write_i16(self.replication_factor);
+            writer.write_nullable_array_length(
+                crate::Framing::Compact,
+                self.configs.as_ref().map(Vec::len),
+            )?;
+            if let Some(values) = &self.configs {
+                for value in values {
+                    value.write_fields(writer, version)?;
+                }
+            }
+        }
+        if version >= 5 {
+            self.write_tagged_fields(writer, version)?;
+        }
+        if version < 5 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `CreatableTopicResult`'s `Configs` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CreatableTopicConfigs {
@@ -278,6 +363,24 @@ impl CreatableTopicConfigs {
     }
 }
 
+impl CreatableTopicConfigs {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.name)?;
+        writer.write_nullable_string(crate::Framing::Compact, self.value.as_deref())?;
+        writer.write_bool(self.read_only);
+        writer.write_i8(self.config_source);
+        writer.write_bool(self.is_sensitive);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl CreateTopicsResponse {
     /// The API key.
     pub const API_KEY: i16 = 19;
@@ -297,5 +400,15 @@ impl crate::Message for CreateTopicsResponse {
             return Err(reader.unsupported_version("CreateTopicsResponse", version));
         }
         CreateTopicsResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !CreateTopicsResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "CreateTopicsResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

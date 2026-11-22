@@ -58,6 +58,21 @@ impl SaslHandshakeResponse {
 }
 
 impl SaslHandshakeResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i16(self.error_code);
+        writer.write_array_length(crate::Framing::Classic, self.mechanisms.len())?;
+        for value in &self.mechanisms {
+            writer.write_string(crate::Framing::Classic, value)?;
+        }
+        Ok(())
+    }
+}
+
+impl SaslHandshakeResponse {
     /// The API key.
     pub const API_KEY: i16 = 17;
     /// The versions of this message.
@@ -76,5 +91,15 @@ impl crate::Message for SaslHandshakeResponse {
             return Err(reader.unsupported_version("SaslHandshakeResponse", version));
         }
         SaslHandshakeResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !SaslHandshakeResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "SaslHandshakeResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

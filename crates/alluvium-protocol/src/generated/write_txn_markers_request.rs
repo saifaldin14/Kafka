@@ -45,6 +45,23 @@ impl WriteTxnMarkersRequest {
     }
 }
 
+impl WriteTxnMarkersRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_array_length(crate::Framing::Compact, self.markers.len())?;
+        for value in &self.markers {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `WriteTxnMarkersRequest`'s `Markers` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct WritableTxnMarker {
@@ -114,6 +131,30 @@ impl WritableTxnMarker {
     }
 }
 
+impl WritableTxnMarker {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i64(self.producer_id);
+        writer.write_i16(self.producer_epoch);
+        writer.write_bool(self.transaction_result);
+        writer.write_array_length(crate::Framing::Compact, self.topics.len())?;
+        for value in &self.topics {
+            value.write_fields(writer, version)?;
+        }
+        writer.write_i32(self.coordinator_epoch);
+        if version == 2 {
+            writer.write_i8(self.transaction_version);
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `WritableTxnMarker`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct WritableTxnMarkerTopic {
@@ -157,6 +198,24 @@ impl WritableTxnMarkerTopic {
     }
 }
 
+impl WritableTxnMarkerTopic {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.name)?;
+        writer.write_array_length(crate::Framing::Compact, self.partition_indexes.len())?;
+        for value in &self.partition_indexes {
+            writer.write_i32(*value);
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl WriteTxnMarkersRequest {
     /// The API key.
     pub const API_KEY: i16 = 27;
@@ -179,5 +238,15 @@ impl crate::Message for WriteTxnMarkersRequest {
             return Err(reader.unsupported_version("WriteTxnMarkersRequest", version));
         }
         WriteTxnMarkersRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !WriteTxnMarkersRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "WriteTxnMarkersRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

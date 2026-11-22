@@ -90,6 +90,36 @@ impl SyncGroupResponse {
 }
 
 impl SyncGroupResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        if version >= 1 {
+            writer.write_i32(self.throttle_time_ms);
+        }
+        writer.write_i16(self.error_code);
+        if version == 5 {
+            writer.write_nullable_string(crate::Framing::Compact, self.protocol_type.as_deref())?;
+            writer.write_nullable_string(crate::Framing::Compact, self.protocol_name.as_deref())?;
+        }
+        writer.write_bytes(
+            if version >= 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.assignment,
+        )?;
+        if version >= 4 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 4 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
+impl SyncGroupResponse {
     /// The API key.
     pub const API_KEY: i16 = 14;
     /// The versions of this message.
@@ -108,5 +138,15 @@ impl crate::Message for SyncGroupResponse {
             return Err(reader.unsupported_version("SyncGroupResponse", version));
         }
         SyncGroupResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !SyncGroupResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "SyncGroupResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

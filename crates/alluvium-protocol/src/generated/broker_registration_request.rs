@@ -114,6 +114,58 @@ impl BrokerRegistrationRequest {
     }
 }
 
+impl BrokerRegistrationRequest {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 1 {
+            check(self.is_migrating_zk_broker, "IsMigratingZkBroker")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_i32(self.broker_id);
+        writer.write_string(crate::Framing::Compact, &self.cluster_id)?;
+        writer.write_uuid(self.incarnation_id);
+        writer.write_array_length(crate::Framing::Compact, self.listeners.len())?;
+        for value in &self.listeners {
+            value.write_fields(writer, version)?;
+        }
+        writer.write_array_length(crate::Framing::Compact, self.features.len())?;
+        for value in &self.features {
+            value.write_fields(writer, version)?;
+        }
+        writer.write_nullable_string(crate::Framing::Compact, self.rack.as_deref())?;
+        if version >= 1 {
+            writer.write_bool(self.is_migrating_zk_broker);
+        }
+        if version >= 2 {
+            writer.write_array_length(crate::Framing::Compact, self.log_dirs.len())?;
+            for value in &self.log_dirs {
+                writer.write_uuid(*value);
+            }
+        }
+        if version >= 3 {
+            writer.write_i64(self.previous_broker_epoch);
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `BrokerRegistrationRequest`'s `Listeners` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Listener {
@@ -177,6 +229,23 @@ impl Listener {
     }
 }
 
+impl Listener {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.name)?;
+        writer.write_string(crate::Framing::Compact, &self.host)?;
+        writer.write_u16(self.port);
+        writer.write_i16(self.security_protocol);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `BrokerRegistrationRequest`'s `Features` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Feature {
@@ -232,6 +301,22 @@ impl Feature {
     }
 }
 
+impl Feature {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.name)?;
+        writer.write_i16(self.min_supported_version);
+        writer.write_i16(self.max_supported_version);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl BrokerRegistrationRequest {
     /// The API key.
     pub const API_KEY: i16 = 62;
@@ -254,5 +339,15 @@ impl crate::Message for BrokerRegistrationRequest {
             return Err(reader.unsupported_version("BrokerRegistrationRequest", version));
         }
         BrokerRegistrationRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !BrokerRegistrationRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "BrokerRegistrationRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

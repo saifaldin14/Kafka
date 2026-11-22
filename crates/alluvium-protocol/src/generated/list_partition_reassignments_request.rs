@@ -63,6 +63,29 @@ impl ListPartitionReassignmentsRequest {
     }
 }
 
+impl ListPartitionReassignmentsRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.timeout_ms);
+        writer.write_nullable_array_length(
+            crate::Framing::Compact,
+            self.topics.as_ref().map(Vec::len),
+        )?;
+        if let Some(values) = &self.topics {
+            for value in values {
+                value.write_fields(writer, version)?;
+            }
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `ListPartitionReassignmentsRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ListPartitionReassignmentsTopics {
@@ -106,6 +129,24 @@ impl ListPartitionReassignmentsTopics {
     }
 }
 
+impl ListPartitionReassignmentsTopics {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.name)?;
+        writer.write_array_length(crate::Framing::Compact, self.partition_indexes.len())?;
+        for value in &self.partition_indexes {
+            writer.write_i32(*value);
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl ListPartitionReassignmentsRequest {
     /// The API key.
     pub const API_KEY: i16 = 46;
@@ -128,5 +169,15 @@ impl crate::Message for ListPartitionReassignmentsRequest {
             return Err(reader.unsupported_version("ListPartitionReassignmentsRequest", version));
         }
         ListPartitionReassignmentsRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !ListPartitionReassignmentsRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "ListPartitionReassignmentsRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

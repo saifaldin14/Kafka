@@ -62,6 +62,22 @@ impl OffsetDeleteResponse {
     }
 }
 
+impl OffsetDeleteResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i16(self.error_code);
+        writer.write_i32(self.throttle_time_ms);
+        writer.write_array_length(crate::Framing::Classic, self.topics.len())?;
+        for value in &self.topics {
+            value.write_fields(writer, version)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `OffsetDeleteResponse`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct OffsetDeleteResponseTopic {
@@ -114,6 +130,21 @@ impl OffsetDeleteResponseTopic {
                 OffsetDeleteResponsePartition::read(reader, version)
             })
             .within("Partitions")?;
+        Ok(())
+    }
+}
+
+impl OffsetDeleteResponseTopic {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Classic, &self.name)?;
+        writer.write_array_length(crate::Framing::Classic, self.partitions.len())?;
+        for value in &self.partitions {
+            value.write_fields(writer, version);
+        }
         Ok(())
     }
 }
@@ -184,6 +215,13 @@ impl OffsetDeleteResponsePartition {
     }
 }
 
+impl OffsetDeleteResponsePartition {
+    fn write_fields(&self, writer: &mut crate::Writer, _version: i16) {
+        writer.write_i32(self.partition_index);
+        writer.write_i16(self.error_code);
+    }
+}
+
 impl OffsetDeleteResponse {
     /// The API key.
     pub const API_KEY: i16 = 47;
@@ -203,5 +241,15 @@ impl crate::Message for OffsetDeleteResponse {
             return Err(reader.unsupported_version("OffsetDeleteResponse", version));
         }
         OffsetDeleteResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !OffsetDeleteResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "OffsetDeleteResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

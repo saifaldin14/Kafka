@@ -135,6 +135,76 @@ impl ApiVersionsResponse {
     }
 }
 
+impl ApiVersionsResponse {
+    fn write_tagged_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        let wanted_0 = !self.supported_features.is_empty();
+        let wanted_1 = self.finalized_features_epoch != -1;
+        let wanted_2 = !self.finalized_features.is_empty();
+        let wanted_3 = self.zk_migration_ready;
+        writer.write_tagged_field_count(
+            [wanted_0, wanted_1, wanted_2, wanted_3]
+                .into_iter()
+                .filter(|wanted| *wanted)
+                .count()
+                .saturating_add(raw.len()),
+        )?;
+        raw.write_known(writer, 0, wanted_0, |writer| {
+            writer.write_array_length(crate::Framing::Compact, self.supported_features.len())?;
+            for value in &self.supported_features {
+                value.write_fields(writer, version)?;
+            }
+            Ok(())
+        })?;
+        raw.write_known(writer, 1, wanted_1, |writer| {
+            writer.write_i64(self.finalized_features_epoch);
+            Ok(())
+        })?;
+        raw.write_known(writer, 2, wanted_2, |writer| {
+            writer.write_array_length(crate::Framing::Compact, self.finalized_features.len())?;
+            for value in &self.finalized_features {
+                value.write_fields(writer, version)?;
+            }
+            Ok(())
+        })?;
+        raw.write_known(writer, 3, wanted_3, |writer| {
+            writer.write_bool(self.zk_migration_ready);
+            Ok(())
+        })?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i16(self.error_code);
+        writer.write_array_length(
+            if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.api_keys.len(),
+        )?;
+        for value in &self.api_keys {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 1 {
+            writer.write_i32(self.throttle_time_ms);
+        }
+        if version >= 3 {
+            self.write_tagged_fields(writer, version)?;
+        }
+        if version < 3 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `ApiVersionsResponse`'s `ApiKeys` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ApiVersion {
@@ -188,6 +258,27 @@ impl ApiVersion {
                 let (tag, size) = reader.read_tagged_field_header()?;
                 reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
             }
+        }
+        Ok(())
+    }
+}
+
+impl ApiVersion {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i16(self.api_key);
+        writer.write_i16(self.min_version);
+        writer.write_i16(self.max_version);
+        if version >= 3 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 3 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
         }
         Ok(())
     }
@@ -257,6 +348,22 @@ impl SupportedFeatureKey {
     }
 }
 
+impl SupportedFeatureKey {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.name)?;
+        writer.write_i16(self.min_version);
+        writer.write_i16(self.max_version);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `ApiVersionsResponse`'s `FinalizedFeatures` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct FinalizedFeatureKey {
@@ -321,6 +428,22 @@ impl FinalizedFeatureKey {
     }
 }
 
+impl FinalizedFeatureKey {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.name)?;
+        writer.write_i16(self.max_version_level);
+        writer.write_i16(self.min_version_level);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl ApiVersionsResponse {
     /// The API key.
     pub const API_KEY: i16 = 18;
@@ -340,5 +463,15 @@ impl crate::Message for ApiVersionsResponse {
             return Err(reader.unsupported_version("ApiVersionsResponse", version));
         }
         ApiVersionsResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !ApiVersionsResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "ApiVersionsResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

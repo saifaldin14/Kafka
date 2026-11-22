@@ -56,6 +56,32 @@ impl IncrementalAlterConfigsRequest {
     }
 }
 
+impl IncrementalAlterConfigsRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_array_length(
+            if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.resources.len(),
+        )?;
+        for value in &self.resources {
+            value.write_fields(writer, version)?;
+        }
+        writer.write_bool(self.validate_only);
+        if version == 1 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 1 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `IncrementalAlterConfigsRequest`'s `Resources` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AlterConfigsResource {
@@ -136,6 +162,36 @@ impl AlterConfigsResource {
                 let (tag, size) = reader.read_tagged_field_header()?;
                 reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
             }
+        }
+        Ok(())
+    }
+}
+
+impl AlterConfigsResource {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i8(self.resource_type);
+        writer.write_string(
+            if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.resource_name,
+        )?;
+        writer.write_array_length(
+            if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.configs.len(),
+        )?;
+        for value in &self.configs {
+            value.write_fields(writer, version)?;
+        }
+        if version == 1 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 1 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
         }
         Ok(())
     }
@@ -238,6 +294,33 @@ impl AlterableConfig {
     }
 }
 
+impl AlterableConfig {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.name,
+        )?;
+        writer.write_i8(self.config_operation);
+        writer.write_nullable_string(
+            if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.value.as_deref(),
+        )?;
+        if version == 1 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 1 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl IncrementalAlterConfigsRequest {
     /// The API key.
     pub const API_KEY: i16 = 44;
@@ -260,5 +343,15 @@ impl crate::Message for IncrementalAlterConfigsRequest {
             return Err(reader.unsupported_version("IncrementalAlterConfigsRequest", version));
         }
         IncrementalAlterConfigsRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !IncrementalAlterConfigsRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "IncrementalAlterConfigsRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

@@ -69,6 +69,28 @@ impl RequestHeader {
 }
 
 impl RequestHeader {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i16(self.request_api_key);
+        writer.write_i16(self.request_api_version);
+        writer.write_i32(self.correlation_id);
+        writer.write_nullable_string(crate::Framing::Classic, self.client_id.as_deref())?;
+        if version == 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
+impl RequestHeader {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(1, 2);
     /// The versions that use the flexible encoding.
@@ -85,5 +107,15 @@ impl crate::Message for RequestHeader {
             return Err(reader.unsupported_version("RequestHeader", version));
         }
         RequestHeader::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !RequestHeader::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "RequestHeader",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

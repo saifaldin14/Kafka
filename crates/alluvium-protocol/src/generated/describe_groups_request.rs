@@ -65,6 +65,52 @@ impl DescribeGroupsRequest {
 }
 
 impl DescribeGroupsRequest {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 3 {
+            check(self.include_authorized_operations, "IncludeAuthorizedOperations")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_array_length(
+            if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.groups.len(),
+        )?;
+        for value in &self.groups {
+            writer.write_string(
+                if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+                value,
+            )?;
+        }
+        if version >= 3 {
+            writer.write_bool(self.include_authorized_operations);
+        }
+        if version >= 5 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 5 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
+impl DescribeGroupsRequest {
     /// The API key.
     pub const API_KEY: i16 = 15;
     /// The versions of this message.
@@ -86,5 +132,15 @@ impl crate::Message for DescribeGroupsRequest {
             return Err(reader.unsupported_version("DescribeGroupsRequest", version));
         }
         DescribeGroupsRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !DescribeGroupsRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "DescribeGroupsRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

@@ -90,6 +90,54 @@ impl ListTransactionsRequest {
 }
 
 impl ListTransactionsRequest {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 1 {
+            check(self.duration_filter != -1, "DurationFilter")?;
+        }
+        if version < 2 {
+            check(self.transactional_id_pattern.is_some(), "TransactionalIdPattern")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_array_length(crate::Framing::Compact, self.state_filters.len())?;
+        for value in &self.state_filters {
+            writer.write_string(crate::Framing::Compact, value)?;
+        }
+        writer.write_array_length(crate::Framing::Compact, self.producer_id_filters.len())?;
+        for value in &self.producer_id_filters {
+            writer.write_i64(*value);
+        }
+        if version >= 1 {
+            writer.write_i64(self.duration_filter);
+        }
+        if version == 2 {
+            writer.write_nullable_string(
+                crate::Framing::Compact,
+                self.transactional_id_pattern.as_deref(),
+            )?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
+impl ListTransactionsRequest {
     /// The API key.
     pub const API_KEY: i16 = 66;
     /// The versions of this message.
@@ -111,5 +159,15 @@ impl crate::Message for ListTransactionsRequest {
             return Err(reader.unsupported_version("ListTransactionsRequest", version));
         }
         ListTransactionsRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !ListTransactionsRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "ListTransactionsRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

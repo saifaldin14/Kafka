@@ -73,6 +73,31 @@ impl DescribeTopicPartitionsRequest {
     }
 }
 
+impl DescribeTopicPartitionsRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_array_length(crate::Framing::Compact, self.topics.len())?;
+        for value in &self.topics {
+            value.write_fields(writer, version)?;
+        }
+        writer.write_i32(self.response_partition_limit);
+        match &self.cursor {
+            None => writer.write_i8(-1),
+            Some(value) => {
+                writer.write_i8(1);
+                value.write_fields(writer, version)?;
+            }
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `DescribeTopicPartitionsRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopicRequest {
@@ -102,6 +127,20 @@ impl TopicRequest {
             let (tag, size) = reader.read_tagged_field_header()?;
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
+    }
+}
+
+impl TopicRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.name)?;
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
         Ok(())
     }
 }
@@ -144,6 +183,21 @@ impl Cursor {
     }
 }
 
+impl Cursor {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.topic_name)?;
+        writer.write_i32(self.partition_index);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl DescribeTopicPartitionsRequest {
     /// The API key.
     pub const API_KEY: i16 = 75;
@@ -166,5 +220,15 @@ impl crate::Message for DescribeTopicPartitionsRequest {
             return Err(reader.unsupported_version("DescribeTopicPartitionsRequest", version));
         }
         DescribeTopicPartitionsRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !DescribeTopicPartitionsRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "DescribeTopicPartitionsRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

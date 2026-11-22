@@ -81,6 +81,32 @@ impl ApiVersionsRequest {
 }
 
 impl ApiVersionsRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        if version >= 3 {
+            writer.write_string(crate::Framing::Compact, &self.client_software_name)?;
+            writer.write_string(crate::Framing::Compact, &self.client_software_version)?;
+        }
+        if version == 5 {
+            writer.write_nullable_string(crate::Framing::Compact, self.cluster_id.as_deref())?;
+            writer.write_i32(self.node_id);
+        }
+        if version >= 3 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 3 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
+impl ApiVersionsRequest {
     /// The API key.
     pub const API_KEY: i16 = 18;
     /// The versions of this message.
@@ -102,5 +128,15 @@ impl crate::Message for ApiVersionsRequest {
             return Err(reader.unsupported_version("ApiVersionsRequest", version));
         }
         ApiVersionsRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !ApiVersionsRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "ApiVersionsRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

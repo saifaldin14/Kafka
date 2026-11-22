@@ -63,6 +63,32 @@ impl SimpleRecordsMessage {
 }
 
 impl SimpleRecordsMessage {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.topic,
+        )?;
+        writer.write_records(
+            if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.record_set.as_ref(),
+        )?;
+        if version == 1 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 1 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
+impl SimpleRecordsMessage {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 1);
     /// The versions that use the flexible encoding.
@@ -79,5 +105,15 @@ impl crate::Message for SimpleRecordsMessage {
             return Err(reader.unsupported_version("SimpleRecordsMessage", version));
         }
         SimpleRecordsMessage::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !SimpleRecordsMessage::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "SimpleRecordsMessage",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

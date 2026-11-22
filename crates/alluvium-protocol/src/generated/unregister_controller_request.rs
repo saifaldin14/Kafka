@@ -44,6 +44,20 @@ impl UnregisterControllerRequest {
 }
 
 impl UnregisterControllerRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.controller_id);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
+impl UnregisterControllerRequest {
     /// The API key.
     pub const API_KEY: i16 = 94;
     /// The versions of this message.
@@ -65,5 +79,15 @@ impl crate::Message for UnregisterControllerRequest {
             return Err(reader.unsupported_version("UnregisterControllerRequest", version));
         }
         UnregisterControllerRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !UnregisterControllerRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "UnregisterControllerRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

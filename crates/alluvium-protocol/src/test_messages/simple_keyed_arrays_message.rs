@@ -50,6 +50,31 @@ impl SimpleKeyedArraysMessage {
     }
 }
 
+impl SimpleKeyedArraysMessage {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_array_length(
+            if version >= 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.keyed_structs.len(),
+        )?;
+        for value in &self.keyed_structs {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 1 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 1 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `SimpleKeyedArraysMessage`'s `KeyedStructs` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct KeyedStruct {
@@ -102,6 +127,26 @@ impl KeyedStruct {
     }
 }
 
+impl KeyedStruct {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.key);
+        writer.write_i32(self.value);
+        if version >= 1 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 1 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl SimpleKeyedArraysMessage {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 2);
@@ -119,5 +164,15 @@ impl crate::Message for SimpleKeyedArraysMessage {
             return Err(reader.unsupported_version("SimpleKeyedArraysMessage", version));
         }
         SimpleKeyedArraysMessage::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !SimpleKeyedArraysMessage::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "SimpleKeyedArraysMessage",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

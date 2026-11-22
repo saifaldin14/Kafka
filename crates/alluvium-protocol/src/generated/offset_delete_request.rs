@@ -44,6 +44,21 @@ impl OffsetDeleteRequest {
     }
 }
 
+impl OffsetDeleteRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Classic, &self.group_id)?;
+        writer.write_array_length(crate::Framing::Classic, self.topics.len())?;
+        for value in &self.topics {
+            value.write_fields(writer, version)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `OffsetDeleteRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct OffsetDeleteRequestTopic {
@@ -100,6 +115,21 @@ impl OffsetDeleteRequestTopic {
     }
 }
 
+impl OffsetDeleteRequestTopic {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Classic, &self.name)?;
+        writer.write_array_length(crate::Framing::Classic, self.partitions.len())?;
+        for value in &self.partitions {
+            value.write_fields(writer, version);
+        }
+        Ok(())
+    }
+}
+
 /// An element of `OffsetDeleteRequestTopic`'s `Partitions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct OffsetDeleteRequestPartition {
@@ -129,6 +159,12 @@ impl OffsetDeleteRequestPartition {
     }
 }
 
+impl OffsetDeleteRequestPartition {
+    fn write_fields(&self, writer: &mut crate::Writer, _version: i16) {
+        writer.write_i32(self.partition_index);
+    }
+}
+
 impl OffsetDeleteRequest {
     /// The API key.
     pub const API_KEY: i16 = 47;
@@ -151,5 +187,15 @@ impl crate::Message for OffsetDeleteRequest {
             return Err(reader.unsupported_version("OffsetDeleteRequest", version));
         }
         OffsetDeleteRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !OffsetDeleteRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "OffsetDeleteRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

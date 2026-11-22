@@ -69,6 +69,25 @@ impl ListConfigResourcesResponse {
     }
 }
 
+impl ListConfigResourcesResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.throttle_time_ms);
+        writer.write_i16(self.error_code);
+        writer.write_array_length(crate::Framing::Compact, self.config_resources.len())?;
+        for value in &self.config_resources {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `ListConfigResourcesResponse`'s `ConfigResources` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ConfigResource {
@@ -122,6 +141,23 @@ impl ConfigResource {
     }
 }
 
+impl ConfigResource {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.resource_name)?;
+        if version == 1 {
+            writer.write_i8(self.resource_type);
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl ListConfigResourcesResponse {
     /// The API key.
     pub const API_KEY: i16 = 74;
@@ -141,5 +177,15 @@ impl crate::Message for ListConfigResourcesResponse {
             return Err(reader.unsupported_version("ListConfigResourcesResponse", version));
         }
         ListConfigResourcesResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !ListConfigResourcesResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "ListConfigResourcesResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

@@ -153,6 +153,80 @@ impl JoinGroupResponse {
     }
 }
 
+impl JoinGroupResponse {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 9 {
+            check(self.skip_assignment, "SkipAssignment")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        if version >= 2 {
+            writer.write_i32(self.throttle_time_ms);
+        }
+        writer.write_i16(self.error_code);
+        writer.write_i32(self.generation_id);
+        if version >= 7 {
+            writer.write_nullable_string(crate::Framing::Compact, self.protocol_type.as_deref())?;
+        }
+        if version >= 7 {
+            writer.write_nullable_string(
+                if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+                self.protocol_name.as_deref(),
+            )?;
+        } else {
+            let value = self
+                .protocol_name
+                .as_ref()
+                .ok_or(crate::EncodeError::NullForNonNullable { field: "ProtocolName" })?;
+            writer.write_string(
+                if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+                value,
+            )?;
+        }
+        writer.write_string(
+            if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.leader,
+        )?;
+        if version == 9 {
+            writer.write_bool(self.skip_assignment);
+        }
+        writer.write_string(
+            if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.member_id,
+        )?;
+        writer.write_array_length(
+            if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.members.len(),
+        )?;
+        for value in &self.members {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 6 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 6 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `JoinGroupResponse`'s `Members` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct JoinGroupResponseMember {
@@ -221,6 +295,38 @@ impl JoinGroupResponseMember {
     }
 }
 
+impl JoinGroupResponseMember {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.member_id,
+        )?;
+        if version >= 5 {
+            writer.write_nullable_string(
+                if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+                self.group_instance_id.as_deref(),
+            )?;
+        }
+        writer.write_bytes(
+            if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.metadata,
+        )?;
+        if version >= 6 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 6 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl JoinGroupResponse {
     /// The API key.
     pub const API_KEY: i16 = 11;
@@ -240,5 +346,15 @@ impl crate::Message for JoinGroupResponse {
             return Err(reader.unsupported_version("JoinGroupResponse", version));
         }
         JoinGroupResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !JoinGroupResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "JoinGroupResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

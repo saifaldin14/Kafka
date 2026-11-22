@@ -27,6 +27,8 @@
 mod array;
 #[cfg(test)]
 mod decode_tests;
+#[cfg(test)]
+mod encode_tests;
 mod error;
 mod error_code;
 mod framed;
@@ -48,10 +50,10 @@ pub use error::{DecodeError, DecodeErrorKind, EncodeError, WithinField};
 pub use error_code::{ErrorCode, UnknownErrorCode};
 pub use framed::Framing;
 pub use limits::{DecodeLimits, Limit};
-pub use message::Message;
+pub use message::{EncodedSize, Message, decode_version_prefixed, encode_version_prefixed};
 pub use reader::Reader;
 pub use records::RecordsField;
-pub use tagged_fields::RawTaggedField;
+pub use tagged_fields::{RawTaggedField, RawTaggedFieldWriter};
 pub use varint::{size_of_unsigned_varint, size_of_varint, size_of_varlong};
 pub use versions::Versions;
 pub use writer::Writer;

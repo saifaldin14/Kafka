@@ -78,6 +78,29 @@ impl ListTransactionsResponse {
     }
 }
 
+impl ListTransactionsResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.throttle_time_ms);
+        writer.write_i16(self.error_code);
+        writer.write_array_length(crate::Framing::Compact, self.unknown_state_filters.len())?;
+        for value in &self.unknown_state_filters {
+            writer.write_string(crate::Framing::Compact, value)?;
+        }
+        writer.write_array_length(crate::Framing::Compact, self.transaction_states.len())?;
+        for value in &self.transaction_states {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `ListTransactionsResponse`'s `TransactionStates` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TransactionState {
@@ -126,6 +149,22 @@ impl TransactionState {
     }
 }
 
+impl TransactionState {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.transactional_id)?;
+        writer.write_i64(self.producer_id);
+        writer.write_string(crate::Framing::Compact, &self.transaction_state)?;
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl ListTransactionsResponse {
     /// The API key.
     pub const API_KEY: i16 = 66;
@@ -145,5 +184,15 @@ impl crate::Message for ListTransactionsResponse {
             return Err(reader.unsupported_version("ListTransactionsResponse", version));
         }
         ListTransactionsResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !ListTransactionsResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "ListTransactionsResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

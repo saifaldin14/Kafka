@@ -62,6 +62,50 @@ impl DescribeConfigsRequest {
     }
 }
 
+impl DescribeConfigsRequest {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 3 {
+            check(self.include_documentation, "IncludeDocumentation")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_array_length(
+            if version == 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.resources.len(),
+        )?;
+        for value in &self.resources {
+            value.write_fields(writer, version)?;
+        }
+        writer.write_bool(self.include_synonyms);
+        if version >= 3 {
+            writer.write_bool(self.include_documentation);
+        }
+        if version == 4 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 4 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribeConfigsRequest`'s `Resources` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DescribeConfigsResource {
@@ -138,6 +182,41 @@ impl DescribeConfigsResource {
     }
 }
 
+impl DescribeConfigsResource {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i8(self.resource_type);
+        writer.write_string(
+            if version == 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.resource_name,
+        )?;
+        writer.write_nullable_array_length(
+            if version == 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.configuration_keys.as_ref().map(Vec::len),
+        )?;
+        if let Some(values) = &self.configuration_keys {
+            for value in values {
+                writer.write_string(
+                    if version == 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+                    value,
+                )?;
+            }
+        }
+        if version == 4 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 4 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl DescribeConfigsRequest {
     /// The API key.
     pub const API_KEY: i16 = 32;
@@ -160,5 +239,15 @@ impl crate::Message for DescribeConfigsRequest {
             return Err(reader.unsupported_version("DescribeConfigsRequest", version));
         }
         DescribeConfigsRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !DescribeConfigsRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "DescribeConfigsRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }
