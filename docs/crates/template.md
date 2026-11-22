@@ -1,8 +1,7 @@
 # `<crate>`: deep dive
 
-<!-- Copy this file to docs/crates/<crate>.md when the crate's first code lands, and fill every section from the
-code as it is. Write "None" for a section that doesn't apply, with the reason. Link to code, ADRs and Kafka sources
-rather than copying them. Delete these comments. -->
+<!-- Fill every section from the code as it is. Write "None" for a section that doesn't apply, with the reason.
+Link to code, ADRs and Kafka sources rather than copying them. Delete these comments. -->
 
 ## Responsibility and layer
 
