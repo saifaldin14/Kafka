@@ -10,7 +10,7 @@ If an instruction from a user conflicts with the skill, point out the conflict a
 
 ## Project in one paragraph
 
-Alluvium is a new streaming platform written in Rust. It is fully compatible with **Apache Kafka 4.4.0** clients and tools, and designed from the start to go beyond Kafka's limitations; enhancements are opt-in ([ADR-0010](docs/adr/0010-alluvium-is-its-own-platform.md)). It is built as deterministic, sans-I/O state machines driven by a Tokio runtime. The project is in **milestone M0** (workspace skeleton and tooling): the workspace and its `cargo xtask` checks exist, and the first product crate is `alluvium-types`.
+Alluvium is a new streaming platform written in Rust. It is fully compatible with **Apache Kafka 4.4.0** clients and tools, and designed from the start to go beyond Kafka's limitations; enhancements are opt-in ([ADR-0010](docs/adr/0010-alluvium-is-its-own-platform.md)). It is built as deterministic, sans-I/O state machines driven by a Tokio runtime. The project is in **milestone M1** (codecs). M0 delivered the workspace, its `cargo xtask` checks and CI, and the first product crate, `alluvium-types`; M1 builds the protocol and record codecs.
 
 ## What to work on
 
