@@ -25,3 +25,4 @@ An ADR records a decision that is hard to reverse, crosses crates, deviates from
 | [0010](0010-alluvium-is-its-own-platform.md) | Alluvium is its own platform; Kafka 4.4 is a compatibility surface | Accepted |
 | [0011](0011-time-model-and-clock-injection.md) | Time model and clock injection | Accepted |
 | [0012](0012-seeded-randomness-and-hashing.md) | Seeded randomness and hashing | Accepted |
+| [0013](0013-key-hash-space.md) | Key hash space | Accepted |
