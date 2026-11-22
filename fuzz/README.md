@@ -16,7 +16,21 @@ cargo xtask fuzz types_uuid_parse fuzz/artifacts/types_uuid_parse/crash-…   # 
 
 `cargo xtask fuzz` builds the target with `cargo fuzz build` and debug assertions, so integer overflow is a crash. Then it runs the target's binary itself, with the limits below, so that every run uses them. cargo-fuzz's own `run` reruns a crashing input without them.
 
-A run reads the corpus in `corpus/<target>/` and the committed seeds in `seeds/<target>/`, and adds new inputs to the corpus only. A crash leaves its input in `artifacts/<target>/`. All three directories but `seeds/` are ignored by git.
+A run reads the corpus in `corpus/<target>/` and the committed seeds in `seeds/<target>/`, and adds new inputs to the corpus only. A crash leaves its input in `artifacts/<target>/`. `corpus/`, `artifacts/` and `target/` are ignored by git.
+
+## Corpora and seeds
+
+The nightly fuzz run on `main` grows each target's corpus and stores it as an Actions artifact ([ADR-0018](../docs/adr/0018-fuzz-corpus-storage.md)). Only CI writes corpora.
+
+```sh
+cargo xtask fuzz corpus pull                     # every target's newest corpus (needs `gh auth login`)
+cargo xtask fuzz corpus pull types_uuid_parse    # one target's
+cargo xtask fuzz corpus minimize types_uuid_parse
+```
+
+`corpus minimize` keeps only the inputs that add coverage, using libFuzzer's merge. It replaces the corpus only if the merge completed and the coverage and feature counts didn't drop, and it fails if the result is over the 50 MiB budget.
+
+`seeds/<target>/` holds small hand-picked inputs, and the input of every fixed crash, so that a run starts from known-interesting cases even with no corpus. Name a seed after what it shows (`zero`, `longest`, `crash-<issue>`). Each is at most 64 KiB, and a target's seeds stay under 1 MiB.
 
 ## Limits
 

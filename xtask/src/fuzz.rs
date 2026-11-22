@@ -7,6 +7,8 @@
 //! allocation crash could stall it; running the binary keeps every run within
 //! [`LIMITS`].
 
+mod corpus;
+
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -48,7 +50,7 @@ pub(crate) const LIMITS: &[Limit] = &[
 ];
 
 /// The fuzz workspace, relative to the repository root.
-const FUZZ_DIR: &str = "fuzz";
+pub(crate) const FUZZ_DIR: &str = "fuzz";
 
 pub(crate) fn run(command: &FuzzCommand, out: &mut impl Write) -> Exit {
     let root = crate::repo_root();
@@ -59,45 +61,70 @@ pub(crate) fn run(command: &FuzzCommand, out: &mut impl Write) -> Exit {
             return Exit::CheckFailed;
         }
     };
-    let (target, input) = match command {
+    let chosen: Vec<&String> = match command {
         FuzzCommand::List => {
             for target in &targets {
                 output::line(out, target);
             }
             return Exit::Success;
         }
-        FuzzCommand::Run { target, seconds } => (target, Input::Fuzz { seconds: *seconds }),
-        FuzzCommand::Reproduce { target, input } => (target, Input::One(PathBuf::from(input))),
+        FuzzCommand::Run { target, .. }
+        | FuzzCommand::Reproduce { target, .. }
+        | FuzzCommand::CorpusMinimize { target } => vec![target],
+        FuzzCommand::CorpusPull { targets: named } if named.is_empty() => targets.iter().collect(),
+        FuzzCommand::CorpusPull { targets: named } => named.iter().collect(),
     };
-    if !targets.contains(target) {
+    if let Some(unknown) = chosen.iter().find(|target| !targets.contains(target)) {
         output::line(
             out,
             &format!(
-                "error: unknown fuzz target `{target}`; the targets are: {}",
+                "error: unknown fuzz target `{unknown}`; the targets are: {}",
                 targets.join(", ")
             ),
         );
         return Exit::Usage;
     }
-    match build(&root, target).and_then(|binary| run_binary(&root, &binary, target, &input)) {
-        Ok(true) => Exit::Success,
-        Ok(false) => {
-            let message = match input {
-                Input::Fuzz { .. } => format!(
-                    "fuzz: {target} found a crash; the input is in {FUZZ_DIR}/artifacts/{target}/. Reproduce it with `cargo xtask fuzz {target} <input>`"
-                ),
-                Input::One(path) => {
-                    format!("fuzz: {} fails {target}", path.display())
-                }
-            };
-            output::line(out, &message);
-            Exit::CheckFailed
+    let result = match command {
+        FuzzCommand::List => Ok(String::new()),
+        FuzzCommand::Run { target, seconds } => {
+            fuzz(&root, target, &Input::Fuzz { seconds: *seconds })
+        }
+        FuzzCommand::Reproduce { target, input } => {
+            fuzz(&root, target, &Input::One(PathBuf::from(input)))
+        }
+        FuzzCommand::CorpusPull { .. } => chosen
+            .iter()
+            .map(|target| corpus::pull(&root, target))
+            .collect::<Result<Vec<_>, _>>()
+            .map(|reports| reports.join("\n")),
+        FuzzCommand::CorpusMinimize { target } => corpus::minimize(&root, target),
+    };
+    match result {
+        Ok(report) => {
+            if !report.is_empty() {
+                output::line(out, &report);
+            }
+            Exit::Success
         }
         Err(error) => {
             output::line(out, &format!("error: {error}"));
             Exit::CheckFailed
         }
     }
+}
+
+/// Builds `target` and runs it on `input`, failing with a report if it crashes.
+fn fuzz(root: &Path, target: &str, input: &Input) -> Result<String, String> {
+    let binary = build(root, target)?;
+    if run_binary(root, &binary, target, input)? {
+        return Ok(String::new());
+    }
+    Err(match input {
+        Input::Fuzz { .. } => format!(
+            "{target} found a crash; the input is in {FUZZ_DIR}/artifacts/{target}/. Reproduce it with `cargo xtask fuzz {target} <input>`"
+        ),
+        Input::One(path) => format!("{} fails {target}", path.display()),
+    })
 }
 
 /// What a run feeds the target.
@@ -156,8 +183,8 @@ pub(crate) fn nightly_problem(channel: &str) -> Option<String> {
 }
 
 /// Builds `target` with debug assertions, so that overflow is a crash, and returns its
-/// binary.
-fn build(root: &Path, target: &str) -> Result<PathBuf, String> {
+/// binary's path from the repository root.
+pub(crate) fn build(root: &Path, target: &str) -> Result<PathBuf, String> {
     let channel = nightly_channel(root)?;
     if let Some(problem) = nightly_problem(&channel) {
         return Err(problem);
@@ -189,8 +216,7 @@ fn build(root: &Path, target: &str) -> Result<PathBuf, String> {
     if !status.success() {
         return Err(format!("cargo fuzz build {target} failed"));
     }
-    Ok(root
-        .join(FUZZ_DIR)
+    Ok(Path::new(FUZZ_DIR)
         .join("target")
         .join(host)
         .join("release")
@@ -199,34 +225,27 @@ fn build(root: &Path, target: &str) -> Result<PathBuf, String> {
 
 /// Runs the target's binary on `input` with [`LIMITS`]. Returns whether it ran clean.
 fn run_binary(root: &Path, binary: &Path, target: &str, input: &Input) -> Result<bool, String> {
-    let fuzz_dir = root.join(FUZZ_DIR);
-    let artifacts = fuzz_dir.join("artifacts").join(target);
-    create_dir(&artifacts)?;
-    let mut command = Command::new(binary);
-    command
-        .args(limit_args())
-        .arg(format!("-artifact_prefix={}/", artifacts.display()))
-        .env("ASAN_OPTIONS", asan_options())
-        .current_dir(root)
-        .stdin(Stdio::null());
+    let mut command = libfuzzer(root, binary, target)?;
     match input {
         Input::Fuzz { seconds } => {
             // libFuzzer writes new inputs to the first directory only, so the
             // committed seeds are read but never added to.
-            let corpus = fuzz_dir.join("corpus").join(target);
-            create_dir(&corpus)?;
+            let corpus = Path::new(FUZZ_DIR).join("corpus").join(target);
+            create_dir(&root.join(&corpus))?;
             command
                 .arg(format!("-max_total_time={seconds}"))
                 .arg(corpus);
-            let seeds = fuzz_dir.join("seeds").join(target);
-            if seeds.is_dir() {
+            let seeds = Path::new(FUZZ_DIR).join("seeds").join(target);
+            if root.join(&seeds).is_dir() {
                 command.arg(seeds);
             }
         }
         Input::One(path) => {
-            if !path.is_file() {
-                return Err(format!("{} is not a file", path.display()));
-            }
+            // Relative to where the command was run, not the repository root.
+            let path = std::fs::canonicalize(path)
+                .ok()
+                .filter(|path| path.is_file())
+                .ok_or_else(|| format!("{} is not a file", path.display()))?;
             command.arg(path);
         }
     }
@@ -236,8 +255,27 @@ fn run_binary(root: &Path, binary: &Path, target: &str, input: &Input) -> Result
     Ok(status.success())
 }
 
+/// A command that runs the target's `binary`, a path from the repository root, with
+/// [`LIMITS`], writing any crash input to `fuzz/artifacts/<target>/`.
+///
+/// It runs in the repository root, and paths passed to it should be relative to that.
+/// libFuzzer's merge starts its child processes from a command line it joins with
+/// spaces, so an absolute path with a space in it would be split.
+pub(crate) fn libfuzzer(root: &Path, binary: &Path, target: &str) -> Result<Command, String> {
+    let artifacts = Path::new(FUZZ_DIR).join("artifacts").join(target);
+    create_dir(&root.join(&artifacts))?;
+    let mut command = Command::new(Path::new(".").join(binary));
+    command
+        .args(limit_args())
+        .arg(format!("-artifact_prefix={}/", artifacts.display()))
+        .env("ASAN_OPTIONS", asan_options())
+        .current_dir(root)
+        .stdin(Stdio::null());
+    Ok(command)
+}
+
 /// [`LIMITS`] as libFuzzer flags.
-pub(crate) fn limit_args() -> Vec<String> {
+fn limit_args() -> Vec<String> {
     LIMITS
         .iter()
         .map(|limit| format!("-{}={}", limit.flag, limit.value))
@@ -253,7 +291,7 @@ fn asan_options() -> String {
     }
 }
 
-fn create_dir(path: &Path) -> Result<(), String> {
+pub(crate) fn create_dir(path: &Path) -> Result<(), String> {
     std::fs::create_dir_all(path)
         .map_err(|error| format!("could not create {}: {error}", path.display()))
 }

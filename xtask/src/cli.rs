@@ -49,6 +49,11 @@ pub(crate) enum FuzzCommand {
     Run { target: String, seconds: u64 },
     /// `<target> <input>`: run one input, such as a crash artifact.
     Reproduce { target: String, input: String },
+    /// `corpus pull [<target>]...`: download the corpora CI grew, for every target if
+    /// none is named (ADR-0018).
+    CorpusPull { targets: Vec<String> },
+    /// `corpus minimize <target>`: shrink a corpus without losing coverage.
+    CorpusMinimize { target: String },
 }
 
 /// How long `cargo xtask fuzz <target>` runs without `--time`.
@@ -114,6 +119,14 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
         "Run one input through a target with the standard limits, such as a crash artifact",
     ),
     ("fuzz --list", "List the fuzz targets"),
+    (
+        "fuzz corpus pull [<target>]...",
+        "Download the corpora the nightly fuzz run grew on main (needs a `gh` login; ADR-0018)",
+    ),
+    (
+        "fuzz corpus minimize <target>",
+        "Shrink a target's corpus with libFuzzer's merge, checking coverage and the size budget",
+    ),
     (
         "check-layers [--print] [--manifest-path <path>]",
         "Check the crate layering rules (ADR-0009); `--print` shows the layer table",
@@ -410,6 +423,7 @@ fn parse_fuzz(rest: &[String]) -> Result<FuzzCommand, UsageError> {
             name: "a target, or `--list`",
         }),
         [flag] if flag == "--list" => Ok(FuzzCommand::List),
+        [corpus, rest @ ..] if corpus == "corpus" => parse_fuzz_corpus(rest),
         [flag, extra, ..] if flag == "--list" => Err(unexpected(extra)),
         [target] => Ok(FuzzCommand::Run {
             target: target.clone(),
@@ -430,6 +444,46 @@ fn parse_fuzz(rest: &[String]) -> Result<FuzzCommand, UsageError> {
             input: input.clone(),
         }),
         [_, _, extra, ..] => Err(unexpected(extra)),
+    }
+}
+
+fn parse_fuzz_corpus(rest: &[String]) -> Result<FuzzCommand, UsageError> {
+    match rest.split_first() {
+        None => Err(UsageError::MissingSubcommand {
+            command: "fuzz corpus",
+        }),
+        Some((sub, targets)) if sub == "pull" => {
+            match targets.iter().find(|t| t.starts_with('-')) {
+                Some(flag) => Err(UsageError::UnexpectedArgument {
+                    command: "fuzz corpus pull",
+                    argument: flag.clone(),
+                }),
+                None => Ok(FuzzCommand::CorpusPull {
+                    targets: targets.to_vec(),
+                }),
+            }
+        }
+        Some((sub, rest)) if sub == "minimize" => match rest {
+            [target] if !target.starts_with('-') => Ok(FuzzCommand::CorpusMinimize {
+                target: target.clone(),
+            }),
+            [] => Err(UsageError::MissingArgument {
+                command: "fuzz corpus minimize",
+                name: "a target",
+            }),
+            [first] => Err(UsageError::UnexpectedArgument {
+                command: "fuzz corpus minimize",
+                argument: first.clone(),
+            }),
+            [_, extra, ..] => Err(UsageError::UnexpectedArgument {
+                command: "fuzz corpus minimize",
+                argument: extra.clone(),
+            }),
+        },
+        Some((sub, _)) => Err(UsageError::UnknownSubcommand {
+            command: "fuzz corpus",
+            name: sub.clone(),
+        }),
     }
 }
 
@@ -797,6 +851,36 @@ mod tests {
             Err(UsageError::MissingArgument {
                 command: "fuzz",
                 name: "a target, or `--list`"
+            })
+        );
+        assert_eq!(
+            parse(args(&["fuzz", "corpus", "pull"])),
+            Ok(Command::Fuzz(FuzzCommand::CorpusPull { targets: vec![] }))
+        );
+        assert_eq!(
+            parse(args(&["fuzz", "corpus", "pull", "a", "b"])),
+            Ok(Command::Fuzz(FuzzCommand::CorpusPull {
+                targets: vec!["a".to_owned(), "b".to_owned()]
+            }))
+        );
+        assert_eq!(
+            parse(args(&["fuzz", "corpus", "minimize", "a"])),
+            Ok(Command::Fuzz(FuzzCommand::CorpusMinimize {
+                target: "a".to_owned()
+            }))
+        );
+        assert_eq!(
+            parse(args(&["fuzz", "corpus", "minimize"])),
+            Err(UsageError::MissingArgument {
+                command: "fuzz corpus minimize",
+                name: "a target"
+            })
+        );
+        assert_eq!(
+            parse(args(&["fuzz", "corpus", "push"])),
+            Err(UsageError::UnknownSubcommand {
+                command: "fuzz corpus",
+                name: "push".to_owned()
             })
         );
     }
