@@ -125,7 +125,7 @@ Done when: `cargo xtask ci` runs the steps in the documented order and exits non
 P0 · M0 · Task · deps: FND-0021 · labels: test · ref: docs/standards/testing.md#rules
 Done when: `cargo nextest run --profile ci` writes the JUnit file; a deliberately slow test (not committed) is reported as slow and then terminated, as shown in the PR; testing.md links to the profile and explains why retries are 0.
 
-## [In Progress] FND-F05 Crate layer checker
+## [Done] FND-F05 Crate layer checker
 P0 · M0 · Feature · deps: FND-F04
 Scope: `cargo xtask check-layers`: layer table, forbidden runtime dependencies for layers 0-2, allow-list with ADR references, sync check with docs/architecture.md.
 
@@ -161,9 +161,10 @@ Done when: Fixtures in `xtask/tests/fixtures/layers/` use path dependencies only
 P0 · M0 · Task · deps: FND-0023, FND-0021 · labels: docs · ref: ADR-0009
 Done when: Moving a crate to another layer in only one of the two places fails with a diff that lists crates missing on each side and layer mismatches; a test runs against a copy of the real architecture.md; `cargo xtask ci --step layers` runs on the real workspace; architecture §5 and ADR-0009 point to the command.
 
-### [To Do] FND-0065 `check-layers` source rule: no layer 1–2 crate names `SystemClock` or `SeededRng::from_os_entropy` (ADR-0011, ADR-0012)
+### [Done] FND-0065 `check-layers` source rule: no layer 1–2 crate names `SystemClock` or `SeededRng::from_os_entropy` (ADR-0011, ADR-0012)
 P2 · M1 · Task · deps: FND-0030 · ref: ADR-0011
 Done when: The rule scans the `src/` of layer 1–2 workspace crates (layer 0 is `alluvium-types`, which defines them) and reports each use with file:line and the ADR; fixture crates show a use rejected and a doc comment mentioning the names accepted; the real workspace passes.
+Notes: The rule covers layers 0–2, not only 1–2, and exempts just `alluvium-types`. Layer 0 also holds `alluvium-protocol` and `alluvium-records`, and architecture §5 rule 2 forbids every layer 0–2 crate from constructing the readers. The fixture `os-reader-in-core` has `alluvium-types` defining `SystemClock` (exempt), and `alluvium-storage` naming both readers in doc and trailing comments (accepted) and calling `SeededRng::from_os_entropy` in a submodule (rejected, with file:line and ADR-0012).
 
 ## [Done] FND-F06 CI pipeline
 P0 · M0 · Feature · deps: FND-F02, FND-F03, FND-F04, FND-F05

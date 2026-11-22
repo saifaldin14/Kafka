@@ -87,3 +87,13 @@ fn a_crate_missing_from_the_layer_table_is_rejected() -> Result<(), Box<dyn Erro
         "crate mystery has no layer: add it to xtask/src/layers.rs and docs/architecture.md §4",
     )
 }
+
+#[test]
+fn an_os_reader_below_layer_3_is_rejected_but_docs_and_its_defining_crate_are_not()
+-> Result<(), Box<dyn Error>> {
+    assert_rejected(
+        "os-reader-in-core",
+        "storage/src/driver.rs:4: alluvium-storage (layer 1) names `SeededRng::from_os_entropy`; \
+         layers 0-2 receive the time and randomness in their inputs and never read the OS (ADR-0012)",
+    )
+}

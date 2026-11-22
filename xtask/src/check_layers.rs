@@ -13,6 +13,14 @@
 //! 5. No layer 0-2 crate reaches an async runtime or networking crate
 //!    ([`RUNTIME_CRATES`]) through normal or build edges, directly or transitively.
 //!
+//! 6. No layer 0-2 crate's source names [`OS_READERS`]: `SystemClock` or
+//!    `SeededRng::from_os_entropy`. Layers 0-2 receive the time and randomness in their
+//!    inputs; only layers 3-5 construct the readers that touch the operating system
+//!    ([ADR-0011](../../docs/adr/0011-time-model-and-clock-injection.md),
+//!    [ADR-0012](../../docs/adr/0012-seeded-randomness-and-hashing.md)). Only
+//!    [`OS_READERS_HOME`], which defines them, is exempt. Comments are skipped, so docs
+//!    may mention the names; a match is a whole word on a line's code.
+//!
 //! The layer table must also match docs/architecture.md §4. Every violation is reported
 //! in one run.
 
@@ -57,6 +65,16 @@ pub(crate) const RUNTIME_CRATES: &[(&str, &str)] = &[
     ("socket2", "socket networking"),
 ];
 
+/// The OS readers layers 0-2 must not name: the word matched, how it is printed, and the
+/// ADR that forbids it.
+pub(crate) const OS_READERS: &[(&str, &str, &str)] = &[
+    ("SystemClock", "SystemClock", "ADR-0011"),
+    ("from_os_entropy", "SeededRng::from_os_entropy", "ADR-0012"),
+];
+
+/// The crate that defines the OS readers, and so may name them.
+pub(crate) const OS_READERS_HOME: &str = "alluvium-types";
+
 /// Options for `cargo xtask check-layers`.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct LayerOptions {
@@ -95,6 +113,14 @@ pub(crate) enum Violation {
     },
     Architecture {
         problem: String,
+    },
+    OsReader {
+        file: String,
+        line: usize,
+        crate_name: String,
+        layer: Layer,
+        name: &'static str,
+        adr: &'static str,
     },
 }
 
@@ -175,6 +201,18 @@ impl fmt::Display for Violation {
                 f,
                 "xtask/src/layers.rs and docs/architecture.md §4 disagree: {problem}"
             ),
+            Violation::OsReader {
+                file,
+                line,
+                crate_name,
+                layer,
+                name,
+                adr,
+            } => write!(
+                f,
+                "{file}:{line}: {crate_name} (layer {layer}) names `{name}`; layers 0-2 \
+                 receive the time and randomness in their inputs and never read the OS ({adr})"
+            ),
         }
     }
 }
@@ -195,6 +233,18 @@ pub(crate) fn run(options: &LayerOptions, out: &mut impl Write) -> Exit {
     }
     let root = crate::repo_root();
     let mut violations = check_graph(&graph, SAME_LAYER_ALLOWED, &root.join("docs/adr"));
+    let workspace = options
+        .manifest_path
+        .as_deref()
+        .and_then(Path::parent)
+        .map_or_else(|| root.clone(), Path::to_path_buf);
+    match check_sources(&graph, &workspace) {
+        Ok(found) => violations.extend(found),
+        Err(error) => {
+            output::line(out, &format!("error: {error}"));
+            return Exit::CheckFailed;
+        }
+    }
     match std::fs::read_to_string(root.join("docs/architecture.md")) {
         Ok(text) => violations.extend(check_architecture(&text)),
         Err(error) => violations.push(Violation::Architecture {
@@ -283,6 +333,97 @@ pub(crate) fn check_graph(
         }
     }
     violations
+}
+
+/// Rule 6 for every layer 0-2 member except [`OS_READERS_HOME`]: reads each `.rs` file under its `src/`. Files are
+/// named relative to `workspace`.
+fn check_sources(graph: &Graph, workspace: &Path) -> Result<Vec<Violation>, String> {
+    let workspace = workspace
+        .canonicalize()
+        .unwrap_or_else(|_| workspace.to_path_buf());
+    let mut violations = Vec::new();
+    for id in &graph.members {
+        let name = graph.name(id);
+        let Some(layer) = layer_of(name).filter(|layer| layer.is_runtime_free()) else {
+            continue;
+        };
+        if name == OS_READERS_HOME {
+            continue;
+        }
+        let Some(source) = graph
+            .manifest_paths
+            .get(id)
+            .and_then(|manifest| manifest.parent())
+            .map(|dir| dir.join("src"))
+        else {
+            return Err(format!("`cargo metadata` has no manifest path for {name}"));
+        };
+        let mut files = Vec::new();
+        rust_files(&source, &mut files)
+            .map_err(|error| format!("could not read {}: {error}", source.display()))?;
+        files.sort();
+        for path in files {
+            let text = std::fs::read_to_string(&path)
+                .map_err(|error| format!("could not read {}: {error}", path.display()))?;
+            let file = path
+                .strip_prefix(&workspace)
+                .unwrap_or(&path)
+                .to_string_lossy()
+                .into_owned();
+            violations.extend(check_os_readers(name, layer, &file, &text));
+        }
+    }
+    Ok(violations)
+}
+
+fn rust_files(dir: &Path, files: &mut Vec<PathBuf>) -> std::io::Result<()> {
+    for entry in std::fs::read_dir(dir)? {
+        let path = entry?.path();
+        if path.is_dir() {
+            rust_files(&path, files)?;
+        } else if path.extension().is_some_and(|extension| extension == "rs") {
+            files.push(path);
+        }
+    }
+    Ok(())
+}
+
+/// Rule 6 for one file of a layer 0-2 crate.
+pub(crate) fn check_os_readers(
+    crate_name: &str,
+    layer: Layer,
+    file: &str,
+    text: &str,
+) -> Vec<Violation> {
+    let mut violations = Vec::new();
+    for (index, line) in text.lines().enumerate() {
+        let code = line.split("//").next().unwrap_or_default();
+        for &(word, name, adr) in OS_READERS {
+            if contains_word(code, word) {
+                violations.push(Violation::OsReader {
+                    file: file.to_owned(),
+                    line: index + 1,
+                    crate_name: crate_name.to_owned(),
+                    layer,
+                    name,
+                    adr,
+                });
+            }
+        }
+    }
+    violations
+}
+
+/// Whether `word` occurs in `text` with no identifier character on either side.
+fn contains_word(text: &str, word: &str) -> bool {
+    let is_ident = |c: char| c.is_alphanumeric() || c == '_';
+    text.match_indices(word).any(|(start, _)| {
+        let before = text.get(..start).and_then(|head| head.chars().next_back());
+        let after = text
+            .get(start + word.len()..)
+            .and_then(|tail| tail.chars().next());
+        !before.is_some_and(is_ident) && !after.is_some_and(is_ident)
+    })
 }
 
 /// The rule an edge between two workspace crates breaks, if any. Dev crates may
@@ -448,8 +589,11 @@ mod tests {
     use std::collections::BTreeSet;
     use std::path::Path;
 
-    use super::{AllowedEdge, EdgeRule, Violation, check_architecture, check_graph};
+    use super::{
+        AllowedEdge, EdgeRule, Violation, check_architecture, check_graph, check_os_readers,
+    };
     use crate::graph::{DepKind, Edge, Graph};
+    use crate::layers::Layer;
 
     /// A graph whose package ids are their names. `members` are workspace crates.
     fn graph(members: &[&str], others: &[&str], edges: &[(&str, &str, DepKind)]) -> Graph {
@@ -667,5 +811,22 @@ mod tests {
             );
         }
         assert_eq!(problems.len(), 3, "{problems:?}");
+    }
+
+    #[test]
+    fn os_readers_are_matched_as_whole_words_outside_comments() {
+        let text = "/// Never `SystemClock` here.\nuse alluvium_types::SystemClock;\nlet clock = MySystemClock;\nlet seed = SeededRng::from_os_entropy(); // SystemClock\nlet a = from_os_entropy_cache;\n";
+        let found: Vec<(usize, &str)> =
+            check_os_readers("alluvium-raft", Layer::Numbered(1), "raft/src/lib.rs", text)
+                .into_iter()
+                .map(|violation| match violation {
+                    Violation::OsReader { line, name, .. } => (line, name),
+                    other => panic!("unexpected {other}"),
+                })
+                .collect();
+        assert_eq!(
+            found,
+            [(2, "SystemClock"), (4, "SeededRng::from_os_entropy")]
+        );
     }
 }
