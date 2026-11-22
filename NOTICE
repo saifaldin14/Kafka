@@ -1,0 +1,25 @@
+Alluvium
+Copyright (c) 2026 Saif Al-Din Ali. All rights reserved (see LICENSE).
+
+This product includes material from Apache Kafka, licensed under the Apache License,
+Version 2.0 (LICENSES/Apache-2.0.txt). The attribution notices below are carried over
+from Apache Kafka 4.4.0's NOTICE file, as section 4(d) of that license requires:
+
+    Apache Kafka
+    Copyright 2026 The Apache Software Foundation.
+
+    This product includes software developed at
+    The Apache Software Foundation (https://www.apache.org/).
+
+Kafka's other notices (the jersey binary dependency, the streams-scala module and the
+Murmur3 code from Apache Hive) concern parts of Kafka that Alluvium doesn't include.
+
+Files containing Apache Kafka material, each marked in the file with its source:
+
+- crates/alluvium-types/src/partitioner.rs: murmur2, ported from
+  clients/src/main/java/org/apache/kafka/common/utils/Utils.java; and the test vectors
+  of clients/src/test/java/org/apache/kafka/common/utils/UtilsTest.java (testMurmur2).
+- crates/alluvium-types/src/uuid.rs: tests ported from
+  clients/src/test/java/org/apache/kafka/common/UuidTest.java.
+- crates/alluvium-types/src/topic.rs: tests ported from
+  clients/src/test/java/org/apache/kafka/common/internals/TopicTest.java.
