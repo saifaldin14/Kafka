@@ -12,6 +12,7 @@ bytes = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
+alluvium-types = { workspace = true, features = ["proptest-strategies"] }
 criterion = { workspace = true }
 gungraun = { workspace = true }
 peak_alloc = { workspace = true }

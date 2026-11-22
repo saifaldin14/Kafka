@@ -577,7 +577,7 @@ Done when: testing.md lists the convention and the boundary-bias helpers; the he
 P0 · M1 · Task · deps: TEST-0125 · labels: test
 Done when: Each strategy has a test asserting its generated values satisfy (or, for the invalid variants, violate) the stated invariant; STOR, REPL and TXN tests can use them.
 
-### [To Do] TEST-0127 Adversarial byte strategies for decoder property tests: length prefixes that lie (larger than the remaining bytes, negative, 2^31 - 1), inputs truncated at every position, overlong and unterminated varints, and nesting deeper than a limit
+### [Done] TEST-0127 Adversarial byte strategies for decoder property tests: length prefixes that lie (larger than the remaining bytes, negative, 2^31 - 1), inputs truncated at every position, overlong and unterminated varints, and nesting deeper than a limit
 P0 · M1 · Task · deps: TEST-0125 · labels: test, decoder, security · ref: docs/standards/security.md#untrusted-input
 Done when: Each generator is tested to produce the adversarial shape it claims; PROTO and REC decoder property tests use them, and a decoder that allocates from an unchecked length fails a test built on them (shown with a toy decoder in the test suite).
 
