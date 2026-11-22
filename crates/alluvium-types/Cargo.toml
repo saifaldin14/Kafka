@@ -18,6 +18,7 @@ getrandom = { workspace = true }
 proptest = { workspace = true, optional = true }
 siphasher = { workspace = true }
 thiserror = { workspace = true }
+tokio = { workspace = true }
 zeroize = { workspace = true }
 
 [dev-dependencies]
