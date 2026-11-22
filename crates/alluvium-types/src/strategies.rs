@@ -16,9 +16,9 @@ use proptest::sample::{Index, select};
 
 use crate::{
     BrokerEpoch, BrokerId, ClientId, CorrelationId, GenerationId, GroupId, GroupInstanceId,
-    KeyHash, KeyRange, LeaderEpoch, MemberEpoch, MonotonicInstant, NodeId, Offset, OffsetRange,
-    OffsetSpec, PartitionIndex, ProducerEpoch, ProducerId, Sequence, TopicId, TopicIdPartition,
-    TopicName, TopicPartition, TransactionalId, Uuid, WallTime,
+    KeyHash, KeyRange, LeaderEpoch, MemberEpoch, MonotonicInstant, NamespaceId, NodeId, Offset,
+    OffsetRange, OffsetSpec, PartitionIndex, ProducerEpoch, ProducerId, Sequence, TopicId,
+    TopicIdPartition, TopicName, TopicPartition, TransactionalId, Uuid, WallTime,
 };
 
 /// Non-negative `i32` values, with extra weight on 0, 1 and `i32::MAX`.
@@ -412,4 +412,16 @@ pub fn key_space_partition() -> impl Strategy<Value = Vec<KeyRange>> {
             ranges
         })
         .prop_shuffle()
+}
+
+/// Valid [`NamespaceId`]s, biased towards the default namespace and the 1- and
+/// 63-character limits.
+pub fn namespace_id() -> impl Strategy<Value = NamespaceId> {
+    prop_oneof![
+        2 => Just("default".to_owned()),
+        1 => Just("a".to_owned()),
+        1 => "[a-z][a-z0-9-]{61}[a-z0-9]",
+        6 => "[a-z]([a-z0-9-]{0,61}[a-z0-9])?",
+    ]
+    .prop_filter_map("valid", |id| id.parse().ok())
 }
