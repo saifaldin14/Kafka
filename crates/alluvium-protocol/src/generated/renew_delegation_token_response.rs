@@ -5,6 +5,8 @@
 
 //! The `RenewDelegationTokenResponse` response.
 
+use crate::WithinField as _;
+
 /// The `RenewDelegationTokenResponse` response, API key 39: versions 1-2, flexible versions
 /// 2+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -39,6 +41,35 @@ impl RenewDelegationTokenResponse {
 }
 
 impl RenewDelegationTokenResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<RenewDelegationTokenResponse, crate::DecodeError> {
+        let mut value = RenewDelegationTokenResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.expiry_timestamp_ms = reader.read_i64().within("ExpiryTimestampMs")?;
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        if version == 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl RenewDelegationTokenResponse {
     /// The API key.
     pub const API_KEY: i16 = 39;
     /// The versions of this message.
@@ -47,4 +78,15 @@ impl RenewDelegationTokenResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(2, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for RenewDelegationTokenResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<RenewDelegationTokenResponse, crate::DecodeError> {
+        if !RenewDelegationTokenResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("RenewDelegationTokenResponse", version));
+        }
+        RenewDelegationTokenResponse::read(reader, version)
+    }
 }

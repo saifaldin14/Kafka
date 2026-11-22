@@ -5,8 +5,9 @@
 
 use std::mem::size_of;
 
+use alluvium_protocol::generated::response_header::ResponseHeader;
 use alluvium_protocol::{
-    DecodeErrorKind, DecodeLimits, Framing, Limit, RawTaggedField, Reader, Writer,
+    DecodeErrorKind, DecodeLimits, Framing, Limit, Message, RawTaggedField, Reader, Writer,
 };
 use peak_alloc::PeakAlloc;
 
@@ -101,5 +102,28 @@ fn declared_sizes_do_not_drive_allocation() {
     assert!(
         peak <= budget,
         "peak {peak} bytes over the {budget}-byte budget"
+    );
+
+    // An unknown tagged field kept under a budget of one slot allocates one slot, not
+    // the four `Vec` would allocate on its first push: capacity is charged before it is
+    // allocated. The rest of the peak is the shared header slicing the input may make.
+    let slot = size_of::<RawTaggedField>();
+    let mut writer = Writer::new();
+    writer.write_i32(1);
+    writer.write_unsigned_varint(1);
+    writer.write_unsigned_varint(0);
+    writer.write_unsigned_varint(0);
+    let input = writer.into_bytes();
+    let limits = DecodeLimits {
+        allocation_budget: slot,
+        ..DecodeLimits::default()
+    };
+    let peak = peak_during(|| {
+        let header = ResponseHeader::decode(&mut Reader::with_limits(input, limits), 1).unwrap();
+        assert_eq!(header.unknown_tagged_fields.len(), 1);
+    });
+    assert!(
+        peak < 2 * slot,
+        "peak {peak} bytes for one kept tagged field"
     );
 }

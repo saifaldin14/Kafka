@@ -5,6 +5,8 @@
 
 //! The `DescribeLogDirsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `DescribeLogDirsRequest` request, API key 35: versions 1-5, flexible versions 2+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DescribeLogDirsRequest {
@@ -18,10 +20,39 @@ pub struct DescribeLogDirsRequest {
 
 impl Default for DescribeLogDirsRequest {
     fn default() -> DescribeLogDirsRequest {
-        DescribeLogDirsRequest {
-            topics: Some(Vec::new()),
-            unknown_tagged_fields: Vec::new(),
+        DescribeLogDirsRequest { topics: Some(Vec::new()), unknown_tagged_fields: Vec::new() }
+    }
+}
+
+impl DescribeLogDirsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeLogDirsRequest, crate::DecodeError> {
+        let mut value = DescribeLogDirsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topics = reader
+            .read_nullable_array(
+                if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| DescribableLogDirTopic::read(reader, version),
+            )
+            .within("Topics")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
         }
+        Ok(())
     }
 }
 
@@ -54,9 +85,46 @@ impl DescribableLogDirTopic {
         elements: &'a [DescribableLogDirTopic],
         topic: &str,
     ) -> impl Iterator<Item = &'a DescribableLogDirTopic> {
-        elements
-            .iter()
-            .filter(move |element| element.topic == topic)
+        elements.iter().filter(move |element| element.topic == topic)
+    }
+}
+
+impl DescribableLogDirTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribableLogDirTopic, crate::DecodeError> {
+        let mut value = DescribableLogDirTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Topic")?;
+        self.partitions = reader
+            .read_array(
+                if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                crate::Reader::read_i32,
+            )
+            .within("Partitions")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -72,4 +140,15 @@ impl DescribeLogDirsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for DescribeLogDirsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeLogDirsRequest, crate::DecodeError> {
+        if !DescribeLogDirsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DescribeLogDirsRequest", version));
+        }
+        DescribeLogDirsRequest::read(reader, version)
+    }
 }

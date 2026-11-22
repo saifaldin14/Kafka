@@ -4,6 +4,8 @@
 
 //! The `AllTypeMessage` header.
 
+use crate::WithinField as _;
+
 /// The `AllTypeMessage` header: versions 0-1, flexible versions 1+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AllTypeMessage {
@@ -142,6 +144,107 @@ impl Default for AllTypeMessage {
     }
 }
 
+impl AllTypeMessage {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AllTypeMessage, crate::DecodeError> {
+        let mut value = AllTypeMessage::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.my_boolean = reader.read_bool().within("myBoolean")?;
+        self.my_int8 = reader.read_i8().within("myInt8")?;
+        self.my_int16 = reader.read_i16().within("myInt16")?;
+        self.my_uint16 = reader.read_u16().within("myUint16")?;
+        self.my_int32 = reader.read_i32().within("myInt32")?;
+        self.my_uint32 = reader.read_u32().within("myUint32")?;
+        self.my_uint64 = reader.read_i64().within("myUint64")?;
+        self.my_uuid = reader.read_uuid().within("myUuid")?;
+        self.my_float64 = reader.read_f64().within("myFloat64")?;
+        if version == 0 {
+            self.my_string = reader.read_string(crate::Framing::Classic).within("myString")?;
+            self.my_nullable_string =
+                reader.read_nullable_string(crate::Framing::Classic).within("myNullableString")?;
+        }
+        if version == 1 {
+            self.my_compact_string =
+                reader.read_string(crate::Framing::Compact).within("myCompactString")?;
+            self.my_compact_nullable_string = reader
+                .read_nullable_string(crate::Framing::Compact)
+                .within("myCompactNullableString")?;
+        }
+        if version == 0 {
+            self.my_bytes = reader.read_bytes(crate::Framing::Classic).within("myBytes")?;
+            self.my_nullable_bytes =
+                reader.read_nullable_bytes(crate::Framing::Classic).within("myNullableBytes")?;
+        }
+        if version == 1 {
+            self.my_compact_bytes =
+                reader.read_bytes(crate::Framing::Compact).within("myCompactBytes")?;
+            self.my_compact_nullable_bytes = reader
+                .read_nullable_bytes(crate::Framing::Compact)
+                .within("myCompactNullableBytes")?;
+        }
+        if version == 0 {
+            self.my_records = reader
+                .read_bytes(crate::Framing::Classic)
+                .map(crate::RecordsField::new)
+                .map(Some)
+                .within("myRecords")?;
+            self.my_nullable_records =
+                reader.read_records(crate::Framing::Classic).within("myNullableRecords")?;
+        }
+        if version == 1 {
+            self.my_compact_records = reader
+                .read_bytes(crate::Framing::Compact)
+                .map(crate::RecordsField::new)
+                .map(Some)
+                .within("myCompactRecords")?;
+            self.my_compact_nullable_records =
+                reader.read_records(crate::Framing::Compact).within("myCompactNullableRecords")?;
+        }
+        self.my_int_array = reader
+            .read_array(
+                if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+                crate::Reader::read_i32,
+            )
+            .within("myIntArray")?;
+        self.my_nullable_int_array = reader
+            .read_nullable_array(
+                if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+                crate::Reader::read_i32,
+            )
+            .within("myNullableIntArray")?;
+        self.my_common_struct = if version == 1 {
+            reader.read_i8().and_then(|marker| {
+                if marker < 0 {
+                    Ok(None)
+                } else {
+                    TestCommonStruct::read(reader, version).map(Some)
+                }
+            })
+        } else {
+            TestCommonStruct::read(reader, version).map(Some)
+        }
+        .within("myCommonStruct")?;
+        if version == 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// `TestCommonStruct`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TestCommonStruct {
@@ -159,11 +262,35 @@ pub struct TestCommonStruct {
 
 impl Default for TestCommonStruct {
     fn default() -> TestCommonStruct {
-        TestCommonStruct {
-            foo: 123,
-            bar: 123,
-            unknown_tagged_fields: Vec::new(),
+        TestCommonStruct { foo: 123, bar: 123, unknown_tagged_fields: Vec::new() }
+    }
+}
+
+impl TestCommonStruct {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TestCommonStruct, crate::DecodeError> {
+        let mut value = TestCommonStruct::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.foo = reader.read_i32().within("foo")?;
+        self.bar = reader.read_i32().within("bar")?;
+        if version >= 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
         }
+        Ok(())
     }
 }
 
@@ -174,4 +301,15 @@ impl AllTypeMessage {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(1, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for AllTypeMessage {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AllTypeMessage, crate::DecodeError> {
+        if !AllTypeMessage::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("AllTypeMessage", version));
+        }
+        AllTypeMessage::read(reader, version)
+    }
 }

@@ -4,6 +4,8 @@
 
 //! The `OffsetDeleteRequest` request.
 
+use crate::WithinField as _;
+
 /// The `OffsetDeleteRequest` request, API key 47: versions 0, flexible versions none.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct OffsetDeleteRequest {
@@ -15,6 +17,31 @@ pub struct OffsetDeleteRequest {
     ///
     /// Versions 0+.
     pub topics: Vec<OffsetDeleteRequestTopic>,
+}
+
+impl OffsetDeleteRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetDeleteRequest, crate::DecodeError> {
+        let mut value = OffsetDeleteRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.group_id = reader.read_string(crate::Framing::Classic).within("GroupId")?;
+        self.topics = reader
+            .read_array(crate::Framing::Classic, |reader| {
+                OffsetDeleteRequestTopic::read(reader, version)
+            })
+            .within("Topics")?;
+        Ok(())
+    }
 }
 
 /// An element of `OffsetDeleteRequest`'s `Topics` array.
@@ -48,6 +75,31 @@ impl OffsetDeleteRequestTopic {
     }
 }
 
+impl OffsetDeleteRequestTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetDeleteRequestTopic, crate::DecodeError> {
+        let mut value = OffsetDeleteRequestTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Classic).within("Name")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Classic, |reader| {
+                OffsetDeleteRequestPartition::read(reader, version)
+            })
+            .within("Partitions")?;
+        Ok(())
+    }
+}
+
 /// An element of `OffsetDeleteRequestTopic`'s `Partitions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct OffsetDeleteRequestPartition {
@@ -55,6 +107,26 @@ pub struct OffsetDeleteRequestPartition {
     ///
     /// Versions 0+.
     pub partition_index: i32,
+}
+
+impl OffsetDeleteRequestPartition {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetDeleteRequestPartition, crate::DecodeError> {
+        let mut value = OffsetDeleteRequestPartition::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        Ok(())
+    }
 }
 
 impl OffsetDeleteRequest {
@@ -69,4 +141,15 @@ impl OffsetDeleteRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for OffsetDeleteRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetDeleteRequest, crate::DecodeError> {
+        if !OffsetDeleteRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("OffsetDeleteRequest", version));
+        }
+        OffsetDeleteRequest::read(reader, version)
+    }
 }

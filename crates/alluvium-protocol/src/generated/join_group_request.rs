@@ -4,6 +4,8 @@
 
 //! The `JoinGroupRequest` request.
 
+use crate::WithinField as _;
+
 /// The `JoinGroupRequest` request, API key 11: versions 0-9, flexible versions 6+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct JoinGroupRequest {
@@ -61,6 +63,75 @@ impl Default for JoinGroupRequest {
     }
 }
 
+impl JoinGroupRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<JoinGroupRequest, crate::DecodeError> {
+        let mut value = JoinGroupRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.group_id = reader
+            .read_string(if version >= 6 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("GroupId")?;
+        self.session_timeout_ms = reader.read_i32().within("SessionTimeoutMs")?;
+        if version >= 1 {
+            self.rebalance_timeout_ms = reader.read_i32().within("RebalanceTimeoutMs")?;
+        }
+        self.member_id = reader
+            .read_string(if version >= 6 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("MemberId")?;
+        if version >= 5 {
+            self.group_instance_id = reader
+                .read_nullable_string(if version >= 6 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("GroupInstanceId")?;
+        }
+        self.protocol_type = reader
+            .read_string(if version >= 6 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ProtocolType")?;
+        self.protocols = reader
+            .read_array(
+                if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| JoinGroupRequestProtocol::read(reader, version),
+            )
+            .within("Protocols")?;
+        if version >= 8 {
+            self.reason = reader.read_nullable_string(crate::Framing::Compact).within("Reason")?;
+        }
+        if version >= 6 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `JoinGroupRequest`'s `Protocols` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct JoinGroupRequestProtocol {
@@ -94,6 +165,46 @@ impl JoinGroupRequestProtocol {
     }
 }
 
+impl JoinGroupRequestProtocol {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<JoinGroupRequestProtocol, crate::DecodeError> {
+        let mut value = JoinGroupRequestProtocol::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader
+            .read_string(if version >= 6 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Name")?;
+        self.metadata = reader
+            .read_bytes(if version >= 6 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Metadata")?;
+        if version >= 6 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl JoinGroupRequest {
     /// The API key.
     pub const API_KEY: i16 = 11;
@@ -106,4 +217,15 @@ impl JoinGroupRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for JoinGroupRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<JoinGroupRequest, crate::DecodeError> {
+        if !JoinGroupRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("JoinGroupRequest", version));
+        }
+        JoinGroupRequest::read(reader, version)
+    }
 }

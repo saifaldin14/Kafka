@@ -5,6 +5,8 @@
 
 //! The `NullableStructMessage` header.
 
+use crate::WithinField as _;
+
 /// The `NullableStructMessage` header: versions 0-2, flexible versions 1+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NullableStructMessage {
@@ -40,6 +42,73 @@ impl Default for NullableStructMessage {
     }
 }
 
+impl NullableStructMessage {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<NullableStructMessage, crate::DecodeError> {
+        let mut value = NullableStructMessage::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.nullable_struct =
+            reader
+                .read_i8()
+                .and_then(|marker| {
+                    if marker < 0 { Ok(None) } else { MyStruct::read(reader, version).map(Some) }
+                })
+                .within("NullableStruct")?;
+        self.nullable_struct2 = if version >= 1 {
+            reader.read_i8().and_then(|marker| {
+                if marker < 0 { Ok(None) } else { MyStruct2::read(reader, version).map(Some) }
+            })
+        } else {
+            MyStruct2::read(reader, version).map(Some)
+        }
+        .within("NullableStruct2")?;
+        if version >= 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                if tag == 0 {
+                    self.nullable_struct3 = reader
+                        .read_tagged_value(tag, size, |reader| {
+                            reader.read_unsigned_varint().and_then(|marker| {
+                                if marker.cast_signed() <= 0 {
+                                    Ok(None)
+                                } else {
+                                    MyStruct3::read(reader, version).map(Some)
+                                }
+                            })
+                        })
+                        .within("NullableStruct3")?;
+                } else if tag == 1 {
+                    self.nullable_struct4 = reader
+                        .read_tagged_value(tag, size, |reader| {
+                            reader.read_unsigned_varint().and_then(|marker| {
+                                if marker.cast_signed() <= 0 {
+                                    Ok(None)
+                                } else {
+                                    MyStruct4::read(reader, version).map(Some)
+                                }
+                            })
+                        })
+                        .within("NullableStruct4")?;
+                } else {
+                    reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
 /// The `NullableStruct` field of `NullableStructMessage`.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct MyStruct {
@@ -53,6 +122,37 @@ pub struct MyStruct {
     pub my_int: i32,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl MyStruct {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<MyStruct, crate::DecodeError> {
+        let mut value = MyStruct::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.my_string = reader
+            .read_string(if version >= 1 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("MyString")?;
+        self.my_int = reader.read_i32().within("MyInt")?;
+        if version >= 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// The `NullableStruct2` field of `NullableStructMessage`.
@@ -70,6 +170,37 @@ pub struct MyStruct2 {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl MyStruct2 {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<MyStruct2, crate::DecodeError> {
+        let mut value = MyStruct2::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.my_string = reader
+            .read_string(if version >= 1 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("MyString")?;
+        self.my_int = reader.read_i32().within("MyInt")?;
+        if version >= 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// The `NullableStruct3` field of `NullableStructMessage`.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct MyStruct3 {
@@ -83,6 +214,29 @@ pub struct MyStruct3 {
     pub my_int: i32,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl MyStruct3 {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<MyStruct3, crate::DecodeError> {
+        let mut value = MyStruct3::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.my_string = reader.read_string(crate::Framing::Compact).within("MyString")?;
+        self.my_int = reader.read_i32().within("MyInt")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// The `NullableStruct4` field of `NullableStructMessage`.
@@ -100,6 +254,29 @@ pub struct MyStruct4 {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl MyStruct4 {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<MyStruct4, crate::DecodeError> {
+        let mut value = MyStruct4::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.my_string = reader.read_string(crate::Framing::Compact).within("MyString")?;
+        self.my_int = reader.read_i32().within("MyInt")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl NullableStructMessage {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 2);
@@ -107,4 +284,15 @@ impl NullableStructMessage {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(1, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for NullableStructMessage {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<NullableStructMessage, crate::DecodeError> {
+        if !NullableStructMessage::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("NullableStructMessage", version));
+        }
+        NullableStructMessage::read(reader, version)
+    }
 }

@@ -4,6 +4,8 @@
 
 //! The `DeleteAclsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `DeleteAclsResponse` response, API key 31: versions 1-3, flexible versions 2+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DeleteAclsResponse {
@@ -18,6 +20,39 @@ pub struct DeleteAclsResponse {
     pub filter_results: Vec<DeleteAclsFilterResult>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl DeleteAclsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeleteAclsResponse, crate::DecodeError> {
+        let mut value = DeleteAclsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.filter_results = reader
+            .read_array(
+                if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| DeleteAclsFilterResult::read(reader, version),
+            )
+            .within("FilterResults")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `DeleteAclsResponse`'s `FilterResults` array.
@@ -59,6 +94,46 @@ impl DeleteAclsFilterResult {
     /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
     pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
         crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
+impl DeleteAclsFilterResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeleteAclsFilterResult, crate::DecodeError> {
+        let mut value = DeleteAclsFilterResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message = reader
+            .read_nullable_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ErrorMessage")?;
+        self.matching_acls = reader
+            .read_array(
+                if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| DeleteAclsMatchingAcl::read(reader, version),
+            )
+            .within("MatchingAcls")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -134,6 +209,65 @@ impl DeleteAclsMatchingAcl {
     }
 }
 
+impl DeleteAclsMatchingAcl {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeleteAclsMatchingAcl, crate::DecodeError> {
+        let mut value = DeleteAclsMatchingAcl::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message = reader
+            .read_nullable_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ErrorMessage")?;
+        self.resource_type = reader.read_i8().within("ResourceType")?;
+        self.resource_name = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ResourceName")?;
+        self.pattern_type = reader.read_i8().within("PatternType")?;
+        self.principal = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Principal")?;
+        self.host = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Host")?;
+        self.operation = reader.read_i8().within("Operation")?;
+        self.permission_type = reader.read_i8().within("PermissionType")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl DeleteAclsResponse {
     /// The API key.
     pub const API_KEY: i16 = 31;
@@ -143,4 +277,15 @@ impl DeleteAclsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(2, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for DeleteAclsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeleteAclsResponse, crate::DecodeError> {
+        if !DeleteAclsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DeleteAclsResponse", version));
+        }
+        DeleteAclsResponse::read(reader, version)
+    }
 }

@@ -5,6 +5,8 @@
 
 //! The `ShareGroupDescribeResponse` response.
 
+use crate::WithinField as _;
+
 /// The `ShareGroupDescribeResponse` response, API key 77: versions 1, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ShareGroupDescribeResponse {
@@ -19,6 +21,34 @@ pub struct ShareGroupDescribeResponse {
     pub groups: Vec<DescribedGroup>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl ShareGroupDescribeResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ShareGroupDescribeResponse, crate::DecodeError> {
+        let mut value = ShareGroupDescribeResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.groups = reader
+            .read_array(crate::Framing::Compact, |reader| DescribedGroup::read(reader, version))
+            .within("Groups")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `ShareGroupDescribeResponse`'s `Groups` array.
@@ -93,6 +123,42 @@ impl DescribedGroup {
     }
 }
 
+impl DescribedGroup {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribedGroup, crate::DecodeError> {
+        let mut value = DescribedGroup::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message =
+            reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        self.group_id = reader.read_string(crate::Framing::Compact).within("GroupId")?;
+        self.group_state = reader.read_string(crate::Framing::Compact).within("GroupState")?;
+        self.group_epoch = reader.read_i32().within("GroupEpoch")?;
+        self.assignment_epoch = reader.read_i32().within("AssignmentEpoch")?;
+        self.assignor_name = reader.read_string(crate::Framing::Compact).within("AssignorName")?;
+        self.members = reader
+            .read_array(crate::Framing::Compact, |reader| Member::read(reader, version))
+            .within("Members")?;
+        self.authorized_operations = reader.read_i32().within("AuthorizedOperations")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribedGroup`'s `Members` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Member {
@@ -128,6 +194,38 @@ pub struct Member {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl Member {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<Member, crate::DecodeError> {
+        let mut value = Member::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.member_id = reader.read_string(crate::Framing::Compact).within("MemberId")?;
+        self.rack_id = reader.read_nullable_string(crate::Framing::Compact).within("RackId")?;
+        self.member_epoch = reader.read_i32().within("MemberEpoch")?;
+        self.client_id = reader.read_string(crate::Framing::Compact).within("ClientId")?;
+        self.client_host = reader.read_string(crate::Framing::Compact).within("ClientHost")?;
+        self.subscribed_topic_names = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                reader.read_string(crate::Framing::Compact)
+            })
+            .within("SubscribedTopicNames")?;
+        self.assignment = Assignment::read(reader, version).within("Assignment")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// `Assignment`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Assignment {
@@ -137,6 +235,30 @@ pub struct Assignment {
     pub topic_partitions: Vec<TopicPartitions>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl Assignment {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<Assignment, crate::DecodeError> {
+        let mut value = Assignment::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_partitions = reader
+            .read_array(crate::Framing::Compact, |reader| TopicPartitions::read(reader, version))
+            .within("TopicPartitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// `TopicPartitions`, a struct several fields share.
@@ -169,6 +291,35 @@ impl Default for TopicPartitions {
     }
 }
 
+impl TopicPartitions {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TopicPartitions, crate::DecodeError> {
+        let mut value = TopicPartitions::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_id = reader.read_uuid().within("TopicId")?;
+        self.topic_name = reader.read_string(crate::Framing::Compact).within("TopicName")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, crate::Reader::read_i32)
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl ShareGroupDescribeResponse {
     /// The API key.
     pub const API_KEY: i16 = 77;
@@ -178,4 +329,15 @@ impl ShareGroupDescribeResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for ShareGroupDescribeResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ShareGroupDescribeResponse, crate::DecodeError> {
+        if !ShareGroupDescribeResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ShareGroupDescribeResponse", version));
+        }
+        ShareGroupDescribeResponse::read(reader, version)
+    }
 }

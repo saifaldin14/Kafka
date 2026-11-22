@@ -5,6 +5,8 @@
 
 //! The `DescribeDelegationTokenRequest` request.
 
+use crate::WithinField as _;
+
 /// The `DescribeDelegationTokenRequest` request, API key 41: versions 1-3, flexible
 /// versions 2+.
 #[derive(Debug, Clone, PartialEq)]
@@ -27,6 +29,38 @@ impl Default for DescribeDelegationTokenRequest {
     }
 }
 
+impl DescribeDelegationTokenRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeDelegationTokenRequest, crate::DecodeError> {
+        let mut value = DescribeDelegationTokenRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.owners = reader
+            .read_nullable_array(
+                if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| DescribeDelegationTokenOwner::read(reader, version),
+            )
+            .within("Owners")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribeDelegationTokenRequest`'s `Owners` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DescribeDelegationTokenOwner {
@@ -42,6 +76,46 @@ pub struct DescribeDelegationTokenOwner {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl DescribeDelegationTokenOwner {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeDelegationTokenOwner, crate::DecodeError> {
+        let mut value = DescribeDelegationTokenOwner::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.principal_type = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("PrincipalType")?;
+        self.principal_name = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("PrincipalName")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl DescribeDelegationTokenRequest {
     /// The API key.
     pub const API_KEY: i16 = 41;
@@ -54,4 +128,15 @@ impl DescribeDelegationTokenRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for DescribeDelegationTokenRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeDelegationTokenRequest, crate::DecodeError> {
+        if !DescribeDelegationTokenRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DescribeDelegationTokenRequest", version));
+        }
+        DescribeDelegationTokenRequest::read(reader, version)
+    }
 }

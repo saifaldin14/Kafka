@@ -4,6 +4,8 @@
 
 //! The `ApiVersionsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `ApiVersionsRequest` request, API key 18: versions 0-5, flexible versions 3+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ApiVersionsRequest {
@@ -42,6 +44,43 @@ impl Default for ApiVersionsRequest {
 }
 
 impl ApiVersionsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ApiVersionsRequest, crate::DecodeError> {
+        let mut value = ApiVersionsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version >= 3 {
+            self.client_software_name =
+                reader.read_string(crate::Framing::Compact).within("ClientSoftwareName")?;
+            self.client_software_version =
+                reader.read_string(crate::Framing::Compact).within("ClientSoftwareVersion")?;
+        }
+        if version == 5 {
+            self.cluster_id =
+                reader.read_nullable_string(crate::Framing::Compact).within("ClusterId")?;
+            self.node_id = reader.read_i32().within("NodeId")?;
+        }
+        if version >= 3 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl ApiVersionsRequest {
     /// The API key.
     pub const API_KEY: i16 = 18;
     /// The versions of this message.
@@ -53,4 +92,15 @@ impl ApiVersionsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for ApiVersionsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ApiVersionsRequest, crate::DecodeError> {
+        if !ApiVersionsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ApiVersionsRequest", version));
+        }
+        ApiVersionsRequest::read(reader, version)
+    }
 }

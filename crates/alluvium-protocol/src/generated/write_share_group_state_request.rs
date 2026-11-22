@@ -5,6 +5,8 @@
 
 //! The `WriteShareGroupStateRequest` request.
 
+use crate::WithinField as _;
+
 /// The `WriteShareGroupStateRequest` request, API key 85: versions 0-1, flexible versions
 /// 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -19,6 +21,34 @@ pub struct WriteShareGroupStateRequest {
     pub topics: Vec<WriteStateData>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl WriteShareGroupStateRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<WriteShareGroupStateRequest, crate::DecodeError> {
+        let mut value = WriteShareGroupStateRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.group_id = reader.read_string(crate::Framing::Compact).within("GroupId")?;
+        self.topics = reader
+            .read_array(crate::Framing::Compact, |reader| WriteStateData::read(reader, version))
+            .within("Topics")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `WriteShareGroupStateRequest`'s `Topics` array.
@@ -43,6 +73,34 @@ impl Default for WriteStateData {
             partitions: Vec::new(),
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl WriteStateData {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<WriteStateData, crate::DecodeError> {
+        let mut value = WriteStateData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_id = reader.read_uuid().within("TopicId")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, |reader| PartitionData::read(reader, version))
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -92,6 +150,37 @@ impl Default for PartitionData {
     }
 }
 
+impl PartitionData {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<PartitionData, crate::DecodeError> {
+        let mut value = PartitionData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition = reader.read_i32().within("Partition")?;
+        self.state_epoch = reader.read_i32().within("StateEpoch")?;
+        self.leader_epoch = reader.read_i32().within("LeaderEpoch")?;
+        self.start_offset = reader.read_i64().within("StartOffset")?;
+        if version == 1 {
+            self.delivery_complete_count = reader.read_i32().within("DeliveryCompleteCount")?;
+        }
+        self.state_batches = reader
+            .read_array(crate::Framing::Compact, |reader| StateBatch::read(reader, version))
+            .within("StateBatches")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `PartitionData`'s `StateBatches` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct StateBatch {
@@ -115,6 +204,31 @@ pub struct StateBatch {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl StateBatch {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<StateBatch, crate::DecodeError> {
+        let mut value = StateBatch::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.first_offset = reader.read_i64().within("FirstOffset")?;
+        self.last_offset = reader.read_i64().within("LastOffset")?;
+        self.delivery_state = reader.read_i8().within("DeliveryState")?;
+        self.delivery_count = reader.read_i16().within("DeliveryCount")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl WriteShareGroupStateRequest {
     /// The API key.
     pub const API_KEY: i16 = 85;
@@ -127,4 +241,15 @@ impl WriteShareGroupStateRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for WriteShareGroupStateRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<WriteShareGroupStateRequest, crate::DecodeError> {
+        if !WriteShareGroupStateRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("WriteShareGroupStateRequest", version));
+        }
+        WriteShareGroupStateRequest::read(reader, version)
+    }
 }

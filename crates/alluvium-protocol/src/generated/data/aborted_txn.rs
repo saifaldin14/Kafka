@@ -4,6 +4,8 @@
 
 //! The `AbortedTxn` data type.
 
+use crate::WithinField as _;
+
 /// The `AbortedTxn` data type: versions 0, flexible versions none.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AbortedTxn {
@@ -26,10 +28,38 @@ pub struct AbortedTxn {
 }
 
 impl AbortedTxn {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<AbortedTxn, crate::DecodeError> {
+        let mut value = AbortedTxn::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.producer_id = reader.read_i64().within("ProducerId")?;
+        self.first_offset = reader.read_i64().within("FirstOffset")?;
+        self.last_offset = reader.read_i64().within("LastOffset")?;
+        self.last_stable_offset = reader.read_i64().within("LastStableOffset")?;
+        Ok(())
+    }
+}
+
+impl AbortedTxn {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 0);
     /// The versions that use the flexible encoding.
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::NONE;
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for AbortedTxn {
+    fn decode(reader: &mut crate::Reader, version: i16) -> Result<AbortedTxn, crate::DecodeError> {
+        if !AbortedTxn::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("AbortedTxn", version));
+        }
+        AbortedTxn::read(reader, version)
+    }
 }

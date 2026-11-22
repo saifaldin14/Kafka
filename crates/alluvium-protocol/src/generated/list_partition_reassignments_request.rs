@@ -5,6 +5,8 @@
 
 //! The `ListPartitionReassignmentsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `ListPartitionReassignmentsRequest` request, API key 46: versions 0, flexible
 /// versions 0+.
 #[derive(Debug, Clone, PartialEq)]
@@ -31,6 +33,36 @@ impl Default for ListPartitionReassignmentsRequest {
     }
 }
 
+impl ListPartitionReassignmentsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListPartitionReassignmentsRequest, crate::DecodeError> {
+        let mut value = ListPartitionReassignmentsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.timeout_ms = reader.read_i32().within("TimeoutMs")?;
+        self.topics = reader
+            .read_nullable_array(crate::Framing::Compact, |reader| {
+                ListPartitionReassignmentsTopics::read(reader, version)
+            })
+            .within("Topics")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `ListPartitionReassignmentsRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ListPartitionReassignmentsTopics {
@@ -46,6 +78,34 @@ pub struct ListPartitionReassignmentsTopics {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl ListPartitionReassignmentsTopics {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListPartitionReassignmentsTopics, crate::DecodeError> {
+        let mut value = ListPartitionReassignmentsTopics::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        self.partition_indexes = reader
+            .read_array(crate::Framing::Compact, crate::Reader::read_i32)
+            .within("PartitionIndexes")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl ListPartitionReassignmentsRequest {
     /// The API key.
     pub const API_KEY: i16 = 46;
@@ -58,4 +118,15 @@ impl ListPartitionReassignmentsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for ListPartitionReassignmentsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListPartitionReassignmentsRequest, crate::DecodeError> {
+        if !ListPartitionReassignmentsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ListPartitionReassignmentsRequest", version));
+        }
+        ListPartitionReassignmentsRequest::read(reader, version)
+    }
 }

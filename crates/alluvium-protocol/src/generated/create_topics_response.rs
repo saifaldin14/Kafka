@@ -4,6 +4,8 @@
 
 //! The `CreateTopicsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `CreateTopicsResponse` response, API key 19: versions 2-7, flexible versions 5+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CreateTopicsResponse {
@@ -18,6 +20,39 @@ pub struct CreateTopicsResponse {
     pub topics: Vec<CreatableTopicResult>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl CreateTopicsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreateTopicsResponse, crate::DecodeError> {
+        let mut value = CreateTopicsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.topics = reader
+            .read_array(
+                if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| CreatableTopicResult::read(reader, version),
+            )
+            .within("Topics")?;
+        if version >= 5 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `CreateTopicsResponse`'s `Topics` array.
@@ -115,6 +150,65 @@ impl CreatableTopicResult {
     }
 }
 
+impl CreatableTopicResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreatableTopicResult, crate::DecodeError> {
+        let mut value = CreatableTopicResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader
+            .read_string(if version >= 5 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Name")?;
+        if version == 7 {
+            self.topic_id = reader.read_uuid().within("TopicId")?;
+        }
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message = reader
+            .read_nullable_string(if version >= 5 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ErrorMessage")?;
+        if version >= 5 {
+            self.num_partitions = reader.read_i32().within("NumPartitions")?;
+            self.replication_factor = reader.read_i16().within("ReplicationFactor")?;
+            self.configs = reader
+                .read_nullable_array(crate::Framing::Compact, |reader| {
+                    CreatableTopicConfigs::read(reader, version)
+                })
+                .within("Configs")?;
+        }
+        if version >= 5 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                if tag == 0 {
+                    self.topic_config_error_code = reader
+                        .read_tagged_value(tag, size, crate::Reader::read_i16)
+                        .within("TopicConfigErrorCode")?;
+                } else {
+                    reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `CreatableTopicResult`'s `Configs` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CreatableTopicConfigs {
@@ -155,6 +249,35 @@ impl Default for CreatableTopicConfigs {
     }
 }
 
+impl CreatableTopicConfigs {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreatableTopicConfigs, crate::DecodeError> {
+        let mut value = CreatableTopicConfigs::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        self.value = reader.read_nullable_string(crate::Framing::Compact).within("Value")?;
+        self.read_only = reader.read_bool().within("ReadOnly")?;
+        self.config_source = reader.read_i8().within("ConfigSource")?;
+        self.is_sensitive = reader.read_bool().within("IsSensitive")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl CreateTopicsResponse {
     /// The API key.
     pub const API_KEY: i16 = 19;
@@ -164,4 +287,15 @@ impl CreateTopicsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(5, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for CreateTopicsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreateTopicsResponse, crate::DecodeError> {
+        if !CreateTopicsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("CreateTopicsResponse", version));
+        }
+        CreateTopicsResponse::read(reader, version)
+    }
 }

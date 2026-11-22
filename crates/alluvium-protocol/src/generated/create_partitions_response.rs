@@ -5,6 +5,8 @@
 
 //! The `CreatePartitionsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `CreatePartitionsResponse` response, API key 37: versions 0-3, flexible versions 2+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CreatePartitionsResponse {
@@ -19,6 +21,39 @@ pub struct CreatePartitionsResponse {
     pub results: Vec<CreatePartitionsTopicResult>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl CreatePartitionsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreatePartitionsResponse, crate::DecodeError> {
+        let mut value = CreatePartitionsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.results = reader
+            .read_array(
+                if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| CreatePartitionsTopicResult::read(reader, version),
+            )
+            .within("Results")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `CreatePartitionsResponse`'s `Results` array.
@@ -52,6 +87,47 @@ impl CreatePartitionsTopicResult {
     }
 }
 
+impl CreatePartitionsTopicResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreatePartitionsTopicResult, crate::DecodeError> {
+        let mut value = CreatePartitionsTopicResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Name")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message = reader
+            .read_nullable_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ErrorMessage")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl CreatePartitionsResponse {
     /// The API key.
     pub const API_KEY: i16 = 37;
@@ -61,4 +137,15 @@ impl CreatePartitionsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(2, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for CreatePartitionsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreatePartitionsResponse, crate::DecodeError> {
+        if !CreatePartitionsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("CreatePartitionsResponse", version));
+        }
+        CreatePartitionsResponse::read(reader, version)
+    }
 }

@@ -4,6 +4,8 @@
 
 //! The `ListGroupsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `ListGroupsRequest` request, API key 16: versions 0-5, flexible versions 3+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ListGroupsRequest {
@@ -22,6 +24,46 @@ pub struct ListGroupsRequest {
 }
 
 impl ListGroupsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListGroupsRequest, crate::DecodeError> {
+        let mut value = ListGroupsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version >= 4 {
+            self.states_filter = reader
+                .read_array(crate::Framing::Compact, |reader| {
+                    reader.read_string(crate::Framing::Compact)
+                })
+                .within("StatesFilter")?;
+        }
+        if version == 5 {
+            self.types_filter = reader
+                .read_array(crate::Framing::Compact, |reader| {
+                    reader.read_string(crate::Framing::Compact)
+                })
+                .within("TypesFilter")?;
+        }
+        if version >= 3 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl ListGroupsRequest {
     /// The API key.
     pub const API_KEY: i16 = 16;
     /// The versions of this message.
@@ -33,4 +75,15 @@ impl ListGroupsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for ListGroupsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListGroupsRequest, crate::DecodeError> {
+        if !ListGroupsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ListGroupsRequest", version));
+        }
+        ListGroupsRequest::read(reader, version)
+    }
 }

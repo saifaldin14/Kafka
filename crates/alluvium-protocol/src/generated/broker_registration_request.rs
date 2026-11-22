@@ -5,6 +5,8 @@
 
 //! The `BrokerRegistrationRequest` request.
 
+use crate::WithinField as _;
+
 /// The `BrokerRegistrationRequest` request, API key 62: versions 0-4, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct BrokerRegistrationRequest {
@@ -67,6 +69,51 @@ impl Default for BrokerRegistrationRequest {
     }
 }
 
+impl BrokerRegistrationRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<BrokerRegistrationRequest, crate::DecodeError> {
+        let mut value = BrokerRegistrationRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.broker_id = reader.read_i32().within("BrokerId")?;
+        self.cluster_id = reader.read_string(crate::Framing::Compact).within("ClusterId")?;
+        self.incarnation_id = reader.read_uuid().within("IncarnationId")?;
+        self.listeners = reader
+            .read_array(crate::Framing::Compact, |reader| Listener::read(reader, version))
+            .within("Listeners")?;
+        self.features = reader
+            .read_array(crate::Framing::Compact, |reader| Feature::read(reader, version))
+            .within("Features")?;
+        self.rack = reader.read_nullable_string(crate::Framing::Compact).within("Rack")?;
+        if version >= 1 {
+            self.is_migrating_zk_broker = reader.read_bool().within("IsMigratingZkBroker")?;
+        }
+        if version >= 2 {
+            self.log_dirs = reader
+                .read_array(crate::Framing::Compact, crate::Reader::read_uuid)
+                .within("LogDirs")?;
+        }
+        if version >= 3 {
+            self.previous_broker_epoch = reader.read_i64().within("PreviousBrokerEpoch")?;
+        }
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `BrokerRegistrationRequest`'s `Listeners` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Listener {
@@ -105,6 +152,31 @@ impl Listener {
     }
 }
 
+impl Listener {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<Listener, crate::DecodeError> {
+        let mut value = Listener::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        self.host = reader.read_string(crate::Framing::Compact).within("Host")?;
+        self.port = reader.read_u16().within("Port")?;
+        self.security_protocol = reader.read_i16().within("SecurityProtocol")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `BrokerRegistrationRequest`'s `Features` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Feature {
@@ -136,6 +208,30 @@ impl Feature {
     }
 }
 
+impl Feature {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<Feature, crate::DecodeError> {
+        let mut value = Feature::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        self.min_supported_version = reader.read_i16().within("MinSupportedVersion")?;
+        self.max_supported_version = reader.read_i16().within("MaxSupportedVersion")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl BrokerRegistrationRequest {
     /// The API key.
     pub const API_KEY: i16 = 62;
@@ -148,4 +244,15 @@ impl BrokerRegistrationRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for BrokerRegistrationRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<BrokerRegistrationRequest, crate::DecodeError> {
+        if !BrokerRegistrationRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("BrokerRegistrationRequest", version));
+        }
+        BrokerRegistrationRequest::read(reader, version)
+    }
 }

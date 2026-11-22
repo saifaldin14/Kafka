@@ -4,6 +4,8 @@
 
 //! The `SnapshotFooterRecord` data type.
 
+use crate::WithinField as _;
+
 /// The `SnapshotFooterRecord` data type: versions 0, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct SnapshotFooterRecord {
@@ -16,10 +18,46 @@ pub struct SnapshotFooterRecord {
 }
 
 impl SnapshotFooterRecord {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<SnapshotFooterRecord, crate::DecodeError> {
+        let mut value = SnapshotFooterRecord::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.version = reader.read_i16().within("Version")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
+impl SnapshotFooterRecord {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 0);
     /// The versions that use the flexible encoding.
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for SnapshotFooterRecord {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<SnapshotFooterRecord, crate::DecodeError> {
+        if !SnapshotFooterRecord::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("SnapshotFooterRecord", version));
+        }
+        SnapshotFooterRecord::read(reader, version)
+    }
 }

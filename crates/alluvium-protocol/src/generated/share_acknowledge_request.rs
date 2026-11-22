@@ -5,6 +5,8 @@
 
 //! The `ShareAcknowledgeRequest` request.
 
+use crate::WithinField as _;
+
 /// The `ShareAcknowledgeRequest` request, API key 79: versions 1-2, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ShareAcknowledgeRequest {
@@ -43,6 +45,39 @@ impl Default for ShareAcknowledgeRequest {
             topics: Vec::new(),
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl ShareAcknowledgeRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ShareAcknowledgeRequest, crate::DecodeError> {
+        let mut value = ShareAcknowledgeRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.group_id = reader.read_nullable_string(crate::Framing::Compact).within("GroupId")?;
+        self.member_id = reader.read_nullable_string(crate::Framing::Compact).within("MemberId")?;
+        self.share_session_epoch = reader.read_i32().within("ShareSessionEpoch")?;
+        if version == 2 {
+            self.is_renew_ack = reader.read_bool().within("IsRenewAck")?;
+        }
+        self.topics = reader
+            .read_array(crate::Framing::Compact, |reader| AcknowledgeTopic::read(reader, version))
+            .within("Topics")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -86,9 +121,37 @@ impl AcknowledgeTopic {
         elements: &[AcknowledgeTopic],
         topic_id: alluvium_types::Uuid,
     ) -> impl Iterator<Item = &AcknowledgeTopic> {
-        elements
-            .iter()
-            .filter(move |element| element.topic_id == topic_id)
+        elements.iter().filter(move |element| element.topic_id == topic_id)
+    }
+}
+
+impl AcknowledgeTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AcknowledgeTopic, crate::DecodeError> {
+        let mut value = AcknowledgeTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_id = reader.read_uuid().within("TopicId")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                AcknowledgePartition::read(reader, version)
+            })
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -114,9 +177,7 @@ impl AcknowledgePartition {
         elements: &[AcknowledgePartition],
         partition_index: i32,
     ) -> Option<&AcknowledgePartition> {
-        elements
-            .iter()
-            .find(|element| element.partition_index == partition_index)
+        elements.iter().find(|element| element.partition_index == partition_index)
     }
 
     /// Every element of `elements` whose key (`PartitionIndex`) equals the arguments, in
@@ -125,9 +186,37 @@ impl AcknowledgePartition {
         elements: &[AcknowledgePartition],
         partition_index: i32,
     ) -> impl Iterator<Item = &AcknowledgePartition> {
-        elements
-            .iter()
-            .filter(move |element| element.partition_index == partition_index)
+        elements.iter().filter(move |element| element.partition_index == partition_index)
+    }
+}
+
+impl AcknowledgePartition {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AcknowledgePartition, crate::DecodeError> {
+        let mut value = AcknowledgePartition::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.acknowledgement_batches = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                AcknowledgementBatch::read(reader, version)
+            })
+            .within("AcknowledgementBatches")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -150,6 +239,35 @@ pub struct AcknowledgementBatch {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl AcknowledgementBatch {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AcknowledgementBatch, crate::DecodeError> {
+        let mut value = AcknowledgementBatch::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.first_offset = reader.read_i64().within("FirstOffset")?;
+        self.last_offset = reader.read_i64().within("LastOffset")?;
+        self.acknowledge_types = reader
+            .read_array(crate::Framing::Compact, crate::Reader::read_i8)
+            .within("AcknowledgeTypes")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl ShareAcknowledgeRequest {
     /// The API key.
     pub const API_KEY: i16 = 79;
@@ -162,4 +280,15 @@ impl ShareAcknowledgeRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for ShareAcknowledgeRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ShareAcknowledgeRequest, crate::DecodeError> {
+        if !ShareAcknowledgeRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ShareAcknowledgeRequest", version));
+        }
+        ShareAcknowledgeRequest::read(reader, version)
+    }
 }

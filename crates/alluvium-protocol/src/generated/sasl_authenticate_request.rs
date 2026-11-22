@@ -5,6 +5,8 @@
 
 //! The `SaslAuthenticateRequest` request.
 
+use crate::WithinField as _;
+
 /// The `SaslAuthenticateRequest` request, API key 36: versions 0-2, flexible versions 2+.
 #[derive(Clone, PartialEq, Default)]
 pub struct SaslAuthenticateRequest {
@@ -26,6 +28,39 @@ impl std::fmt::Debug for SaslAuthenticateRequest {
 }
 
 impl SaslAuthenticateRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<SaslAuthenticateRequest, crate::DecodeError> {
+        let mut value = SaslAuthenticateRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.auth_bytes = reader
+            .read_bytes(if version == 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("AuthBytes")?;
+        if version == 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl SaslAuthenticateRequest {
     /// The API key.
     pub const API_KEY: i16 = 36;
     /// The versions of this message.
@@ -37,4 +72,15 @@ impl SaslAuthenticateRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for SaslAuthenticateRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<SaslAuthenticateRequest, crate::DecodeError> {
+        if !SaslAuthenticateRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("SaslAuthenticateRequest", version));
+        }
+        SaslAuthenticateRequest::read(reader, version)
+    }
 }

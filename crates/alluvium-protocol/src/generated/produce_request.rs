@@ -4,6 +4,8 @@
 
 //! The `ProduceRequest` request.
 
+use crate::WithinField as _;
+
 /// The `ProduceRequest` request, API key 0: versions 3-13, flexible versions 9+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ProduceRequest {
@@ -38,6 +40,47 @@ impl ProduceRequest {
     /// [`alluvium_types::DeliveryError`] if the value is not one the enum defines.
     pub fn acks(&self) -> Result<alluvium_types::Acks, alluvium_types::DeliveryError> {
         alluvium_types::Acks::from_wire(self.acks)
+    }
+}
+
+impl ProduceRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ProduceRequest, crate::DecodeError> {
+        let mut value = ProduceRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.transactional_id = reader
+            .read_nullable_string(if version >= 9 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("TransactionalId")?;
+        self.acks = reader.read_i16().within("Acks")?;
+        self.timeout_ms = reader.read_i32().within("TimeoutMs")?;
+        self.topic_data = reader
+            .read_array(
+                if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| TopicProduceData::read(reader, version),
+            )
+            .within("TopicData")?;
+        if version >= 9 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -79,9 +122,7 @@ impl TopicProduceData {
         name: &str,
         topic_id: alluvium_types::Uuid,
     ) -> Option<&'a TopicProduceData> {
-        elements
-            .iter()
-            .find(|element| element.name == name && element.topic_id == topic_id)
+        elements.iter().find(|element| element.name == name && element.topic_id == topic_id)
     }
 
     /// Every element of `elements` whose key (`Name`, `TopicId`) equals the arguments, in
@@ -91,9 +132,51 @@ impl TopicProduceData {
         name: &str,
         topic_id: alluvium_types::Uuid,
     ) -> impl Iterator<Item = &'a TopicProduceData> {
-        elements
-            .iter()
-            .filter(move |element| element.name == name && element.topic_id == topic_id)
+        elements.iter().filter(move |element| element.name == name && element.topic_id == topic_id)
+    }
+}
+
+impl TopicProduceData {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TopicProduceData, crate::DecodeError> {
+        let mut value = TopicProduceData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version <= 12 {
+            self.name = reader
+                .read_string(if version >= 9 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("Name")?;
+        }
+        if version == 13 {
+            self.topic_id = reader.read_uuid().within("TopicId")?;
+        }
+        self.partition_data = reader
+            .read_array(
+                if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| PartitionProduceData::read(reader, version),
+            )
+            .within("PartitionData")?;
+        if version >= 9 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -112,6 +195,40 @@ pub struct PartitionProduceData {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl PartitionProduceData {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<PartitionProduceData, crate::DecodeError> {
+        let mut value = PartitionProduceData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.index = reader.read_i32().within("Index")?;
+        self.records = reader
+            .read_records(if version >= 9 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Records")?;
+        if version >= 9 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl ProduceRequest {
     /// The API key.
     pub const API_KEY: i16 = 0;
@@ -124,4 +241,15 @@ impl ProduceRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for ProduceRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ProduceRequest, crate::DecodeError> {
+        if !ProduceRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ProduceRequest", version));
+        }
+        ProduceRequest::read(reader, version)
+    }
 }

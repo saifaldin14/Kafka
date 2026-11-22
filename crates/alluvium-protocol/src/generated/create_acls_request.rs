@@ -4,6 +4,8 @@
 
 //! The `CreateAclsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `CreateAclsRequest` request, API key 30: versions 1-3, flexible versions 2+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CreateAclsRequest {
@@ -13,6 +15,38 @@ pub struct CreateAclsRequest {
     pub creations: Vec<AclCreation>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl CreateAclsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreateAclsRequest, crate::DecodeError> {
+        let mut value = CreateAclsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.creations = reader
+            .read_array(
+                if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| AclCreation::read(reader, version),
+            )
+            .within("Creations")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `CreateAclsRequest`'s `Creations` array.
@@ -65,6 +99,54 @@ impl Default for AclCreation {
     }
 }
 
+impl AclCreation {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<AclCreation, crate::DecodeError> {
+        let mut value = AclCreation::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.resource_type = reader.read_i8().within("ResourceType")?;
+        self.resource_name = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ResourceName")?;
+        self.resource_pattern_type = reader.read_i8().within("ResourcePatternType")?;
+        self.principal = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Principal")?;
+        self.host = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Host")?;
+        self.operation = reader.read_i8().within("Operation")?;
+        self.permission_type = reader.read_i8().within("PermissionType")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl CreateAclsRequest {
     /// The API key.
     pub const API_KEY: i16 = 30;
@@ -77,4 +159,15 @@ impl CreateAclsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for CreateAclsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreateAclsRequest, crate::DecodeError> {
+        if !CreateAclsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("CreateAclsRequest", version));
+        }
+        CreateAclsRequest::read(reader, version)
+    }
 }

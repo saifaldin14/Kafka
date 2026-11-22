@@ -5,6 +5,8 @@
 
 //! The `AlterPartitionReassignmentsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `AlterPartitionReassignmentsResponse` response, API key 45: versions 0-1, flexible
 /// versions 0+.
 #[derive(Debug, Clone, PartialEq)]
@@ -60,6 +62,43 @@ impl AlterPartitionReassignmentsResponse {
     }
 }
 
+impl AlterPartitionReassignmentsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterPartitionReassignmentsResponse, crate::DecodeError> {
+        let mut value = AlterPartitionReassignmentsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        if version == 1 {
+            self.allow_replication_factor_change =
+                reader.read_bool().within("AllowReplicationFactorChange")?;
+        }
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message =
+            reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        self.responses = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                ReassignableTopicResponse::read(reader, version)
+            })
+            .within("Responses")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `AlterPartitionReassignmentsResponse`'s `Responses` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ReassignableTopicResponse {
@@ -73,6 +112,36 @@ pub struct ReassignableTopicResponse {
     pub partitions: Vec<ReassignablePartitionResponse>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl ReassignableTopicResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ReassignableTopicResponse, crate::DecodeError> {
+        let mut value = ReassignableTopicResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                ReassignablePartitionResponse::read(reader, version)
+            })
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `ReassignableTopicResponse`'s `Partitions` array.
@@ -117,6 +186,34 @@ impl ReassignablePartitionResponse {
     }
 }
 
+impl ReassignablePartitionResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ReassignablePartitionResponse, crate::DecodeError> {
+        let mut value = ReassignablePartitionResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message =
+            reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl AlterPartitionReassignmentsResponse {
     /// The API key.
     pub const API_KEY: i16 = 45;
@@ -126,4 +223,15 @@ impl AlterPartitionReassignmentsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for AlterPartitionReassignmentsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterPartitionReassignmentsResponse, crate::DecodeError> {
+        if !AlterPartitionReassignmentsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("AlterPartitionReassignmentsResponse", version));
+        }
+        AlterPartitionReassignmentsResponse::read(reader, version)
+    }
 }

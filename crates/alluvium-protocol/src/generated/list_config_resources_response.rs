@@ -5,6 +5,8 @@
 
 //! The `ListConfigResourcesResponse` response.
 
+use crate::WithinField as _;
+
 /// The `ListConfigResourcesResponse` response, API key 74: versions 0-1, flexible versions
 /// 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -38,6 +40,35 @@ impl ListConfigResourcesResponse {
     }
 }
 
+impl ListConfigResourcesResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListConfigResourcesResponse, crate::DecodeError> {
+        let mut value = ListConfigResourcesResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.config_resources = reader
+            .read_array(crate::Framing::Compact, |reader| ConfigResource::read(reader, version))
+            .within("ConfigResources")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `ListConfigResourcesResponse`'s `ConfigResources` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ConfigResource {
@@ -63,6 +94,34 @@ impl Default for ConfigResource {
     }
 }
 
+impl ConfigResource {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ConfigResource, crate::DecodeError> {
+        let mut value = ConfigResource::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.resource_name = reader.read_string(crate::Framing::Compact).within("ResourceName")?;
+        if version == 1 {
+            self.resource_type = reader.read_i8().within("ResourceType")?;
+        }
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl ListConfigResourcesResponse {
     /// The API key.
     pub const API_KEY: i16 = 74;
@@ -72,4 +131,15 @@ impl ListConfigResourcesResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for ListConfigResourcesResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListConfigResourcesResponse, crate::DecodeError> {
+        if !ListConfigResourcesResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ListConfigResourcesResponse", version));
+        }
+        ListConfigResourcesResponse::read(reader, version)
+    }
 }

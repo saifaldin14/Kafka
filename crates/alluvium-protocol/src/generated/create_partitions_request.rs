@@ -5,6 +5,8 @@
 
 //! The `CreatePartitionsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `CreatePartitionsRequest` request, API key 37: versions 0-3, flexible versions 2+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CreatePartitionsRequest {
@@ -23,6 +25,40 @@ pub struct CreatePartitionsRequest {
     pub validate_only: bool,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl CreatePartitionsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreatePartitionsRequest, crate::DecodeError> {
+        let mut value = CreatePartitionsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topics = reader
+            .read_array(
+                if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| CreatePartitionsTopic::read(reader, version),
+            )
+            .within("Topics")?;
+        self.timeout_ms = reader.read_i32().within("TimeoutMs")?;
+        self.validate_only = reader.read_bool().within("ValidateOnly")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `CreatePartitionsRequest`'s `Topics` array.
@@ -73,6 +109,46 @@ impl CreatePartitionsTopic {
     }
 }
 
+impl CreatePartitionsTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreatePartitionsTopic, crate::DecodeError> {
+        let mut value = CreatePartitionsTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Name")?;
+        self.count = reader.read_i32().within("Count")?;
+        self.assignments = reader
+            .read_nullable_array(
+                if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| CreatePartitionsAssignment::read(reader, version),
+            )
+            .within("Assignments")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `CreatePartitionsTopic`'s `Assignments` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CreatePartitionsAssignment {
@@ -82,6 +158,38 @@ pub struct CreatePartitionsAssignment {
     pub broker_ids: Vec<i32>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl CreatePartitionsAssignment {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreatePartitionsAssignment, crate::DecodeError> {
+        let mut value = CreatePartitionsAssignment::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.broker_ids = reader
+            .read_array(
+                if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                crate::Reader::read_i32,
+            )
+            .within("BrokerIds")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 impl CreatePartitionsRequest {
@@ -96,4 +204,15 @@ impl CreatePartitionsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for CreatePartitionsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreatePartitionsRequest, crate::DecodeError> {
+        if !CreatePartitionsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("CreatePartitionsRequest", version));
+        }
+        CreatePartitionsRequest::read(reader, version)
+    }
 }

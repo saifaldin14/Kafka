@@ -4,6 +4,8 @@
 
 //! The `DeleteTopicsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `DeleteTopicsResponse` response, API key 20: versions 1-6, flexible versions 4+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DeleteTopicsResponse {
@@ -18,6 +20,39 @@ pub struct DeleteTopicsResponse {
     pub responses: Vec<DeletableTopicResult>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl DeleteTopicsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeleteTopicsResponse, crate::DecodeError> {
+        let mut value = DeleteTopicsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.responses = reader
+            .read_array(
+                if version >= 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| DeletableTopicResult::read(reader, version),
+            )
+            .within("Responses")?;
+        if version >= 4 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `DeleteTopicsResponse`'s `Responses` array.
@@ -61,9 +96,7 @@ impl DeletableTopicResult {
         elements: &'a [DeletableTopicResult],
         name: Option<&str>,
     ) -> Option<&'a DeletableTopicResult> {
-        elements
-            .iter()
-            .find(|element| element.name.as_deref() == name)
+        elements.iter().find(|element| element.name.as_deref() == name)
     }
 
     /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
@@ -71,9 +104,7 @@ impl DeletableTopicResult {
         elements: &'a [DeletableTopicResult],
         name: Option<&str>,
     ) -> impl Iterator<Item = &'a DeletableTopicResult> {
-        elements
-            .iter()
-            .filter(move |element| element.name.as_deref() == name)
+        elements.iter().filter(move |element| element.name.as_deref() == name)
     }
 }
 
@@ -89,6 +120,56 @@ impl DeletableTopicResult {
     }
 }
 
+impl DeletableTopicResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeletableTopicResult, crate::DecodeError> {
+        let mut value = DeletableTopicResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = if version == 6 {
+            reader.read_nullable_string(if version >= 4 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+        } else {
+            reader
+                .read_string(if version >= 4 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .map(Some)
+        }
+        .within("Name")?;
+        if version == 6 {
+            self.topic_id = reader.read_uuid().within("TopicId")?;
+        }
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        if version >= 5 {
+            self.error_message =
+                reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        }
+        if version >= 4 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl DeleteTopicsResponse {
     /// The API key.
     pub const API_KEY: i16 = 20;
@@ -98,4 +179,15 @@ impl DeleteTopicsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(4, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for DeleteTopicsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DeleteTopicsResponse, crate::DecodeError> {
+        if !DeleteTopicsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DeleteTopicsResponse", version));
+        }
+        DeleteTopicsResponse::read(reader, version)
+    }
 }

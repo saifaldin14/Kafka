@@ -4,6 +4,8 @@
 
 //! The `OffsetCommitRequest` request.
 
+use crate::WithinField as _;
+
 /// The `OffsetCommitRequest` request, API key 8: versions 2-10, flexible versions 8+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct OffsetCommitRequest {
@@ -50,6 +52,66 @@ impl Default for OffsetCommitRequest {
     }
 }
 
+impl OffsetCommitRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetCommitRequest, crate::DecodeError> {
+        let mut value = OffsetCommitRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.group_id = reader
+            .read_string(if version >= 8 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("GroupId")?;
+        self.generation_id_or_member_epoch =
+            reader.read_i32().within("GenerationIdOrMemberEpoch")?;
+        self.member_id = reader
+            .read_string(if version >= 8 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("MemberId")?;
+        if version >= 7 {
+            self.group_instance_id = reader
+                .read_nullable_string(if version >= 8 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("GroupInstanceId")?;
+        }
+        if version <= 4 {
+            self.retention_time_ms = reader.read_i64().within("RetentionTimeMs")?;
+        }
+        self.topics = reader
+            .read_array(
+                if version >= 8 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| OffsetCommitRequestTopic::read(reader, version),
+            )
+            .within("Topics")?;
+        if version >= 8 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `OffsetCommitRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct OffsetCommitRequestTopic {
@@ -77,6 +139,50 @@ impl Default for OffsetCommitRequestTopic {
             partitions: Vec::new(),
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl OffsetCommitRequestTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetCommitRequestTopic, crate::DecodeError> {
+        let mut value = OffsetCommitRequestTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version <= 9 {
+            self.name = reader
+                .read_string(if version >= 8 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("Name")?;
+        }
+        if version == 10 {
+            self.topic_id = reader.read_uuid().within("TopicId")?;
+        }
+        self.partitions = reader
+            .read_array(
+                if version >= 8 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| OffsetCommitRequestPartition::read(reader, version),
+            )
+            .within("Partitions")?;
+        if version >= 8 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -115,6 +221,44 @@ impl Default for OffsetCommitRequestPartition {
     }
 }
 
+impl OffsetCommitRequestPartition {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetCommitRequestPartition, crate::DecodeError> {
+        let mut value = OffsetCommitRequestPartition::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.committed_offset = reader.read_i64().within("CommittedOffset")?;
+        if version >= 6 {
+            self.committed_leader_epoch = reader.read_i32().within("CommittedLeaderEpoch")?;
+        }
+        self.committed_metadata = reader
+            .read_nullable_string(if version >= 8 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("CommittedMetadata")?;
+        if version >= 8 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl OffsetCommitRequest {
     /// The API key.
     pub const API_KEY: i16 = 8;
@@ -127,4 +271,15 @@ impl OffsetCommitRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for OffsetCommitRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetCommitRequest, crate::DecodeError> {
+        if !OffsetCommitRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("OffsetCommitRequest", version));
+        }
+        OffsetCommitRequest::read(reader, version)
+    }
 }

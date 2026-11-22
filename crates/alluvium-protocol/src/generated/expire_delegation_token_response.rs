@@ -5,6 +5,8 @@
 
 //! The `ExpireDelegationTokenResponse` response.
 
+use crate::WithinField as _;
+
 /// The `ExpireDelegationTokenResponse` response, API key 40: versions 1-2, flexible
 /// versions 2+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -39,6 +41,35 @@ impl ExpireDelegationTokenResponse {
 }
 
 impl ExpireDelegationTokenResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ExpireDelegationTokenResponse, crate::DecodeError> {
+        let mut value = ExpireDelegationTokenResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.expiry_timestamp_ms = reader.read_i64().within("ExpiryTimestampMs")?;
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        if version == 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl ExpireDelegationTokenResponse {
     /// The API key.
     pub const API_KEY: i16 = 40;
     /// The versions of this message.
@@ -47,4 +78,15 @@ impl ExpireDelegationTokenResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(2, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for ExpireDelegationTokenResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ExpireDelegationTokenResponse, crate::DecodeError> {
+        if !ExpireDelegationTokenResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ExpireDelegationTokenResponse", version));
+        }
+        ExpireDelegationTokenResponse::read(reader, version)
+    }
 }

@@ -4,6 +4,8 @@
 
 //! The `FetchRequest` request.
 
+use crate::WithinField as _;
+
 /// The `FetchRequest` request, API key 1: versions 4-18, flexible versions 12+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FetchRequest {
@@ -101,6 +103,77 @@ impl FetchRequest {
     }
 }
 
+impl FetchRequest {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<FetchRequest, crate::DecodeError> {
+        let mut value = FetchRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version <= 14 {
+            self.replica_id = reader.read_i32().within("ReplicaId")?;
+        }
+        self.max_wait_ms = reader.read_i32().within("MaxWaitMs")?;
+        self.min_bytes = reader.read_i32().within("MinBytes")?;
+        self.max_bytes = reader.read_i32().within("MaxBytes")?;
+        self.isolation_level = reader.read_i8().within("IsolationLevel")?;
+        if version >= 7 {
+            self.session_id = reader.read_i32().within("SessionId")?;
+            self.session_epoch = reader.read_i32().within("SessionEpoch")?;
+        }
+        self.topics = reader
+            .read_array(
+                if version >= 12 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| FetchTopic::read(reader, version),
+            )
+            .within("Topics")?;
+        if version >= 7 {
+            self.forgotten_topics_data = reader
+                .read_array(
+                    if version >= 12 { crate::Framing::Compact } else { crate::Framing::Classic },
+                    |reader| ForgottenTopic::read(reader, version),
+                )
+                .within("ForgottenTopicsData")?;
+        }
+        if version >= 11 {
+            self.rack_id = reader
+                .read_string(if version >= 12 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("RackId")?;
+        }
+        if version >= 12 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                if tag == 0 {
+                    self.cluster_id = reader
+                        .read_tagged_value(tag, size, |reader| {
+                            reader.read_nullable_string(crate::Framing::Compact)
+                        })
+                        .within("ClusterId")?;
+                } else if tag == 1 && version >= 15 {
+                    self.replica_state = reader
+                        .read_tagged_value(tag, size, |reader| ReplicaState::read(reader, version))
+                        .within("ReplicaState")?;
+                } else if tag == 1 {
+                    return Err(reader.tag_not_valid(tag, version).within("ReplicaState"));
+                } else {
+                    reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
 /// The `ReplicaState` field of `FetchRequest`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ReplicaState {
@@ -118,11 +191,30 @@ pub struct ReplicaState {
 
 impl Default for ReplicaState {
     fn default() -> ReplicaState {
-        ReplicaState {
-            replica_id: -1,
-            replica_epoch: -1,
-            unknown_tagged_fields: Vec::new(),
+        ReplicaState { replica_id: -1, replica_epoch: -1, unknown_tagged_fields: Vec::new() }
+    }
+}
+
+impl ReplicaState {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<ReplicaState, crate::DecodeError> {
+        let mut value = ReplicaState::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.replica_id = reader.read_i32().within("ReplicaId")?;
+        self.replica_epoch = reader.read_i64().within("ReplicaEpoch")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
     }
 }
 
@@ -153,6 +245,47 @@ impl Default for FetchTopic {
             partitions: Vec::new(),
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl FetchTopic {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<FetchTopic, crate::DecodeError> {
+        let mut value = FetchTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version <= 12 {
+            self.topic = reader
+                .read_string(if version == 12 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("Topic")?;
+        }
+        if version >= 13 {
+            self.topic_id = reader.read_uuid().within("TopicId")?;
+        }
+        self.partitions = reader
+            .read_array(
+                if version >= 12 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| FetchPartition::read(reader, version),
+            )
+            .within("Partitions")?;
+        if version >= 12 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -214,6 +347,58 @@ impl Default for FetchPartition {
     }
 }
 
+impl FetchPartition {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<FetchPartition, crate::DecodeError> {
+        let mut value = FetchPartition::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition = reader.read_i32().within("Partition")?;
+        if version >= 9 {
+            self.current_leader_epoch = reader.read_i32().within("CurrentLeaderEpoch")?;
+        }
+        self.fetch_offset = reader.read_i64().within("FetchOffset")?;
+        if version >= 12 {
+            self.last_fetched_epoch = reader.read_i32().within("LastFetchedEpoch")?;
+        }
+        if version >= 5 {
+            self.log_start_offset = reader.read_i64().within("LogStartOffset")?;
+        }
+        self.partition_max_bytes = reader.read_i32().within("PartitionMaxBytes")?;
+        if version >= 12 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                if tag == 0 && version >= 17 {
+                    self.replica_directory_id = reader
+                        .read_tagged_value(tag, size, crate::Reader::read_uuid)
+                        .within("ReplicaDirectoryId")?;
+                } else if tag == 0 {
+                    return Err(reader.tag_not_valid(tag, version).within("ReplicaDirectoryId"));
+                } else if tag == 1 && version == 18 {
+                    self.high_watermark = reader
+                        .read_tagged_value(tag, size, crate::Reader::read_i64)
+                        .within("HighWatermark")?;
+                } else if tag == 1 {
+                    return Err(reader.tag_not_valid(tag, version).within("HighWatermark"));
+                } else {
+                    reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `FetchRequest`'s `ForgottenTopicsData` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ForgottenTopic {
@@ -244,6 +429,50 @@ impl Default for ForgottenTopic {
     }
 }
 
+impl ForgottenTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ForgottenTopic, crate::DecodeError> {
+        let mut value = ForgottenTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version <= 12 {
+            self.topic = reader
+                .read_string(if version == 12 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("Topic")?;
+        }
+        if version >= 13 {
+            self.topic_id = reader.read_uuid().within("TopicId")?;
+        }
+        self.partitions = reader
+            .read_array(
+                if version >= 12 { crate::Framing::Compact } else { crate::Framing::Classic },
+                crate::Reader::read_i32,
+            )
+            .within("Partitions")?;
+        if version >= 12 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl FetchRequest {
     /// The API key.
     pub const API_KEY: i16 = 1;
@@ -256,4 +485,15 @@ impl FetchRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for FetchRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<FetchRequest, crate::DecodeError> {
+        if !FetchRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("FetchRequest", version));
+        }
+        FetchRequest::read(reader, version)
+    }
 }

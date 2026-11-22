@@ -5,6 +5,8 @@
 
 //! The `AddPartitionsToTxnRequest` request.
 
+use crate::WithinField as _;
+
 /// The `AddPartitionsToTxnRequest` request, API key 24: versions 0-5, flexible versions 3+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AddPartitionsToTxnRequest {
@@ -30,6 +32,57 @@ pub struct AddPartitionsToTxnRequest {
     pub v3_and_below_topics: Vec<AddPartitionsToTxnTopic>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl AddPartitionsToTxnRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AddPartitionsToTxnRequest, crate::DecodeError> {
+        let mut value = AddPartitionsToTxnRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version >= 4 {
+            self.transactions = reader
+                .read_array(crate::Framing::Compact, |reader| {
+                    AddPartitionsToTxnTransaction::read(reader, version)
+                })
+                .within("Transactions")?;
+        }
+        if version <= 3 {
+            self.v3_and_below_transactional_id = reader
+                .read_string(if version == 3 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("V3AndBelowTransactionalId")?;
+            self.v3_and_below_producer_id = reader.read_i64().within("V3AndBelowProducerId")?;
+            self.v3_and_below_producer_epoch =
+                reader.read_i16().within("V3AndBelowProducerEpoch")?;
+            self.v3_and_below_topics = reader
+                .read_array(
+                    if version == 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+                    |reader| AddPartitionsToTxnTopic::read(reader, version),
+                )
+                .within("V3AndBelowTopics")?;
+        }
+        if version >= 3 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `AddPartitionsToTxnRequest`'s `Transactions` array.
@@ -67,9 +120,7 @@ impl AddPartitionsToTxnTransaction {
         elements: &'a [AddPartitionsToTxnTransaction],
         transactional_id: &str,
     ) -> Option<&'a AddPartitionsToTxnTransaction> {
-        elements
-            .iter()
-            .find(|element| element.transactional_id == transactional_id)
+        elements.iter().find(|element| element.transactional_id == transactional_id)
     }
 
     /// Every element of `elements` whose key (`TransactionalId`) equals the arguments, in
@@ -78,9 +129,41 @@ impl AddPartitionsToTxnTransaction {
         elements: &'a [AddPartitionsToTxnTransaction],
         transactional_id: &str,
     ) -> impl Iterator<Item = &'a AddPartitionsToTxnTransaction> {
-        elements
-            .iter()
-            .filter(move |element| element.transactional_id == transactional_id)
+        elements.iter().filter(move |element| element.transactional_id == transactional_id)
+    }
+}
+
+impl AddPartitionsToTxnTransaction {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AddPartitionsToTxnTransaction, crate::DecodeError> {
+        let mut value = AddPartitionsToTxnTransaction::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.transactional_id =
+            reader.read_string(crate::Framing::Compact).within("TransactionalId")?;
+        self.producer_id = reader.read_i64().within("ProducerId")?;
+        self.producer_epoch = reader.read_i16().within("ProducerEpoch")?;
+        self.verify_only = reader.read_bool().within("VerifyOnly")?;
+        self.topics = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                AddPartitionsToTxnTopic::read(reader, version)
+            })
+            .within("Topics")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -117,6 +200,45 @@ impl AddPartitionsToTxnTopic {
     }
 }
 
+impl AddPartitionsToTxnTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AddPartitionsToTxnTopic, crate::DecodeError> {
+        let mut value = AddPartitionsToTxnTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader
+            .read_string(if version >= 3 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Name")?;
+        self.partitions = reader
+            .read_array(
+                if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+                crate::Reader::read_i32,
+            )
+            .within("Partitions")?;
+        if version >= 3 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl AddPartitionsToTxnRequest {
     /// The API key.
     pub const API_KEY: i16 = 24;
@@ -129,4 +251,15 @@ impl AddPartitionsToTxnRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for AddPartitionsToTxnRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AddPartitionsToTxnRequest, crate::DecodeError> {
+        if !AddPartitionsToTxnRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("AddPartitionsToTxnRequest", version));
+        }
+        AddPartitionsToTxnRequest::read(reader, version)
+    }
 }

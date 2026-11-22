@@ -4,6 +4,8 @@
 
 //! The `PushTelemetryRequest` request.
 
+use crate::WithinField as _;
+
 /// The `PushTelemetryRequest` request, API key 72: versions 0, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct PushTelemetryRequest {
@@ -45,6 +47,35 @@ impl Default for PushTelemetryRequest {
 }
 
 impl PushTelemetryRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<PushTelemetryRequest, crate::DecodeError> {
+        let mut value = PushTelemetryRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.client_instance_id = reader.read_uuid().within("ClientInstanceId")?;
+        self.subscription_id = reader.read_i32().within("SubscriptionId")?;
+        self.terminating = reader.read_bool().within("Terminating")?;
+        self.compression_type = reader.read_i8().within("CompressionType")?;
+        self.metrics = reader.read_bytes(crate::Framing::Compact).within("Metrics")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
+impl PushTelemetryRequest {
     /// The API key.
     pub const API_KEY: i16 = 72;
     /// The versions of this message.
@@ -56,4 +87,15 @@ impl PushTelemetryRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for PushTelemetryRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<PushTelemetryRequest, crate::DecodeError> {
+        if !PushTelemetryRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("PushTelemetryRequest", version));
+        }
+        PushTelemetryRequest::read(reader, version)
+    }
 }

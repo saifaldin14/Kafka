@@ -5,6 +5,8 @@
 
 //! The `ControlRecordTypeSchema` data type.
 
+use crate::WithinField as _;
+
 /// The `ControlRecordTypeSchema` data type: versions 0, flexible versions none.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ControlRecordTypeSchema {
@@ -15,10 +17,41 @@ pub struct ControlRecordTypeSchema {
 }
 
 impl ControlRecordTypeSchema {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ControlRecordTypeSchema, crate::DecodeError> {
+        let mut value = ControlRecordTypeSchema::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.type_ = reader.read_i16().within("Type")?;
+        Ok(())
+    }
+}
+
+impl ControlRecordTypeSchema {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 0);
     /// The versions that use the flexible encoding.
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::NONE;
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for ControlRecordTypeSchema {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ControlRecordTypeSchema, crate::DecodeError> {
+        if !ControlRecordTypeSchema::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ControlRecordTypeSchema", version));
+        }
+        ControlRecordTypeSchema::read(reader, version)
+    }
 }

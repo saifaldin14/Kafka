@@ -5,6 +5,8 @@
 
 //! The `IncrementalAlterConfigsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `IncrementalAlterConfigsRequest` request, API key 44: versions 0-1, flexible
 /// versions 1+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -19,6 +21,39 @@ pub struct IncrementalAlterConfigsRequest {
     pub validate_only: bool,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl IncrementalAlterConfigsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<IncrementalAlterConfigsRequest, crate::DecodeError> {
+        let mut value = IncrementalAlterConfigsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.resources = reader
+            .read_array(
+                if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| AlterConfigsResource::read(reader, version),
+            )
+            .within("Resources")?;
+        self.validate_only = reader.read_bool().within("ValidateOnly")?;
+        if version == 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `IncrementalAlterConfigsRequest`'s `Resources` array.
@@ -63,6 +98,46 @@ impl AlterConfigsResource {
         elements.iter().filter(move |element| {
             element.resource_type == resource_type && element.resource_name == resource_name
         })
+    }
+}
+
+impl AlterConfigsResource {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterConfigsResource, crate::DecodeError> {
+        let mut value = AlterConfigsResource::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.resource_type = reader.read_i8().within("ResourceType")?;
+        self.resource_name = reader
+            .read_string(if version == 1 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ResourceName")?;
+        self.configs = reader
+            .read_array(
+                if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| AlterableConfig::read(reader, version),
+            )
+            .within("Configs")?;
+        if version == 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -122,6 +197,47 @@ impl AlterableConfig {
     }
 }
 
+impl AlterableConfig {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterableConfig, crate::DecodeError> {
+        let mut value = AlterableConfig::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader
+            .read_string(if version == 1 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Name")?;
+        self.config_operation = reader.read_i8().within("ConfigOperation")?;
+        self.value = reader
+            .read_nullable_string(if version == 1 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Value")?;
+        if version == 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl IncrementalAlterConfigsRequest {
     /// The API key.
     pub const API_KEY: i16 = 44;
@@ -134,4 +250,15 @@ impl IncrementalAlterConfigsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for IncrementalAlterConfigsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<IncrementalAlterConfigsRequest, crate::DecodeError> {
+        if !IncrementalAlterConfigsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("IncrementalAlterConfigsRequest", version));
+        }
+        IncrementalAlterConfigsRequest::read(reader, version)
+    }
 }

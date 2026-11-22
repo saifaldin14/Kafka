@@ -5,6 +5,8 @@
 
 //! The `InitializeShareGroupStateRequest` request.
 
+use crate::WithinField as _;
+
 /// The `InitializeShareGroupStateRequest` request, API key 83: versions 0, flexible
 /// versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -19,6 +21,36 @@ pub struct InitializeShareGroupStateRequest {
     pub topics: Vec<InitializeStateData>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl InitializeShareGroupStateRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<InitializeShareGroupStateRequest, crate::DecodeError> {
+        let mut value = InitializeShareGroupStateRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.group_id = reader.read_string(crate::Framing::Compact).within("GroupId")?;
+        self.topics = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                InitializeStateData::read(reader, version)
+            })
+            .within("Topics")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `InitializeShareGroupStateRequest`'s `Topics` array.
@@ -46,6 +78,34 @@ impl Default for InitializeStateData {
     }
 }
 
+impl InitializeStateData {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<InitializeStateData, crate::DecodeError> {
+        let mut value = InitializeStateData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_id = reader.read_uuid().within("TopicId")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, |reader| PartitionData::read(reader, version))
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `InitializeStateData`'s `Partitions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct PartitionData {
@@ -66,6 +126,30 @@ pub struct PartitionData {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl PartitionData {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<PartitionData, crate::DecodeError> {
+        let mut value = PartitionData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition = reader.read_i32().within("Partition")?;
+        self.state_epoch = reader.read_i32().within("StateEpoch")?;
+        self.start_offset = reader.read_i64().within("StartOffset")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl InitializeShareGroupStateRequest {
     /// The API key.
     pub const API_KEY: i16 = 83;
@@ -78,4 +162,15 @@ impl InitializeShareGroupStateRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for InitializeShareGroupStateRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<InitializeShareGroupStateRequest, crate::DecodeError> {
+        if !InitializeShareGroupStateRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("InitializeShareGroupStateRequest", version));
+        }
+        InitializeShareGroupStateRequest::read(reader, version)
+    }
 }

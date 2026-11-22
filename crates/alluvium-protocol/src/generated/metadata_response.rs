@@ -4,6 +4,8 @@
 
 //! The `MetadataResponse` response.
 
+use crate::WithinField as _;
+
 /// The `MetadataResponse` response, API key 3: versions 0-13, flexible versions 9+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct MetadataResponse {
@@ -67,6 +69,66 @@ impl MetadataResponse {
     }
 }
 
+impl MetadataResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<MetadataResponse, crate::DecodeError> {
+        let mut value = MetadataResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version >= 3 {
+            self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        }
+        self.brokers = reader
+            .read_array(
+                if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| MetadataResponseBroker::read(reader, version),
+            )
+            .within("Brokers")?;
+        if version >= 2 {
+            self.cluster_id = reader
+                .read_nullable_string(if version >= 9 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("ClusterId")?;
+        }
+        if version >= 1 {
+            self.controller_id = reader.read_i32().within("ControllerId")?;
+        }
+        self.topics = reader
+            .read_array(
+                if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| MetadataResponseTopic::read(reader, version),
+            )
+            .within("Topics")?;
+        if (8..=10).contains(&version) {
+            self.cluster_authorized_operations =
+                reader.read_i32().within("ClusterAuthorizedOperations")?;
+        }
+        if version == 13 {
+            self.error_code = reader.read_i16().within("ErrorCode")?;
+        }
+        if version >= 9 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `MetadataResponse`'s `Brokers` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct MetadataResponseBroker {
@@ -105,9 +167,51 @@ impl MetadataResponseBroker {
         elements: &[MetadataResponseBroker],
         node_id: i32,
     ) -> impl Iterator<Item = &MetadataResponseBroker> {
-        elements
-            .iter()
-            .filter(move |element| element.node_id == node_id)
+        elements.iter().filter(move |element| element.node_id == node_id)
+    }
+}
+
+impl MetadataResponseBroker {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<MetadataResponseBroker, crate::DecodeError> {
+        let mut value = MetadataResponseBroker::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.node_id = reader.read_i32().within("NodeId")?;
+        self.host = reader
+            .read_string(if version >= 9 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Host")?;
+        self.port = reader.read_i32().within("Port")?;
+        if version >= 1 {
+            self.rack = reader
+                .read_nullable_string(if version >= 9 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("Rack")?;
+        }
+        if version >= 9 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -164,9 +268,7 @@ impl MetadataResponseTopic {
         elements: &'a [MetadataResponseTopic],
         name: Option<&str>,
     ) -> Option<&'a MetadataResponseTopic> {
-        elements
-            .iter()
-            .find(|element| element.name.as_deref() == name)
+        elements.iter().find(|element| element.name.as_deref() == name)
     }
 
     /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
@@ -174,9 +276,7 @@ impl MetadataResponseTopic {
         elements: &'a [MetadataResponseTopic],
         name: Option<&str>,
     ) -> impl Iterator<Item = &'a MetadataResponseTopic> {
-        elements
-            .iter()
-            .filter(move |element| element.name.as_deref() == name)
+        elements.iter().filter(move |element| element.name.as_deref() == name)
     }
 }
 
@@ -189,6 +289,65 @@ impl MetadataResponseTopic {
     /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
     pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
         crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
+impl MetadataResponseTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<MetadataResponseTopic, crate::DecodeError> {
+        let mut value = MetadataResponseTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.name = if version >= 12 {
+            reader.read_nullable_string(if version >= 9 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+        } else {
+            reader
+                .read_string(if version >= 9 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .map(Some)
+        }
+        .within("Name")?;
+        if version >= 10 {
+            self.topic_id = reader.read_uuid().within("TopicId")?;
+        }
+        if version >= 1 {
+            self.is_internal = reader.read_bool().within("IsInternal")?;
+        }
+        self.partitions = reader
+            .read_array(
+                if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| MetadataResponsePartition::read(reader, version),
+            )
+            .within("Partitions")?;
+        if version >= 8 {
+            self.topic_authorized_operations =
+                reader.read_i32().within("TopicAuthorizedOperations")?;
+        }
+        if version >= 9 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -254,6 +413,58 @@ impl MetadataResponsePartition {
     }
 }
 
+impl MetadataResponsePartition {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<MetadataResponsePartition, crate::DecodeError> {
+        let mut value = MetadataResponsePartition::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.leader_id = reader.read_i32().within("LeaderId")?;
+        if version >= 7 {
+            self.leader_epoch = reader.read_i32().within("LeaderEpoch")?;
+        }
+        self.replica_nodes = reader
+            .read_array(
+                if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+                crate::Reader::read_i32,
+            )
+            .within("ReplicaNodes")?;
+        self.isr_nodes = reader
+            .read_array(
+                if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+                crate::Reader::read_i32,
+            )
+            .within("IsrNodes")?;
+        if version >= 5 {
+            self.offline_replicas = reader
+                .read_array(
+                    if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+                    crate::Reader::read_i32,
+                )
+                .within("OfflineReplicas")?;
+        }
+        if version >= 9 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl MetadataResponse {
     /// The API key.
     pub const API_KEY: i16 = 3;
@@ -263,4 +474,15 @@ impl MetadataResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(9, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for MetadataResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<MetadataResponse, crate::DecodeError> {
+        if !MetadataResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("MetadataResponse", version));
+        }
+        MetadataResponse::read(reader, version)
+    }
 }

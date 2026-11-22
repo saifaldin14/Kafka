@@ -5,6 +5,8 @@
 
 //! The `InitializeShareGroupStateResponse` response.
 
+use crate::WithinField as _;
+
 /// The `InitializeShareGroupStateResponse` response, API key 83: versions 0, flexible
 /// versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -15,6 +17,35 @@ pub struct InitializeShareGroupStateResponse {
     pub results: Vec<InitializeStateResult>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl InitializeShareGroupStateResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<InitializeShareGroupStateResponse, crate::DecodeError> {
+        let mut value = InitializeShareGroupStateResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.results = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                InitializeStateResult::read(reader, version)
+            })
+            .within("Results")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `InitializeShareGroupStateResponse`'s `Results` array.
@@ -39,6 +70,34 @@ impl Default for InitializeStateResult {
             partitions: Vec::new(),
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl InitializeStateResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<InitializeStateResult, crate::DecodeError> {
+        let mut value = InitializeStateResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_id = reader.read_uuid().within("TopicId")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, |reader| PartitionResult::read(reader, version))
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -73,6 +132,34 @@ impl PartitionResult {
     }
 }
 
+impl PartitionResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<PartitionResult, crate::DecodeError> {
+        let mut value = PartitionResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition = reader.read_i32().within("Partition")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message =
+            reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl InitializeShareGroupStateResponse {
     /// The API key.
     pub const API_KEY: i16 = 83;
@@ -82,4 +169,15 @@ impl InitializeShareGroupStateResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for InitializeShareGroupStateResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<InitializeShareGroupStateResponse, crate::DecodeError> {
+        if !InitializeShareGroupStateResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("InitializeShareGroupStateResponse", version));
+        }
+        InitializeShareGroupStateResponse::read(reader, version)
+    }
 }

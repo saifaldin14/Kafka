@@ -5,6 +5,8 @@
 
 //! The `ListConfigResourcesRequest` request.
 
+use crate::WithinField as _;
+
 /// The `ListConfigResourcesRequest` request, API key 74: versions 0-1, flexible versions
 /// 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -19,6 +21,35 @@ pub struct ListConfigResourcesRequest {
 }
 
 impl ListConfigResourcesRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListConfigResourcesRequest, crate::DecodeError> {
+        let mut value = ListConfigResourcesRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version == 1 {
+            self.resource_types = reader
+                .read_array(crate::Framing::Compact, crate::Reader::read_i8)
+                .within("ResourceTypes")?;
+        }
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
+impl ListConfigResourcesRequest {
     /// The API key.
     pub const API_KEY: i16 = 74;
     /// The versions of this message.
@@ -30,4 +61,15 @@ impl ListConfigResourcesRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for ListConfigResourcesRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListConfigResourcesRequest, crate::DecodeError> {
+        if !ListConfigResourcesRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ListConfigResourcesRequest", version));
+        }
+        ListConfigResourcesRequest::read(reader, version)
+    }
 }

@@ -5,6 +5,8 @@
 
 //! The `EndQuorumEpochRequest` request.
 
+use crate::WithinField as _;
+
 /// The `EndQuorumEpochRequest` request, API key 54: versions 0-1, flexible versions 1+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct EndQuorumEpochRequest {
@@ -24,6 +26,50 @@ pub struct EndQuorumEpochRequest {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl EndQuorumEpochRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<EndQuorumEpochRequest, crate::DecodeError> {
+        let mut value = EndQuorumEpochRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.cluster_id = reader
+            .read_nullable_string(if version == 1 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ClusterId")?;
+        self.topics = reader
+            .read_array(
+                if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| TopicData::read(reader, version),
+            )
+            .within("Topics")?;
+        if version == 1 {
+            self.leader_endpoints = reader
+                .read_array(crate::Framing::Compact, |reader| LeaderEndpoint::read(reader, version))
+                .within("LeaderEndpoints")?;
+        }
+        if version == 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `EndQuorumEpochRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopicData {
@@ -37,6 +83,42 @@ pub struct TopicData {
     pub partitions: Vec<PartitionData>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl TopicData {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<TopicData, crate::DecodeError> {
+        let mut value = TopicData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_name = reader
+            .read_string(if version == 1 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("TopicName")?;
+        self.partitions = reader
+            .read_array(
+                if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| PartitionData::read(reader, version),
+            )
+            .within("Partitions")?;
+        if version == 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `TopicData`'s `Partitions` array.
@@ -66,6 +148,42 @@ pub struct PartitionData {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl PartitionData {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<PartitionData, crate::DecodeError> {
+        let mut value = PartitionData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.leader_id = reader.read_i32().within("LeaderId")?;
+        self.leader_epoch = reader.read_i32().within("LeaderEpoch")?;
+        if version == 0 {
+            self.preferred_successors = reader
+                .read_array(crate::Framing::Classic, crate::Reader::read_i32)
+                .within("PreferredSuccessors")?;
+        }
+        if version == 1 {
+            self.preferred_candidates = reader
+                .read_array(crate::Framing::Compact, |reader| ReplicaInfo::read(reader, version))
+                .within("PreferredCandidates")?;
+        }
+        if version == 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `PartitionData`'s `PreferredCandidates` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ReplicaInfo {
@@ -88,6 +206,29 @@ impl Default for ReplicaInfo {
             candidate_directory_id: alluvium_types::Uuid::ZERO,
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl ReplicaInfo {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<ReplicaInfo, crate::DecodeError> {
+        let mut value = ReplicaInfo::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.candidate_id = reader.read_i32().within("CandidateId")?;
+        self.candidate_directory_id = reader.read_uuid().within("CandidateDirectoryId")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -125,6 +266,33 @@ impl LeaderEndpoint {
     }
 }
 
+impl LeaderEndpoint {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<LeaderEndpoint, crate::DecodeError> {
+        let mut value = LeaderEndpoint::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        self.host = reader.read_string(crate::Framing::Compact).within("Host")?;
+        self.port = reader.read_u16().within("Port")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl EndQuorumEpochRequest {
     /// The API key.
     pub const API_KEY: i16 = 54;
@@ -137,4 +305,15 @@ impl EndQuorumEpochRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for EndQuorumEpochRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<EndQuorumEpochRequest, crate::DecodeError> {
+        if !EndQuorumEpochRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("EndQuorumEpochRequest", version));
+        }
+        EndQuorumEpochRequest::read(reader, version)
+    }
 }

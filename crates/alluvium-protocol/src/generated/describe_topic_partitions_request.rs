@@ -5,6 +5,8 @@
 
 //! The `DescribeTopicPartitionsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `DescribeTopicPartitionsRequest` request, API key 75: versions 0, flexible versions
 /// 0+.
 #[derive(Debug, Clone, PartialEq)]
@@ -36,6 +38,41 @@ impl Default for DescribeTopicPartitionsRequest {
     }
 }
 
+impl DescribeTopicPartitionsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeTopicPartitionsRequest, crate::DecodeError> {
+        let mut value = DescribeTopicPartitionsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topics = reader
+            .read_array(crate::Framing::Compact, |reader| TopicRequest::read(reader, version))
+            .within("Topics")?;
+        self.response_partition_limit = reader.read_i32().within("ResponsePartitionLimit")?;
+        self.cursor =
+            reader
+                .read_i8()
+                .and_then(|marker| {
+                    if marker < 0 { Ok(None) } else { Cursor::read(reader, version).map(Some) }
+                })
+                .within("Cursor")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribeTopicPartitionsRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopicRequest {
@@ -45,6 +82,28 @@ pub struct TopicRequest {
     pub name: String,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl TopicRequest {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<TopicRequest, crate::DecodeError> {
+        let mut value = TopicRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// The `Cursor` field of `DescribeTopicPartitionsRequest`.
@@ -62,6 +121,29 @@ pub struct Cursor {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl Cursor {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<Cursor, crate::DecodeError> {
+        let mut value = Cursor::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_name = reader.read_string(crate::Framing::Compact).within("TopicName")?;
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl DescribeTopicPartitionsRequest {
     /// The API key.
     pub const API_KEY: i16 = 75;
@@ -74,4 +156,15 @@ impl DescribeTopicPartitionsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for DescribeTopicPartitionsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeTopicPartitionsRequest, crate::DecodeError> {
+        if !DescribeTopicPartitionsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DescribeTopicPartitionsRequest", version));
+        }
+        DescribeTopicPartitionsRequest::read(reader, version)
+    }
 }

@@ -4,6 +4,8 @@
 
 //! The `RequestHeader` header.
 
+use crate::WithinField as _;
+
 /// The `RequestHeader` header: versions 1-2, flexible versions 2+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RequestHeader {
@@ -40,10 +42,48 @@ impl Default for RequestHeader {
 }
 
 impl RequestHeader {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<RequestHeader, crate::DecodeError> {
+        let mut value = RequestHeader::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.request_api_key = reader.read_i16().within("RequestApiKey")?;
+        self.request_api_version = reader.read_i16().within("RequestApiVersion")?;
+        self.correlation_id = reader.read_i32().within("CorrelationId")?;
+        self.client_id = reader.read_nullable_string(crate::Framing::Classic).within("ClientId")?;
+        if version == 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl RequestHeader {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(1, 2);
     /// The versions that use the flexible encoding.
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(2, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for RequestHeader {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<RequestHeader, crate::DecodeError> {
+        if !RequestHeader::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("RequestHeader", version));
+        }
+        RequestHeader::read(reader, version)
+    }
 }

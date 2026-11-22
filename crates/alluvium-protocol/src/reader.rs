@@ -18,12 +18,12 @@ use crate::limits::{DecodeLimits, Limit};
 // Parity: clients/src/main/java/org/apache/kafka/common/protocol/ByteBufferAccessor.java@4.4.0 ByteBufferAccessor
 #[derive(Debug)]
 pub struct Reader {
-    buf: Bytes,
+    pub(crate) buf: Bytes,
     /// The input's length, to report offsets from its start.
-    total: usize,
+    pub(crate) total: usize,
     pub(crate) limits: DecodeLimits,
     /// The bytes of [`DecodeLimits::allocation_budget`] not yet charged.
-    budget_left: usize,
+    pub(crate) budget_left: usize,
 }
 
 impl Reader {

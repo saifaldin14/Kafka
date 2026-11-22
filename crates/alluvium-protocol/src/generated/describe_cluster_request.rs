@@ -5,6 +5,8 @@
 
 //! The `DescribeClusterRequest` request.
 
+use crate::WithinField as _;
+
 /// The `DescribeClusterRequest` request, API key 60: versions 0-2, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DescribeClusterRequest {
@@ -36,6 +38,38 @@ impl Default for DescribeClusterRequest {
 }
 
 impl DescribeClusterRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeClusterRequest, crate::DecodeError> {
+        let mut value = DescribeClusterRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.include_cluster_authorized_operations =
+            reader.read_bool().within("IncludeClusterAuthorizedOperations")?;
+        if version >= 1 {
+            self.endpoint_type = reader.read_i8().within("EndpointType")?;
+        }
+        if version == 2 {
+            self.include_fenced_brokers = reader.read_bool().within("IncludeFencedBrokers")?;
+        }
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
+impl DescribeClusterRequest {
     /// The API key.
     pub const API_KEY: i16 = 60;
     /// The versions of this message.
@@ -47,4 +81,15 @@ impl DescribeClusterRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for DescribeClusterRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeClusterRequest, crate::DecodeError> {
+        if !DescribeClusterRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DescribeClusterRequest", version));
+        }
+        DescribeClusterRequest::read(reader, version)
+    }
 }

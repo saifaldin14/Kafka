@@ -4,6 +4,8 @@
 
 //! The `ApiVersionsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `ApiVersionsResponse` response, API key 18: versions 0-5, flexible versions 3+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ApiVersionsResponse {
@@ -71,6 +73,68 @@ impl ApiVersionsResponse {
     }
 }
 
+impl ApiVersionsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ApiVersionsResponse, crate::DecodeError> {
+        let mut value = ApiVersionsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.api_keys = reader
+            .read_array(
+                if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| ApiVersion::read(reader, version),
+            )
+            .within("ApiKeys")?;
+        if version >= 1 {
+            self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        }
+        if version >= 3 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                if tag == 0 {
+                    self.supported_features = reader
+                        .read_tagged_value(tag, size, |reader| {
+                            reader.read_array(crate::Framing::Compact, |reader| {
+                                SupportedFeatureKey::read(reader, version)
+                            })
+                        })
+                        .within("SupportedFeatures")?;
+                } else if tag == 1 {
+                    self.finalized_features_epoch = reader
+                        .read_tagged_value(tag, size, crate::Reader::read_i64)
+                        .within("FinalizedFeaturesEpoch")?;
+                } else if tag == 2 {
+                    self.finalized_features = reader
+                        .read_tagged_value(tag, size, |reader| {
+                            reader.read_array(crate::Framing::Compact, |reader| {
+                                FinalizedFeatureKey::read(reader, version)
+                            })
+                        })
+                        .within("FinalizedFeatures")?;
+                } else if tag == 3 {
+                    self.zk_migration_ready = reader
+                        .read_tagged_value(tag, size, crate::Reader::read_bool)
+                        .within("ZkMigrationReady")?;
+                } else {
+                    reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `ApiVersionsResponse`'s `ApiKeys` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ApiVersion {
@@ -99,9 +163,33 @@ impl ApiVersion {
     /// Every element of `elements` whose key (`ApiKey`) equals the arguments, in wire
     /// order.
     pub fn find_all(elements: &[ApiVersion], api_key: i16) -> impl Iterator<Item = &ApiVersion> {
-        elements
-            .iter()
-            .filter(move |element| element.api_key == api_key)
+        elements.iter().filter(move |element| element.api_key == api_key)
+    }
+}
+
+impl ApiVersion {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<ApiVersion, crate::DecodeError> {
+        let mut value = ApiVersion::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.api_key = reader.read_i16().within("ApiKey")?;
+        self.min_version = reader.read_i16().within("MinVersion")?;
+        self.max_version = reader.read_i16().within("MaxVersion")?;
+        if version >= 3 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -142,6 +230,33 @@ impl SupportedFeatureKey {
     }
 }
 
+impl SupportedFeatureKey {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<SupportedFeatureKey, crate::DecodeError> {
+        let mut value = SupportedFeatureKey::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        self.min_version = reader.read_i16().within("MinVersion")?;
+        self.max_version = reader.read_i16().within("MaxVersion")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `ApiVersionsResponse`'s `FinalizedFeatures` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct FinalizedFeatureKey {
@@ -179,6 +294,33 @@ impl FinalizedFeatureKey {
     }
 }
 
+impl FinalizedFeatureKey {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<FinalizedFeatureKey, crate::DecodeError> {
+        let mut value = FinalizedFeatureKey::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        self.max_version_level = reader.read_i16().within("MaxVersionLevel")?;
+        self.min_version_level = reader.read_i16().within("MinVersionLevel")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl ApiVersionsResponse {
     /// The API key.
     pub const API_KEY: i16 = 18;
@@ -188,4 +330,15 @@ impl ApiVersionsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(3, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for ApiVersionsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ApiVersionsResponse, crate::DecodeError> {
+        if !ApiVersionsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ApiVersionsResponse", version));
+        }
+        ApiVersionsResponse::read(reader, version)
+    }
 }

@@ -4,6 +4,8 @@
 
 //! The `ProduceResponse` response.
 
+use crate::WithinField as _;
+
 /// The `ProduceResponse` response, API key 0: versions 3-13, flexible versions 9+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ProduceResponse {
@@ -23,6 +25,51 @@ pub struct ProduceResponse {
     pub node_endpoints: Vec<NodeEndpoint>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl ProduceResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ProduceResponse, crate::DecodeError> {
+        let mut value = ProduceResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.responses = reader
+            .read_array(
+                if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| TopicProduceResponse::read(reader, version),
+            )
+            .within("Responses")?;
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        if version >= 9 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                if tag == 0 && version >= 10 {
+                    self.node_endpoints = reader
+                        .read_tagged_value(tag, size, |reader| {
+                            reader.read_array(crate::Framing::Compact, |reader| {
+                                NodeEndpoint::read(reader, version)
+                            })
+                        })
+                        .within("NodeEndpoints")?;
+                } else if tag == 0 {
+                    return Err(reader.tag_not_valid(tag, version).within("NodeEndpoints"));
+                } else {
+                    reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `ProduceResponse`'s `Responses` array.
@@ -63,9 +110,7 @@ impl TopicProduceResponse {
         name: &str,
         topic_id: alluvium_types::Uuid,
     ) -> Option<&'a TopicProduceResponse> {
-        elements
-            .iter()
-            .find(|element| element.name == name && element.topic_id == topic_id)
+        elements.iter().find(|element| element.name == name && element.topic_id == topic_id)
     }
 
     /// Every element of `elements` whose key (`Name`, `TopicId`) equals the arguments, in
@@ -75,9 +120,51 @@ impl TopicProduceResponse {
         name: &str,
         topic_id: alluvium_types::Uuid,
     ) -> impl Iterator<Item = &'a TopicProduceResponse> {
-        elements
-            .iter()
-            .filter(move |element| element.name == name && element.topic_id == topic_id)
+        elements.iter().filter(move |element| element.name == name && element.topic_id == topic_id)
+    }
+}
+
+impl TopicProduceResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TopicProduceResponse, crate::DecodeError> {
+        let mut value = TopicProduceResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version <= 12 {
+            self.name = reader
+                .read_string(if version >= 9 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("Name")?;
+        }
+        if version == 13 {
+            self.topic_id = reader.read_uuid().within("TopicId")?;
+        }
+        self.partition_responses = reader
+            .read_array(
+                if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| PartitionProduceResponse::read(reader, version),
+            )
+            .within("PartitionResponses")?;
+        if version >= 9 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -151,6 +238,64 @@ impl PartitionProduceResponse {
     }
 }
 
+impl PartitionProduceResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<PartitionProduceResponse, crate::DecodeError> {
+        let mut value = PartitionProduceResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.index = reader.read_i32().within("Index")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.base_offset = reader.read_i64().within("BaseOffset")?;
+        self.log_append_time_ms = reader.read_i64().within("LogAppendTimeMs")?;
+        if version >= 5 {
+            self.log_start_offset = reader.read_i64().within("LogStartOffset")?;
+        }
+        if version >= 8 {
+            self.record_errors = reader
+                .read_array(
+                    if version >= 9 { crate::Framing::Compact } else { crate::Framing::Classic },
+                    |reader| BatchIndexAndErrorMessage::read(reader, version),
+                )
+                .within("RecordErrors")?;
+            self.error_message = reader
+                .read_nullable_string(if version >= 9 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("ErrorMessage")?;
+        }
+        if version >= 9 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                if tag == 0 && version >= 10 {
+                    self.current_leader = reader
+                        .read_tagged_value(tag, size, |reader| {
+                            LeaderIdAndEpoch::read(reader, version)
+                        })
+                        .within("CurrentLeader")?;
+                } else if tag == 0 {
+                    return Err(reader.tag_not_valid(tag, version).within("CurrentLeader"));
+                } else {
+                    reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `PartitionProduceResponse`'s `RecordErrors` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct BatchIndexAndErrorMessage {
@@ -164,6 +309,40 @@ pub struct BatchIndexAndErrorMessage {
     pub batch_index_error_message: Option<String>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl BatchIndexAndErrorMessage {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<BatchIndexAndErrorMessage, crate::DecodeError> {
+        let mut value = BatchIndexAndErrorMessage::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.batch_index = reader.read_i32().within("BatchIndex")?;
+        self.batch_index_error_message = reader
+            .read_nullable_string(if version >= 9 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("BatchIndexErrorMessage")?;
+        if version >= 9 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// The `CurrentLeader` field of `PartitionProduceResponse`.
@@ -183,11 +362,33 @@ pub struct LeaderIdAndEpoch {
 
 impl Default for LeaderIdAndEpoch {
     fn default() -> LeaderIdAndEpoch {
-        LeaderIdAndEpoch {
-            leader_id: -1,
-            leader_epoch: -1,
-            unknown_tagged_fields: Vec::new(),
+        LeaderIdAndEpoch { leader_id: -1, leader_epoch: -1, unknown_tagged_fields: Vec::new() }
+    }
+}
+
+impl LeaderIdAndEpoch {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<LeaderIdAndEpoch, crate::DecodeError> {
+        let mut value = LeaderIdAndEpoch::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.leader_id = reader.read_i32().within("LeaderId")?;
+        self.leader_epoch = reader.read_i32().within("LeaderEpoch")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
     }
 }
 
@@ -226,9 +427,32 @@ impl NodeEndpoint {
         elements: &[NodeEndpoint],
         node_id: i32,
     ) -> impl Iterator<Item = &NodeEndpoint> {
-        elements
-            .iter()
-            .filter(move |element| element.node_id == node_id)
+        elements.iter().filter(move |element| element.node_id == node_id)
+    }
+}
+
+impl NodeEndpoint {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<NodeEndpoint, crate::DecodeError> {
+        let mut value = NodeEndpoint::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.node_id = reader.read_i32().within("NodeId")?;
+        self.host = reader.read_string(crate::Framing::Compact).within("Host")?;
+        self.port = reader.read_i32().within("Port")?;
+        self.rack = reader.read_nullable_string(crate::Framing::Compact).within("Rack")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -241,4 +465,15 @@ impl ProduceResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(9, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for ProduceResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ProduceResponse, crate::DecodeError> {
+        if !ProduceResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ProduceResponse", version));
+        }
+        ProduceResponse::read(reader, version)
+    }
 }

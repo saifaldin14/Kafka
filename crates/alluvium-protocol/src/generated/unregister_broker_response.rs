@@ -5,6 +5,8 @@
 
 //! The `UnregisterBrokerResponse` response.
 
+use crate::WithinField as _;
+
 /// The `UnregisterBrokerResponse` response, API key 64: versions 0, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnregisterBrokerResponse {
@@ -49,6 +51,34 @@ impl UnregisterBrokerResponse {
 }
 
 impl UnregisterBrokerResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<UnregisterBrokerResponse, crate::DecodeError> {
+        let mut value = UnregisterBrokerResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message =
+            reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
+impl UnregisterBrokerResponse {
     /// The API key.
     pub const API_KEY: i16 = 64;
     /// The versions of this message.
@@ -57,4 +87,15 @@ impl UnregisterBrokerResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for UnregisterBrokerResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<UnregisterBrokerResponse, crate::DecodeError> {
+        if !UnregisterBrokerResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("UnregisterBrokerResponse", version));
+        }
+        UnregisterBrokerResponse::read(reader, version)
+    }
 }

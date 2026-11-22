@@ -5,6 +5,8 @@
 
 //! The `FetchSnapshotResponse` response.
 
+use crate::WithinField as _;
+
 /// The `FetchSnapshotResponse` response, API key 59: versions 0-1, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct FetchSnapshotResponse {
@@ -41,6 +43,47 @@ impl FetchSnapshotResponse {
     }
 }
 
+impl FetchSnapshotResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<FetchSnapshotResponse, crate::DecodeError> {
+        let mut value = FetchSnapshotResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.topics = reader
+            .read_array(crate::Framing::Compact, |reader| TopicSnapshot::read(reader, version))
+            .within("Topics")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            if tag == 0 && version == 1 {
+                self.node_endpoints = reader
+                    .read_tagged_value(tag, size, |reader| {
+                        reader.read_array(crate::Framing::Compact, |reader| {
+                            NodeEndpoint::read(reader, version)
+                        })
+                    })
+                    .within("NodeEndpoints")?;
+            } else if tag == 0 {
+                return Err(reader.tag_not_valid(tag, version).within("NodeEndpoints"));
+            } else {
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `FetchSnapshotResponse`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopicSnapshot {
@@ -54,6 +97,31 @@ pub struct TopicSnapshot {
     pub partitions: Vec<PartitionSnapshot>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl TopicSnapshot {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<TopicSnapshot, crate::DecodeError> {
+        let mut value = TopicSnapshot::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, |reader| PartitionSnapshot::read(reader, version))
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `TopicSnapshot`'s `Partitions` array.
@@ -103,6 +171,46 @@ impl PartitionSnapshot {
     }
 }
 
+impl PartitionSnapshot {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<PartitionSnapshot, crate::DecodeError> {
+        let mut value = PartitionSnapshot::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.index = reader.read_i32().within("Index")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.snapshot_id = SnapshotId::read(reader, version).within("SnapshotId")?;
+        self.size = reader.read_i64().within("Size")?;
+        self.position = reader.read_i64().within("Position")?;
+        self.unaligned_records = reader
+            .read_bytes(crate::Framing::Compact)
+            .map(crate::RecordsField::new)
+            .map(Some)
+            .within("UnalignedRecords")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            if tag == 0 {
+                self.current_leader = reader
+                    .read_tagged_value(tag, size, |reader| LeaderIdAndEpoch::read(reader, version))
+                    .within("CurrentLeader")?;
+            } else {
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// The `SnapshotId` field of `PartitionSnapshot`.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct SnapshotId {
@@ -118,6 +226,29 @@ pub struct SnapshotId {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl SnapshotId {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<SnapshotId, crate::DecodeError> {
+        let mut value = SnapshotId::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.end_offset = reader.read_i64().within("EndOffset")?;
+        self.epoch = reader.read_i32().within("Epoch")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// The `CurrentLeader` field of `PartitionSnapshot`.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct LeaderIdAndEpoch {
@@ -131,6 +262,32 @@ pub struct LeaderIdAndEpoch {
     pub leader_epoch: i32,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl LeaderIdAndEpoch {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<LeaderIdAndEpoch, crate::DecodeError> {
+        let mut value = LeaderIdAndEpoch::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.leader_id = reader.read_i32().within("LeaderId")?;
+        self.leader_epoch = reader.read_i32().within("LeaderEpoch")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `FetchSnapshotResponse`'s `NodeEndpoints` array.
@@ -164,9 +321,31 @@ impl NodeEndpoint {
         elements: &[NodeEndpoint],
         node_id: i32,
     ) -> impl Iterator<Item = &NodeEndpoint> {
-        elements
-            .iter()
-            .filter(move |element| element.node_id == node_id)
+        elements.iter().filter(move |element| element.node_id == node_id)
+    }
+}
+
+impl NodeEndpoint {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<NodeEndpoint, crate::DecodeError> {
+        let mut value = NodeEndpoint::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.node_id = reader.read_i32().within("NodeId")?;
+        self.host = reader.read_string(crate::Framing::Compact).within("Host")?;
+        self.port = reader.read_u16().within("Port")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -179,4 +358,15 @@ impl FetchSnapshotResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for FetchSnapshotResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<FetchSnapshotResponse, crate::DecodeError> {
+        if !FetchSnapshotResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("FetchSnapshotResponse", version));
+        }
+        FetchSnapshotResponse::read(reader, version)
+    }
 }

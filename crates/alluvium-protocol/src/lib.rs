@@ -25,24 +25,30 @@
 #![deny(clippy::indexing_slicing, clippy::arithmetic_side_effects)]
 
 mod array;
+#[cfg(test)]
+mod decode_tests;
 mod error;
 mod error_code;
 mod framed;
+#[rustfmt::skip]
 pub mod generated;
 mod limits;
+mod message;
 mod reader;
 mod records;
 mod tagged_fields;
 #[cfg(test)]
+#[rustfmt::skip]
 pub mod test_messages;
 mod varint;
 mod versions;
 mod writer;
 
-pub use error::{DecodeError, DecodeErrorKind, EncodeError};
+pub use error::{DecodeError, DecodeErrorKind, EncodeError, WithinField};
 pub use error_code::{ErrorCode, UnknownErrorCode};
 pub use framed::Framing;
 pub use limits::{DecodeLimits, Limit};
+pub use message::Message;
 pub use reader::Reader;
 pub use records::RecordsField;
 pub use tagged_fields::RawTaggedField;

@@ -4,6 +4,8 @@
 
 //! The `SyncGroupRequest` request.
 
+use crate::WithinField as _;
+
 /// The `SyncGroupRequest` request, API key 14: versions 0-5, flexible versions 4+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct SyncGroupRequest {
@@ -39,6 +41,68 @@ pub struct SyncGroupRequest {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl SyncGroupRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<SyncGroupRequest, crate::DecodeError> {
+        let mut value = SyncGroupRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.group_id = reader
+            .read_string(if version >= 4 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("GroupId")?;
+        self.generation_id = reader.read_i32().within("GenerationId")?;
+        self.member_id = reader
+            .read_string(if version >= 4 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("MemberId")?;
+        if version >= 3 {
+            self.group_instance_id = reader
+                .read_nullable_string(if version >= 4 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("GroupInstanceId")?;
+        }
+        if version == 5 {
+            self.protocol_type =
+                reader.read_nullable_string(crate::Framing::Compact).within("ProtocolType")?;
+            self.protocol_name =
+                reader.read_nullable_string(crate::Framing::Compact).within("ProtocolName")?;
+        }
+        self.assignments = reader
+            .read_array(
+                if version >= 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| SyncGroupRequestAssignment::read(reader, version),
+            )
+            .within("Assignments")?;
+        if version >= 4 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `SyncGroupRequest`'s `Assignments` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct SyncGroupRequestAssignment {
@@ -54,6 +118,46 @@ pub struct SyncGroupRequestAssignment {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl SyncGroupRequestAssignment {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<SyncGroupRequestAssignment, crate::DecodeError> {
+        let mut value = SyncGroupRequestAssignment::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.member_id = reader
+            .read_string(if version >= 4 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("MemberId")?;
+        self.assignment = reader
+            .read_bytes(if version >= 4 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Assignment")?;
+        if version >= 4 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl SyncGroupRequest {
     /// The API key.
     pub const API_KEY: i16 = 14;
@@ -66,4 +170,15 @@ impl SyncGroupRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for SyncGroupRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<SyncGroupRequest, crate::DecodeError> {
+        if !SyncGroupRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("SyncGroupRequest", version));
+        }
+        SyncGroupRequest::read(reader, version)
+    }
 }

@@ -5,6 +5,8 @@
 
 //! The `StreamsGroupHeartbeatRequest` request.
 
+use crate::WithinField as _;
+
 /// The `StreamsGroupHeartbeatRequest` request, API key 88: versions 0-1, flexible versions
 /// 0+.
 #[derive(Debug, Clone, PartialEq)]
@@ -123,6 +125,77 @@ impl Default for StreamsGroupHeartbeatRequest {
     }
 }
 
+impl StreamsGroupHeartbeatRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<StreamsGroupHeartbeatRequest, crate::DecodeError> {
+        let mut value = StreamsGroupHeartbeatRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.group_id = reader.read_string(crate::Framing::Compact).within("GroupId")?;
+        self.member_id = reader.read_string(crate::Framing::Compact).within("MemberId")?;
+        self.member_epoch = reader.read_i32().within("MemberEpoch")?;
+        self.endpoint_information_epoch = reader.read_i32().within("EndpointInformationEpoch")?;
+        self.instance_id =
+            reader.read_nullable_string(crate::Framing::Compact).within("InstanceId")?;
+        self.rack_id = reader.read_nullable_string(crate::Framing::Compact).within("RackId")?;
+        self.rebalance_timeout_ms = reader.read_i32().within("RebalanceTimeoutMs")?;
+        self.topology =
+            reader
+                .read_i8()
+                .and_then(|marker| {
+                    if marker < 0 { Ok(None) } else { Topology::read(reader, version).map(Some) }
+                })
+                .within("Topology")?;
+        self.active_tasks = reader
+            .read_nullable_array(crate::Framing::Compact, |reader| TaskIds::read(reader, version))
+            .within("ActiveTasks")?;
+        self.standby_tasks = reader
+            .read_nullable_array(crate::Framing::Compact, |reader| TaskIds::read(reader, version))
+            .within("StandbyTasks")?;
+        self.warmup_tasks = reader
+            .read_nullable_array(crate::Framing::Compact, |reader| TaskIds::read(reader, version))
+            .within("WarmupTasks")?;
+        self.process_id =
+            reader.read_nullable_string(crate::Framing::Compact).within("ProcessId")?;
+        self.user_endpoint =
+            reader
+                .read_i8()
+                .and_then(|marker| {
+                    if marker < 0 { Ok(None) } else { Endpoint::read(reader, version).map(Some) }
+                })
+                .within("UserEndpoint")?;
+        self.client_tags = reader
+            .read_nullable_array(crate::Framing::Compact, |reader| KeyValue::read(reader, version))
+            .within("ClientTags")?;
+        self.task_offsets = reader
+            .read_nullable_array(crate::Framing::Compact, |reader| {
+                TaskOffset::read(reader, version)
+            })
+            .within("TaskOffsets")?;
+        self.task_end_offsets = reader
+            .read_nullable_array(crate::Framing::Compact, |reader| {
+                TaskOffset::read(reader, version)
+            })
+            .within("TaskEndOffsets")?;
+        self.shutdown_application = reader.read_bool().within("ShutdownApplication")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// The `Topology` field of `StreamsGroupHeartbeatRequest`.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Topology {
@@ -137,6 +210,31 @@ pub struct Topology {
     pub subtopologies: Vec<Subtopology>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl Topology {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<Topology, crate::DecodeError> {
+        let mut value = Topology::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.epoch = reader.read_i32().within("Epoch")?;
+        self.subtopologies = reader
+            .read_array(crate::Framing::Compact, |reader| Subtopology::read(reader, version))
+            .within("Subtopologies")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `Topology`'s `Subtopologies` array.
@@ -177,6 +275,53 @@ pub struct Subtopology {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl Subtopology {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<Subtopology, crate::DecodeError> {
+        let mut value = Subtopology::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.subtopology_id =
+            reader.read_string(crate::Framing::Compact).within("SubtopologyId")?;
+        self.source_topics = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                reader.read_string(crate::Framing::Compact)
+            })
+            .within("SourceTopics")?;
+        self.source_topic_regex = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                reader.read_string(crate::Framing::Compact)
+            })
+            .within("SourceTopicRegex")?;
+        self.state_changelog_topics = reader
+            .read_array(crate::Framing::Compact, |reader| TopicInfo::read(reader, version))
+            .within("StateChangelogTopics")?;
+        self.repartition_sink_topics = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                reader.read_string(crate::Framing::Compact)
+            })
+            .within("RepartitionSinkTopics")?;
+        self.repartition_source_topics = reader
+            .read_array(crate::Framing::Compact, |reader| TopicInfo::read(reader, version))
+            .within("RepartitionSourceTopics")?;
+        self.copartition_groups = reader
+            .read_array(crate::Framing::Compact, |reader| CopartitionGroup::read(reader, version))
+            .within("CopartitionGroups")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// `TopicInfo`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopicInfo {
@@ -202,6 +347,33 @@ pub struct TopicInfo {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl TopicInfo {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<TopicInfo, crate::DecodeError> {
+        let mut value = TopicInfo::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        self.partitions = reader.read_i32().within("Partitions")?;
+        self.replication_factor = reader.read_i16().within("ReplicationFactor")?;
+        self.topic_configs = reader
+            .read_array(crate::Framing::Compact, |reader| KeyValue::read(reader, version))
+            .within("TopicConfigs")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// `KeyValue`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct KeyValue {
@@ -215,6 +387,29 @@ pub struct KeyValue {
     pub value: String,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl KeyValue {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<KeyValue, crate::DecodeError> {
+        let mut value = KeyValue::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.key = reader.read_string(crate::Framing::Compact).within("Key")?;
+        self.value = reader.read_string(crate::Framing::Compact).within("Value")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `Subtopology`'s `CopartitionGroups` array.
@@ -238,6 +433,39 @@ pub struct CopartitionGroup {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl CopartitionGroup {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CopartitionGroup, crate::DecodeError> {
+        let mut value = CopartitionGroup::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.source_topics = reader
+            .read_array(crate::Framing::Compact, crate::Reader::read_i16)
+            .within("SourceTopics")?;
+        self.source_topic_regex = reader
+            .read_array(crate::Framing::Compact, crate::Reader::read_i16)
+            .within("SourceTopicRegex")?;
+        self.repartition_source_topics = reader
+            .read_array(crate::Framing::Compact, crate::Reader::read_i16)
+            .within("RepartitionSourceTopics")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// `TaskIds`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TaskIds {
@@ -253,6 +481,32 @@ pub struct TaskIds {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl TaskIds {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<TaskIds, crate::DecodeError> {
+        let mut value = TaskIds::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.subtopology_id =
+            reader.read_string(crate::Framing::Compact).within("SubtopologyId")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, crate::Reader::read_i32)
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// `Endpoint`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Endpoint {
@@ -266,6 +520,29 @@ pub struct Endpoint {
     pub port: u16,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl Endpoint {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<Endpoint, crate::DecodeError> {
+        let mut value = Endpoint::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.host = reader.read_string(crate::Framing::Compact).within("Host")?;
+        self.port = reader.read_u16().within("Port")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// `TaskOffset`, a struct several fields share.
@@ -287,6 +564,31 @@ pub struct TaskOffset {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl TaskOffset {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<TaskOffset, crate::DecodeError> {
+        let mut value = TaskOffset::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.subtopology_id =
+            reader.read_string(crate::Framing::Compact).within("SubtopologyId")?;
+        self.partition = reader.read_i32().within("Partition")?;
+        self.offset = reader.read_i64().within("Offset")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl StreamsGroupHeartbeatRequest {
     /// The API key.
     pub const API_KEY: i16 = 88;
@@ -299,4 +601,15 @@ impl StreamsGroupHeartbeatRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for StreamsGroupHeartbeatRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<StreamsGroupHeartbeatRequest, crate::DecodeError> {
+        if !StreamsGroupHeartbeatRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("StreamsGroupHeartbeatRequest", version));
+        }
+        StreamsGroupHeartbeatRequest::read(reader, version)
+    }
 }

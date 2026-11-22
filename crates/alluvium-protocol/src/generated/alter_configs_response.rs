@@ -4,6 +4,8 @@
 
 //! The `AlterConfigsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `AlterConfigsResponse` response, API key 33: versions 0-2, flexible versions 2+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AlterConfigsResponse {
@@ -18,6 +20,39 @@ pub struct AlterConfigsResponse {
     pub responses: Vec<AlterConfigsResourceResponse>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl AlterConfigsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterConfigsResponse, crate::DecodeError> {
+        let mut value = AlterConfigsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.responses = reader
+            .read_array(
+                if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| AlterConfigsResourceResponse::read(reader, version),
+            )
+            .within("Responses")?;
+        if version == 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `AlterConfigsResponse`'s `Responses` array.
@@ -67,6 +102,48 @@ impl AlterConfigsResourceResponse {
     }
 }
 
+impl AlterConfigsResourceResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterConfigsResourceResponse, crate::DecodeError> {
+        let mut value = AlterConfigsResourceResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message = reader
+            .read_nullable_string(if version == 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ErrorMessage")?;
+        self.resource_type = reader.read_i8().within("ResourceType")?;
+        self.resource_name = reader
+            .read_string(if version == 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ResourceName")?;
+        if version == 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl AlterConfigsResponse {
     /// The API key.
     pub const API_KEY: i16 = 33;
@@ -76,4 +153,15 @@ impl AlterConfigsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(2, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for AlterConfigsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterConfigsResponse, crate::DecodeError> {
+        if !AlterConfigsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("AlterConfigsResponse", version));
+        }
+        AlterConfigsResponse::read(reader, version)
+    }
 }

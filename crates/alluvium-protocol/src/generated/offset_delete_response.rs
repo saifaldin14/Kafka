@@ -4,6 +4,8 @@
 
 //! The `OffsetDeleteResponse` response.
 
+use crate::WithinField as _;
+
 /// The `OffsetDeleteResponse` response, API key 47: versions 0, flexible versions none.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct OffsetDeleteResponse {
@@ -31,6 +33,32 @@ impl OffsetDeleteResponse {
     /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
     pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
         crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
+impl OffsetDeleteResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetDeleteResponse, crate::DecodeError> {
+        let mut value = OffsetDeleteResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.topics = reader
+            .read_array(crate::Framing::Classic, |reader| {
+                OffsetDeleteResponseTopic::read(reader, version)
+            })
+            .within("Topics")?;
+        Ok(())
     }
 }
 
@@ -65,6 +93,31 @@ impl OffsetDeleteResponseTopic {
     }
 }
 
+impl OffsetDeleteResponseTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetDeleteResponseTopic, crate::DecodeError> {
+        let mut value = OffsetDeleteResponseTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Classic).within("Name")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Classic, |reader| {
+                OffsetDeleteResponsePartition::read(reader, version)
+            })
+            .within("Partitions")?;
+        Ok(())
+    }
+}
+
 /// An element of `OffsetDeleteResponseTopic`'s `Partitions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct OffsetDeleteResponsePartition {
@@ -85,9 +138,7 @@ impl OffsetDeleteResponsePartition {
         elements: &[OffsetDeleteResponsePartition],
         partition_index: i32,
     ) -> Option<&OffsetDeleteResponsePartition> {
-        elements
-            .iter()
-            .find(|element| element.partition_index == partition_index)
+        elements.iter().find(|element| element.partition_index == partition_index)
     }
 
     /// Every element of `elements` whose key (`PartitionIndex`) equals the arguments, in
@@ -96,9 +147,7 @@ impl OffsetDeleteResponsePartition {
         elements: &[OffsetDeleteResponsePartition],
         partition_index: i32,
     ) -> impl Iterator<Item = &OffsetDeleteResponsePartition> {
-        elements
-            .iter()
-            .filter(move |element| element.partition_index == partition_index)
+        elements.iter().filter(move |element| element.partition_index == partition_index)
     }
 }
 
@@ -114,6 +163,27 @@ impl OffsetDeleteResponsePartition {
     }
 }
 
+impl OffsetDeleteResponsePartition {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetDeleteResponsePartition, crate::DecodeError> {
+        let mut value = OffsetDeleteResponsePartition::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        Ok(())
+    }
+}
+
 impl OffsetDeleteResponse {
     /// The API key.
     pub const API_KEY: i16 = 47;
@@ -123,4 +193,15 @@ impl OffsetDeleteResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::NONE;
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for OffsetDeleteResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<OffsetDeleteResponse, crate::DecodeError> {
+        if !OffsetDeleteResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("OffsetDeleteResponse", version));
+        }
+        OffsetDeleteResponse::read(reader, version)
+    }
 }

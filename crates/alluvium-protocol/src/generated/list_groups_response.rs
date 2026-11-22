@@ -4,6 +4,8 @@
 
 //! The `ListGroupsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `ListGroupsResponse` response, API key 16: versions 0-5, flexible versions 3+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ListGroupsResponse {
@@ -36,6 +38,42 @@ impl ListGroupsResponse {
     }
 }
 
+impl ListGroupsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListGroupsResponse, crate::DecodeError> {
+        let mut value = ListGroupsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version >= 1 {
+            self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        }
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.groups = reader
+            .read_array(
+                if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| ListedGroup::read(reader, version),
+            )
+            .within("Groups")?;
+        if version >= 3 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `ListGroupsResponse`'s `Groups` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ListedGroup {
@@ -59,6 +97,49 @@ pub struct ListedGroup {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl ListedGroup {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<ListedGroup, crate::DecodeError> {
+        let mut value = ListedGroup::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.group_id = reader
+            .read_string(if version >= 3 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("GroupId")?;
+        self.protocol_type = reader
+            .read_string(if version >= 3 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ProtocolType")?;
+        if version >= 4 {
+            self.group_state = reader.read_string(crate::Framing::Compact).within("GroupState")?;
+        }
+        if version == 5 {
+            self.group_type = reader.read_string(crate::Framing::Compact).within("GroupType")?;
+        }
+        if version >= 3 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl ListGroupsResponse {
     /// The API key.
     pub const API_KEY: i16 = 16;
@@ -68,4 +149,15 @@ impl ListGroupsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(3, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for ListGroupsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListGroupsResponse, crate::DecodeError> {
+        if !ListGroupsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ListGroupsResponse", version));
+        }
+        ListGroupsResponse::read(reader, version)
+    }
 }

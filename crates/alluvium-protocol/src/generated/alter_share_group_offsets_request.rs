@@ -5,6 +5,8 @@
 
 //! The `AlterShareGroupOffsetsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `AlterShareGroupOffsetsRequest` request, API key 91: versions 0, flexible versions
 /// 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -19,6 +21,36 @@ pub struct AlterShareGroupOffsetsRequest {
     pub topics: Vec<AlterShareGroupOffsetsRequestTopic>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl AlterShareGroupOffsetsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterShareGroupOffsetsRequest, crate::DecodeError> {
+        let mut value = AlterShareGroupOffsetsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.group_id = reader.read_string(crate::Framing::Compact).within("GroupId")?;
+        self.topics = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                AlterShareGroupOffsetsRequestTopic::read(reader, version)
+            })
+            .within("Topics")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `AlterShareGroupOffsetsRequest`'s `Topics` array.
@@ -43,9 +75,7 @@ impl AlterShareGroupOffsetsRequestTopic {
         elements: &'a [AlterShareGroupOffsetsRequestTopic],
         topic_name: &str,
     ) -> Option<&'a AlterShareGroupOffsetsRequestTopic> {
-        elements
-            .iter()
-            .find(|element| element.topic_name == topic_name)
+        elements.iter().find(|element| element.topic_name == topic_name)
     }
 
     /// Every element of `elements` whose key (`TopicName`) equals the arguments, in wire
@@ -54,9 +84,37 @@ impl AlterShareGroupOffsetsRequestTopic {
         elements: &'a [AlterShareGroupOffsetsRequestTopic],
         topic_name: &str,
     ) -> impl Iterator<Item = &'a AlterShareGroupOffsetsRequestTopic> {
-        elements
-            .iter()
-            .filter(move |element| element.topic_name == topic_name)
+        elements.iter().filter(move |element| element.topic_name == topic_name)
+    }
+}
+
+impl AlterShareGroupOffsetsRequestTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterShareGroupOffsetsRequestTopic, crate::DecodeError> {
+        let mut value = AlterShareGroupOffsetsRequestTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_name = reader.read_string(crate::Framing::Compact).within("TopicName")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                AlterShareGroupOffsetsRequestPartition::read(reader, version)
+            })
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -75,6 +133,32 @@ pub struct AlterShareGroupOffsetsRequestPartition {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl AlterShareGroupOffsetsRequestPartition {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterShareGroupOffsetsRequestPartition, crate::DecodeError> {
+        let mut value = AlterShareGroupOffsetsRequestPartition::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.start_offset = reader.read_i64().within("StartOffset")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl AlterShareGroupOffsetsRequest {
     /// The API key.
     pub const API_KEY: i16 = 91;
@@ -87,4 +171,15 @@ impl AlterShareGroupOffsetsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for AlterShareGroupOffsetsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterShareGroupOffsetsRequest, crate::DecodeError> {
+        if !AlterShareGroupOffsetsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("AlterShareGroupOffsetsRequest", version));
+        }
+        AlterShareGroupOffsetsRequest::read(reader, version)
+    }
 }

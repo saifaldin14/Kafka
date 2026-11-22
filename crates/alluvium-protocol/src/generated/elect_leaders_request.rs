@@ -4,6 +4,8 @@
 
 //! The `ElectLeadersRequest` request.
 
+use crate::WithinField as _;
+
 /// The `ElectLeadersRequest` request, API key 43: versions 0-2, flexible versions 2+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ElectLeadersRequest {
@@ -36,6 +38,42 @@ impl Default for ElectLeadersRequest {
     }
 }
 
+impl ElectLeadersRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ElectLeadersRequest, crate::DecodeError> {
+        let mut value = ElectLeadersRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version >= 1 {
+            self.election_type = reader.read_i8().within("ElectionType")?;
+        }
+        self.topic_partitions = reader
+            .read_nullable_array(
+                if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| TopicPartitions::read(reader, version),
+            )
+            .within("TopicPartitions")?;
+        self.timeout_ms = reader.read_i32().within("TimeoutMs")?;
+        if version == 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `ElectLeadersRequest`'s `TopicPartitions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopicPartitions {
@@ -62,9 +100,46 @@ impl TopicPartitions {
         elements: &'a [TopicPartitions],
         topic: &str,
     ) -> impl Iterator<Item = &'a TopicPartitions> {
-        elements
-            .iter()
-            .filter(move |element| element.topic == topic)
+        elements.iter().filter(move |element| element.topic == topic)
+    }
+}
+
+impl TopicPartitions {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TopicPartitions, crate::DecodeError> {
+        let mut value = TopicPartitions::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic = reader
+            .read_string(if version == 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Topic")?;
+        self.partitions = reader
+            .read_array(
+                if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                crate::Reader::read_i32,
+            )
+            .within("Partitions")?;
+        if version == 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -80,4 +155,15 @@ impl ElectLeadersRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for ElectLeadersRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ElectLeadersRequest, crate::DecodeError> {
+        if !ElectLeadersRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ElectLeadersRequest", version));
+        }
+        ElectLeadersRequest::read(reader, version)
+    }
 }

@@ -85,10 +85,6 @@ impl Versions {
     }
 
     /// The versions in `self` but not in `other`, or `None` when that is two ranges.
-    #[cfg_attr(
-        not(test),
-        expect(dead_code, reason = "codegen's version conditions (PROTO-F05) use it")
-    )]
     pub(crate) fn subtract(self, other: Versions) -> Option<Versions> {
         if other.lowest <= self.lowest {
             if other.highest >= self.highest {
@@ -119,10 +115,7 @@ impl Versions {
     }
 
     /// Whether `version` is in the range.
-    #[cfg_attr(
-        not(test),
-        expect(dead_code, reason = "codegen's version conditions (PROTO-F05) use it")
-    )]
+    #[cfg(test)]
     pub(crate) fn contains(self, version: i16) -> bool {
         self.lowest <= version && version <= self.highest
     }

@@ -5,6 +5,8 @@
 
 //! The `DescribeTopicPartitionsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `DescribeTopicPartitionsResponse` response, API key 75: versions 0, flexible
 /// versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -24,6 +26,43 @@ pub struct DescribeTopicPartitionsResponse {
     pub next_cursor: Option<Cursor>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl DescribeTopicPartitionsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeTopicPartitionsResponse, crate::DecodeError> {
+        let mut value = DescribeTopicPartitionsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.topics = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                DescribeTopicPartitionsResponseTopic::read(reader, version)
+            })
+            .within("Topics")?;
+        self.next_cursor =
+            reader
+                .read_i8()
+                .and_then(|marker| {
+                    if marker < 0 { Ok(None) } else { Cursor::read(reader, version).map(Some) }
+                })
+                .within("NextCursor")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `DescribeTopicPartitionsResponse`'s `Topics` array.
@@ -77,9 +116,7 @@ impl DescribeTopicPartitionsResponseTopic {
         elements: &'a [DescribeTopicPartitionsResponseTopic],
         name: Option<&str>,
     ) -> Option<&'a DescribeTopicPartitionsResponseTopic> {
-        elements
-            .iter()
-            .find(|element| element.name.as_deref() == name)
+        elements.iter().find(|element| element.name.as_deref() == name)
     }
 
     /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
@@ -87,9 +124,7 @@ impl DescribeTopicPartitionsResponseTopic {
         elements: &'a [DescribeTopicPartitionsResponseTopic],
         name: Option<&str>,
     ) -> impl Iterator<Item = &'a DescribeTopicPartitionsResponseTopic> {
-        elements
-            .iter()
-            .filter(move |element| element.name.as_deref() == name)
+        elements.iter().filter(move |element| element.name.as_deref() == name)
     }
 }
 
@@ -102,6 +137,40 @@ impl DescribeTopicPartitionsResponseTopic {
     /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
     pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
         crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
+impl DescribeTopicPartitionsResponseTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeTopicPartitionsResponseTopic, crate::DecodeError> {
+        let mut value = DescribeTopicPartitionsResponseTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.name = reader.read_nullable_string(crate::Framing::Compact).within("Name")?;
+        self.topic_id = reader.read_uuid().within("TopicId")?;
+        self.is_internal = reader.read_bool().within("IsInternal")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                DescribeTopicPartitionsResponsePartition::read(reader, version)
+            })
+            .within("Partitions")?;
+        self.topic_authorized_operations = reader.read_i32().within("TopicAuthorizedOperations")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -177,6 +246,49 @@ impl DescribeTopicPartitionsResponsePartition {
     }
 }
 
+impl DescribeTopicPartitionsResponsePartition {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeTopicPartitionsResponsePartition, crate::DecodeError> {
+        let mut value = DescribeTopicPartitionsResponsePartition::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.leader_id = reader.read_i32().within("LeaderId")?;
+        self.leader_epoch = reader.read_i32().within("LeaderEpoch")?;
+        self.replica_nodes = reader
+            .read_array(crate::Framing::Compact, crate::Reader::read_i32)
+            .within("ReplicaNodes")?;
+        self.isr_nodes = reader
+            .read_array(crate::Framing::Compact, crate::Reader::read_i32)
+            .within("IsrNodes")?;
+        self.eligible_leader_replicas = reader
+            .read_nullable_array(crate::Framing::Compact, crate::Reader::read_i32)
+            .within("EligibleLeaderReplicas")?;
+        self.last_known_elr = reader
+            .read_nullable_array(crate::Framing::Compact, crate::Reader::read_i32)
+            .within("LastKnownElr")?;
+        self.offline_replicas = reader
+            .read_array(crate::Framing::Compact, crate::Reader::read_i32)
+            .within("OfflineReplicas")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// The `NextCursor` field of `DescribeTopicPartitionsResponse`.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Cursor {
@@ -192,6 +304,29 @@ pub struct Cursor {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl Cursor {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<Cursor, crate::DecodeError> {
+        let mut value = Cursor::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_name = reader.read_string(crate::Framing::Compact).within("TopicName")?;
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl DescribeTopicPartitionsResponse {
     /// The API key.
     pub const API_KEY: i16 = 75;
@@ -201,4 +336,15 @@ impl DescribeTopicPartitionsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for DescribeTopicPartitionsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeTopicPartitionsResponse, crate::DecodeError> {
+        if !DescribeTopicPartitionsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DescribeTopicPartitionsResponse", version));
+        }
+        DescribeTopicPartitionsResponse::read(reader, version)
+    }
 }

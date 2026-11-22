@@ -5,6 +5,8 @@
 
 //! The `BrokerHeartbeatResponse` response.
 
+use crate::WithinField as _;
+
 /// The `BrokerHeartbeatResponse` response, API key 63: versions 0-2, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct BrokerHeartbeatResponse {
@@ -59,6 +61,35 @@ impl BrokerHeartbeatResponse {
 }
 
 impl BrokerHeartbeatResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<BrokerHeartbeatResponse, crate::DecodeError> {
+        let mut value = BrokerHeartbeatResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.is_caught_up = reader.read_bool().within("IsCaughtUp")?;
+        self.is_fenced = reader.read_bool().within("IsFenced")?;
+        self.should_shut_down = reader.read_bool().within("ShouldShutDown")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
+impl BrokerHeartbeatResponse {
     /// The API key.
     pub const API_KEY: i16 = 63;
     /// The versions of this message.
@@ -67,4 +98,15 @@ impl BrokerHeartbeatResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for BrokerHeartbeatResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<BrokerHeartbeatResponse, crate::DecodeError> {
+        if !BrokerHeartbeatResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("BrokerHeartbeatResponse", version));
+        }
+        BrokerHeartbeatResponse::read(reader, version)
+    }
 }

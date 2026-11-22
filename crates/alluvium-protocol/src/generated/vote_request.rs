@@ -4,6 +4,8 @@
 
 //! The `VoteRequest` request.
 
+use crate::WithinField as _;
+
 /// The `VoteRequest` request, API key 52: versions 0-2, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct VoteRequest {
@@ -34,6 +36,35 @@ impl Default for VoteRequest {
     }
 }
 
+impl VoteRequest {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<VoteRequest, crate::DecodeError> {
+        let mut value = VoteRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.cluster_id =
+            reader.read_nullable_string(crate::Framing::Compact).within("ClusterId")?;
+        if version >= 1 {
+            self.voter_id = reader.read_i32().within("VoterId")?;
+        }
+        self.topics = reader
+            .read_array(crate::Framing::Compact, |reader| TopicData::read(reader, version))
+            .within("Topics")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `VoteRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopicData {
@@ -47,6 +78,31 @@ pub struct TopicData {
     pub partitions: Vec<PartitionData>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl TopicData {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<TopicData, crate::DecodeError> {
+        let mut value = TopicData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_name = reader.read_string(crate::Framing::Compact).within("TopicName")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, |reader| PartitionData::read(reader, version))
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `TopicData`'s `Partitions` array.
@@ -104,6 +160,39 @@ impl Default for PartitionData {
     }
 }
 
+impl PartitionData {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<PartitionData, crate::DecodeError> {
+        let mut value = PartitionData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.replica_epoch = reader.read_i32().within("ReplicaEpoch")?;
+        self.replica_id = reader.read_i32().within("ReplicaId")?;
+        if version >= 1 {
+            self.replica_directory_id = reader.read_uuid().within("ReplicaDirectoryId")?;
+            self.voter_directory_id = reader.read_uuid().within("VoterDirectoryId")?;
+        }
+        self.last_offset_epoch = reader.read_i32().within("LastOffsetEpoch")?;
+        self.last_offset = reader.read_i64().within("LastOffset")?;
+        if version == 2 {
+            self.pre_vote = reader.read_bool().within("PreVote")?;
+        }
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl VoteRequest {
     /// The API key.
     pub const API_KEY: i16 = 52;
@@ -116,4 +205,12 @@ impl VoteRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for VoteRequest {
+    fn decode(reader: &mut crate::Reader, version: i16) -> Result<VoteRequest, crate::DecodeError> {
+        if !VoteRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("VoteRequest", version));
+        }
+        VoteRequest::read(reader, version)
+    }
 }

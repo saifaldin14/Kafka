@@ -4,6 +4,8 @@
 
 //! The `JoinGroupResponse` response.
 
+use crate::WithinField as _;
+
 /// The `JoinGroupResponse` response, API key 11: versions 0-9, flexible versions 6+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct JoinGroupResponse {
@@ -77,6 +79,80 @@ impl JoinGroupResponse {
     }
 }
 
+impl JoinGroupResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<JoinGroupResponse, crate::DecodeError> {
+        let mut value = JoinGroupResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version >= 2 {
+            self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        }
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.generation_id = reader.read_i32().within("GenerationId")?;
+        if version >= 7 {
+            self.protocol_type =
+                reader.read_nullable_string(crate::Framing::Compact).within("ProtocolType")?;
+        }
+        self.protocol_name = if version >= 7 {
+            reader.read_nullable_string(if version >= 6 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+        } else {
+            reader
+                .read_string(if version >= 6 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .map(Some)
+        }
+        .within("ProtocolName")?;
+        self.leader = reader
+            .read_string(if version >= 6 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Leader")?;
+        if version == 9 {
+            self.skip_assignment = reader.read_bool().within("SkipAssignment")?;
+        }
+        self.member_id = reader
+            .read_string(if version >= 6 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("MemberId")?;
+        self.members = reader
+            .read_array(
+                if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| JoinGroupResponseMember::read(reader, version),
+            )
+            .within("Members")?;
+        if version >= 6 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `JoinGroupResponse`'s `Members` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct JoinGroupResponseMember {
@@ -96,6 +172,55 @@ pub struct JoinGroupResponseMember {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl JoinGroupResponseMember {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<JoinGroupResponseMember, crate::DecodeError> {
+        let mut value = JoinGroupResponseMember::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.member_id = reader
+            .read_string(if version >= 6 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("MemberId")?;
+        if version >= 5 {
+            self.group_instance_id = reader
+                .read_nullable_string(if version >= 6 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("GroupInstanceId")?;
+        }
+        self.metadata = reader
+            .read_bytes(if version >= 6 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Metadata")?;
+        if version >= 6 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl JoinGroupResponse {
     /// The API key.
     pub const API_KEY: i16 = 11;
@@ -105,4 +230,15 @@ impl JoinGroupResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(6, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for JoinGroupResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<JoinGroupResponse, crate::DecodeError> {
+        if !JoinGroupResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("JoinGroupResponse", version));
+        }
+        JoinGroupResponse::read(reader, version)
+    }
 }

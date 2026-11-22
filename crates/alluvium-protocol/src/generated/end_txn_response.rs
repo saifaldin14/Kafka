@@ -4,6 +4,8 @@
 
 //! The `EndTxnResponse` response.
 
+use crate::WithinField as _;
+
 /// The `EndTxnResponse` response, API key 26: versions 0-5, flexible versions 3+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct EndTxnResponse {
@@ -53,6 +55,38 @@ impl EndTxnResponse {
 }
 
 impl EndTxnResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<EndTxnResponse, crate::DecodeError> {
+        let mut value = EndTxnResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        if version == 5 {
+            self.producer_id = reader.read_i64().within("ProducerId")?;
+            self.producer_epoch = reader.read_i16().within("ProducerEpoch")?;
+        }
+        if version >= 3 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl EndTxnResponse {
     /// The API key.
     pub const API_KEY: i16 = 26;
     /// The versions of this message.
@@ -61,4 +95,15 @@ impl EndTxnResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(3, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for EndTxnResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<EndTxnResponse, crate::DecodeError> {
+        if !EndTxnResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("EndTxnResponse", version));
+        }
+        EndTxnResponse::read(reader, version)
+    }
 }

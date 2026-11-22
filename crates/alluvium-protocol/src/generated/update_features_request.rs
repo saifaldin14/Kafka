@@ -5,6 +5,8 @@
 
 //! The `UpdateFeaturesRequest` request.
 
+use crate::WithinField as _;
+
 /// The `UpdateFeaturesRequest` request, API key 57: versions 0-2, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct UpdateFeaturesRequest {
@@ -32,6 +34,37 @@ impl Default for UpdateFeaturesRequest {
             validate_only: false,
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl UpdateFeaturesRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<UpdateFeaturesRequest, crate::DecodeError> {
+        let mut value = UpdateFeaturesRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.timeout_ms = reader.read_i32().within("timeoutMs")?;
+        self.feature_updates = reader
+            .read_array(crate::Framing::Compact, |reader| FeatureUpdateKey::read(reader, version))
+            .within("FeatureUpdates")?;
+        if version >= 1 {
+            self.validate_only = reader.read_bool().within("ValidateOnly")?;
+        }
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -91,9 +124,39 @@ impl FeatureUpdateKey {
         elements: &'a [FeatureUpdateKey],
         feature: &str,
     ) -> impl Iterator<Item = &'a FeatureUpdateKey> {
-        elements
-            .iter()
-            .filter(move |element| element.feature == feature)
+        elements.iter().filter(move |element| element.feature == feature)
+    }
+}
+
+impl FeatureUpdateKey {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<FeatureUpdateKey, crate::DecodeError> {
+        let mut value = FeatureUpdateKey::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.feature = reader.read_string(crate::Framing::Compact).within("Feature")?;
+        self.max_version_level = reader.read_i16().within("MaxVersionLevel")?;
+        if version == 0 {
+            self.allow_downgrade = reader.read_bool().within("AllowDowngrade")?;
+        }
+        if version >= 1 {
+            self.upgrade_type = reader.read_i8().within("UpgradeType")?;
+        }
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -109,4 +172,15 @@ impl UpdateFeaturesRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for UpdateFeaturesRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<UpdateFeaturesRequest, crate::DecodeError> {
+        if !UpdateFeaturesRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("UpdateFeaturesRequest", version));
+        }
+        UpdateFeaturesRequest::read(reader, version)
+    }
 }

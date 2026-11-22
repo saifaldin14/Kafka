@@ -5,6 +5,8 @@
 
 //! The `ReadShareGroupStateResponse` response.
 
+use crate::WithinField as _;
+
 /// The `ReadShareGroupStateResponse` response, API key 84: versions 0, flexible versions
 /// 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -15,6 +17,33 @@ pub struct ReadShareGroupStateResponse {
     pub results: Vec<ReadStateResult>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl ReadShareGroupStateResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ReadShareGroupStateResponse, crate::DecodeError> {
+        let mut value = ReadShareGroupStateResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.results = reader
+            .read_array(crate::Framing::Compact, |reader| ReadStateResult::read(reader, version))
+            .within("Results")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `ReadShareGroupStateResponse`'s `Results` array.
@@ -39,6 +68,34 @@ impl Default for ReadStateResult {
             partitions: Vec::new(),
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl ReadStateResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ReadStateResult, crate::DecodeError> {
+        let mut value = ReadStateResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic_id = reader.read_uuid().within("TopicId")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, |reader| PartitionResult::read(reader, version))
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -85,6 +142,39 @@ impl PartitionResult {
     }
 }
 
+impl PartitionResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<PartitionResult, crate::DecodeError> {
+        let mut value = PartitionResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition = reader.read_i32().within("Partition")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message =
+            reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        self.state_epoch = reader.read_i32().within("StateEpoch")?;
+        self.start_offset = reader.read_i64().within("StartOffset")?;
+        self.state_batches = reader
+            .read_array(crate::Framing::Compact, |reader| StateBatch::read(reader, version))
+            .within("StateBatches")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `PartitionResult`'s `StateBatches` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct StateBatch {
@@ -108,6 +198,31 @@ pub struct StateBatch {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl StateBatch {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<StateBatch, crate::DecodeError> {
+        let mut value = StateBatch::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.first_offset = reader.read_i64().within("FirstOffset")?;
+        self.last_offset = reader.read_i64().within("LastOffset")?;
+        self.delivery_state = reader.read_i8().within("DeliveryState")?;
+        self.delivery_count = reader.read_i16().within("DeliveryCount")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl ReadShareGroupStateResponse {
     /// The API key.
     pub const API_KEY: i16 = 84;
@@ -117,4 +232,15 @@ impl ReadShareGroupStateResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for ReadShareGroupStateResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ReadShareGroupStateResponse, crate::DecodeError> {
+        if !ReadShareGroupStateResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ReadShareGroupStateResponse", version));
+        }
+        ReadShareGroupStateResponse::read(reader, version)
+    }
 }

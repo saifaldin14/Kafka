@@ -5,6 +5,8 @@
 
 //! The `DescribeProducersResponse` response.
 
+use crate::WithinField as _;
+
 /// The `DescribeProducersResponse` response, API key 61: versions 0, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DescribeProducersResponse {
@@ -21,6 +23,34 @@ pub struct DescribeProducersResponse {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl DescribeProducersResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeProducersResponse, crate::DecodeError> {
+        let mut value = DescribeProducersResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.topics = reader
+            .read_array(crate::Framing::Compact, |reader| TopicResponse::read(reader, version))
+            .within("Topics")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribeProducersResponse`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopicResponse {
@@ -34,6 +64,31 @@ pub struct TopicResponse {
     pub partitions: Vec<PartitionResponse>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl TopicResponse {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<TopicResponse, crate::DecodeError> {
+        let mut value = TopicResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader.read_string(crate::Framing::Compact).within("Name")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Compact, |reader| PartitionResponse::read(reader, version))
+            .within("Partitions")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
 }
 
 /// An element of `TopicResponse`'s `Partitions` array.
@@ -69,6 +124,37 @@ impl PartitionResponse {
     /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
     pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
         crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
+impl PartitionResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<PartitionResponse, crate::DecodeError> {
+        let mut value = PartitionResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message =
+            reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        self.active_producers = reader
+            .read_array(crate::Framing::Compact, |reader| ProducerState::read(reader, version))
+            .within("ActiveProducers")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
     }
 }
 
@@ -117,6 +203,33 @@ impl Default for ProducerState {
     }
 }
 
+impl ProducerState {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<ProducerState, crate::DecodeError> {
+        let mut value = ProducerState::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.producer_id = reader.read_i64().within("ProducerId")?;
+        self.producer_epoch = reader.read_i32().within("ProducerEpoch")?;
+        self.last_sequence = reader.read_i32().within("LastSequence")?;
+        self.last_timestamp = reader.read_i64().within("LastTimestamp")?;
+        self.coordinator_epoch = reader.read_i32().within("CoordinatorEpoch")?;
+        self.current_txn_start_offset = reader.read_i64().within("CurrentTxnStartOffset")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl DescribeProducersResponse {
     /// The API key.
     pub const API_KEY: i16 = 61;
@@ -126,4 +239,15 @@ impl DescribeProducersResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for DescribeProducersResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeProducersResponse, crate::DecodeError> {
+        if !DescribeProducersResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DescribeProducersResponse", version));
+        }
+        DescribeProducersResponse::read(reader, version)
+    }
 }

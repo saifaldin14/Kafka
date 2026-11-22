@@ -5,6 +5,8 @@
 
 //! The `AllocateProducerIdsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `AllocateProducerIdsResponse` response, API key 67: versions 0, flexible versions
 /// 0+.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -43,6 +45,34 @@ impl AllocateProducerIdsResponse {
 }
 
 impl AllocateProducerIdsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AllocateProducerIdsResponse, crate::DecodeError> {
+        let mut value = AllocateProducerIdsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.producer_id_start = reader.read_i64().within("ProducerIdStart")?;
+        self.producer_id_len = reader.read_i32().within("ProducerIdLen")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
+impl AllocateProducerIdsResponse {
     /// The API key.
     pub const API_KEY: i16 = 67;
     /// The versions of this message.
@@ -51,4 +81,15 @@ impl AllocateProducerIdsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for AllocateProducerIdsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AllocateProducerIdsResponse, crate::DecodeError> {
+        if !AllocateProducerIdsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("AllocateProducerIdsResponse", version));
+        }
+        AllocateProducerIdsResponse::read(reader, version)
+    }
 }

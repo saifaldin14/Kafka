@@ -5,6 +5,8 @@
 
 //! The `CreateDelegationTokenRequest` request.
 
+use crate::WithinField as _;
+
 /// The `CreateDelegationTokenRequest` request, API key 38: versions 1-3, flexible versions
 /// 2+.
 #[derive(Debug, Clone, PartialEq)]
@@ -44,6 +46,47 @@ impl Default for CreateDelegationTokenRequest {
     }
 }
 
+impl CreateDelegationTokenRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreateDelegationTokenRequest, crate::DecodeError> {
+        let mut value = CreateDelegationTokenRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        if version == 3 {
+            self.owner_principal_type = reader
+                .read_nullable_string(crate::Framing::Compact)
+                .within("OwnerPrincipalType")?;
+            self.owner_principal_name = reader
+                .read_nullable_string(crate::Framing::Compact)
+                .within("OwnerPrincipalName")?;
+        }
+        self.renewers = reader
+            .read_array(
+                if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| CreatableRenewers::read(reader, version),
+            )
+            .within("Renewers")?;
+        self.max_lifetime_ms = reader.read_i64().within("MaxLifetimeMs")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `CreateDelegationTokenRequest`'s `Renewers` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CreatableRenewers {
@@ -59,6 +102,46 @@ pub struct CreatableRenewers {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl CreatableRenewers {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreatableRenewers, crate::DecodeError> {
+        let mut value = CreatableRenewers::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.principal_type = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("PrincipalType")?;
+        self.principal_name = reader
+            .read_string(if version >= 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("PrincipalName")?;
+        if version >= 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl CreateDelegationTokenRequest {
     /// The API key.
     pub const API_KEY: i16 = 38;
@@ -71,4 +154,15 @@ impl CreateDelegationTokenRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for CreateDelegationTokenRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreateDelegationTokenRequest, crate::DecodeError> {
+        if !CreateDelegationTokenRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("CreateDelegationTokenRequest", version));
+        }
+        CreateDelegationTokenRequest::read(reader, version)
+    }
 }

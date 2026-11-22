@@ -5,6 +5,8 @@
 
 //! The `DescribeUserScramCredentialsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `DescribeUserScramCredentialsResponse` response, API key 50: versions 0, flexible
 /// versions 0+.
 #[derive(Debug, Clone, PartialEq)]
@@ -55,6 +57,39 @@ impl DescribeUserScramCredentialsResponse {
     }
 }
 
+impl DescribeUserScramCredentialsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeUserScramCredentialsResponse, crate::DecodeError> {
+        let mut value = DescribeUserScramCredentialsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message =
+            reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        self.results = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                DescribeUserScramCredentialsResult::read(reader, version)
+            })
+            .within("Results")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribeUserScramCredentialsResponse`'s `Results` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DescribeUserScramCredentialsResult {
@@ -102,6 +137,37 @@ impl DescribeUserScramCredentialsResult {
     }
 }
 
+impl DescribeUserScramCredentialsResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeUserScramCredentialsResult, crate::DecodeError> {
+        let mut value = DescribeUserScramCredentialsResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.user = reader.read_string(crate::Framing::Compact).within("User")?;
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message =
+            reader.read_nullable_string(crate::Framing::Compact).within("ErrorMessage")?;
+        self.credential_infos = reader
+            .read_array(crate::Framing::Compact, |reader| CredentialInfo::read(reader, version))
+            .within("CredentialInfos")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribeUserScramCredentialsResult`'s `CredentialInfos` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CredentialInfo {
@@ -117,6 +183,32 @@ pub struct CredentialInfo {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl CredentialInfo {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CredentialInfo, crate::DecodeError> {
+        let mut value = CredentialInfo::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.mechanism = reader.read_i8().within("Mechanism")?;
+        self.iterations = reader.read_i32().within("Iterations")?;
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
 impl DescribeUserScramCredentialsResponse {
     /// The API key.
     pub const API_KEY: i16 = 50;
@@ -126,4 +218,15 @@ impl DescribeUserScramCredentialsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(0, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for DescribeUserScramCredentialsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeUserScramCredentialsResponse, crate::DecodeError> {
+        if !DescribeUserScramCredentialsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DescribeUserScramCredentialsResponse", version));
+        }
+        DescribeUserScramCredentialsResponse::read(reader, version)
+    }
 }

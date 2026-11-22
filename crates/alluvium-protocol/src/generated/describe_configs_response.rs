@@ -5,6 +5,8 @@
 
 //! The `DescribeConfigsResponse` response.
 
+use crate::WithinField as _;
+
 /// The `DescribeConfigsResponse` response, API key 32: versions 1-4, flexible versions 4+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DescribeConfigsResponse {
@@ -19,6 +21,39 @@ pub struct DescribeConfigsResponse {
     pub results: Vec<DescribeConfigsResult>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl DescribeConfigsResponse {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeConfigsResponse, crate::DecodeError> {
+        let mut value = DescribeConfigsResponse::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.throttle_time_ms = reader.read_i32().within("ThrottleTimeMs")?;
+        self.results = reader
+            .read_array(
+                if version == 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| DescribeConfigsResult::read(reader, version),
+            )
+            .within("Results")?;
+        if version == 4 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `DescribeConfigsResponse`'s `Results` array.
@@ -71,6 +106,54 @@ impl DescribeConfigsResult {
     /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
     pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
         crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
+impl DescribeConfigsResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeConfigsResult, crate::DecodeError> {
+        let mut value = DescribeConfigsResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.error_code = reader.read_i16().within("ErrorCode")?;
+        self.error_message = reader
+            .read_nullable_string(if version == 4 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ErrorMessage")?;
+        self.resource_type = reader.read_i8().within("ResourceType")?;
+        self.resource_name = reader
+            .read_string(if version == 4 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("ResourceName")?;
+        self.configs = reader
+            .read_array(
+                if version == 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| DescribeConfigsResourceResult::read(reader, version),
+            )
+            .within("Configs")?;
+        if version == 4 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -130,6 +213,65 @@ impl Default for DescribeConfigsResourceResult {
     }
 }
 
+impl DescribeConfigsResourceResult {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeConfigsResourceResult, crate::DecodeError> {
+        let mut value = DescribeConfigsResourceResult::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader
+            .read_string(if version == 4 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Name")?;
+        self.value = reader
+            .read_nullable_string(if version == 4 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Value")?;
+        self.read_only = reader.read_bool().within("ReadOnly")?;
+        self.config_source = reader.read_i8().within("ConfigSource")?;
+        self.is_sensitive = reader.read_bool().within("IsSensitive")?;
+        self.synonyms = reader
+            .read_array(
+                if version == 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| DescribeConfigsSynonym::read(reader, version),
+            )
+            .within("Synonyms")?;
+        if version >= 3 {
+            self.config_type = reader.read_i8().within("ConfigType")?;
+            self.documentation = reader
+                .read_nullable_string(if version == 4 {
+                    crate::Framing::Compact
+                } else {
+                    crate::Framing::Classic
+                })
+                .within("Documentation")?;
+        }
+        if version == 4 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribeConfigsResourceResult`'s `Synonyms` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DescribeConfigsSynonym {
@@ -160,6 +302,47 @@ impl Default for DescribeConfigsSynonym {
     }
 }
 
+impl DescribeConfigsSynonym {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeConfigsSynonym, crate::DecodeError> {
+        let mut value = DescribeConfigsSynonym::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader
+            .read_string(if version == 4 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Name")?;
+        self.value = reader
+            .read_nullable_string(if version == 4 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Value")?;
+        self.source = reader.read_i8().within("Source")?;
+        if version == 4 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl DescribeConfigsResponse {
     /// The API key.
     pub const API_KEY: i16 = 32;
@@ -169,4 +352,15 @@ impl DescribeConfigsResponse {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::new(4, i16::MAX);
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for DescribeConfigsResponse {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<DescribeConfigsResponse, crate::DecodeError> {
+        if !DescribeConfigsResponse::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("DescribeConfigsResponse", version));
+        }
+        DescribeConfigsResponse::read(reader, version)
+    }
 }

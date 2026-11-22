@@ -4,6 +4,8 @@
 
 //! The `CreateTopicsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `CreateTopicsRequest` request, API key 19: versions 2-7, flexible versions 5+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CreateTopicsRequest {
@@ -32,6 +34,40 @@ impl Default for CreateTopicsRequest {
             validate_only: false,
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl CreateTopicsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreateTopicsRequest, crate::DecodeError> {
+        let mut value = CreateTopicsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topics = reader
+            .read_array(
+                if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| CreatableTopic::read(reader, version),
+            )
+            .within("Topics")?;
+        self.timeout_ms = reader.read_i32().within("timeoutMs")?;
+        self.validate_only = reader.read_bool().within("validateOnly")?;
+        if version >= 5 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -81,6 +117,53 @@ impl CreatableTopic {
     }
 }
 
+impl CreatableTopic {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreatableTopic, crate::DecodeError> {
+        let mut value = CreatableTopic::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader
+            .read_string(if version >= 5 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Name")?;
+        self.num_partitions = reader.read_i32().within("NumPartitions")?;
+        self.replication_factor = reader.read_i16().within("ReplicationFactor")?;
+        self.assignments = reader
+            .read_array(
+                if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| CreatableReplicaAssignment::read(reader, version),
+            )
+            .within("Assignments")?;
+        self.configs = reader
+            .read_array(
+                if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| CreatableTopicConfig::read(reader, version),
+            )
+            .within("Configs")?;
+        if version >= 5 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `CreatableTopic`'s `Assignments` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CreatableReplicaAssignment {
@@ -103,9 +186,7 @@ impl CreatableReplicaAssignment {
         elements: &[CreatableReplicaAssignment],
         partition_index: i32,
     ) -> Option<&CreatableReplicaAssignment> {
-        elements
-            .iter()
-            .find(|element| element.partition_index == partition_index)
+        elements.iter().find(|element| element.partition_index == partition_index)
     }
 
     /// Every element of `elements` whose key (`PartitionIndex`) equals the arguments, in
@@ -114,9 +195,40 @@ impl CreatableReplicaAssignment {
         elements: &[CreatableReplicaAssignment],
         partition_index: i32,
     ) -> impl Iterator<Item = &CreatableReplicaAssignment> {
-        elements
-            .iter()
-            .filter(move |element| element.partition_index == partition_index)
+        elements.iter().filter(move |element| element.partition_index == partition_index)
+    }
+}
+
+impl CreatableReplicaAssignment {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreatableReplicaAssignment, crate::DecodeError> {
+        let mut value = CreatableReplicaAssignment::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.partition_index = reader.read_i32().within("PartitionIndex")?;
+        self.broker_ids = reader
+            .read_array(
+                if version >= 5 { crate::Framing::Compact } else { crate::Framing::Classic },
+                crate::Reader::read_i32,
+            )
+            .within("BrokerIds")?;
+        if version >= 5 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -163,6 +275,46 @@ impl CreatableTopicConfig {
     }
 }
 
+impl CreatableTopicConfig {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreatableTopicConfig, crate::DecodeError> {
+        let mut value = CreatableTopicConfig::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.name = reader
+            .read_string(if version >= 5 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Name")?;
+        self.value = reader
+            .read_nullable_string(if version >= 5 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Value")?;
+        if version >= 5 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl CreateTopicsRequest {
     /// The API key.
     pub const API_KEY: i16 = 19;
@@ -175,4 +327,15 @@ impl CreateTopicsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for CreateTopicsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<CreateTopicsRequest, crate::DecodeError> {
+        if !CreateTopicsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("CreateTopicsRequest", version));
+        }
+        CreateTopicsRequest::read(reader, version)
+    }
 }

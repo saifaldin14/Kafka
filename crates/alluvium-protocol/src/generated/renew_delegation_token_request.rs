@@ -5,6 +5,8 @@
 
 //! The `RenewDelegationTokenRequest` request.
 
+use crate::WithinField as _;
+
 /// The `RenewDelegationTokenRequest` request, API key 39: versions 1-2, flexible versions
 /// 2+.
 #[derive(Clone, PartialEq, Default)]
@@ -32,6 +34,40 @@ impl std::fmt::Debug for RenewDelegationTokenRequest {
 }
 
 impl RenewDelegationTokenRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<RenewDelegationTokenRequest, crate::DecodeError> {
+        let mut value = RenewDelegationTokenRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.hmac = reader
+            .read_bytes(if version == 2 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Hmac")?;
+        self.renew_period_ms = reader.read_i64().within("RenewPeriodMs")?;
+        if version == 2 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl RenewDelegationTokenRequest {
     /// The API key.
     pub const API_KEY: i16 = 39;
     /// The versions of this message.
@@ -43,4 +79,15 @@ impl RenewDelegationTokenRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for RenewDelegationTokenRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<RenewDelegationTokenRequest, crate::DecodeError> {
+        if !RenewDelegationTokenRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("RenewDelegationTokenRequest", version));
+        }
+        RenewDelegationTokenRequest::read(reader, version)
+    }
 }

@@ -5,6 +5,8 @@
 
 //! The `AlterClientQuotasRequest` request.
 
+use crate::WithinField as _;
+
 /// The `AlterClientQuotasRequest` request, API key 49: versions 0-1, flexible versions 1+.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AlterClientQuotasRequest {
@@ -20,6 +22,39 @@ pub struct AlterClientQuotasRequest {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl AlterClientQuotasRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterClientQuotasRequest, crate::DecodeError> {
+        let mut value = AlterClientQuotasRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.entries = reader
+            .read_array(
+                if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| EntryData::read(reader, version),
+            )
+            .within("Entries")?;
+        self.validate_only = reader.read_bool().within("ValidateOnly")?;
+        if version == 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `AlterClientQuotasRequest`'s `Entries` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct EntryData {
@@ -33,6 +68,41 @@ pub struct EntryData {
     pub ops: Vec<OpData>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl EntryData {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<EntryData, crate::DecodeError> {
+        let mut value = EntryData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.entity = reader
+            .read_array(
+                if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| EntityData::read(reader, version),
+            )
+            .within("Entity")?;
+        self.ops = reader
+            .read_array(
+                if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+                |reader| OpData::read(reader, version),
+            )
+            .within("Ops")?;
+        if version == 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// An element of `EntryData`'s `Entity` array.
@@ -60,6 +130,43 @@ impl Default for EntityData {
     }
 }
 
+impl EntityData {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<EntityData, crate::DecodeError> {
+        let mut value = EntityData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.entity_type = reader
+            .read_string(if version == 1 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("EntityType")?;
+        self.entity_name = reader
+            .read_nullable_string(if version == 1 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("EntityName")?;
+        if version == 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// An element of `EntryData`'s `Ops` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct OpData {
@@ -79,6 +186,38 @@ pub struct OpData {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl OpData {
+    fn read(reader: &mut crate::Reader, version: i16) -> Result<OpData, crate::DecodeError> {
+        let mut value = OpData::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.key = reader
+            .read_string(if version == 1 {
+                crate::Framing::Compact
+            } else {
+                crate::Framing::Classic
+            })
+            .within("Key")?;
+        self.value = reader.read_f64().within("Value")?;
+        self.remove = reader.read_bool().within("Remove")?;
+        if version == 1 {
+            let count = reader.read_tagged_field_count()?;
+            for _ in 0..count {
+                let (tag, size) = reader.read_tagged_field_header()?;
+                reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl AlterClientQuotasRequest {
     /// The API key.
     pub const API_KEY: i16 = 49;
@@ -91,4 +230,15 @@ impl AlterClientQuotasRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for AlterClientQuotasRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<AlterClientQuotasRequest, crate::DecodeError> {
+        if !AlterClientQuotasRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("AlterClientQuotasRequest", version));
+        }
+        AlterClientQuotasRequest::read(reader, version)
+    }
 }

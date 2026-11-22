@@ -5,6 +5,8 @@
 
 //! The `ConsumerProtocolSubscription` data type.
 
+use crate::WithinField as _;
+
 /// The `ConsumerProtocolSubscription` data type: versions 0-3, flexible versions none.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ConsumerProtocolSubscription {
@@ -42,6 +44,42 @@ impl Default for ConsumerProtocolSubscription {
     }
 }
 
+impl ConsumerProtocolSubscription {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ConsumerProtocolSubscription, crate::DecodeError> {
+        let mut value = ConsumerProtocolSubscription::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topics = reader
+            .read_array(crate::Framing::Classic, |reader| {
+                reader.read_string(crate::Framing::Classic)
+            })
+            .within("Topics")?;
+        self.user_data = reader.read_nullable_bytes(crate::Framing::Classic).within("UserData")?;
+        if version >= 1 {
+            self.owned_partitions = reader
+                .read_array(crate::Framing::Classic, |reader| TopicPartition::read(reader, version))
+                .within("OwnedPartitions")?;
+        }
+        if version >= 2 {
+            self.generation_id = reader.read_i32().within("GenerationId")?;
+        }
+        if version == 3 {
+            self.rack_id = reader.read_nullable_string(crate::Framing::Classic).within("RackId")?;
+        }
+        Ok(())
+    }
+}
+
 /// An element of `ConsumerProtocolSubscription`'s `OwnedPartitions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopicPartition {
@@ -66,9 +104,30 @@ impl TopicPartition {
         elements: &'a [TopicPartition],
         topic: &str,
     ) -> impl Iterator<Item = &'a TopicPartition> {
-        elements
-            .iter()
-            .filter(move |element| element.topic == topic)
+        elements.iter().filter(move |element| element.topic == topic)
+    }
+}
+
+impl TopicPartition {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<TopicPartition, crate::DecodeError> {
+        let mut value = TopicPartition::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        _version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.topic = reader.read_string(crate::Framing::Classic).within("Topic")?;
+        self.partitions = reader
+            .read_array(crate::Framing::Classic, crate::Reader::read_i32)
+            .within("Partitions")?;
+        Ok(())
     }
 }
 
@@ -79,4 +138,15 @@ impl ConsumerProtocolSubscription {
     pub const FLEXIBLE_VERSIONS: crate::Versions = crate::Versions::NONE;
     /// The versions Kafka has deprecated.
     pub const DEPRECATED_VERSIONS: crate::Versions = crate::Versions::NONE;
+}
+impl crate::Message for ConsumerProtocolSubscription {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ConsumerProtocolSubscription, crate::DecodeError> {
+        if !ConsumerProtocolSubscription::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ConsumerProtocolSubscription", version));
+        }
+        ConsumerProtocolSubscription::read(reader, version)
+    }
 }

@@ -5,6 +5,8 @@
 
 //! The `ListTransactionsRequest` request.
 
+use crate::WithinField as _;
+
 /// The `ListTransactionsRequest` request, API key 66: versions 0-2, flexible versions 0+.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ListTransactionsRequest {
@@ -48,6 +50,46 @@ impl Default for ListTransactionsRequest {
 }
 
 impl ListTransactionsRequest {
+    fn read(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListTransactionsRequest, crate::DecodeError> {
+        let mut value = ListTransactionsRequest::default();
+        value.read_fields(reader, version)?;
+        Ok(value)
+    }
+
+    fn read_fields(
+        &mut self,
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<(), crate::DecodeError> {
+        self.state_filters = reader
+            .read_array(crate::Framing::Compact, |reader| {
+                reader.read_string(crate::Framing::Compact)
+            })
+            .within("StateFilters")?;
+        self.producer_id_filters = reader
+            .read_array(crate::Framing::Compact, crate::Reader::read_i64)
+            .within("ProducerIdFilters")?;
+        if version >= 1 {
+            self.duration_filter = reader.read_i64().within("DurationFilter")?;
+        }
+        if version == 2 {
+            self.transactional_id_pattern = reader
+                .read_nullable_string(crate::Framing::Compact)
+                .within("TransactionalIdPattern")?;
+        }
+        let count = reader.read_tagged_field_count()?;
+        for _ in 0..count {
+            let (tag, size) = reader.read_tagged_field_header()?;
+            reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
+        }
+        Ok(())
+    }
+}
+
+impl ListTransactionsRequest {
     /// The API key.
     pub const API_KEY: i16 = 66;
     /// The versions of this message.
@@ -59,4 +101,15 @@ impl ListTransactionsRequest {
     /// Whether the highest version is still unstable, and served only when
     /// unstable versions are enabled.
     pub const LATEST_VERSION_UNSTABLE: bool = false;
+}
+impl crate::Message for ListTransactionsRequest {
+    fn decode(
+        reader: &mut crate::Reader,
+        version: i16,
+    ) -> Result<ListTransactionsRequest, crate::DecodeError> {
+        if !ListTransactionsRequest::VERSIONS.contains(version) {
+            return Err(reader.unsupported_version("ListTransactionsRequest", version));
+        }
+        ListTransactionsRequest::read(reader, version)
+    }
 }
