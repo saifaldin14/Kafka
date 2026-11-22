@@ -56,6 +56,22 @@ Every decoder's property tests use them. A decoder must return an error or a val
 
 Generated message strategies come from the code generator (PROTO-0081) and record batch strategies from REC-F14. Both are built from these helpers rather than from `any::<T>()`.
 
+## State-machine property tests
+
+A sans-I/O state machine is tested against a reference model: a few lines of plain Rust that state what the machine must do, without its optimizations.
+- Generate a `Vec` of operations with weighted choices (`vec(prop_oneof![3 => …, 1 => …], 0..50)`).
+- Apply each operation to both with `alluvium_types::strategies::state_machine::compare`. It compares what the two observe after every operation and fails at the first difference, naming the step.
+- Operations aren't filtered by the current state: the machine must reject an operation that is invalid now, as the model does.
+
+On failure:
+- proptest shrinks the sequence to the shortest one of the simplest operations that still fails;
+- its message prints the operations as `Debug` does, which for plain enums is valid Rust;
+- the seed is recorded in `proptest-regressions/`.
+
+Paste the operations into a unit test that calls `compare` on that slice, so the failure stays fixed (rule 1).
+
+We don't use `proptest-state-machine`. Its state-dependent generation would let tests skip invalid operations, but those are exactly what a Kafka state machine must reject. It also turns on proptest's `fork` and `timeout` features for every crate's tests, adding about 35 crates to the lockfile. Plain proptest already shrinks a sequence of operations.
+
 ## Simulation harness (`alluvium-testkit`)
 
 - Drives real layer 1–2 state machines (and, where needed, real drivers) with a simulated clock, network and disk, all controlled by one seeded RNG.
