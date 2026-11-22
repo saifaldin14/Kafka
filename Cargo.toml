@@ -9,6 +9,7 @@ publish = false
 license-file = "LICENSE"
 
 [workspace.dependencies]
+alluvium-types = { path = "crates/alluvium-types" }
 chacha20 = { version = "0.10.2", default-features = false, features = ["rng"] }
 crc32c = { version = "0.6.9", default-features = false }
 criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }

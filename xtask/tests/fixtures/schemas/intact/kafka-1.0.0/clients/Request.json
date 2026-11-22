@@ -1,2 +1,2 @@
 // A fixture schema.
-{ "name": "Request" }
+{ "type": "data", "name": "Request", "validVersions": "0", "flexibleVersions": "none", "fields": [] }
