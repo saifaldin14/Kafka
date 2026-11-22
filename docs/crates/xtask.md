@@ -17,6 +17,7 @@ It is a dev-layer crate in the [code map](../architecture.md#4-code-map): it may
 | [`graph`](../../xtask/src/graph.rs), [`layers`](../../xtask/src/layers.rs), [`check_layers`](../../xtask/src/check_layers.rs) | The dependency graph from `cargo metadata`; the layer table; the layering rules |
 | [`check_manifests`](../../xtask/src/check_manifests.rs) | `[workspace.lints]` and `clippy.toml` against rust.md, member manifests, `deny.toml` ignores, crate-root docs |
 | [`check_workflows`](../../xtask/src/check_workflows.rs) | Pinned actions, triggers, job timeouts and permissions, ci.yml running every step, then actionlint and shellcheck |
+| [`schemas`](../../xtask/src/schemas.rs) | `schemas verify`: the vendored Kafka schemas against their manifests |
 | [`crate_docs`](../../xtask/src/crate_docs.rs) | `docs check-crates` and `docs new-crate-doc` ([crate deep dives](README.md)) |
 | [`lint_canary`](../../xtask/src/lint_canary.rs) | Running clippy on [`lint-canary`](../../xtask/lint-canary/src/lib.rs) and matching its `expect-lint:` annotations |
 | [`backlog`](../../xtask/src/backlog.rs), [`backlog_check`](../../xtask/src/backlog_check.rs), [`backlog_next`](../../xtask/src/backlog_next.rs), [`backlog_stats`](../../xtask/src/backlog_stats.rs) | Parsing docs/backlog/, its rules, task selection and `show`, and the README totals ([backlog rules](../backlog/README.md)) |

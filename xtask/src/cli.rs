@@ -25,6 +25,7 @@ pub(crate) enum Command {
     LintCanary,
     Backlog(BacklogCommand),
     Docs(DocsCommand),
+    Schemas(SchemasCommand),
     /// `deps-diff <base-ref>`.
     DepsDiff {
         base_ref: String,
@@ -56,6 +57,13 @@ pub(crate) enum DocsCommand {
     CheckCrates,
     /// `new-crate-doc <crate>`.
     NewCrateDoc { name: String },
+}
+
+/// A `cargo xtask schemas` subcommand.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum SchemasCommand {
+    /// `verify`.
+    Verify,
 }
 
 /// Options for `cargo xtask ci`.
@@ -109,6 +117,10 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
     (
         "install-hooks [--uninstall]",
         "Install (or remove) an optional pre-push hook that runs the fmt and clippy steps",
+    ),
+    (
+        "schemas verify",
+        "Check that the vendored Kafka schemas match their MANIFEST.sha256",
     ),
     (
         "lint-canary",
@@ -214,6 +226,7 @@ pub(crate) fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Command,
         }
         "backlog" => parse_backlog(rest).map(Command::Backlog),
         "docs" => parse_docs(rest).map(Command::Docs),
+        "schemas" => parse_schemas(rest).map(Command::Schemas),
         "deps-diff" => match rest {
             [base_ref] => Ok(Command::DepsDiff {
                 base_ref: base_ref.clone(),
@@ -410,6 +423,19 @@ fn parse_backlog(rest: &[String]) -> Result<BacklogCommand, UsageError> {
     }
 }
 
+fn parse_schemas(rest: &[String]) -> Result<SchemasCommand, UsageError> {
+    let Some((sub, rest)) = rest.split_first() else {
+        return Err(UsageError::MissingSubcommand { command: "schemas" });
+    };
+    match sub.as_str() {
+        "verify" => no_arguments("schemas verify", rest).map(|()| SchemasCommand::Verify),
+        _ => Err(UsageError::UnknownSubcommand {
+            command: "schemas",
+            name: sub.clone(),
+        }),
+    }
+}
+
 fn parse_docs(rest: &[String]) -> Result<DocsCommand, UsageError> {
     let Some((sub, rest)) = rest.split_first() else {
         return Err(UsageError::MissingSubcommand { command: "docs" });
@@ -450,7 +476,9 @@ fn add_step(options: &mut CiOptions, name: &str) -> Result<(), UsageError> {
 mod tests {
     use std::ffi::OsString;
 
-    use super::{BacklogCommand, CiOptions, Command, DocsCommand, UsageError, parse};
+    use super::{
+        BacklogCommand, CiOptions, Command, DocsCommand, SchemasCommand, UsageError, parse,
+    };
 
     fn args(list: &[&str]) -> Vec<OsString> {
         list.iter().map(OsString::from).collect()
@@ -715,6 +743,25 @@ mod tests {
         assert_eq!(
             parse(args(&["backlog"])),
             Err(UsageError::MissingSubcommand { command: "backlog" })
+        );
+    }
+
+    #[test]
+    fn schemas_subcommands_parse() {
+        assert_eq!(
+            parse(args(&["schemas", "verify"])),
+            Ok(Command::Schemas(SchemasCommand::Verify))
+        );
+        assert_eq!(
+            parse(args(&["schemas"])),
+            Err(UsageError::MissingSubcommand { command: "schemas" })
+        );
+        assert_eq!(
+            parse(args(&["schemas", "verify", "x"])),
+            Err(UsageError::UnexpectedArgument {
+                command: "schemas verify",
+                argument: "x".to_owned()
+            })
         );
     }
 

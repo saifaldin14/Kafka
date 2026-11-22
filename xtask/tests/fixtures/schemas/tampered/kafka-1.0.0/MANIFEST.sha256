@@ -1,0 +1,5 @@
+# Apache Kafka 1.0.0, commit 1156b2752aaa28eafc0b4c4d387e63356793268d.
+# Fixture for the xtask schemas tests.
+f9e4b570d97711642558936ac49e56b57ef43db95da225b842bf7a9aff1cf0ed  LICENSE
+a3493666b5cdaffacce740de7d115ccbb908f553fd85b37c4d51acb0d8bfa626  clients/Removed.json
+7ad49ebb790b11128f3cae2b3bf6c733d011d17309c667786cc2932bdadc9612  clients/Request.json
