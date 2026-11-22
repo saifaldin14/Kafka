@@ -240,7 +240,7 @@ Done when: The command fails with the target list on an unknown target, and with
 P0 · M1 · Spike · deps: TEST-0048 · labels: test
 Done when: An accepted ADR "Fuzz corpus storage" names where corpora live, how CI reads and writes them with least-privilege tokens, retention, and a size budget; `.gitignore`'s `/fuzz/corpus/` entry is kept or changed accordingly.
 
-### [In Review] TEST-0052 Corpus management per ADR-0018: `cargo xtask fuzz corpus pull`, committed seed inputs under `fuzz/seeds/<target>/`, and weekly corpus minimization (`cargo xtask fuzz corpus minimize`, libFuzzer `-merge=1`)
+### [Done] TEST-0052 Corpus management per ADR-0018: `cargo xtask fuzz corpus pull`, committed seed inputs under `fuzz/seeds/<target>/`, and weekly corpus minimization (`cargo xtask fuzz corpus minimize`, libFuzzer `-merge=1`)
 P0 · M1 · Task · deps: TEST-0051, TEST-0050 · labels: test
 Done when: A fresh clone can pull the corpus and run a target from it; the minimization job reduces the corpus without losing coverage (libFuzzer's coverage and feature counts before and after, from the same binary, in the job log). Only CI writes corpora (ADR-0018), so there is no push command.
 
@@ -248,7 +248,7 @@ Done when: A fresh clone can pull the corpus and run a target from it; the minim
 P0 · M1 · Task · deps: TEST-0050, TEST-0052 · labels: test, security · ref: docs/standards/security.md#untrusted-input
 Done when: A planted crash in a PR fails the job and the artifact reproduces it with `cargo xtask fuzz <target> <artifact>`; the job's total wall time is reported in the PR description.
 
-### [In Review] TEST-0054 Nightly fuzzing job: each target for one hour (configurable), saving the grown corpus and opening or updating one issue per crashing target with the minimized reproducer
+### [Done] TEST-0054 Nightly fuzzing job: each target for one hour (configurable), saving the grown corpus and opening or updating one issue per crashing target with the minimized reproducer
 P0 · M1 · Task · deps: TEST-0053 · labels: test, security · ref: docs/standards/security.md#untrusted-input
 Done when: The job runs only on schedule, with write permissions limited to corpus storage and issues; a planted crash creates one issue (not one per run) with the reproducer and the `cargo xtask fuzz` command.
 
