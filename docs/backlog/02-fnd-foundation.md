@@ -288,7 +288,7 @@ P3 · M0 · Task · deps: FND-0020
 Done when: In the container, `cargo xtask doctor` reports all required checks ok and `cargo xtask ci` passes; the image digest is updated by Dependabot (`devcontainers` ecosystem).
 Notes: Built with `devcontainer up` (Docker Desktop, Apple M3, so linux/aarch64). Inside it `cargo xtask doctor` reported every required check ok (actionlint and shellcheck came from the release-download path) and Docker-in-Docker ran server 29.9.3; `cargo xtask ci` passed all 13 steps. The rust feature's `version: none` skips rustup itself, so it installs rustup with a minimal stable toolchain and `rust-toolchain.toml` selects 1.99.0 inside the repository. Dependabot watches the Dockerfile digest (`docker`) and the features (`devcontainers`).
 
-## [In Progress] FND-F10 Documentation build checks
+## [Done] FND-F10 Documentation build checks
 P1 · M0 · Feature · deps: FND-F04
 Scope: `cargo doc` with `-D warnings`, Markdown link and anchor checking in CI.
 
@@ -300,9 +300,10 @@ Done when: A broken intra-doc link, in either a public or a `pub(crate)` item, f
 P1 · M0 · Task · deps: FND-0021, FND-0020 · labels: docs
 Done when: A test PR with a broken relative link and a wrong heading anchor fails the step, naming both; all existing broken links are fixed in this PR, so main starts clean; external URLs are excluded from this step.
 
-### [In Review] FND-0056 Weekly scheduled workflow that checks external URLs in the same files (lychee online, with retries) and opens or updates one tracking issue when links are dead
+### [Done] FND-0056 Weekly scheduled workflow that checks external URLs in the same files (lychee online, with retries) and opens or updates one tracking issue when links are dead
 P2 · M0 · Task · deps: FND-0055, FND-0031 · labels: docs
 Done when: The workflow never runs on PRs; a dead link creates an issue listing file:line and URL; permissions are `contents: read` and `issues: write` only.
+Notes: Proven by dispatching `links.yml` on a probe branch with a deliberate dead link in docs/glossary.md: run https://github.com/saifaldin14/Kafka/actions/runs/45021832343 opened https://github.com/saifaldin14/Kafka/issues/18 listing `docs/glossary.md:108` and the URL with its 404. The issue was closed and the probe branch deleted. The workflow's triggers are `schedule` and `workflow_dispatch` only, with `contents: read` and `issues: write`.
 
 ### [Done] FND-0057 `check-manifests` rule: each library crate's `lib.rs` starts with a `//!` doc that has `Layer:` (matching the xtask layer table) and `Kafka counterpart:` lines
 P2 · M0 · Task · deps: FND-0023, FND-0007, TYPE-F01 · labels: docs · ref: docs/standards/rust.md#modules-and-documentation
