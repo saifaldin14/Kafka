@@ -2,7 +2,7 @@
 
 One document per crate, for contributors: how the crate works inside, where its state machines, invariants and tests are, and how to debug it. The [code map](../architecture.md#4-code-map) is the authority on each crate's layer and responsibility; a deep dive expands on it and never contradicts it.
 
-A crate's deep dive is written from the [template](template.md) when the crate's first code lands, and updated in the same change as the code it describes.
+A crate's deep dive is written from the [template](template.md) when the crate's first code lands, and updated in the same change as the code it describes. `cargo xtask docs new-crate-doc <crate>` writes a stub from the template, marked by its first line. The `crate-docs` CI step (`cargo xtask docs check-crates`) fails when a workspace crate has no deep dive and lists the stubs still to fill in.
 
 Crates, in code-map order:
 

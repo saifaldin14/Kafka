@@ -49,7 +49,7 @@ jobs:
           steps: layers manifests workflows backlog lint-canary
 
   docs:
-    name: docs (rustdoc, links)
+    name: docs (rustdoc, links, crate deep dives)
     # Linux only: rustdoc output and Markdown links don't depend on the platform.
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -61,7 +61,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/xtask-ci
         with:
-          steps: doc links
+          steps: doc crate-docs links
 
   deny:
     name: deny (bans, licenses, sources)
