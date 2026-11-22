@@ -24,7 +24,7 @@ A vendored file only ever changes by being copied again from a Kafka tag. The `s
    ```sh
    cargo xtask schemas vendor --tag <tag>
    ```
-   This copies the directories listed in `SOURCES` in [`xtask/src/schemas.rs`](../../xtask/src/schemas.rs), with Kafka's `LICENSE` and `NOTICE`, and writes `MANIFEST.sha256`. A schema directory Kafka adds in a new version has to be added to `SOURCES` first. The directory's `README.md` is kept as it is.
+   This copies the directories listed in `SOURCES` and the files listed in `SOURCE_FILES` in [`xtask/src/schemas.rs`](../../xtask/src/schemas.rs), with Kafka's `LICENSE` and `NOTICE`, and writes `MANIFEST.sha256`. A schema directory Kafka adds in a new version has to be added to `SOURCES` first. The directory's `README.md` is kept as it is.
 3. For a new tag, write `schemas/kafka-<tag>/README.md` from the previous version's README: the tag, its commit (the first line of the manifest), and the source of each directory. Add the directory to Alluvium's [`NOTICE`](../../NOTICE), as for any Kafka material ([attributing Kafka material](../../CONTRIBUTING.md#attributing-kafka-material)).
 4. Run `cargo xtask schemas verify`, then `cargo xtask ci`.
 
