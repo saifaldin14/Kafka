@@ -362,7 +362,7 @@ Done when: strategies are generated beside each message behind `cfg(test)`/a `pr
 P0 · M1 · Task · deps: PROTO-0081, PROTO-0078, PROTO-0079, PROTO-0076, PROTO-0072 · labels: test
 Done when: one generated test per message decodes(encode(m)) == m for each valid version and checks `encoded_size`; the suite runs within the nextest time budget.
 
-### [To Do] PROTO-0083 Port Kafka's message tests: MessageTest, SimpleExampleMessageTest, NullableStructMessageTest, SimpleArraysMessageTest
+### [Done] PROTO-0083 Port Kafka's message tests: MessageTest, SimpleExampleMessageTest, NullableStructMessageTest, SimpleArraysMessageTest
 P1 · M1 · Task · deps: PROTO-0082, PROTO-0135 · labels: test · ref: clients/src/test/java/org/apache/kafka/common/message/MessageTest.java @4.4.0
 Done when: tricky cases (tagged defaults, nullable structs, unknown tags, version downgrades) pass against the generated fixtures with `// Ported from:` attribution.
 
