@@ -88,7 +88,7 @@ Done when: A property test shows `a.collides_with(b)` exactly when the collision
 P0 · M0 · Task · deps: TYPE-0001 · labels: security · ref: docs/standards/debuggability.md#printing-values
 Done when: A property test shows the output never contains `\n`, `\r` or other control characters, for any input; printable ASCII and Unicode are unchanged; the escaping format is documented in debuggability.md "Printing values"; TYPE's group, transactional, client and instance id types use it.
 
-### [To Do] TYPE-0018 `GroupId` (any string; `is_empty()` because coordinators reject empty ids with `INVALID_GROUP_ID`) and `GroupInstanceId` (validated with the topic-name rules, as `JoinGroupRequest.validateGroupInstanceId` does)
+### [Done] TYPE-0018 `GroupId` (any string; `is_empty()` because coordinators reject empty ids with `INVALID_GROUP_ID`) and `GroupInstanceId` (validated with the topic-name rules, as `JoinGroupRequest.validateGroupInstanceId` does)
 P0 · M0 · Task · deps: TYPE-0014, TYPE-0017 · ref: clients/src/main/java/org/apache/kafka/common/requests/JoinGroupRequest.java validateGroupInstanceId @4.4.0
 Done when: An empty `GroupId` can be built (the rejection belongs to the group coordinator, citing `GroupCoordinatorService.isGroupIdNotEmpty`); `GroupInstanceId` rejects exactly what `TopicName` rejects; both use the log-safe display; strategies are added.
 

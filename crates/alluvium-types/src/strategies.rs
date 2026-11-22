@@ -14,9 +14,9 @@ use proptest::prelude::{Just, Strategy, any, prop_oneof};
 use proptest::sample::{Index, select};
 
 use crate::{
-    BrokerEpoch, BrokerId, CorrelationId, GenerationId, LeaderEpoch, MemberEpoch, MonotonicInstant,
-    NodeId, Offset, OffsetRange, OffsetSpec, PartitionIndex, ProducerEpoch, ProducerId, Sequence,
-    TopicId, TopicName, Uuid, WallTime,
+    BrokerEpoch, BrokerId, CorrelationId, GenerationId, GroupId, GroupInstanceId, LeaderEpoch,
+    MemberEpoch, MonotonicInstant, NodeId, Offset, OffsetRange, OffsetSpec, PartitionIndex,
+    ProducerEpoch, ProducerId, Sequence, TopicId, TopicName, Uuid, WallTime,
 };
 
 /// Non-negative `i32` values, with extra weight on 0, 1 and `i32::MAX`.
@@ -260,4 +260,22 @@ pub fn colliding_topic_names() -> impl Strategy<Value = (TopicName, TopicName)> 
             Some((first, second))
         },
     )
+}
+
+/// [`GroupId`]s: any string, biased towards the empty id the coordinator rejects and
+/// towards ids with characters that need escaping in logs.
+pub fn group_id() -> impl Strategy<Value = GroupId> {
+    prop_oneof![
+        1 => Just(String::new()),
+        1 => Just("group\nwith\u{202e}controls".to_owned()),
+        8 => any::<String>(),
+    ]
+    .prop_map(GroupId::from)
+}
+
+/// Valid [`GroupInstanceId`]s, which follow the topic-name rules.
+pub fn group_instance_id() -> impl Strategy<Value = GroupInstanceId> {
+    topic_name().prop_filter_map("valid", |name| {
+        GroupInstanceId::try_from(name.as_str()).ok()
+    })
 }
