@@ -18,7 +18,7 @@ Keep [docs/standards/](docs/standards/) open as a reference. You don't need to m
 
 ## 2. Set up your machine
 
-*Milestone M0 is building these commands. `cargo xtask ci --list` shows the checks that exist today; the [tooling table](docs/standards/rust.md#tooling-commands-contract-implemented-in-m0) lists what exists and what is still to come.*
+*`cargo xtask ci --list` shows the checks; the [tooling table](docs/standards/rust.md#tooling-commands-contract-implemented-in-m0) lists every command, and those still to come with later milestones.*
 
 - **Rust via rustup.** Don't use Homebrew's or your distribution's `cargo`. They ignore `rust-toolchain.toml`, so you'd build with the wrong compiler. Check with `which cargo`, which should point into `~/.cargo/bin`.
 - The pinned toolchain installs automatically on the first `cargo` command.
@@ -95,4 +95,4 @@ where relevant. Refs #123.
 
 ## 5. Good first tasks
 
-Once M0 lands, good starting points are self-contained, well-specified pieces with clear Kafka references. Examples: a protocol primitive codec with property tests, a fuzz target for an existing decoder, or a config key with validation. Issues labelled `good-first-task` point at them.
+Good starting points are self-contained, well-specified pieces with clear Kafka references. Examples: a protocol primitive codec with property tests, a fuzz target for an existing decoder, or a config key with validation. Issues labelled `good-first-task` point at them.

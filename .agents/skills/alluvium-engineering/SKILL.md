@@ -24,9 +24,9 @@ The anti-slop rules below are specific cases of this principle. Apply its intent
 
 ## Current phase
 
-**Milestone M0 (workspace skeleton and tooling) is in progress.** The Cargo workspace and the `cargo xtask` checks exist; the first product crate is `alluvium-types`, which is part of M0.
+**The current milestone is M1: codecs.** M0 has landed: the Cargo workspace, the lint configuration, the `cargo xtask` checks, CI, and the first product crate, `alluvium-types`. M1 builds the wire layer: vendored Kafka 4.4.0 schemas, the code generator, the protocol and record-batch codecs, compression, and their fuzz targets (see the [milestones](../../../docs/backlog/README.md#milestones)).
 
-Do not implement any feature outside M0 until M0 has landed: the workspace, lint config, `xtask` checks, CI and `alluvium-types` (see the [milestones](../../../docs/backlog/README.md#milestones)). If asked to build a feature before then, say so and offer to do M0 first.
+Work in milestone order. Don't start a task from a later milestone while the current one has ready work, unless the backlog's [selection rules](../../../docs/backlog/README.md#choosing-the-next-task) allow it. If asked to build something from a later milestone, say so and point to what it waits for.
 
 To find the next task, run `cargo xtask backlog next`.
 
@@ -117,7 +117,7 @@ Don't start a task whose dependencies aren't `Done`. Don't start work that has n
 A change is done only when all of these hold:
 
 - [ ] Every added line, feature, option and dependency is needed for the end goal and is the best available choice ([more is not better](#more-is-not-better-braess-paradox)).
-- [ ] `cargo xtask ci` passes: fmt, clippy `-D warnings`, nextest, doc, deny, layers, codegen drift. (Available from M0.)
+- [ ] `cargo xtask ci` passes: fmt, clippy `-D warnings`, nextest, doc, deny, layers, and the other steps `cargo xtask ci --list` shows.
 - [ ] New behavior has tests at the right level: unit/property for logic, simulation for distributed logic, a fuzz target for any decoder, compatibility tests for client-visible behavior.
 - [ ] Errors carry context. New state transitions emit events with a `reason` and are in the flight recorder. New hot paths have metrics.
 - [ ] No new `unsafe`, unbounded queue, untimed network wait, unnamed task, secret in logs, or panic reachable from input.
