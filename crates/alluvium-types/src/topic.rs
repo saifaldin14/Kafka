@@ -84,6 +84,34 @@ impl TopicName {
     pub fn as_str(&self) -> &str {
         &self.0
     }
+
+    /// True if the name contains `.` or `_`.
+    ///
+    /// Kafka's metric names can't tell the two apart, so `orders.eu` and `orders_eu`
+    /// would report into the same metrics. Kafka therefore refuses to create a topic
+    /// that collides with an existing one, and warns about names that could.
+    // Parity: clients/src/main/java/org/apache/kafka/common/internals/Topic.java@4.4.0 Topic.hasCollisionChars, Topic.unifyCollisionChars, Topic.hasCollision
+    pub fn has_collision_chars(&self) -> bool {
+        self.0.contains(['.', '_'])
+    }
+
+    /// The name with every `.` replaced by `_`. Two names collide exactly when their
+    /// keys are equal, so a set of keys finds collisions among many topics.
+    pub fn collision_key(&self) -> String {
+        self.0.replace('.', "_")
+    }
+
+    /// True if the two names differ only by `.` and `_` in the same positions,
+    /// including when they are equal.
+    pub fn collides_with(&self, other: &TopicName) -> bool {
+        let unify = |byte: &u8| if *byte == b'.' { b'_' } else { *byte };
+        self.0.len() == other.0.len()
+            && self
+                .0
+                .bytes()
+                .map(|b| unify(&b))
+                .eq(other.0.as_bytes().iter().map(unify))
+    }
 }
 
 // Parity: clients/src/main/java/org/apache/kafka/common/internals/Topic.java@4.4.0 Topic.detectInvalidTopic, Topic.containsValidPattern
@@ -153,14 +181,18 @@ mod tests {
     use proptest::prelude::{any, prop_assert, prop_assert_eq, proptest};
 
     use super::{MAX_LENGTH, TopicName, TopicNameError};
-    use crate::strategies::{invalid_topic_name, topic_name};
+    use crate::strategies::{colliding_topic_names, invalid_topic_name, topic_name};
 
     fn reject(name: &str) -> TopicNameError {
         TopicName::try_from(name).unwrap_err()
     }
 
+    fn name(text: &str) -> TopicName {
+        TopicName::try_from(text).unwrap()
+    }
+
     // Ported from clients/src/test/java/org/apache/kafka/common/internals/TopicTest.java@4.4.0
-    // (Apache License 2.0). The collision tests are ported with TYPE-0016.
+    // (Apache License 2.0).
 
     #[test]
     fn should_accept_valid_topic_names() {
@@ -209,6 +241,50 @@ mod tests {
                     character,
                     position: 2
                 }
+            );
+        }
+    }
+
+    #[test]
+    fn topic_has_collision_chars() {
+        for topic in ["start", "end", "middle", "many"] {
+            assert!(!name(topic).has_collision_chars(), "{topic}");
+        }
+        for topic in [
+            ".start", "end.", "mid.dle", ".ma.ny.", "_start", "end_", "mid_dle", "_ma_ny.",
+        ] {
+            assert!(name(topic).has_collision_chars(), "{topic}");
+        }
+    }
+
+    #[test]
+    fn unify_collision_chars() {
+        assert_eq!(name("topic").collision_key(), "topic");
+        assert_eq!(name(".topic").collision_key(), "_topic");
+        assert_eq!(name("_topic").collision_key(), "_topic");
+        assert_eq!(name("_.topic").collision_key(), "__topic");
+    }
+
+    #[test]
+    fn topic_has_collision() {
+        let periods = [".topic", "to.pic", "topic.", "topic"];
+        let underscores = ["_topic", "to_pic", "topic_", "topic"];
+        // Self.
+        for topic in periods.iter().chain(&underscores) {
+            assert!(name(topic).collides_with(&name(topic)), "{topic}");
+        }
+        // Same position.
+        for (period, underscore) in periods.iter().zip(&underscores) {
+            assert!(
+                name(period).collides_with(&name(underscore)),
+                "{period} {underscore}"
+            );
+        }
+        // Different position.
+        for (period, underscore) in periods.iter().zip(underscores.iter().rev()) {
+            assert!(
+                !name(period).collides_with(&name(underscore)),
+                "{period} {underscore}"
             );
         }
     }
@@ -333,6 +409,18 @@ mod tests {
             let expected = kafka_rule(&name);
             prop_assert!(expected.is_some(), "{:?} is valid", name);
             prop_assert_eq!(TopicName::try_from(name.as_str()).err(), expected);
+        }
+
+        #[test]
+        fn names_collide_exactly_when_their_keys_are_equal(a in topic_name(), b in topic_name()) {
+            prop_assert_eq!(a.collides_with(&b), a.collision_key() == b.collision_key());
+            prop_assert!(a.collides_with(&a));
+        }
+
+        #[test]
+        fn generated_colliding_pairs_collide((a, b) in colliding_topic_names()) {
+            prop_assert!(a.collides_with(&b) && b.collides_with(&a));
+            prop_assert_eq!(a.collision_key(), b.collision_key());
         }
 
         #[test]

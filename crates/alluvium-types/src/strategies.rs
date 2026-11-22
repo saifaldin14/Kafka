@@ -228,3 +228,36 @@ pub fn invalid_topic_name() -> impl Strategy<Value = String> {
         }),
     ]
 }
+
+/// Pairs of valid [`TopicName`]s that collide: the second swaps some of the first's
+/// `.` and `_` for each other, and both contain at least one.
+pub fn colliding_topic_names() -> impl Strategy<Value = (TopicName, TopicName)> {
+    (topic_name(), any::<Index>(), any::<u64>()).prop_filter_map(
+        "a collision character and two valid names",
+        |(name, at, flips)| {
+            // Make sure there is at least one collision character to swap.
+            let mut first: Vec<u8> = name.as_str().bytes().collect();
+            let position = at.index(first.len());
+            if !first.iter().any(|byte| matches!(byte, b'.' | b'_')) {
+                first[position] = b'_';
+            }
+            let second: Vec<u8> = first
+                .iter()
+                .enumerate()
+                .map(|(index, &byte)| match byte {
+                    b'.' | b'_' if flips >> (index % 64) & 1 == 1 => {
+                        if byte == b'.' {
+                            b'_'
+                        } else {
+                            b'.'
+                        }
+                    }
+                    other => other,
+                })
+                .collect();
+            let first = TopicName::try_from(String::from_utf8(first).ok()?).ok()?;
+            let second = TopicName::try_from(String::from_utf8(second).ok()?).ok()?;
+            Some((first, second))
+        },
+    )
+}

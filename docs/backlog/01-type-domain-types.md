@@ -80,7 +80,7 @@ Done when: Ported `TopicTest` cases pass; property tests show all strings over t
 P0 · M0 · Task · deps: TYPE-0014 · ref: clients/src/main/java/org/apache/kafka/common/internals/Topic.java isInternal @4.4.0
 Done when: Tests assert exactly these three names are internal and that `__cluster_metadata` and look-alikes (`__consumer_offsets_`, `__Consumer_offsets`) are not; the doc explains the `__cluster_metadata` difference with a `// Parity:` citation; the `CLUSTER_METADATA_TOPIC_PARTITION` constant is added with TYPE-F05.
 
-### [To Do] TYPE-0016 Topic name collision detection: `has_collision_chars()`, `collision_key()` (`.` replaced by `_`) and `collides_with(&other)`, mirroring `Topic.hasCollisionChars`, `unifyCollisionChars` and `hasCollision`
+### [Done] TYPE-0016 Topic name collision detection: `has_collision_chars()`, `collision_key()` (`.` replaced by `_`) and `collides_with(&other)`, mirroring `Topic.hasCollisionChars`, `unifyCollisionChars` and `hasCollision`
 P0 · M0 · Task · deps: TYPE-0014 · ref: clients/src/main/java/org/apache/kafka/common/internals/Topic.java hasCollision @4.4.0
 Done when: A property test shows `a.collides_with(b)` exactly when the collision keys are equal; tests cover `a.b` and `a_b`, identical names, and names without collision characters; strategies generate colliding pairs for CTRL topic-creation tests; the doc explains that the reason is metric-name collisions.
 
