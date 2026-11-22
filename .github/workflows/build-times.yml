@@ -1,0 +1,91 @@
+# Build time tracking (NFR-0045): on every push to main, a clean and an incremental build
+# with `cargo build --timings`. The HTML reports are kept as an artifact, and the job
+# summary compares the totals with the previous main build. Nothing fails on build time.
+name: Build times
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: build-times
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: never
+
+jobs:
+  build-times:
+    name: build-times
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      # To download the previous run's totals.
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the pinned toolchain
+        # No build cache: the clean build must start from nothing.
+        run: |
+          rustup toolchain install --profile minimal
+          cargo fetch --locked
+      - name: Clean and incremental builds
+        run: |
+          seconds() { date +%s.%N; }
+          start=$(seconds)
+          cargo build --workspace --all-targets --locked --timings
+          clean=$(echo "$(seconds) - $start" | bc)
+          mkdir -p build-times/clean
+          cp target/cargo-timings/cargo-timing.html build-times/clean/
+          # A change to the lowest-layer crate, which every other crate rebuilds after.
+          touch crates/alluvium-types/src/lib.rs
+          start=$(seconds)
+          cargo build --workspace --all-targets --locked --timings
+          incremental=$(echo "$(seconds) - $start" | bc)
+          mkdir -p build-times/incremental
+          cp target/cargo-timings/cargo-timing.html build-times/incremental/
+          printf '{"sha":"%s","clean":%.1f,"incremental":%.1f}\n' \
+            "$GITHUB_SHA" "$clean" "$incremental" > build-times/totals.json
+      - name: Compare with the previous main build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          previous=$(gh run list --repo "$REPO" --workflow build-times.yml --branch main \
+            --status success --limit 10 --json databaseId \
+            --jq "map(select(.databaseId != $RUN_ID)) | .[0].databaseId // empty")
+          if [ -n "$previous" ] && gh run download "$previous" --repo "$REPO" \
+            --name build-times --dir previous; then
+            before_clean=$(jq .clean previous/totals.json)
+            before_incremental=$(jq .incremental previous/totals.json)
+          fi
+          row() {
+            if [ -n "$3" ]; then
+              printf '| %s | %s s | %s s | %+.1f s |\n' "$1" "$2" "$3" "$(echo "$2 - $3" | bc)"
+            else
+              printf '| %s | %s s | none | |\n' "$1" "$2"
+            fi
+          }
+          {
+            echo "## Build times"
+            echo
+            echo "| Build | This commit | Previous main | Change |"
+            echo "|---|---|---|---|"
+            row clean "$(jq .clean build-times/totals.json)" "${before_clean:-}"
+            row "incremental (alluvium-types touched)" \
+              "$(jq .incremental build-times/totals.json)" "${before_incremental:-}"
+            echo
+            echo "The \`cargo build --timings\` reports are in the build-times artifact."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: build-times
+          path: build-times/
+          retention-days: 90

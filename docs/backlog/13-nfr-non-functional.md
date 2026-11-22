@@ -212,11 +212,11 @@ Done when: The policy is in docs/compatibility.md; it states that Kafka-compatib
 P1 · M2 · Task · deps: NFR-0041, TEST-F08 · labels: nfr, test
 Done when: The nightly compatibility job runs the matrix; each pin is recorded in `images.lock`; docs/compatibility.md's tested versions are read from the same file (no second list).
 
-## [To Do] NFR-F09 Maintainability metrics
+## [In Progress] NFR-F09 Maintainability metrics
 P2 · M0 · Feature · deps: FND-F06
 Scope: Build time, crate size and doc coverage tracking.
 
-### [To Do] NFR-0045 Build time tracking: CI records clean and incremental build times on main (`cargo build --timings` report as an artifact) and writes the totals to the job summary
+### [In Review] NFR-0045 Build time tracking: CI records clean and incremental build times on main (`cargo build --timings` report as an artifact) and writes the totals to the job summary
 P2 · M0 · Task · deps: none · labels: nfr
 Done when: The timings artifact is available for every main build; the summary shows the change against the previous main build; nothing fails on build time.
 
