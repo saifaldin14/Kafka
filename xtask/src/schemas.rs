@@ -56,6 +56,7 @@ pub(crate) const SOURCES: &[(&str, &str)] = &[
         "share-coordinator/src/main/resources/common/message",
     ),
     ("raft", "raft/src/main/resources/common/message"),
+    ("clients-test", "clients/src/test/resources/common/message"),
     (
         "errors",
         "clients/src/main/java/org/apache/kafka/common/errors",

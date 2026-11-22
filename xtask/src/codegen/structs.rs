@@ -597,7 +597,7 @@ mod tests {
                 }
             }
         }
-        assert_eq!(rendered, 281);
+        assert_eq!(rendered, 287);
     }
 
     #[test]

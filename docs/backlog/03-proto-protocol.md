@@ -598,7 +598,7 @@ Done when: a counting allocator fails the target on budget overrun; a deliberate
 P1 · M1 · Feature · deps: PROTO-F04
 Scope: Golden-output tests for the generator, drift check `cargo xtask codegen --check`.
 
-### [To Do] PROTO-0135 Vendor Kafka's generator test schemas (AllTypeMessage, NullableStructMessage, SimpleArraysMessage, SimpleExampleMessage, SimpleKeyedArraysMessage, SimpleRecordsMessage) as fixtures
+### [In Progress] PROTO-0135 Vendor Kafka's generator test schemas (AllTypeMessage, NullableStructMessage, SimpleArraysMessage, SimpleExampleMessage, SimpleKeyedArraysMessage, SimpleRecordsMessage) as fixtures
 P1 · M1 · Task · deps: none · labels: test · ref: clients/src/test/resources/common/message @4.4.0
 Done when: fixtures are unmodified copies listed in the schema manifest and generate compiling code.
 
