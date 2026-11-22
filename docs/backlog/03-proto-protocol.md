@@ -459,7 +459,7 @@ P2 · M1 · Task · deps: PROTO-0101 · labels: nfr
 Done when: the value equals the frame length when any records slice is held and zero otherwise; documented for NET memory accounting.
 
 ## [To Do] PROTO-F09 Decode limits
-P0 · M1 · Feature · deps: PROTO-F03
+P0 · M1 · Feature · deps: none
 Scope: `DecodeLimits` bounding array lengths, string lengths, nesting depth and total allocation before allocating.
 
 ### [To Do] PROTO-0105 `DecodeLimits` and a per-decode budget with `DecodeError::LimitExceeded { limit, requested, path }`
