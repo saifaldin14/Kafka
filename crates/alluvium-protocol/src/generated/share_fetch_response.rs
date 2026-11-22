@@ -37,6 +37,18 @@ pub struct ShareFetchResponse {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl ShareFetchResponse {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
 /// An element of `ShareFetchResponse`'s `Responses` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ShareFetchableTopicResponse {
@@ -59,6 +71,27 @@ impl Default for ShareFetchableTopicResponse {
             partitions: Vec::new(),
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl ShareFetchableTopicResponse {
+    /// The first of `elements`, in wire order, whose key (`TopicId`) equals the arguments.
+    pub fn find(
+        elements: &[ShareFetchableTopicResponse],
+        topic_id: alluvium_types::Uuid,
+    ) -> Option<&ShareFetchableTopicResponse> {
+        elements.iter().find(|element| element.topic_id == topic_id)
+    }
+
+    /// Every element of `elements` whose key (`TopicId`) equals the arguments, in wire
+    /// order.
+    pub fn find_all(
+        elements: &[ShareFetchableTopicResponse],
+        topic_id: alluvium_types::Uuid,
+    ) -> impl Iterator<Item = &ShareFetchableTopicResponse> {
+        elements
+            .iter()
+            .filter(move |element| element.topic_id == topic_id)
     }
 }
 
@@ -99,6 +132,28 @@ pub struct PartitionData {
     pub acquired_records: Vec<AcquiredRecords>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl PartitionData {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
+
+    /// `acknowledge_error_code` as a [`crate::ErrorCode`]. The field keeps the raw value,
+    /// so a value the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn acknowledge_error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.acknowledge_error_code)
+    }
 }
 
 /// The `CurrentLeader` field of `PartitionData`.
@@ -156,6 +211,24 @@ pub struct NodeEndpoint {
     pub rack: Option<String>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl NodeEndpoint {
+    /// The first of `elements`, in wire order, whose key (`NodeId`) equals the arguments.
+    pub fn find(elements: &[NodeEndpoint], node_id: i32) -> Option<&NodeEndpoint> {
+        elements.iter().find(|element| element.node_id == node_id)
+    }
+
+    /// Every element of `elements` whose key (`NodeId`) equals the arguments, in wire
+    /// order.
+    pub fn find_all(
+        elements: &[NodeEndpoint],
+        node_id: i32,
+    ) -> impl Iterator<Item = &NodeEndpoint> {
+        elements
+            .iter()
+            .filter(move |element| element.node_id == node_id)
+    }
 }
 
 impl ShareFetchResponse {

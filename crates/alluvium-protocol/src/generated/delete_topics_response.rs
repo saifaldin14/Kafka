@@ -55,6 +55,40 @@ impl Default for DeletableTopicResult {
     }
 }
 
+impl DeletableTopicResult {
+    /// The first of `elements`, in wire order, whose key (`Name`) equals the arguments.
+    pub fn find<'a>(
+        elements: &'a [DeletableTopicResult],
+        name: Option<&str>,
+    ) -> Option<&'a DeletableTopicResult> {
+        elements
+            .iter()
+            .find(|element| element.name.as_deref() == name)
+    }
+
+    /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [DeletableTopicResult],
+        name: Option<&str>,
+    ) -> impl Iterator<Item = &'a DeletableTopicResult> {
+        elements
+            .iter()
+            .filter(move |element| element.name.as_deref() == name)
+    }
+}
+
+impl DeletableTopicResult {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
 impl DeleteTopicsResponse {
     /// The API key.
     pub const API_KEY: i16 = 20;

@@ -55,6 +55,18 @@ impl Default for MetadataResponse {
     }
 }
 
+impl MetadataResponse {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
 /// An element of `MetadataResponse`'s `Brokers` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct MetadataResponseBroker {
@@ -76,6 +88,27 @@ pub struct MetadataResponseBroker {
     pub rack: Option<String>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl MetadataResponseBroker {
+    /// The first of `elements`, in wire order, whose key (`NodeId`) equals the arguments.
+    pub fn find(
+        elements: &[MetadataResponseBroker],
+        node_id: i32,
+    ) -> Option<&MetadataResponseBroker> {
+        elements.iter().find(|element| element.node_id == node_id)
+    }
+
+    /// Every element of `elements` whose key (`NodeId`) equals the arguments, in wire
+    /// order.
+    pub fn find_all(
+        elements: &[MetadataResponseBroker],
+        node_id: i32,
+    ) -> impl Iterator<Item = &MetadataResponseBroker> {
+        elements
+            .iter()
+            .filter(move |element| element.node_id == node_id)
+    }
 }
 
 /// An element of `MetadataResponse`'s `Topics` array.
@@ -122,6 +155,40 @@ impl Default for MetadataResponseTopic {
             topic_authorized_operations: -2_147_483_648,
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl MetadataResponseTopic {
+    /// The first of `elements`, in wire order, whose key (`Name`) equals the arguments.
+    pub fn find<'a>(
+        elements: &'a [MetadataResponseTopic],
+        name: Option<&str>,
+    ) -> Option<&'a MetadataResponseTopic> {
+        elements
+            .iter()
+            .find(|element| element.name.as_deref() == name)
+    }
+
+    /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [MetadataResponseTopic],
+        name: Option<&str>,
+    ) -> impl Iterator<Item = &'a MetadataResponseTopic> {
+        elements
+            .iter()
+            .filter(move |element| element.name.as_deref() == name)
+    }
+}
+
+impl MetadataResponseTopic {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
     }
 }
 
@@ -172,6 +239,18 @@ impl Default for MetadataResponsePartition {
             offline_replicas: Vec::new(),
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl MetadataResponsePartition {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
     }
 }
 

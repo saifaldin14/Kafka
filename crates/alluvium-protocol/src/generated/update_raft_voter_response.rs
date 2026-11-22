@@ -25,6 +25,18 @@ pub struct UpdateRaftVoterResponse {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl UpdateRaftVoterResponse {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
 /// The `CurrentLeader` field of `UpdateRaftVoterResponse`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CurrentLeader {

@@ -174,7 +174,7 @@ Done when: the coordinator for a group key is the leader of its `__consumer_offs
 
 ### [To Do] GRP-0039 Coordinator key type dispatch
 P0 · M5 · Task · deps: GRP-0038 · ref: core/src/main/scala/kafka/server/KafkaApis.scala getCoordinator @4.4.0
-Done when: `CoordinatorType` (GROUP=0, TRANSACTION=1, SHARE=2) is matched exhaustively; an unknown key type returns INVALID_REQUEST; SHARE below FindCoordinator v6 returns INVALID_REQUEST; TRANSACTION and SHARE return COORDINATOR_NOT_AVAILABLE until TXN-F03 and SHARE-F05 add their arms; tests per key type.
+Done when: `CoordinatorType` (GROUP=0, TRANSACTION=1, SHARE=2) is matched exhaustively, and FindCoordinator's `KeyType` reads as it through `xtask/codegen/known_values.toml` (PROTO-0062); an unknown key type returns INVALID_REQUEST; SHARE below FindCoordinator v6 returns INVALID_REQUEST; TRANSACTION and SHARE return COORDINATOR_NOT_AVAILABLE until TXN-F03 and SHARE-F05 add their arms; tests per key type.
 
 ### [To Do] GRP-0040 Batched coordinator lookups for many keys
 P0 · M5 · Task · deps: GRP-0039 · ref: core/src/main/scala/kafka/server/KafkaApis.scala handleFindCoordinatorRequestV4AndAbove @4.4.0

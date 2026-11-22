@@ -40,6 +40,18 @@ impl Default for DescribeQuorumResponse {
     }
 }
 
+impl DescribeQuorumResponse {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
 /// An element of `DescribeQuorumResponse`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopicData {
@@ -110,6 +122,18 @@ impl Default for PartitionData {
     }
 }
 
+impl PartitionData {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
 /// `ReplicaState`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ReplicaState {
@@ -168,6 +192,21 @@ pub struct Node {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl Node {
+    /// The first of `elements`, in wire order, whose key (`NodeId`) equals the arguments.
+    pub fn find(elements: &[Node], node_id: i32) -> Option<&Node> {
+        elements.iter().find(|element| element.node_id == node_id)
+    }
+
+    /// Every element of `elements` whose key (`NodeId`) equals the arguments, in wire
+    /// order.
+    pub fn find_all(elements: &[Node], node_id: i32) -> impl Iterator<Item = &Node> {
+        elements
+            .iter()
+            .filter(move |element| element.node_id == node_id)
+    }
+}
+
 /// An element of `Node`'s `Listeners` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Listener {
@@ -185,6 +224,21 @@ pub struct Listener {
     pub port: u16,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl Listener {
+    /// The first of `elements`, in wire order, whose key (`Name`) equals the arguments.
+    pub fn find<'a>(elements: &'a [Listener], name: &str) -> Option<&'a Listener> {
+        elements.iter().find(|element| element.name == name)
+    }
+
+    /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [Listener],
+        name: &str,
+    ) -> impl Iterator<Item = &'a Listener> {
+        elements.iter().filter(move |element| element.name == name)
+    }
 }
 
 impl DescribeQuorumResponse {

@@ -30,6 +30,18 @@ pub struct AlterShareGroupOffsetsResponse {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl AlterShareGroupOffsetsResponse {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
 /// An element of `AlterShareGroupOffsetsResponse`'s `Responses` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AlterShareGroupOffsetsResponseTopic {
@@ -60,6 +72,30 @@ impl Default for AlterShareGroupOffsetsResponseTopic {
     }
 }
 
+impl AlterShareGroupOffsetsResponseTopic {
+    /// The first of `elements`, in wire order, whose key (`TopicName`) equals the
+    /// arguments.
+    pub fn find<'a>(
+        elements: &'a [AlterShareGroupOffsetsResponseTopic],
+        topic_name: &str,
+    ) -> Option<&'a AlterShareGroupOffsetsResponseTopic> {
+        elements
+            .iter()
+            .find(|element| element.topic_name == topic_name)
+    }
+
+    /// Every element of `elements` whose key (`TopicName`) equals the arguments, in wire
+    /// order.
+    pub fn find_all<'a>(
+        elements: &'a [AlterShareGroupOffsetsResponseTopic],
+        topic_name: &str,
+    ) -> impl Iterator<Item = &'a AlterShareGroupOffsetsResponseTopic> {
+        elements
+            .iter()
+            .filter(move |element| element.topic_name == topic_name)
+    }
+}
+
 /// An element of `AlterShareGroupOffsetsResponseTopic`'s `Partitions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AlterShareGroupOffsetsResponsePartition {
@@ -77,6 +113,18 @@ pub struct AlterShareGroupOffsetsResponsePartition {
     pub error_message: Option<String>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl AlterShareGroupOffsetsResponsePartition {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
 }
 
 impl AlterShareGroupOffsetsResponse {

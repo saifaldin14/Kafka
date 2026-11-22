@@ -6,7 +6,7 @@
 //! The `SaslAuthenticateResponse` response.
 
 /// The `SaslAuthenticateResponse` response, API key 36: versions 0-2, flexible versions 2+.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct SaslAuthenticateResponse {
     /// The error code, or 0 if there was no error.
     ///
@@ -38,6 +38,30 @@ impl Default for SaslAuthenticateResponse {
             session_lifetime_ms: 0,
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl std::fmt::Debug for SaslAuthenticateResponse {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SaslAuthenticateResponse")
+            .field("error_code", &self.error_code)
+            .field("error_message", &self.error_message)
+            .field("auth_bytes", &format_args!("***"))
+            .field("session_lifetime_ms", &self.session_lifetime_ms)
+            .field("unknown_tagged_fields", &self.unknown_tagged_fields)
+            .finish()
+    }
+}
+
+impl SaslAuthenticateResponse {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
     }
 }
 

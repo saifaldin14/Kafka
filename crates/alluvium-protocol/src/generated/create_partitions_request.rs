@@ -55,6 +55,24 @@ impl Default for CreatePartitionsTopic {
     }
 }
 
+impl CreatePartitionsTopic {
+    /// The first of `elements`, in wire order, whose key (`Name`) equals the arguments.
+    pub fn find<'a>(
+        elements: &'a [CreatePartitionsTopic],
+        name: &str,
+    ) -> Option<&'a CreatePartitionsTopic> {
+        elements.iter().find(|element| element.name == name)
+    }
+
+    /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [CreatePartitionsTopic],
+        name: &str,
+    ) -> impl Iterator<Item = &'a CreatePartitionsTopic> {
+        elements.iter().filter(move |element| element.name == name)
+    }
+}
+
 /// An element of `CreatePartitionsTopic`'s `Assignments` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CreatePartitionsAssignment {

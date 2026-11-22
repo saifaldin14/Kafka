@@ -31,6 +31,21 @@ pub struct TopicRequest {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl TopicRequest {
+    /// The first of `elements`, in wire order, whose key (`Name`) equals the arguments.
+    pub fn find<'a>(elements: &'a [TopicRequest], name: &str) -> Option<&'a TopicRequest> {
+        elements.iter().find(|element| element.name == name)
+    }
+
+    /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [TopicRequest],
+        name: &str,
+    ) -> impl Iterator<Item = &'a TopicRequest> {
+        elements.iter().filter(move |element| element.name == name)
+    }
+}
+
 impl DescribeProducersRequest {
     /// The API key.
     pub const API_KEY: i16 = 61;

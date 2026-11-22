@@ -73,6 +73,21 @@ pub struct Endpoint {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl Endpoint {
+    /// The first of `elements`, in wire order, whose key (`Name`) equals the arguments.
+    pub fn find<'a>(elements: &'a [Endpoint], name: &str) -> Option<&'a Endpoint> {
+        elements.iter().find(|element| element.name == name)
+    }
+
+    /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [Endpoint],
+        name: &str,
+    ) -> impl Iterator<Item = &'a Endpoint> {
+        elements.iter().filter(move |element| element.name == name)
+    }
+}
+
 /// The `KRaftVersionFeature` field of `Voter`.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct KRaftVersionFeature {

@@ -69,6 +69,7 @@ Alluvium stores other people's data and listens on the network. Security is a de
 - Secrets are held in `Secret<T>`. It redacts `Debug` and `Display`, zeroizes on drop, and exposes the value only through an explicit `expose_secret()`.
 - Secrets come from files or environment variables, never command-line arguments, which other users can see in `ps`.
 - Config dumps (`check-config`, `/debug/config`, `DescribeConfigs`) redact sensitive keys, as Kafka marks them `PASSWORD`.
+- Protocol messages carry credentials as plain wire bytes (SASL `AuthBytes`, SCRAM salts, delegation token HMACs). [`xtask/codegen/sensitive_fields.toml`](../../xtask/codegen/sensitive_fields.toml) lists those fields, and their generated `Debug` prints `***`, so logging a decoded message never shows them. A new API that carries a credential adds its fields there ([codegen](../protocol/codegen.md#redaction)).
 
 ## `unsafe` code
 

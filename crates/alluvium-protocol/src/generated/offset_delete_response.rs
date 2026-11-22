@@ -22,6 +22,18 @@ pub struct OffsetDeleteResponse {
     pub topics: Vec<OffsetDeleteResponseTopic>,
 }
 
+impl OffsetDeleteResponse {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
 /// An element of `OffsetDeleteResponse`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct OffsetDeleteResponseTopic {
@@ -35,6 +47,24 @@ pub struct OffsetDeleteResponseTopic {
     pub partitions: Vec<OffsetDeleteResponsePartition>,
 }
 
+impl OffsetDeleteResponseTopic {
+    /// The first of `elements`, in wire order, whose key (`Name`) equals the arguments.
+    pub fn find<'a>(
+        elements: &'a [OffsetDeleteResponseTopic],
+        name: &str,
+    ) -> Option<&'a OffsetDeleteResponseTopic> {
+        elements.iter().find(|element| element.name == name)
+    }
+
+    /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [OffsetDeleteResponseTopic],
+        name: &str,
+    ) -> impl Iterator<Item = &'a OffsetDeleteResponseTopic> {
+        elements.iter().filter(move |element| element.name == name)
+    }
+}
+
 /// An element of `OffsetDeleteResponseTopic`'s `Partitions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct OffsetDeleteResponsePartition {
@@ -46,6 +76,42 @@ pub struct OffsetDeleteResponsePartition {
     ///
     /// Versions 0+.
     pub error_code: i16,
+}
+
+impl OffsetDeleteResponsePartition {
+    /// The first of `elements`, in wire order, whose key (`PartitionIndex`) equals the
+    /// arguments.
+    pub fn find(
+        elements: &[OffsetDeleteResponsePartition],
+        partition_index: i32,
+    ) -> Option<&OffsetDeleteResponsePartition> {
+        elements
+            .iter()
+            .find(|element| element.partition_index == partition_index)
+    }
+
+    /// Every element of `elements` whose key (`PartitionIndex`) equals the arguments, in
+    /// wire order.
+    pub fn find_all(
+        elements: &[OffsetDeleteResponsePartition],
+        partition_index: i32,
+    ) -> impl Iterator<Item = &OffsetDeleteResponsePartition> {
+        elements
+            .iter()
+            .filter(move |element| element.partition_index == partition_index)
+    }
+}
+
+impl OffsetDeleteResponsePartition {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
 }
 
 impl OffsetDeleteResponse {

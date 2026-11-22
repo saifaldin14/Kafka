@@ -53,7 +53,7 @@ Each message is its own module, so inline struct names never clash across messag
 
 **No payload copies.** `bytes` and `records` values are slices of the frame they arrived in, sharing its allocation, as [`RecordsField`](../../crates/alluvium-protocol/src/records.rs) documents.
 
-**Derives.** Every struct derives `Debug`, `Clone` and `PartialEq`. It doesn't derive `Eq`, because `float64` fields follow IEEE 754 equality, as Kafka's `equals` does.
+**Derives.** Every struct derives `Clone` and `PartialEq`, and `Debug` unless it has a sensitive field (see [Redaction](#redaction)). It doesn't derive `Eq`, because `float64` fields follow IEEE 754 equality, as Kafka's `equals` does.
 
 ## Structs
 
@@ -102,3 +102,97 @@ Each message struct has:
 | `LATEST_VERSION_UNSTABLE: bool` | Requests only: whether the highest version is served only when unstable versions are enabled |
 
 `Versions` is an inclusive range of versions, which may be empty (`Versions::NONE`).
+
+## Keyed arrays
+
+A struct with `mapKey` fields makes every array of it keyed. Kafka generates a collection class for such an array, with `find` and `findAll` taking the key fields.
+
+The generated array stays a plain `Vec` in wire order. The element struct gets two associated functions over a slice, taking the key fields in declaration order:
+
+```rust
+let first = CreatableTopic::find(&request.topics, "orders");
+let all: Vec<&CreatableTopic> = CreatableTopic::find_all(&request.topics, "orders").collect();
+```
+
+`find` returns the first match in wire order, and `find_all` every match in wire order. Duplicate keys are kept, as in Kafka's `ImplicitLinkedHashMultiCollection`.
+
+Keys are compared by value. A string key is passed as `&str`, or `Option<&str>` when nullable. A key of another type (bytes, records, a struct or an array) is a generator error.
+
+## Known values
+
+Some integer fields hold values from a known set, such as error codes. [`xtask/codegen/known_values.toml`](../../xtask/codegen/known_values.toml) names them:
+
+| Fields | Accessor returns |
+|---|---|
+| `ErrorCode`, `AcknowledgeErrorCode`, `PartitionErrorCode`, `TopicConfigErrorCode` | `Result<ErrorCode, UnknownErrorCode>` |
+| `IsolationLevel` | `Result<IsolationLevel, DeliveryError>` |
+| `Acks` | `Result<Acks, DeliveryError>` |
+
+How the accessors work:
+- Each field with one of those names, in any message, gets an accessor of the same name: `partition.error_code()` beside the raw `partition.error_code`.
+- The struct keeps the raw integer, so a value the enum doesn't know is still decoded and written back unchanged.
+- An entry that matches no field, or a field of another type, is a generator error.
+- The coordinator key type and the ACL enums are added by the tasks that define them (GRP-0039, SEC-0051).
+
+## Redaction
+
+[`xtask/codegen/sensitive_fields.toml`](../../xtask/codegen/sensitive_fields.toml) lists the fields that hold credentials:
+- SASL `AuthBytes`;
+- SCRAM `Salt` and `SaltedPassword`;
+- delegation token `Hmac`.
+
+A struct with such a field gets a hand-shaped `Debug` that prints `***` for it, and everything else as the derived `Debug` would. An entry naming a message or field that isn't generated is a generator error.
+
+Records need no entry: `RecordsField` always prints a `PayloadSummary` (length and checksum), never the records.
+
+## Worked example: ProduceRequest
+
+The schema [`ProduceRequest.json`](../../schemas/kafka-4.4.0/clients/ProduceRequest.json) starts like this:
+
+```json
+"apiKey": 0, "type": "request", "name": "ProduceRequest",
+"validVersions": "3-13", "flexibleVersions": "9+",
+"fields": [
+  { "name": "TransactionalId", "type": "string", "versions": "3+", "nullableVersions": "3+",
+    "default": "null", "about": "The transactional ID, or null if the producer is not transactional." },
+  { "name": "Acks", "type": "int16", "versions": "0+", "about": "The number of acknowledgments ..." },
+  { "name": "TimeoutMs", "type": "int32", "versions": "0+", "about": "The timeout to await a response in milliseconds." },
+  { "name": "TopicData", "type": "[]TopicProduceData", "versions": "0+", "fields": [ ... ] }
+]
+```
+
+It generates [`produce_request.rs`](../../crates/alluvium-protocol/src/generated/produce_request.rs), whose message struct is:
+
+```rust
+/// The `ProduceRequest` request, API key 0: versions 3-13, flexible versions 9+.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct ProduceRequest {
+    /// The transactional ID, or null if the producer is not transactional.
+    ///
+    /// Versions 3+, nullable 3+.
+    pub transactional_id: Option<String>,
+    /// The number of acknowledgments ...
+    ///
+    /// Versions 0+.
+    pub acks: i16,
+    /// The timeout to await a response in milliseconds.
+    ///
+    /// Versions 0+.
+    pub timeout_ms: i32,
+    /// Each topic to produce to.
+    ///
+    /// Versions 0+.
+    pub topic_data: Vec<TopicProduceData>,
+    /// Tagged fields this version doesn't define, kept to be written back unchanged.
+    pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+```
+
+How each part of the schema shows up in that module:
+- **Nullable.** `TransactionalId` is nullable, so it is an `Option`. Its `"default": "null"` is `None`, the same as the derived `Default`.
+- **Known value.** `Acks` gets an `acks()` accessor returning `Result<Acks, DeliveryError>`.
+- **Unknown tagged fields.** Version 9 and later are flexible, so the struct keeps unknown tagged fields.
+- **Constants.** `VERSIONS` is `Versions::new(3, 13)` and `FLEXIBLE_VERSIONS` is `Versions::new(9, i16::MAX)`.
+- **Nested structs.** `TopicProduceData` and `PartitionProduceData` follow in the same module.
+- **No derived `Default` for topics.** `TopicProduceData` holds a `uuid` `TopicId`, and `Uuid` has no `Default`, so the generator writes its `Default` impl with `Uuid::ZERO`.
+- **Records.** `PartitionProduceData`'s `Records` field is `Option<RecordsField>`.

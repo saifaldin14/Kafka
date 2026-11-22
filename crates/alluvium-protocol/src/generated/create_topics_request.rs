@@ -66,6 +66,21 @@ pub struct CreatableTopic {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl CreatableTopic {
+    /// The first of `elements`, in wire order, whose key (`Name`) equals the arguments.
+    pub fn find<'a>(elements: &'a [CreatableTopic], name: &str) -> Option<&'a CreatableTopic> {
+        elements.iter().find(|element| element.name == name)
+    }
+
+    /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [CreatableTopic],
+        name: &str,
+    ) -> impl Iterator<Item = &'a CreatableTopic> {
+        elements.iter().filter(move |element| element.name == name)
+    }
+}
+
 /// An element of `CreatableTopic`'s `Assignments` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CreatableReplicaAssignment {
@@ -79,6 +94,30 @@ pub struct CreatableReplicaAssignment {
     pub broker_ids: Vec<i32>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl CreatableReplicaAssignment {
+    /// The first of `elements`, in wire order, whose key (`PartitionIndex`) equals the
+    /// arguments.
+    pub fn find(
+        elements: &[CreatableReplicaAssignment],
+        partition_index: i32,
+    ) -> Option<&CreatableReplicaAssignment> {
+        elements
+            .iter()
+            .find(|element| element.partition_index == partition_index)
+    }
+
+    /// Every element of `elements` whose key (`PartitionIndex`) equals the arguments, in
+    /// wire order.
+    pub fn find_all(
+        elements: &[CreatableReplicaAssignment],
+        partition_index: i32,
+    ) -> impl Iterator<Item = &CreatableReplicaAssignment> {
+        elements
+            .iter()
+            .filter(move |element| element.partition_index == partition_index)
+    }
 }
 
 /// An element of `CreatableTopic`'s `Configs` array.
@@ -103,6 +142,24 @@ impl Default for CreatableTopicConfig {
             value: Some(String::new()),
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl CreatableTopicConfig {
+    /// The first of `elements`, in wire order, whose key (`Name`) equals the arguments.
+    pub fn find<'a>(
+        elements: &'a [CreatableTopicConfig],
+        name: &str,
+    ) -> Option<&'a CreatableTopicConfig> {
+        elements.iter().find(|element| element.name == name)
+    }
+
+    /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [CreatableTopicConfig],
+        name: &str,
+    ) -> impl Iterator<Item = &'a CreatableTopicConfig> {
+        elements.iter().filter(move |element| element.name == name)
     }
 }
 

@@ -1,0 +1,32 @@
+# Integer fields whose values have a typed meaning (PROTO-0062).
+#
+# Every generated field with one of an entry's `fields` names, in any message, gets an
+# accessor of the same name that converts the raw integer with `convert`, returning
+# `Result<rust, error>`. The wire struct keeps the integer, so a value the enum doesn't
+# know still round-trips. `cargo xtask codegen` fails if a name matches no field, or a
+# matched field's type isn't `type`.
+#
+# Paths start with `protocol::` (alluvium-protocol) or `types::` (alluvium-types).
+# The coordinator key type (GRP-0039) and the ACL enums (SEC-0051) are added here by
+# the tasks that define those enums.
+
+[[known_value]]
+fields = ["ErrorCode", "AcknowledgeErrorCode", "PartitionErrorCode", "TopicConfigErrorCode"]
+type = "int16"
+rust = "protocol::ErrorCode"
+convert = "protocol::ErrorCode::from_code"
+error = "protocol::UnknownErrorCode"
+
+[[known_value]]
+fields = ["IsolationLevel"]
+type = "int8"
+rust = "types::IsolationLevel"
+convert = "types::IsolationLevel::from_wire"
+error = "types::DeliveryError"
+
+[[known_value]]
+fields = ["Acks"]
+type = "int16"
+rust = "types::Acks"
+convert = "types::Acks::from_wire"
+error = "types::DeliveryError"

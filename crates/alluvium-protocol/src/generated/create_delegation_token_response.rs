@@ -7,7 +7,7 @@
 
 /// The `CreateDelegationTokenResponse` response, API key 38: versions 1-3, flexible
 /// versions 2+.
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Clone, PartialEq, Default)]
 pub struct CreateDelegationTokenResponse {
     /// The top-level error, or zero if there was no error.
     ///
@@ -56,6 +56,43 @@ pub struct CreateDelegationTokenResponse {
     pub throttle_time_ms: i32,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl std::fmt::Debug for CreateDelegationTokenResponse {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CreateDelegationTokenResponse")
+            .field("error_code", &self.error_code)
+            .field("principal_type", &self.principal_type)
+            .field("principal_name", &self.principal_name)
+            .field(
+                "token_requester_principal_type",
+                &self.token_requester_principal_type,
+            )
+            .field(
+                "token_requester_principal_name",
+                &self.token_requester_principal_name,
+            )
+            .field("issue_timestamp_ms", &self.issue_timestamp_ms)
+            .field("expiry_timestamp_ms", &self.expiry_timestamp_ms)
+            .field("max_timestamp_ms", &self.max_timestamp_ms)
+            .field("token_id", &self.token_id)
+            .field("hmac", &format_args!("***"))
+            .field("throttle_time_ms", &self.throttle_time_ms)
+            .field("unknown_tagged_fields", &self.unknown_tagged_fields)
+            .finish()
+    }
+}
+
+impl CreateDelegationTokenResponse {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
 }
 
 impl CreateDelegationTokenResponse {

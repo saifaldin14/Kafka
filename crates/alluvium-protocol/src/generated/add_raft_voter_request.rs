@@ -69,6 +69,21 @@ pub struct Listener {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl Listener {
+    /// The first of `elements`, in wire order, whose key (`Name`) equals the arguments.
+    pub fn find<'a>(elements: &'a [Listener], name: &str) -> Option<&'a Listener> {
+        elements.iter().find(|element| element.name == name)
+    }
+
+    /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [Listener],
+        name: &str,
+    ) -> impl Iterator<Item = &'a Listener> {
+        elements.iter().filter(move |element| element.name == name)
+    }
+}
+
 impl AddRaftVoterRequest {
     /// The API key.
     pub const API_KEY: i16 = 80;

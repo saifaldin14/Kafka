@@ -30,6 +30,24 @@ pub struct OffsetDeleteRequestTopic {
     pub partitions: Vec<OffsetDeleteRequestPartition>,
 }
 
+impl OffsetDeleteRequestTopic {
+    /// The first of `elements`, in wire order, whose key (`Name`) equals the arguments.
+    pub fn find<'a>(
+        elements: &'a [OffsetDeleteRequestTopic],
+        name: &str,
+    ) -> Option<&'a OffsetDeleteRequestTopic> {
+        elements.iter().find(|element| element.name == name)
+    }
+
+    /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [OffsetDeleteRequestTopic],
+        name: &str,
+    ) -> impl Iterator<Item = &'a OffsetDeleteRequestTopic> {
+        elements.iter().filter(move |element| element.name == name)
+    }
+}
+
 /// An element of `OffsetDeleteRequestTopic`'s `Partitions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct OffsetDeleteRequestPartition {

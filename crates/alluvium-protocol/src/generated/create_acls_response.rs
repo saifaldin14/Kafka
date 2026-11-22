@@ -45,6 +45,18 @@ impl Default for AclCreationResult {
     }
 }
 
+impl AclCreationResult {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
 impl CreateAclsResponse {
     /// The API key.
     pub const API_KEY: i16 = 30;

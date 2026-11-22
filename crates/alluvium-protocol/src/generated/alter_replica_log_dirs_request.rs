@@ -32,6 +32,24 @@ pub struct AlterReplicaLogDir {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl AlterReplicaLogDir {
+    /// The first of `elements`, in wire order, whose key (`Path`) equals the arguments.
+    pub fn find<'a>(
+        elements: &'a [AlterReplicaLogDir],
+        path: &str,
+    ) -> Option<&'a AlterReplicaLogDir> {
+        elements.iter().find(|element| element.path == path)
+    }
+
+    /// Every element of `elements` whose key (`Path`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [AlterReplicaLogDir],
+        path: &str,
+    ) -> impl Iterator<Item = &'a AlterReplicaLogDir> {
+        elements.iter().filter(move |element| element.path == path)
+    }
+}
+
 /// An element of `AlterReplicaLogDir`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AlterReplicaLogDirTopic {
@@ -45,6 +63,24 @@ pub struct AlterReplicaLogDirTopic {
     pub partitions: Vec<i32>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl AlterReplicaLogDirTopic {
+    /// The first of `elements`, in wire order, whose key (`Name`) equals the arguments.
+    pub fn find<'a>(
+        elements: &'a [AlterReplicaLogDirTopic],
+        name: &str,
+    ) -> Option<&'a AlterReplicaLogDirTopic> {
+        elements.iter().find(|element| element.name == name)
+    }
+
+    /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [AlterReplicaLogDirTopic],
+        name: &str,
+    ) -> impl Iterator<Item = &'a AlterReplicaLogDirTopic> {
+        elements.iter().filter(move |element| element.name == name)
+    }
 }
 
 impl AlterReplicaLogDirsRequest {

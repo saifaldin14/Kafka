@@ -38,6 +38,32 @@ pub struct AlterConfigsResource {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl AlterConfigsResource {
+    /// The first of `elements`, in wire order, whose key (`ResourceType`, `ResourceName`)
+    /// equals the arguments.
+    pub fn find<'a>(
+        elements: &'a [AlterConfigsResource],
+        resource_type: i8,
+        resource_name: &str,
+    ) -> Option<&'a AlterConfigsResource> {
+        elements.iter().find(|element| {
+            element.resource_type == resource_type && element.resource_name == resource_name
+        })
+    }
+
+    /// Every element of `elements` whose key (`ResourceType`, `ResourceName`) equals the
+    /// arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [AlterConfigsResource],
+        resource_type: i8,
+        resource_name: &str,
+    ) -> impl Iterator<Item = &'a AlterConfigsResource> {
+        elements.iter().filter(move |element| {
+            element.resource_type == resource_type && element.resource_name == resource_name
+        })
+    }
+}
+
 /// An element of `AlterConfigsResource`'s `Configs` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AlterableConfig {
@@ -60,6 +86,21 @@ impl Default for AlterableConfig {
             value: Some(String::new()),
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl AlterableConfig {
+    /// The first of `elements`, in wire order, whose key (`Name`) equals the arguments.
+    pub fn find<'a>(elements: &'a [AlterableConfig], name: &str) -> Option<&'a AlterableConfig> {
+        elements.iter().find(|element| element.name == name)
+    }
+
+    /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [AlterableConfig],
+        name: &str,
+    ) -> impl Iterator<Item = &'a AlterableConfig> {
+        elements.iter().filter(move |element| element.name == name)
     }
 }
 
