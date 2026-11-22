@@ -11,6 +11,11 @@ pub struct Writer {
 }
 
 impl Writer {
+    /// Appends one byte.
+    pub(crate) fn put_u8(&mut self, byte: u8) {
+        self.buf.put_u8(byte);
+    }
+
     /// An empty writer.
     pub fn new() -> Writer {
         Writer::default()

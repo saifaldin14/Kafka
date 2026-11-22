@@ -158,15 +158,15 @@ Done when: decoding 0x02 and 0xFF yields true as in Kafka's generated `readByte(
 P0 · M1 · Task · deps: PROTO-0025, TYPE-F03 · labels: decoder · ref: clients/src/main/java/org/apache/kafka/common/protocol/Readable.java readUuid @4.4.0
 Done when: round-trip property test; zero uuid encodes as 16 zero bytes; byte order checked against a vector produced by Kafka's `Uuid.fromString`.
 
-### [To Do] PROTO-0035 Unsigned varint (u32) codec with Kafka's 5-byte limit and `size_of`
+### [Done] PROTO-0035 Unsigned varint (u32) codec with Kafka's 5-byte limit and `size_of`
 P0 · M1 · Task · deps: PROTO-0025 · labels: decoder · ref: clients/src/main/java/org/apache/kafka/common/utils/internals/ByteUtils.java readUnsignedVarint/writeUnsignedVarint/sizeOfUnsignedVarint @4.4.0
 Done when: decoding matches Kafka bit for bit: overlong encodings are accepted and bits above bit 3 of the 5th byte are discarded; a 5th byte with the continuation bit set is `DecodeError::VarintTooLong`; encoding is canonical; property: size_of == encoded length; ByteUtilsTest vectors ported.
 
-### [To Do] PROTO-0036 Signed varint (zigzag i32) codec
+### [Done] PROTO-0036 Signed varint (zigzag i32) codec
 P0 · M1 · Task · deps: PROTO-0035 · labels: decoder · ref: clients/src/main/java/org/apache/kafka/common/utils/internals/ByteUtils.java readVarint/writeVarint @4.4.0
 Done when: i32::MIN, −1, 0 and i32::MAX round-trip; property round-trip; size_of matches; ByteUtilsTest vectors ported.
 
-### [To Do] PROTO-0037 Signed varlong (zigzag i64) codec with the 10-byte limit
+### [Done] PROTO-0037 Signed varlong (zigzag i64) codec with the 10-byte limit
 P0 · M1 · Task · deps: PROTO-0025 · labels: decoder · ref: clients/src/main/java/org/apache/kafka/common/utils/internals/ByteUtils.java readVarlong/writeVarlong/sizeOfVarlong @4.4.0
 Done when: a continuation bit on the 10th byte is `DecodeError::VarlongTooLong`; i64 extremes round-trip; property round-trip; size_of matches; ByteUtilsTest vectors ported.
 

@@ -55,7 +55,7 @@ impl Reader {
     }
 
     /// The next `N` bytes as an array.
-    fn array<const N: usize>(&mut self) -> Result<[u8; N], DecodeError> {
+    pub(crate) fn array<const N: usize>(&mut self) -> Result<[u8; N], DecodeError> {
         let bytes = self.take(N)?;
         let mut array = [0; N];
         array.copy_from_slice(&bytes);

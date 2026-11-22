@@ -24,6 +24,9 @@ that it was modified, and marks every ported part `// Ported from:` with its sou
   clients/src/test/java/org/apache/kafka/common/UuidTest.java.
 - crates/alluvium-types/src/topic.rs: tests ported from
   clients/src/test/java/org/apache/kafka/common/internals/TopicTest.java.
+- crates/alluvium-protocol/src/varint.rs: tests ported from
+  clients/src/test/java/org/apache/kafka/common/utils/internals/ByteUtilsTest.java
+  (the varint and varlong cases).
 - xtask/src/message_spec/versions.rs: tests ported from
   generator/src/test/java/org/apache/kafka/message/VersionsTest.java.
 - xtask/src/message_spec/spec.rs: tests ported from

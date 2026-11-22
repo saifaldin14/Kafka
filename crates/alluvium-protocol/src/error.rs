@@ -44,6 +44,12 @@ pub enum DecodeErrorKind {
         /// The bytes left in the input.
         remaining: usize,
     },
+    /// An unsigned varint whose 5th byte has its continuation bit set.
+    #[error("varint is too long: the 5th byte has its continuation bit set")]
+    VarintTooLong,
+    /// A varlong whose 10th byte has its continuation bit set.
+    #[error("varlong is too long: the 10th byte has its continuation bit set")]
+    VarlongTooLong,
 }
 
 /// Formats a field path as ` in A.B.C`, or nothing when empty.
