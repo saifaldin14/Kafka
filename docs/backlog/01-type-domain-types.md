@@ -20,11 +20,11 @@ Done when: docs/standards/testing.md states where shared strategies live (in the
 P0 · M0 · Task · deps: TYPE-0002 · ref: clients/src/main/java/org/apache/kafka/common/TopicPartition.java @4.4.0
 Done when: Unit tests cover 0, `i32::MAX` and negatives for `PartitionIndex`, and the overflow of `checked_next` at `i32::MAX`; `CorrelationId` round-trips every `i32`, including negatives; strategies for both are added; `Display` prints the plain number.
 
-### [To Do] TYPE-0004 `ProducerId` (non-negative `i64`, `NO_PRODUCER_ID = -1` → `None`) and `ProducerEpoch` (non-negative `i16`, `-1` → `None`) with `is_exhausted()` (epoch ≥ `i16::MAX - 1`) and `checked_bump()`
+### [Done] TYPE-0004 `ProducerId` (non-negative `i64`, `NO_PRODUCER_ID = -1` → `None`) and `ProducerEpoch` (non-negative `i16`, `-1` → `None`) with `is_exhausted()` (epoch ≥ `i16::MAX - 1`) and `checked_bump()`
 P0 · M0 · Task · deps: TYPE-0002 · ref: transaction-coordinator/src/main/java/org/apache/kafka/coordinator/transaction/TransactionMetadata.java isEpochExhausted @4.4.0
 Done when: `// Parity:` cites `TransactionMetadata.isEpochExhausted` and `RecordBatch.NO_PRODUCER_ID`/`NO_PRODUCER_EPOCH`; tests cover epochs 32765, 32766 and 32767 for `is_exhausted` and `checked_bump` (which returns `None` at `i16::MAX`); strategies cover the boundaries.
 
-### [To Do] TYPE-0005 `Sequence` (non-negative `i32`, `NO_SEQUENCE = -1` → `None`) with `wrapping_add(n)` and `wrapping_sub(n)` matching `DefaultRecordBatch.incrementSequence`/`decrementSequence` (wrap from `i32::MAX` to 0)
+### [Done] TYPE-0005 `Sequence` (non-negative `i32`, `NO_SEQUENCE = -1` → `None`) with `wrapping_add(n)` and `wrapping_sub(n)` matching `DefaultRecordBatch.incrementSequence`/`decrementSequence` (wrap from `i32::MAX` to 0)
 P0 · M0 · Task · deps: TYPE-0002 · ref: clients/src/main/java/org/apache/kafka/common/record/internal/DefaultRecordBatch.java incrementSequence @4.4.0
 Done when: Ported cases cover wrap-around at `i32::MAX`; a property test shows `wrapping_sub(wrapping_add(s, n), n) == s` for all valid `s` and `n`; `// Parity:` cites both Kafka methods.
 
