@@ -26,6 +26,8 @@ version = "0.0.0"
 dependencies = [
  "alluvium-types",
  "bytes",
+ "criterion",
+ "gungraun",
  "peak_alloc",
  "proptest",
  "thiserror",

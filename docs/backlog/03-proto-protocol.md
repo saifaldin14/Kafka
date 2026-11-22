@@ -114,7 +114,7 @@ P0 · M1 · Task · deps: PROTO-0015, PROTO-0016, PROTO-0017, PROTO-0018, PROTO-
 Done when: a test loads all vendored files with zero errors and asserts the number of request schemas, unique API keys, matching request/response pairs per API key, and the valid-version ranges of Produce (3-13) and Fetch (4-18).
 Notes: 281 schemas load (the 282 vendored files minus Kafka's README). There are 95 request schemas; 91 have valid versions, and four ZooKeeper-era APIs keep their key with `none`. That gives 91 request and 91 response APIs with no unpaired key, and 76 keyed struct arrays. An independent script over the JSON gave the same numbers. `schemas verify` prints this inventory and fails on an unpaired API key.
 
-## [In Progress] PROTO-F03 Primitive codecs
+## [Done] PROTO-F03 Primitive codecs
 P0 · M1 · Feature · deps: TYPE-F01, TYPE-F03
 Scope: All wire primitives: fixed ints, (u)varint/varlong, float64, bool, uuid, (compact/nullable) strings and bytes, (compact) arrays, tagged-field sections, records fields.
 
@@ -222,7 +222,7 @@ Done when: a count that is negative as a Java int or exceeds the remaining bytes
 P0 · M1 · Task · deps: PROTO-0032, PROTO-0033, PROTO-0034, PROTO-0036, PROTO-0037, PROTO-0039, PROTO-0041, PROTO-0046, PROTO-0048, PROTO-0049, PROTO-0026, PROTO-0029, PROTO-0030, PROTO-0031, TEST-F07 · labels: test, security, decoder
 Done when: the target exercises every primitive reader, runs clean for the CI fuzz budget and never allocates more than the input length times a constant.
 
-### [To Do] PROTO-0051 Criterion benchmarks for varint, compact string and bytes codecs
+### [Done] PROTO-0051 Criterion benchmarks for varint, compact string and bytes codecs
 P2 · M1 · Task · deps: PROTO-0036, PROTO-0037, PROTO-0040, PROTO-0044, TEST-F11 · labels: perf
 Done when: benchmarks run in the benchmark CI job with baselines recorded.
 
