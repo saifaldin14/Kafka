@@ -83,7 +83,8 @@
 //!   ([ADR-0013](../../../docs/adr/0013-key-hash-space.md); [`KeyRangeError`]), and
 //!   [`check_coverage`] for sets of ranges that must cover the space exactly.
 //! - [`NamespaceId`]: a tenant namespace, `default` unless tenancy says otherwise
-//!   ([ADR-0014](../../../docs/adr/0014-namespace-identity.md); [`NamespaceIdError`]).
+//!   ([ADR-0014](../../../docs/adr/0014-namespace-identity.md); [`NamespaceIdError`]),
+//!   and [`NamespacedName`], a topic, group or transactional id in a namespace.
 //! - [`CleanupPolicy`]: delete, compact, both or neither ([`CleanupPolicyError`]).
 //! - [`ByteSize`]: a non-negative size, printed with an IEC approximation
 //!   ([`ByteSizeError`]).
@@ -140,7 +141,9 @@ pub use id::{BrokerId, CorrelationId, IdError, IdKind, NodeId, PartitionIndex};
 pub use key_range::{KeyHash, KeyRange, KeyRangeError, check_coverage};
 pub use listener::{BlankListenerName, ListenerName};
 pub use log_safe::LogSafe;
-pub use namespace::{NamespaceId, NamespaceIdError};
+pub use namespace::{
+    KafkaName, NamespaceId, NamespaceIdError, NamespacedName, NotInDefaultNamespace,
+};
 pub use offset::{Offset, OffsetError, OffsetRange, OffsetSpec};
 pub use partition::{TopicIdPartition, TopicPartition};
 pub use partitioner::{murmur2, partition_for_key};

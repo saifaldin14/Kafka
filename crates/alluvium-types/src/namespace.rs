@@ -10,7 +10,7 @@ use std::borrow::Cow;
 use std::fmt;
 use std::str::FromStr;
 
-use crate::LogSafe;
+use crate::{GroupId, LogSafe, TopicName, TransactionalId};
 
 /// A namespace's id: 1 to 63 characters of `[a-z0-9-]`, starting with a letter and not
 /// ending with `-`.
@@ -58,6 +58,89 @@ pub enum NamespaceIdError {
 }
 
 const MAX_LENGTH: usize = 63;
+
+/// A Kafka name in a namespace: a pair, never a prefixed string, so the name keeps
+/// Kafka's rules and length limits in every namespace.
+///
+/// `N` is one of the names ADR-0014 scopes: [`TopicName`], [`GroupId`] or
+/// [`TransactionalId`]. A name in [`NamespaceId::DEFAULT`] displays exactly as the
+/// Kafka name; any other as `<namespace>/<name>`, for people and logs, never to be
+/// parsed.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct NamespacedName<N: KafkaName> {
+    namespace: NamespaceId,
+    name: N,
+}
+
+/// The Kafka names that can be qualified by a namespace. Sealed: ADR-0014 lists them.
+pub trait KafkaName: sealed::Sealed + fmt::Display {}
+
+mod sealed {
+    pub trait Sealed {}
+}
+
+impl sealed::Sealed for TopicName {}
+impl sealed::Sealed for GroupId {}
+impl sealed::Sealed for TransactionalId {}
+impl KafkaName for TopicName {}
+impl KafkaName for GroupId {}
+impl KafkaName for TransactionalId {}
+
+/// A name outside the default namespace has no plain Kafka form.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error("a name in namespace {namespace} has no plain Kafka name")]
+pub struct NotInDefaultNamespace {
+    /// The name's namespace.
+    pub namespace: NamespaceId,
+}
+
+impl<N: KafkaName> NamespacedName<N> {
+    /// `name` in `namespace`.
+    pub fn new(namespace: NamespaceId, name: N) -> NamespacedName<N> {
+        NamespacedName { namespace, name }
+    }
+
+    /// A plain Kafka name, which is in the default namespace.
+    pub fn from_kafka(name: N) -> NamespacedName<N> {
+        NamespacedName::new(NamespaceId::DEFAULT, name)
+    }
+
+    /// The namespace.
+    pub fn namespace(&self) -> &NamespaceId {
+        &self.namespace
+    }
+
+    /// The name within the namespace.
+    pub fn name(&self) -> &N {
+        &self.name
+    }
+
+    /// The plain Kafka name, which exists only in the default namespace.
+    ///
+    /// # Errors
+    ///
+    /// [`NotInDefaultNamespace`] for a name in any other namespace, so a namespace is
+    /// never dropped by accident.
+    pub fn into_kafka(self) -> Result<N, NotInDefaultNamespace> {
+        if self.namespace.is_default() {
+            Ok(self.name)
+        } else {
+            Err(NotInDefaultNamespace {
+                namespace: self.namespace,
+            })
+        }
+    }
+}
+
+impl<N: KafkaName> fmt::Display for NamespacedName<N> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.namespace.is_default() {
+            self.name.fmt(f)
+        } else {
+            write!(f, "{}/{}", self.namespace, self.name)
+        }
+    }
+}
 
 impl NamespaceId {
     /// `default`: the namespace of every resource named without one. Never stored in
@@ -124,8 +207,32 @@ impl fmt::Display for NamespaceId {
 mod tests {
     use proptest::prelude::{any, prop_assert, prop_assert_eq, proptest};
 
-    use super::{NamespaceId, NamespaceIdError};
-    use crate::strategies::namespace_id;
+    use super::{NamespaceId, NamespaceIdError, NamespacedName, NotInDefaultNamespace};
+    use crate::strategies::{group_id, namespace_id, topic_name, transactional_id};
+    use crate::{GroupId, TopicName};
+
+    #[test]
+    fn default_names_are_kafka_names_and_others_are_not() {
+        let orders = TopicName::try_from("orders").unwrap();
+        let plain = NamespacedName::from_kafka(orders.clone());
+        assert_eq!(plain.namespace(), &NamespaceId::DEFAULT);
+        assert_eq!(plain.to_string(), "orders");
+        assert_eq!(plain.into_kafka(), Ok(orders.clone()));
+
+        let payments: NamespaceId = "payments".parse().unwrap();
+        let qualified = NamespacedName::new(payments.clone(), orders);
+        assert_eq!(qualified.to_string(), "payments/orders");
+        assert_eq!(
+            qualified.into_kafka(),
+            Err(NotInDefaultNamespace {
+                namespace: payments
+            })
+        );
+        assert_eq!(
+            NamespacedName::new("team-a".parse().unwrap(), GroupId::from("g\n1")).to_string(),
+            r"team-a/g\n1"
+        );
+    }
 
     #[test]
     fn default_round_trips_through_display_and_from_str() {
@@ -213,6 +320,31 @@ mod tests {
         #[test]
         fn short_strings_over_the_alphabet_match_the_rules(id in "[a-z0-9-]{0,66}") {
             prop_assert_eq!(id.parse::<NamespaceId>().is_ok(), valid(&id));
+        }
+
+        #[test]
+        fn every_kafka_name_round_trips_through_the_default_namespace(
+            topic in topic_name(),
+            group in group_id(),
+            transactional in transactional_id(),
+        ) {
+            let shown = (topic.to_string(), group.to_string(), transactional.to_string());
+            let topic = NamespacedName::from_kafka(topic.clone());
+            let group = NamespacedName::from_kafka(group);
+            let transactional = NamespacedName::from_kafka(transactional);
+            prop_assert_eq!(
+                (topic.to_string(), group.to_string(), transactional.to_string()),
+                shown.clone()
+            );
+            prop_assert_eq!(topic.into_kafka().map(|n| n.to_string()), Ok(shown.0));
+            prop_assert_eq!(group.into_kafka().map(|n| n.to_string()), Ok(shown.1));
+            prop_assert_eq!(transactional.into_kafka().map(|n| n.to_string()), Ok(shown.2));
+        }
+
+        #[test]
+        fn other_namespaces_never_convert_silently(namespace in namespace_id(), topic in topic_name()) {
+            let qualified = NamespacedName::new(namespace.clone(), topic.clone());
+            prop_assert_eq!(qualified.into_kafka().is_ok(), namespace.is_default());
         }
 
         #[test]
