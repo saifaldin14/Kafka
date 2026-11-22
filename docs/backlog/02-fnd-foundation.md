@@ -165,7 +165,7 @@ Done when: Moving a crate to another layer in only one of the two places fails w
 P2 · M1 · Task · deps: FND-0030 · ref: ADR-0011
 Done when: The rule scans the `src/` of layer 1–2 workspace crates (layer 0 is `alluvium-types`, which defines them) and reports each use with file:line and the ADR; fixture crates show a use rejected and a doc comment mentioning the names accepted; the real workspace passes.
 
-## [In Progress] FND-F06 CI pipeline
+## [Done] FND-F06 CI pipeline
 P0 · M0 · Feature · deps: FND-F02, FND-F03, FND-F04, FND-F05
 Scope: GitHub Actions running `cargo xtask ci` on Linux and macOS, caching, SHA-pinned actions, required checks.
 
@@ -224,9 +224,10 @@ P0 · M0 · Task · deps: FND-0021, FND-0033
 Done when: `cargo xtask ci --list` shows `doctest` after `test`; a failing doctest and a `compile_fail` doctest that compiles each fail the step; docs/standards/rust.md lists the step; the `test` job runs `test doctest`.
 Notes: Proved locally: a doctest asserting `1 == 2` fails the step ("FAILED", exit 1), a `compile_fail` example that compiles fails it ("Test compiled successfully, but it's marked `compile_fail`"), and the workspace passes. TYPE-0024's compile-fail test is the first real doctest.
 
-### [To Do] FND-0040 M0 exit: `cargo xtask ci` is green in CI on main for Linux and macOS, a draft PR with a deliberately wrong crate dependency is rejected by the `policy` job, and the phase docs are updated
+### [Done] FND-0040 M0 exit: `cargo xtask ci` is green in CI on main for Linux and macOS, a draft PR with a deliberately wrong crate dependency is rejected by the `policy` job, and the phase docs are updated
 P0 · M0 · Task · deps: FND-0037, FND-0038, FND-0045 · labels: docs
 Done when: Both runs are linked in the PR; the "Current phase" section of the engineering skill, AGENTS.md ("design phase"), CONTRIBUTING.md ("contract that milestone M0 implements") and the M0 row of docs/parity.md describe the new state; the remaining open M0 tasks (if any) are listed in the PR as non-blocking for starting M1 work.
+Notes: CI on main is green on Linux and macOS: run [45023903751](https://github.com/saifaldin14/Kafka/actions/runs/45023903751) (d8b38d0), every job, with tests on ubuntu-24.04 and macos-15. Draft PR [#21](https://github.com/saifaldin14/Kafka/pull/21) made layer 0 `alluvium-types` depend on `tokio`, and run [45023934006](https://github.com/saifaldin14/Kafka/actions/runs/45023934006) failed the `policy` job's `layers` step with "alluvium-types (layer 0) -> tokio: layers 0-2 must not depend on an async runtime or networking crate". The phase text is updated in the skill, AGENTS.md, README.md and CONTRIBUTING.md. docs/parity.md has no milestone rows, by design (status lives in the backlog), and the M0 row of the backlog's milestone table describes scope, which is unchanged. No M0 tasks remain open.
 
 ## [Done] FND-F07 Backlog tooling
 P1 · M0 · Feature · deps: FND-F04

@@ -6,10 +6,10 @@ Alluvium is a streaming platform written in Rust. It is fully compatible with Ap
 
 ## Status
 
-**Milestone M0 in progress.** The architecture, standards and decisions were written down first, so the code starts from a consistent foundation. The workspace and its `cargo xtask` checks are being built now; the first product crate is `alluvium-types`.
+**Milestone M1 (codecs) is next.** The architecture, standards and decisions were written down first, so the code starts from a consistent foundation. Milestone M0 built that foundation in code: the workspace, its `cargo xtask` checks and CI, and the first product crate, `alluvium-types`.
 
 - Compatibility target: **Apache Kafka 4.4.0**
-- Next milestone: **M0, workspace skeleton and tooling**
+- Current milestone: **M1, codecs**
 - Plan: [docs/backlog/](docs/backlog/README.md), with milestones M0–M18. Run `cargo xtask backlog next` to see what to work on.
 
 ## Goals
