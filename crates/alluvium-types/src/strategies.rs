@@ -14,7 +14,7 @@ use proptest::prelude::{Just, Strategy, any, prop_oneof};
 use crate::{
     BrokerEpoch, BrokerId, CorrelationId, GenerationId, LeaderEpoch, MemberEpoch, MonotonicInstant,
     NodeId, Offset, OffsetRange, OffsetSpec, PartitionIndex, ProducerEpoch, ProducerId, Sequence,
-    WallTime,
+    Uuid, WallTime,
 };
 
 /// Non-negative `i32` values, with extra weight on 0, 1 and `i32::MAX`.
@@ -166,4 +166,19 @@ pub fn wall_time() -> impl Strategy<Value = WallTime> {
         7 => 0..=i64::MAX,
     ]
     .prop_filter_map("non-negative", |value| WallTime::try_from(value).ok())
+}
+
+/// [`Uuid`]s over all 128 bits, biased towards zero, one and the signed extremes.
+pub fn uuid() -> impl Strategy<Value = Uuid> {
+    let half = || {
+        prop_oneof![
+            1 => Just(0),
+            1 => Just(1),
+            1 => Just(-1),
+            1 => Just(i64::MIN),
+            1 => Just(i64::MAX),
+            5 => any::<i64>(),
+        ]
+    };
+    (half(), half()).prop_map(|(most, least)| Uuid::from_bits(most, least))
 }

@@ -52,11 +52,11 @@ Done when: Property tests compare every operation with a naive model over small 
 P0 · M0 · Task · deps: TYPE-0002 · ref: clients/src/main/java/org/apache/kafka/common/requests/ListOffsetsRequest.java @4.4.0
 Done when: A property test over all `i64` shows that decode then encode is the identity for accepted values and that every other negative returns a typed error; `// Parity:` cites the `ListOffsetsRequest` constants; the doc states that which spec each API version may send is checked by the handler (API epic), not here.
 
-## [To Do] TYPE-F03 Kafka-compatible UUID
+## [In Progress] TYPE-F03 Kafka-compatible UUID
 P0 · M0 · Feature · deps: FND-F02
 Scope: `Uuid` and `TopicId` with Kafka's base64url display, reserved zero/metadata ids, generation from the injected RNG.
 
-### [To Do] TYPE-0011 `Uuid`: Kafka's base64url `Display`, `FromStr` and signed ordering
+### [Done] TYPE-0011 `Uuid`: Kafka's base64url `Display`, `FromStr` and signed ordering
 P0 · M0 · Task · deps: TYPE-0002 · labels: decoder, security · ref: clients/src/main/java/org/apache/kafka/common/Uuid.java toString/fromString/compareTo @4.4.0
 Done when: `Display` is unpadded base64url (22 characters); `FromStr` follows `Uuid.fromString` (rejects input over 24 characters before decoding, accepts optional padding, requires exactly 16 bytes); `Ord` matches Kafka's signed `compareTo`. Ported `UuidTest` cases pass; property tests show string round-trips for all values and that ordering equals signed comparison of the most significant then least significant bits; errors are a typed `UuidError` that echoes at most the first 24 characters of the input; no panic on any input; no new dependency unless justified per security.md#dependencies.
 
