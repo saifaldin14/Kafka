@@ -244,7 +244,7 @@ Done when: An accepted ADR "Fuzz corpus storage" names where corpora live, how C
 P0 · M1 · Task · deps: TEST-0051, TEST-0050 · labels: test
 Done when: A fresh clone can pull the corpus and run a target from it; the minimization job reduces the corpus without losing coverage (libFuzzer's coverage and feature counts before and after, from the same binary, in the job log). Only CI writes corpora (ADR-0018), so there is no push command.
 
-### [To Do] TEST-0053 PR fuzzing job: every fuzz target runs for 60 s per PR (targets sharded across a matrix), starting from the stored corpus, failing the PR on a crash with the reproducer uploaded
+### [In Review] TEST-0053 PR fuzzing job: every fuzz target runs for 60 s per PR (targets sharded across a matrix), starting from the stored corpus, failing the PR on a crash with the reproducer uploaded
 P0 · M1 · Task · deps: TEST-0050, TEST-0052 · labels: test, security · ref: docs/standards/security.md#untrusted-input
 Done when: A planted crash in a PR fails the job and the artifact reproduces it with `cargo xtask fuzz <target> <artifact>`; the job's total wall time is reported in the PR description.
 
