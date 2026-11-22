@@ -51,12 +51,24 @@ Proptest strategies for a crate's types live in that crate, in a `strategies` mo
 
 ## Benchmarks
 
-- Each crate has one criterion target, `crates/<crate>/benches/<area>.rs`, declared in its `Cargo.toml` with `harness = false`. Run it with `cargo bench -p <crate>`. The first is `alluvium-types`' [`benches/types.rs`](../../crates/alluvium-types/benches/types.rs).
-- Benchmark ids are `<area>/<operation>/<size>`, such as `types/murmur2/4096`: one group per operation, with the input size as the parameter.
+Benchmarks come in two kinds ([ADR-0019](../adr/0019-benchmark-regression-gating.md)). Both measure the same inputs, from a shared `benches/inputs/` module in the crate:
+
+- **Gated benchmarks** count instructions under valgrind's callgrind, with gungraun.
+  - They are each crate's `benches/<area>_instructions.rs`, and they cover hot paths.
+  - Every pull request runs them at its base and at its head in one CI job (`bench`). It fails when a count grows by more than its threshold in [`benches/thresholds.toml`](../../benches/thresholds.toml): 3% unless an override, with its reason, says otherwise.
+  - Counts are exact, so a failure is a real change in work done, never noise.
+  - Run them with `cargo xtask bench [--base <ref>]`. They need Linux and valgrind; on macOS, use the devcontainer.
+- **Wall-time benchmarks** use criterion.
+  - They are each crate's `benches/<area>.rs`, run with `cargo bench -p <crate> --bench <area>`.
+  - They are for local work and for the numbers a performance claim needs. CI doesn't run them: wall time on shared runners varies by tens of percent between machines.
+
+Conventions for both:
+
+- Benchmark ids are `<area>/<operation>/<case>`, such as `types/murmur2/size_4096`. In criterion: one group per operation, with the input size as the parameter. In gungraun: the group is the area, the function the operation, and the `#[bench::…]` id the case. A group name is unique across the workspace.
 - Inputs are deterministic, drawn from `SeededRng::from_seed` with a fixed seed, so two runs measure the same work.
-- Every group declares its throughput (`Throughput::Bytes` or `Throughput::Elements`), so results compare across sizes and machines.
+- Every criterion group declares its throughput (`Throughput::Bytes` or `Throughput::Elements`), so results compare across sizes and machines.
 - A PR that claims a performance change includes the before and after numbers and the CPU they ran on.
-- `criterion` is built without its default features: no plotting and no rayon, only `cargo bench` support. Benchmarks don't run in CI yet; regression gating is TEST-0095.
+- `criterion` is built without its default features: no plotting and no rayon, only `cargo bench` support.
 
 ## Coverage
 

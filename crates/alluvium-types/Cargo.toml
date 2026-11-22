@@ -22,11 +22,16 @@ zeroize = { workspace = true }
 
 [dev-dependencies]
 criterion = { workspace = true }
+gungraun = { workspace = true }
 proptest = { workspace = true }
 tracing = { workspace = true }
 
 [[bench]]
 name = "types"
+harness = false
+
+[[bench]]
+name = "types_instructions"
 harness = false
 
 [lints]

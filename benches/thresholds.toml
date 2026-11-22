@@ -1,0 +1,13 @@
+# Instruction-count regression thresholds for `cargo xtask bench` (ADR-0019).
+#
+# A pull request fails when a gated benchmark executes more instructions than at its base
+# by more than its threshold, in percent. Instruction counts have no noise, so this is the
+# smallest regression worth stopping a merge for, not a noise margin.
+default_percent = 3.0
+
+# An override names one benchmark (`<area>/<operation>/<case>`) and says why it differs:
+#
+# [[override]]
+# benchmark = "types/murmur2/size_16"
+# percent = 5.0
+# reason = "..."

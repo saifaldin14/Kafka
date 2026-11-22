@@ -38,6 +38,10 @@ pub(crate) enum Command {
         uninstall: bool,
     },
     Fuzz(FuzzCommand),
+    /// `bench [--base <ref>]`.
+    Bench {
+        base: Option<String>,
+    },
 }
 
 /// A `cargo xtask fuzz` command.
@@ -119,6 +123,10 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
         "Run one input through a target with the standard limits, such as a crash artifact",
     ),
     ("fuzz --list", "List the fuzz targets"),
+    (
+        "bench [--base <ref>]",
+        "Run the gated benchmarks (Linux, valgrind); with --base, fail on an instruction-count regression against <ref>",
+    ),
     (
         "fuzz corpus pull [<target>]...",
         "Download the corpora the nightly fuzz run grew on main (needs a `gh` login; ADR-0018)",
@@ -314,6 +322,21 @@ pub(crate) fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Command,
             }),
         },
         "fuzz" => parse_fuzz(rest).map(Command::Fuzz),
+        "bench" => match rest {
+            [] => Ok(Command::Bench { base: None }),
+            [flag] if flag == "--base" => Err(UsageError::MissingValue { flag: "--base" }),
+            [flag, base] if flag == "--base" => Ok(Command::Bench {
+                base: Some(base.clone()),
+            }),
+            [flag, _, extra, ..] if flag == "--base" => Err(UsageError::UnexpectedArgument {
+                command: "bench",
+                argument: extra.clone(),
+            }),
+            [argument, ..] => Err(UsageError::UnexpectedArgument {
+                command: "bench",
+                argument: argument.clone(),
+            }),
+        },
         _ => Err(UsageError::UnknownCommand(name.clone())),
     }
 }
@@ -797,6 +820,28 @@ mod tests {
             Err(UsageError::UnknownSubcommand {
                 command: "tools",
                 name: "remove".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn bench_parses_an_optional_base() {
+        assert_eq!(parse(args(&["bench"])), Ok(Command::Bench { base: None }));
+        assert_eq!(
+            parse(args(&["bench", "--base", "origin/main"])),
+            Ok(Command::Bench {
+                base: Some("origin/main".to_owned())
+            })
+        );
+        assert_eq!(
+            parse(args(&["bench", "--base"])),
+            Err(UsageError::MissingValue { flag: "--base" })
+        );
+        assert_eq!(
+            parse(args(&["bench", "main"])),
+            Err(UsageError::UnexpectedArgument {
+                command: "bench",
+                argument: "main".to_owned()
             })
         );
     }

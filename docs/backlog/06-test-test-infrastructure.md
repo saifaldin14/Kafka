@@ -433,7 +433,7 @@ Notes: Pulled into M0 because TYPE-0035 (M0) needs its benchmark budget measured
 P1 · M1 · Spike · deps: TEST-0094 · labels: perf
 Done when: An accepted ADR "Benchmark regression gating" picks the method, the regression threshold and its statistical basis, measured on 20 repeated runs of the murmur2 benchmark on the chosen runner.
 
-### [To Do] TEST-0096 Benchmark CI job per the ADR: run benchmarks on the PR and on its base commit in the same job, compare, and fail when a benchmark regresses beyond its threshold
+### [In Review] TEST-0096 Benchmark CI job per the ADR: run benchmarks on the PR and on its base commit in the same job, compare, and fail when a benchmark regresses beyond its threshold
 P1 · M1 · Task · deps: TEST-0095 · labels: perf
 Done when: Thresholds live in `benches/thresholds.toml` (default plus per-benchmark overrides with a reason); a planted slowdown fails the job with the benchmark name and both results; the comparison is written to the job summary.
 

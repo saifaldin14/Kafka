@@ -1,6 +1,6 @@
 # Every check is a step of `cargo xtask ci` (xtask/src/ci.rs); jobs only choose which
-# steps run where. The exception is fuzzing, which runs `cargo xtask fuzz` per target
-# (fuzz/README.md). Security defaults (docs/standards/security.md#dependencies):
+# steps run where. The exceptions are fuzzing, which runs `cargo xtask fuzz` per target
+# (fuzz/README.md), and the gated benchmarks, which need valgrind (ADR-0019). Security defaults (docs/standards/security.md#dependencies):
 # no permissions unless a job asks, actions pinned to full commit SHAs, no persisted
 # checkout credentials, and a timeout on every job.
 name: CI
@@ -207,12 +207,44 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  bench:
+    name: bench (instruction counts)
+    # The gated benchmarks at the base and at this commit, in one job: instruction counts
+    # are exact but differ between machines' architectures (ADR-0019). A count that grows
+    # beyond its threshold in benches/thresholds.toml fails the job; the comparison is in
+    # the job summary.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the pinned toolchain and valgrind
+        run: |
+          rustup toolchain install --profile minimal
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq valgrind
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+          cache-bin: "true"
+      - name: Install gungraun-runner
+        run: cargo xtask tools install --tool gungraun-runner
+      - name: Fetch the base commit
+        run: git fetch --no-tags --depth=1 origin "$BASE_SHA"
+      - name: Compare with the base
+        run: cargo xtask bench --base "$BASE_SHA"
+
   ci-success:
     name: ci-success
     # The single required status check. Every job that must pass is in `needs`: add a
     # new required job here. `advisories` is deliberately left out.
     if: always()
-    needs: [lint, policy, docs, deny, test, fuzz-targets, fuzz]
+    needs: [lint, policy, docs, deny, test, fuzz-targets, fuzz, bench]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions: {}
