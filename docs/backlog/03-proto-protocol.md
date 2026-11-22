@@ -214,7 +214,7 @@ Done when: a length greater than the remaining bytes fails before any allocation
 P0 · M1 · Task · deps: PROTO-0035, PROTO-0047 · labels: decoder, security · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateVariableLengthReader @4.4.0
 Done when: Java int wrapping semantics as for compact strings; zero means null; property round-trip.
 
-### [To Do] PROTO-0049 Tagged-field section codec: unsigned varint count, then (tag, size, bytes) entries as `RawTaggedField`
+### [Done] PROTO-0049 Tagged-field section codec: unsigned varint count, then (tag, size, bytes) entries as `RawTaggedField`
 P0 · M1 · Task · deps: PROTO-0035, PROTO-0042 · labels: decoder · ref: clients/src/main/java/org/apache/kafka/common/protocol/types/RawTaggedField.java, types/RawTaggedFieldWriter.java @4.4.0
 Done when: a count that is negative as a Java int or exceeds the remaining bytes is an error; each size is bounded by the remaining bytes; the writer emits entries in ascending tag order and rejects unsorted or duplicate raw tags (RawTaggedFieldWriter's "Invalid raw tag field list"); size computation matches output (property).
 

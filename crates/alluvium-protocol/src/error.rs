@@ -61,6 +61,28 @@ pub enum DecodeErrorKind {
         /// The bytes left in the input.
         remaining: usize,
     },
+    /// A tagged-field count that is negative as a Java `int`.
+    #[error("invalid negative number of tagged fields {count}")]
+    NegativeTaggedFieldCount {
+        /// The count, as Kafka reads it.
+        count: i32,
+    },
+    /// More tagged fields than there are bytes left: each takes at least two.
+    #[error("{count} tagged field(s) can't fit in the {remaining} byte(s) remaining")]
+    TaggedFieldCountExceedsInput {
+        /// The declared count.
+        count: usize,
+        /// The bytes left in the input.
+        remaining: usize,
+    },
+    /// A tagged field whose size is negative as a Java `int`.
+    #[error("tagged field {tag} has a negative size {size}")]
+    NegativeTaggedFieldSize {
+        /// The field's tag.
+        tag: u32,
+        /// The size, as Kafka reads it.
+        size: i32,
+    },
 }
 
 /// Why a value can't be encoded.
@@ -72,6 +94,16 @@ pub enum EncodeError {
     StringTooLong {
         /// The string's length in UTF-8 bytes.
         length: usize,
+    },
+    /// Raw tagged fields out of order: each tag must be higher than the one before.
+    #[error(
+        "invalid raw tag field list: tag {tag} comes after tag {previous}, but is not higher than it"
+    )]
+    UnsortedRawTags {
+        /// The tag out of order.
+        tag: u32,
+        /// The tag before it.
+        previous: u32,
     },
     /// A byte array, records or array too long for its length prefix.
     #[error("a length of {length} doesn't fit in the length prefix")]
