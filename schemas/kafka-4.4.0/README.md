@@ -9,3 +9,10 @@ They are Apache Kafka material under the Apache License 2.0. [`LICENSE`](LICENSE
 | Directory | Kafka source at the tag |
 |---|---|
 | `clients/` | `clients/src/main/resources/common/message/`: request, response, header and data schemas, and Kafka's README on the schema format |
+| `metadata/` | `metadata/src/main/resources/common/metadata/`: the KRaft metadata log's records |
+| `group-coordinator/` | `group-coordinator/src/main/resources/common/message/`: the group coordinator's records in `__consumer_offsets` |
+| `transaction-coordinator/` | `transaction-coordinator/src/main/resources/common/message/`: the transaction coordinator's records in `__transaction_state` |
+| `share-coordinator/` | `share-coordinator/src/main/resources/common/message/`: the share coordinator's records in `__share_group_state` |
+| `raft/` | `raft/src/main/resources/common/message/`: `QuorumStateData.json`, the `quorum-state` file a KRaft voter keeps on disk |
+
+One schema directory is deliberately not vendored: `streams/src/main/resources/common/message/` holds only `SubscriptionInfoData.json`, which Kafka Streams clients exchange inside consumer group subscription metadata. A broker passes those bytes through without reading them, so Alluvium never decodes them.
