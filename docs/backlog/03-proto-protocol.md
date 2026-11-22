@@ -230,43 +230,43 @@ Done when: benchmarks run in the benchmark CI job with baselines recorded.
 P1 · M1 · Task · deps: PROTO-0051 · labels: perf
 Done when: the PROTO-0051 gated benchmarks show fewer instructions for varint and string reads, and none more elsewhere; the decode tests pass unchanged.
 
-## [To Do] PROTO-F04 Generator: message types
+## [In Progress] PROTO-F04 Generator: message types
 P0 · M1 · Feature · deps: PROTO-F02
 Scope: Generate structs, nested structs, enums for known values, defaults and version metadata.
 
-### [To Do] PROTO-0052 `cargo xtask codegen` output pipeline: one module per schema under `crates/alluvium-protocol/src/generated/`, rustfmt, `@generated` header citing the schema path and Kafka 4.4.0
+### [Done] PROTO-0052 `cargo xtask codegen` output pipeline: one module per schema under `crates/alluvium-protocol/src/generated/`, rustfmt, `@generated` header citing the schema path and Kafka 4.4.0
 P0 · M1 · Task · deps: none · ref: ADR-0008
 Done when: output is written in sorted order with a generated `mod.rs`; each file states it is generated and must not be edited; running twice yields identical bytes; a fixture schema produces a compiling module.
 
-### [To Do] PROTO-0053 Identifier mapping from Kafka CamelCase to Rust (`TransactionalId` → `transactional_id`, struct names kept), keyword escaping and collision detection
+### [Done] PROTO-0053 Identifier mapping from Kafka CamelCase to Rust (`TransactionalId` → `transactional_id`, struct names kept), keyword escaping and collision detection
 P0 · M1 · Task · deps: PROTO-0052
 Done when: Rust keywords get a documented suffix; two Kafka names mapping to one identifier is a codegen error; a test over all vendored schemas finds no collision.
 
-### [To Do] PROTO-0054 Field type mapping: bool, i8, i16, u16, i32, u32, i64, f64, `Uuid`, `String`, `Bytes`, records field, `Vec<T>`, `Option<T>` for fields nullable in any version
+### [Done] PROTO-0054 Field type mapping: bool, i8, i16, u16, i32, u32, i64, f64, `Uuid`, `String`, `Bytes`, records field, `Vec<T>`, `Option<T>` for fields nullable in any version
 P0 · M1 · Task · deps: PROTO-0052, PROTO-0101, TYPE-F03
 Done when: the mapping table is in the generator's module docs and docs/protocol/codegen.md; records fields use the PROTO-F08 type; uuid uses alluvium-types `Uuid`.
 
-### [To Do] PROTO-0055 Generate top-level message structs with rustdoc from `about` plus versions, nullable and tagged annotations per field
+### [Done] PROTO-0055 Generate top-level message structs with rustdoc from `about` plus versions, nullable and tagged annotations per field
 P0 · M1 · Task · deps: PROTO-0053, PROTO-0054
 Done when: every vendored request, response and header schema produces a struct; field docs state versions such as `versions 3+, nullable 3+`; output compiles.
 
-### [To Do] PROTO-0056 Generate inline nested structs and struct-array element types inside each message's module
+### [Done] PROTO-0056 Generate inline nested structs and struct-array element types inside each message's module
 P0 · M1 · Task · deps: PROTO-0055 · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateSubclasses @4.4.0
 Done when: inline names unique within a message cannot clash across messages; nested types carry their own docs; output compiles for all schemas.
 
-### [To Do] PROTO-0057 Generate `commonStructs` once per message module and reuse them for every referencing field
+### [Done] PROTO-0057 Generate `commonStructs` once per message module and reuse them for every referencing field
 P0 · M1 · Task · deps: PROTO-0056 · ref: generator/src/main/java/org/apache/kafka/message/StructRegistry.java @4.4.0
 Done when: a common struct used by several fields (for example in ConsumerGroupHeartbeat or DescribeQuorum) is emitted once; test asserts single definition.
 
-### [To Do] PROTO-0058 `Default` impls with Kafka defaults: implicit (0, false, empty string, empty bytes, zero uuid, empty array, null records) and custom `default` values
+### [Done] PROTO-0058 `Default` impls with Kafka defaults: implicit (0, false, empty string, empty bytes, zero uuid, empty array, null records) and custom `default` values
 P0 · M1 · Task · deps: PROTO-0055 · ref: clients/src/main/resources/common/message/README.md (Deserializing Messages, Custom Default Values) @4.4.0
 Done when: custom decimal, hex and `null` defaults appear in `Default`; a test compares defaults for every field of the vendored schemas against a table derived from the schema model.
 
-### [To Do] PROTO-0059 `unknown_tagged_fields: Vec<RawTaggedField>` on every struct that appears in a flexible version
+### [Done] PROTO-0059 `unknown_tagged_fields: Vec<RawTaggedField>` on every struct that appears in a flexible version
 P0 · M1 · Task · deps: PROTO-0055 · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateUnknownTaggedFieldsAccessor @4.4.0
 Done when: the field exists exactly on structs with at least one flexible version and is excluded from equality only where Kafka excludes it (documented); accessors documented.
 
-### [To Do] PROTO-0060 Version metadata constants per message: API key, lowest and highest valid version, flexible versions, deprecated versions, latest-version-unstable
+### [Done] PROTO-0060 Version metadata constants per message: API key, lowest and highest valid version, flexible versions, deprecated versions, latest-version-unstable
 P0 · M1 · Task · deps: PROTO-0055 · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateShortAccessor; clients/src/main/java/org/apache/kafka/common/protocol/ApiMessage.java @4.4.0
 Done when: constants are generated for every request, response and data schema; unit test cross-checks them against the schema model.
 
@@ -282,7 +282,7 @@ Done when: the overlay is validated (field exists, integer type matches); wire s
 P0 · M1 · Task · deps: PROTO-0055, TYPE-F09 · labels: security
 Done when: the list covers SaslAuthenticateRequest/Response `AuthBytes`, AlterUserScramCredentialsRequest `Salt` and `SaltedPassword`, and `Hmac` in CreateDelegationTokenResponse, DescribeDelegationTokenResponse, RenewDelegationTokenRequest and ExpireDelegationTokenRequest; unknown entries are codegen errors; tests assert no secret or payload bytes in Debug output.
 
-### [To Do] PROTO-0064 Generate `data` schemas used by records and coordinators: ControlRecordTypeSchema, EndTxnMarker, LeaderChangeMessage, SnapshotHeaderRecord, SnapshotFooterRecord, KRaftVersionRecord, VotersRecord, ConsumerProtocolAssignment, ConsumerProtocolSubscription, DefaultPrincipalData
+### [Done] PROTO-0064 Generate `data` schemas used by records and coordinators: ControlRecordTypeSchema, EndTxnMarker, LeaderChangeMessage, SnapshotHeaderRecord, SnapshotFooterRecord, KRaftVersionRecord, VotersRecord, ConsumerProtocolAssignment, ConsumerProtocolSubscription, DefaultPrincipalData
 P0 · M1 · Task · deps: PROTO-0056
 Done when: the types are generated without API keys under `generated::data`; zeroCopy fields of the consumer protocol schemas are `Bytes`; output compiles.
 
@@ -290,7 +290,7 @@ Done when: the types are generated without API keys under `generated::data`; zer
 P0 · M1 · Task · deps: PROTO-0058, PROTO-0057, PROTO-0064, PROTO-0059, PROTO-0060 · labels: security
 Done when: `cargo clippy -p alluvium-protocol -- -D warnings` passes with `deny(clippy::indexing_slicing, clippy::arithmetic_side_effects)` and missing_docs; the generator never emits `#[allow]` (test greps output).
 
-### [To Do] PROTO-0066 Generator as a library: input directories, output crate path and message-type filter, so META-F01 and coordinator record codegen reuse it
+### [Done] PROTO-0066 Generator as a library: input directories, output crate path and message-type filter, so META-F01 and coordinator record codegen reuse it
 P1 · M1 · Task · deps: PROTO-0052
 Done when: `codegen::generate(inputs, out_dir, filter)` is the single entry point used by `cargo xtask codegen`; a test generates a metadata fixture into a temp dir.
 
@@ -486,7 +486,7 @@ Done when: a compact string declaring 40000 bytes fails with "string field had i
 P0 · M1 · Task · deps: PROTO-0105, PROTO-0049 · labels: security · ref: clients/src/main/java/org/apache/kafka/common/protocol/MessageUtil.java MAX_TAGGED_FIELD_COUNT; generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateClassReader @4.4.0
 Done when: 10,001 declared tags fail before reading entries; test for each bound.
 
-### [To Do] PROTO-0110 Rule: static nesting depth — codegen computes each message's maximum struct depth and fails above the documented limit
+### [Done] PROTO-0110 Rule: static nesting depth — codegen computes each message's maximum struct depth and fails above the documented limit
 P0 · M1 · Task · deps: PROTO-0105, PROTO-0056 · labels: security
 Done when: the deepest vendored message is reported in codegen output; a fixture deeper than the limit fails codegen; no recursive types exist so no runtime recursion is possible (documented).
 

@@ -61,7 +61,6 @@ impl Versions {
         Ok(Some(versions))
     }
 
-    #[cfg(test)]
     pub(crate) fn lowest(self) -> i16 {
         self.lowest
     }

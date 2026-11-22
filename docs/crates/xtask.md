@@ -2,7 +2,7 @@
 
 ## Responsibility and layer
 
-`xtask` is the repository's automation, run as `cargo xtask <command>`. Every check CI runs is a step of `cargo xtask ci`, so CI and a developer's machine run exactly the same thing. It also holds the tools around the checks: the backlog commands, the pinned-tool installer, `doctor` and the optional pre-push hook. It never ships in a product binary. Codegen and the compatibility runner arrive later with their backlog tasks ([planned commands](../standards/rust.md#tooling-commands-contract-implemented-in-m0)).
+`xtask` is the repository's automation, run as `cargo xtask <command>`. Every check CI runs is a step of `cargo xtask ci`, so CI and a developer's machine run exactly the same thing. It also holds the tools around the checks: the backlog commands, the pinned-tool installer, `doctor` and the optional pre-push hook. It never ships in a product binary. The compatibility runner arrives later with its backlog task ([planned commands](../standards/rust.md#tooling-commands-contract-implemented-in-m0)).
 
 It is a dev-layer crate in the [code map](../architecture.md#4-code-map): it may depend on anything except the binary, and nothing except tests depends on it ([ADR-0009](../adr/0009-crate-layering-and-dependency-rules.md)). Its only dependencies are `serde_json`, which reads `cargo metadata` and clippy's JSON, and `toml`, which reads manifests, `clippy.toml` and lockfiles. Argument parsing is std-only.
 
@@ -19,6 +19,7 @@ It is a dev-layer crate in the [code map](../architecture.md#4-code-map): it may
 | [`check_workflows`](../../xtask/src/check_workflows.rs) | Pinned actions, triggers, job timeouts and permissions, ci.yml running every step, then actionlint and shellcheck |
 | [`schemas`](../../xtask/src/schemas.rs) | `schemas verify`: the vendored Kafka schemas against their manifests, each loaded as a schema; `schemas vendor`: copying them from a Kafka tag |
 | [`message_spec`](../../xtask/src/message_spec.rs) | Kafka's message schemas, read and checked as Kafka's generator reads them (`MessageSpec`, `FieldSpec`, version ranges, field types, defaults, the struct registry): the input to codegen |
+| [`codegen`](../../xtask/src/codegen.rs) | `cargo xtask codegen`: Rust types from the schemas, one module per message, with their defaults and version constants ([codegen](../protocol/codegen.md)) |
 | [`crate_docs`](../../xtask/src/crate_docs.rs) | `docs check-crates` and `docs new-crate-doc` ([crate deep dives](README.md)) |
 | [`lint_canary`](../../xtask/src/lint_canary.rs) | Running clippy on [`lint-canary`](../../xtask/lint-canary/src/lib.rs) and matching its `expect-lint:` annotations |
 | [`backlog`](../../xtask/src/backlog.rs), [`backlog_check`](../../xtask/src/backlog_check.rs), [`backlog_next`](../../xtask/src/backlog_next.rs), [`backlog_stats`](../../xtask/src/backlog_stats.rs) | Parsing docs/backlog/, its rules, task selection and `show`, and the README totals ([backlog rules](../backlog/README.md)) |

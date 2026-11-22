@@ -1,5 +1,6 @@
 //! Kafka's wire protocol: the primitive encodings every request, response and header
-//! field is made of, decoded from untrusted bytes without panicking.
+//! field is made of, decoded from untrusted bytes without panicking, and the message
+//! types in [`generated`], one module per Kafka 4.4.0 schema.
 //!
 //! Layer: 0 ([ADR-0009](../../../docs/adr/0009-crate-layering-and-dependency-rules.md)).
 //! It depends only on `alluvium-types` and does no I/O: a [`Reader`] reads from bytes
@@ -26,11 +27,13 @@
 mod array;
 mod error;
 mod framed;
+pub mod generated;
 mod limits;
 mod reader;
 mod records;
 mod tagged_fields;
 mod varint;
+mod versions;
 mod writer;
 
 pub use error::{DecodeError, DecodeErrorKind, EncodeError};
@@ -40,4 +43,5 @@ pub use reader::Reader;
 pub use records::RecordsField;
 pub use tagged_fields::RawTaggedField;
 pub use varint::{size_of_unsigned_varint, size_of_varint, size_of_varlong};
+pub use versions::Versions;
 pub use writer::Writer;
