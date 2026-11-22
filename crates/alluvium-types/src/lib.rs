@@ -63,6 +63,8 @@
 //!   operating system ([`WallClockError`] when its wall clock is out of range);
 //!   [`ManualClock`] moves only when told to, for tests and simulation.
 //! - [`Deadline`]: when a wait must end; a timeout too long to represent saturates.
+//! - [`Timer`]: how layer 3–5 async code waits until an instant, passed as
+//!   `Arc<dyn Timer>`; state machines never wait.
 //! - [`SeededRng`]: the only random number generator, replayable from a `u64` seed,
 //!   with independent `fork`s per component ([`EntropyError`] if the OS has none).
 //! - [`collections`]: `SeededHashMap` and `SeededHashSet`, hashed under a `HashSeed`
@@ -128,6 +130,7 @@ mod secret;
 #[cfg(any(test, feature = "proptest-strategies"))]
 pub mod strategies;
 mod time;
+mod timer;
 mod topic;
 mod uuid;
 
@@ -154,5 +157,6 @@ pub use record_attributes::{AttributeError, CompressionType, TimestampType};
 pub use rng::{EntropyError, SeededRng};
 pub use secret::Secret;
 pub use time::{MonotonicInstant, TimeError, WallTime};
+pub use timer::Timer;
 pub use topic::{TopicName, TopicNameError};
 pub use uuid::{Base64Problem, TopicId, Uuid, UuidError};
