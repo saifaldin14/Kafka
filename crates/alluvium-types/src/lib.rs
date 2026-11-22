@@ -33,6 +33,7 @@
 //! - `clients/.../common/TopicPartition.java` and `TopicIdPartition.java` (display);
 //! - `clients/.../common/config/ConfigDef.java` `ValidList` (the `cleanup.policy` list
 //!   rules);
+//! - `clients/.../common/utils/Utils.java` (`murmur2`, ported closely; see `partitioner`);
 //! - `clients/.../common/config/types/Password.java` and
 //!   `clients/.../common/utils/internals/Crc32C.java`.
 //!
@@ -74,6 +75,7 @@
 //! - [`ListenerName`]: a listener's name, upper-cased as Kafka normalises it.
 //! - [`TimestampType`] and [`CompressionType`]: record batch attributes, by Kafka id
 //!   and name ([`AttributeError`] for others).
+//! - [`murmur2`]: Kafka's key hash, the one producers partition by.
 //! - [`CleanupPolicy`]: delete, compact, both or neither ([`CleanupPolicyError`]).
 //! - [`ByteSize`]: a non-negative size, printed with an IEC approximation
 //!   ([`ByteSizeError`]).
@@ -105,6 +107,7 @@ mod listener;
 mod log_safe;
 mod offset;
 mod partition;
+mod partitioner;
 mod payload;
 mod producer;
 mod record_attributes;
@@ -128,6 +131,7 @@ pub use listener::{BlankListenerName, ListenerName};
 pub use log_safe::LogSafe;
 pub use offset::{Offset, OffsetError, OffsetRange, OffsetSpec};
 pub use partition::{TopicIdPartition, TopicPartition};
+pub use partitioner::murmur2;
 pub use payload::PayloadSummary;
 pub use producer::{ProducerEpoch, ProducerId, Sequence};
 pub use record_attributes::{AttributeError, CompressionType, TimestampType};
