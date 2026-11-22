@@ -115,7 +115,7 @@ impl TopicName {
 }
 
 // Parity: clients/src/main/java/org/apache/kafka/common/internals/Topic.java@4.4.0 Topic.detectInvalidTopic, Topic.containsValidPattern
-fn validate(name: &str) -> Result<(), TopicNameError> {
+pub(crate) fn validate(name: &str) -> Result<(), TopicNameError> {
     if name.is_empty() {
         return Err(TopicNameError::Empty);
     }

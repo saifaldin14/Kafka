@@ -14,7 +14,8 @@
 //!
 //! - `clients/.../common/Node.java` (node ids and the `-1` "no node" sentinel);
 //! - `clients/.../common/Uuid.java` (base64 form, signed ordering, reserved ids);
-//! - `clients/.../common/internals/Topic.java` (topic name rules);
+//! - `clients/.../common/internals/Topic.java` (topic name rules, also applied to group
+//!   instance ids by `JoinGroupRequest.java`);
 //! - `clients/.../common/record/internal/RecordBatch.java` and `DefaultRecordBatch.java`
 //!   (producer id, epoch and sequence sentinels and arithmetic);
 //! - `transaction-coordinator/.../TransactionMetadata.java` (epoch exhaustion);
@@ -60,6 +61,8 @@
 //!   [`Uuid::random`]; and [`TopicId`], which is never zero.
 //! - [`TopicName`]: a name that passes Kafka's rules ([`TopicNameError`] names the
 //!   rule a string breaks).
+//! - [`GroupId`] and [`GroupInstanceId`]: ids clients choose, printed with
+//!   [`LogSafe`].
 //! - [`IdError`]: why a value was rejected.
 //! - [`Secret`]: a value that is never printed and is zeroized on drop.
 //! - [`PayloadSummary`]: how record payloads are printed (length and CRC32C only).
@@ -71,6 +74,7 @@
 //! Errors here carry no Kafka error code: the Kafka error depends on where the value
 //! came from, so the decoder or handler that rejects it maps it.
 
+mod client_ids;
 mod clock;
 pub mod collections;
 mod deadline;
@@ -88,6 +92,7 @@ mod time;
 mod topic;
 mod uuid;
 
+pub use client_ids::{GroupId, GroupInstanceId};
 pub use clock::{Clock, ManualClock, SystemClock, WallClockError};
 pub use deadline::Deadline;
 pub use epoch::{BrokerEpoch, GenerationId, LeaderEpoch, MemberEpoch, PositiveEpoch};
