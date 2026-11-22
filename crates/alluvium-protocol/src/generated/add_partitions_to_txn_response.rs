@@ -30,6 +30,18 @@ pub struct AddPartitionsToTxnResponse {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl AddPartitionsToTxnResponse {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
 /// An element of `AddPartitionsToTxnResponse`'s `ResultsByTransaction` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AddPartitionsToTxnResult {
@@ -43,6 +55,30 @@ pub struct AddPartitionsToTxnResult {
     pub topic_results: Vec<AddPartitionsToTxnTopicResult>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl AddPartitionsToTxnResult {
+    /// The first of `elements`, in wire order, whose key (`TransactionalId`) equals the
+    /// arguments.
+    pub fn find<'a>(
+        elements: &'a [AddPartitionsToTxnResult],
+        transactional_id: &str,
+    ) -> Option<&'a AddPartitionsToTxnResult> {
+        elements
+            .iter()
+            .find(|element| element.transactional_id == transactional_id)
+    }
+
+    /// Every element of `elements` whose key (`TransactionalId`) equals the arguments, in
+    /// wire order.
+    pub fn find_all<'a>(
+        elements: &'a [AddPartitionsToTxnResult],
+        transactional_id: &str,
+    ) -> impl Iterator<Item = &'a AddPartitionsToTxnResult> {
+        elements
+            .iter()
+            .filter(move |element| element.transactional_id == transactional_id)
+    }
 }
 
 /// `AddPartitionsToTxnTopicResult`, a struct several fields share.
@@ -60,6 +96,24 @@ pub struct AddPartitionsToTxnTopicResult {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl AddPartitionsToTxnTopicResult {
+    /// The first of `elements`, in wire order, whose key (`Name`) equals the arguments.
+    pub fn find<'a>(
+        elements: &'a [AddPartitionsToTxnTopicResult],
+        name: &str,
+    ) -> Option<&'a AddPartitionsToTxnTopicResult> {
+        elements.iter().find(|element| element.name == name)
+    }
+
+    /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [AddPartitionsToTxnTopicResult],
+        name: &str,
+    ) -> impl Iterator<Item = &'a AddPartitionsToTxnTopicResult> {
+        elements.iter().filter(move |element| element.name == name)
+    }
+}
+
 /// `AddPartitionsToTxnPartitionResult`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AddPartitionsToTxnPartitionResult {
@@ -73,6 +127,42 @@ pub struct AddPartitionsToTxnPartitionResult {
     pub partition_error_code: i16,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl AddPartitionsToTxnPartitionResult {
+    /// The first of `elements`, in wire order, whose key (`PartitionIndex`) equals the
+    /// arguments.
+    pub fn find(
+        elements: &[AddPartitionsToTxnPartitionResult],
+        partition_index: i32,
+    ) -> Option<&AddPartitionsToTxnPartitionResult> {
+        elements
+            .iter()
+            .find(|element| element.partition_index == partition_index)
+    }
+
+    /// Every element of `elements` whose key (`PartitionIndex`) equals the arguments, in
+    /// wire order.
+    pub fn find_all(
+        elements: &[AddPartitionsToTxnPartitionResult],
+        partition_index: i32,
+    ) -> impl Iterator<Item = &AddPartitionsToTxnPartitionResult> {
+        elements
+            .iter()
+            .filter(move |element| element.partition_index == partition_index)
+    }
+}
+
+impl AddPartitionsToTxnPartitionResult {
+    /// `partition_error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so
+    /// a value the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn partition_error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.partition_error_code)
+    }
 }
 
 impl AddPartitionsToTxnResponse {

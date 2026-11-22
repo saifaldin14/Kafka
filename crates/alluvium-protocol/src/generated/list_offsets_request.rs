@@ -35,6 +35,20 @@ pub struct ListOffsetsRequest {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl ListOffsetsRequest {
+    /// `isolation_level` as a [`alluvium_types::IsolationLevel`]. The field keeps the raw
+    /// value, so a value the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`alluvium_types::DeliveryError`] if the value is not one the enum defines.
+    pub fn isolation_level(
+        &self,
+    ) -> Result<alluvium_types::IsolationLevel, alluvium_types::DeliveryError> {
+        alluvium_types::IsolationLevel::from_wire(self.isolation_level)
+    }
+}
+
 /// An element of `ListOffsetsRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ListOffsetsTopic {

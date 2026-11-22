@@ -60,6 +60,30 @@ pub struct AddPartitionsToTxnTransaction {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl AddPartitionsToTxnTransaction {
+    /// The first of `elements`, in wire order, whose key (`TransactionalId`) equals the
+    /// arguments.
+    pub fn find<'a>(
+        elements: &'a [AddPartitionsToTxnTransaction],
+        transactional_id: &str,
+    ) -> Option<&'a AddPartitionsToTxnTransaction> {
+        elements
+            .iter()
+            .find(|element| element.transactional_id == transactional_id)
+    }
+
+    /// Every element of `elements` whose key (`TransactionalId`) equals the arguments, in
+    /// wire order.
+    pub fn find_all<'a>(
+        elements: &'a [AddPartitionsToTxnTransaction],
+        transactional_id: &str,
+    ) -> impl Iterator<Item = &'a AddPartitionsToTxnTransaction> {
+        elements
+            .iter()
+            .filter(move |element| element.transactional_id == transactional_id)
+    }
+}
+
 /// `AddPartitionsToTxnTopic`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AddPartitionsToTxnTopic {
@@ -73,6 +97,24 @@ pub struct AddPartitionsToTxnTopic {
     pub partitions: Vec<i32>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl AddPartitionsToTxnTopic {
+    /// The first of `elements`, in wire order, whose key (`Name`) equals the arguments.
+    pub fn find<'a>(
+        elements: &'a [AddPartitionsToTxnTopic],
+        name: &str,
+    ) -> Option<&'a AddPartitionsToTxnTopic> {
+        elements.iter().find(|element| element.name == name)
+    }
+
+    /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [AddPartitionsToTxnTopic],
+        name: &str,
+    ) -> impl Iterator<Item = &'a AddPartitionsToTxnTopic> {
+        elements.iter().filter(move |element| element.name == name)
+    }
 }
 
 impl AddPartitionsToTxnRequest {

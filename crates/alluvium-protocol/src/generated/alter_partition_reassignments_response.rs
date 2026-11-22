@@ -48,6 +48,18 @@ impl Default for AlterPartitionReassignmentsResponse {
     }
 }
 
+impl AlterPartitionReassignmentsResponse {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
 /// An element of `AlterPartitionReassignmentsResponse`'s `Responses` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ReassignableTopicResponse {
@@ -90,6 +102,18 @@ impl Default for ReassignablePartitionResponse {
             error_message: Some(String::new()),
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl ReassignablePartitionResponse {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
     }
 }
 

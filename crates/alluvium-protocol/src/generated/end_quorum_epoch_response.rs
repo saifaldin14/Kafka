@@ -24,6 +24,18 @@ pub struct EndQuorumEpochResponse {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl EndQuorumEpochResponse {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
 /// An element of `EndQuorumEpochResponse`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopicData {
@@ -62,6 +74,18 @@ pub struct PartitionData {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl PartitionData {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
 /// An element of `EndQuorumEpochResponse`'s `NodeEndpoints` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct NodeEndpoint {
@@ -79,6 +103,24 @@ pub struct NodeEndpoint {
     pub port: u16,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl NodeEndpoint {
+    /// The first of `elements`, in wire order, whose key (`NodeId`) equals the arguments.
+    pub fn find(elements: &[NodeEndpoint], node_id: i32) -> Option<&NodeEndpoint> {
+        elements.iter().find(|element| element.node_id == node_id)
+    }
+
+    /// Every element of `elements` whose key (`NodeId`) equals the arguments, in wire
+    /// order.
+    pub fn find_all(
+        elements: &[NodeEndpoint],
+        node_id: i32,
+    ) -> impl Iterator<Item = &NodeEndpoint> {
+        elements
+            .iter()
+            .filter(move |element| element.node_id == node_id)
+    }
 }
 
 impl EndQuorumEpochResponse {

@@ -1,0 +1,34 @@
+# Fields that hold credentials or secrets (PROTO-0063). Their structs' generated `Debug`
+# prints `***` in place of the value, so a logged message never shows them.
+#
+# Each entry names a message and fields anywhere in it. `cargo xtask codegen` fails if
+# the message isn't generated or has no field with that name. Records fields need no
+# entry: `RecordsField` always prints a `PayloadSummary`.
+
+[[sensitive]]
+message = "SaslAuthenticateRequest"
+fields = ["AuthBytes"]
+
+[[sensitive]]
+message = "SaslAuthenticateResponse"
+fields = ["AuthBytes"]
+
+[[sensitive]]
+message = "AlterUserScramCredentialsRequest"
+fields = ["Salt", "SaltedPassword"]
+
+[[sensitive]]
+message = "CreateDelegationTokenResponse"
+fields = ["Hmac"]
+
+[[sensitive]]
+message = "DescribeDelegationTokenResponse"
+fields = ["Hmac"]
+
+[[sensitive]]
+message = "RenewDelegationTokenRequest"
+fields = ["Hmac"]
+
+[[sensitive]]
+message = "ExpireDelegationTokenRequest"
+fields = ["Hmac"]

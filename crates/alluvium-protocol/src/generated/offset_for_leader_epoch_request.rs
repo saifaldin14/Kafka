@@ -46,6 +46,26 @@ pub struct OffsetForLeaderTopic {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl OffsetForLeaderTopic {
+    /// The first of `elements`, in wire order, whose key (`Topic`) equals the arguments.
+    pub fn find<'a>(
+        elements: &'a [OffsetForLeaderTopic],
+        topic: &str,
+    ) -> Option<&'a OffsetForLeaderTopic> {
+        elements.iter().find(|element| element.topic == topic)
+    }
+
+    /// Every element of `elements` whose key (`Topic`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [OffsetForLeaderTopic],
+        topic: &str,
+    ) -> impl Iterator<Item = &'a OffsetForLeaderTopic> {
+        elements
+            .iter()
+            .filter(move |element| element.topic == topic)
+    }
+}
+
 /// An element of `OffsetForLeaderTopic`'s `Partitions` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct OffsetForLeaderPartition {

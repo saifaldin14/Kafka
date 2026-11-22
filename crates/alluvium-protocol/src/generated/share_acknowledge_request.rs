@@ -71,6 +71,27 @@ impl Default for AcknowledgeTopic {
     }
 }
 
+impl AcknowledgeTopic {
+    /// The first of `elements`, in wire order, whose key (`TopicId`) equals the arguments.
+    pub fn find(
+        elements: &[AcknowledgeTopic],
+        topic_id: alluvium_types::Uuid,
+    ) -> Option<&AcknowledgeTopic> {
+        elements.iter().find(|element| element.topic_id == topic_id)
+    }
+
+    /// Every element of `elements` whose key (`TopicId`) equals the arguments, in wire
+    /// order.
+    pub fn find_all(
+        elements: &[AcknowledgeTopic],
+        topic_id: alluvium_types::Uuid,
+    ) -> impl Iterator<Item = &AcknowledgeTopic> {
+        elements
+            .iter()
+            .filter(move |element| element.topic_id == topic_id)
+    }
+}
+
 /// An element of `AcknowledgeTopic`'s `Partitions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AcknowledgePartition {
@@ -84,6 +105,30 @@ pub struct AcknowledgePartition {
     pub acknowledgement_batches: Vec<AcknowledgementBatch>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl AcknowledgePartition {
+    /// The first of `elements`, in wire order, whose key (`PartitionIndex`) equals the
+    /// arguments.
+    pub fn find(
+        elements: &[AcknowledgePartition],
+        partition_index: i32,
+    ) -> Option<&AcknowledgePartition> {
+        elements
+            .iter()
+            .find(|element| element.partition_index == partition_index)
+    }
+
+    /// Every element of `elements` whose key (`PartitionIndex`) equals the arguments, in
+    /// wire order.
+    pub fn find_all(
+        elements: &[AcknowledgePartition],
+        partition_index: i32,
+    ) -> impl Iterator<Item = &AcknowledgePartition> {
+        elements
+            .iter()
+            .filter(move |element| element.partition_index == partition_index)
+    }
 }
 
 /// An element of `AcknowledgePartition`'s `AcknowledgementBatches` array.

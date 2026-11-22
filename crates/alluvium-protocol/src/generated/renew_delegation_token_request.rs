@@ -7,7 +7,7 @@
 
 /// The `RenewDelegationTokenRequest` request, API key 39: versions 1-2, flexible versions
 /// 2+.
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Clone, PartialEq, Default)]
 pub struct RenewDelegationTokenRequest {
     /// The HMAC of the delegation token to be renewed.
     ///
@@ -19,6 +19,16 @@ pub struct RenewDelegationTokenRequest {
     pub renew_period_ms: i64,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl std::fmt::Debug for RenewDelegationTokenRequest {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RenewDelegationTokenRequest")
+            .field("hmac", &format_args!("***"))
+            .field("renew_period_ms", &self.renew_period_ms)
+            .field("unknown_tagged_fields", &self.unknown_tagged_fields)
+            .finish()
+    }
 }
 
 impl RenewDelegationTokenRequest {

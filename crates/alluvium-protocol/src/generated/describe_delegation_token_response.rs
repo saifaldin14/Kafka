@@ -26,8 +26,20 @@ pub struct DescribeDelegationTokenResponse {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl DescribeDelegationTokenResponse {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
 /// An element of `DescribeDelegationTokenResponse`'s `Tokens` array.
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Clone, PartialEq, Default)]
 pub struct DescribedDelegationToken {
     /// The token principal type.
     ///
@@ -71,6 +83,30 @@ pub struct DescribedDelegationToken {
     pub renewers: Vec<DescribedDelegationTokenRenewer>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl std::fmt::Debug for DescribedDelegationToken {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DescribedDelegationToken")
+            .field("principal_type", &self.principal_type)
+            .field("principal_name", &self.principal_name)
+            .field(
+                "token_requester_principal_type",
+                &self.token_requester_principal_type,
+            )
+            .field(
+                "token_requester_principal_name",
+                &self.token_requester_principal_name,
+            )
+            .field("issue_timestamp", &self.issue_timestamp)
+            .field("expiry_timestamp", &self.expiry_timestamp)
+            .field("max_timestamp", &self.max_timestamp)
+            .field("token_id", &self.token_id)
+            .field("hmac", &format_args!("***"))
+            .field("renewers", &self.renewers)
+            .field("unknown_tagged_fields", &self.unknown_tagged_fields)
+            .finish()
+    }
 }
 
 /// An element of `DescribedDelegationToken`'s `Renewers` array.

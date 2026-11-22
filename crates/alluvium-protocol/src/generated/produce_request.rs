@@ -29,6 +29,18 @@ pub struct ProduceRequest {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl ProduceRequest {
+    /// `acks` as a [`alluvium_types::Acks`]. The field keeps the raw value, so a value the
+    /// enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`alluvium_types::DeliveryError`] if the value is not one the enum defines.
+    pub fn acks(&self) -> Result<alluvium_types::Acks, alluvium_types::DeliveryError> {
+        alluvium_types::Acks::from_wire(self.acks)
+    }
+}
+
 /// An element of `ProduceRequest`'s `TopicData` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TopicProduceData {
@@ -56,6 +68,32 @@ impl Default for TopicProduceData {
             partition_data: Vec::new(),
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl TopicProduceData {
+    /// The first of `elements`, in wire order, whose key (`Name`, `TopicId`) equals the
+    /// arguments.
+    pub fn find<'a>(
+        elements: &'a [TopicProduceData],
+        name: &str,
+        topic_id: alluvium_types::Uuid,
+    ) -> Option<&'a TopicProduceData> {
+        elements
+            .iter()
+            .find(|element| element.name == name && element.topic_id == topic_id)
+    }
+
+    /// Every element of `elements` whose key (`Name`, `TopicId`) equals the arguments, in
+    /// wire order.
+    pub fn find_all<'a>(
+        elements: &'a [TopicProduceData],
+        name: &str,
+        topic_id: alluvium_types::Uuid,
+    ) -> impl Iterator<Item = &'a TopicProduceData> {
+        elements
+            .iter()
+            .filter(move |element| element.name == name && element.topic_id == topic_id)
     }
 }
 

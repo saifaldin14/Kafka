@@ -1,5 +1,7 @@
 //! One message's Rust module: its struct, every struct its fields define or share, each
-//! struct's `Default`, and the message's version constants.
+//! struct's `Default`, the message's version constants, and what the overlays add:
+//! `find` and `find_all` for keyed arrays, typed accessors for known-value fields, and a
+//! `Debug` that hides sensitive fields.
 //!
 //! Field types map as follows (docs/protocol/codegen.md has the rest of the mapping):
 //!
@@ -24,6 +26,7 @@ use alluvium_types::Uuid;
 
 use super::docs;
 use super::names::{self, UNKNOWN_TAGGED_FIELDS};
+use super::overlays::{self, Overlays};
 use crate::message_spec::{
     FieldDefault, FieldSpec, FieldType, MessageKind, MessageSpec, StructRegistry, Versions,
 };
@@ -47,11 +50,17 @@ struct Struct<'a> {
     /// The versions in which the struct is on the wire.
     versions: Versions,
     doc: String,
+    /// Whether it has `mapKey` fields, which make arrays of it keyed.
+    keyed: bool,
 }
 
 /// Renders `message`'s module. `runtime` is the path of the crate the generated code
 /// uses for `RawTaggedField`, `RecordsField` and `Versions`.
-pub(crate) fn module(message: &MessageSpec, runtime: &str) -> Result<Module, String> {
+pub(crate) fn module(
+    message: &MessageSpec,
+    runtime: &str,
+    overlays: &Overlays,
+) -> Result<Module, String> {
     let registry = StructRegistry::new(message)
         .map_err(|problem| format!("{} at {}", problem.message, problem.pointer))?;
     let mut structs = vec![Struct {
@@ -59,6 +68,7 @@ pub(crate) fn module(message: &MessageSpec, runtime: &str) -> Result<Module, Str
         fields: &message.fields,
         versions: message.valid_versions,
         doc: message_doc(message),
+        keyed: false,
     }];
     let mut seen = BTreeSet::from([message.name.as_str()]);
     let depth = collect(
@@ -85,7 +95,20 @@ pub(crate) fn module(message: &MessageSpec, runtime: &str) -> Result<Module, Str
             .versions
             .intersect(message.flexible_versions)
             .is_empty();
-        render_struct(&mut source, item, flexible, runtime);
+        let sensitive: BTreeSet<&str> = item
+            .fields
+            .iter()
+            .filter(|field| overlays.is_sensitive(&message.name, &field.name))
+            .map(|field| field.name.as_str())
+            .collect();
+        render_struct(&mut source, item, flexible, runtime, &sensitive);
+        if !sensitive.is_empty() {
+            render_debug(&mut source, item, flexible, &sensitive);
+        }
+        if item.keyed {
+            render_find(&mut source, item)?;
+        }
+        render_known_values(&mut source, item, overlays, runtime);
     }
     render_constants(&mut source, message, runtime);
     Ok(Module { source, depth })
@@ -125,6 +148,7 @@ fn collect<'a>(
                 fields: registered.fields,
                 versions: registered.versions.intersect(registered.parent_versions),
                 doc,
+                keyed: registered.has_keys(),
             });
         }
         path.push(name);
@@ -283,14 +307,23 @@ fn float_literal(value: f64) -> String {
     }
 }
 
-fn render_struct(out: &mut String, item: &Struct<'_>, flexible: bool, runtime: &str) {
+/// The struct, and its `Default` impl unless it can derive one. A struct with
+/// `sensitive` fields doesn't derive `Debug`; `render_debug` writes one that hides them.
+fn render_struct(
+    out: &mut String,
+    item: &Struct<'_>,
+    flexible: bool,
+    runtime: &str,
+    sensitive: &BTreeSet<&str>,
+) {
     let defaults: Vec<(String, bool)> = item.fields.iter().map(default).collect();
     let derivable = defaults.iter().all(|(_, derivable)| *derivable);
     out.push_str(&docs::wrap(&item.doc, "/// "));
+    let debug = if sensitive.is_empty() { "Debug, " } else { "" };
     let derives = if derivable {
-        "Debug, Clone, PartialEq, Default"
+        format!("{debug}Clone, PartialEq, Default")
     } else {
-        "Debug, Clone, PartialEq"
+        format!("{debug}Clone, PartialEq")
     };
     // Writing to a String can't fail; here and below.
     let _ = writeln!(out, "#[derive({derives})]\npub struct {} {{", item.name);
@@ -335,6 +368,141 @@ fn render_struct(out: &mut String, item: &Struct<'_>, flexible: bool, runtime: &
         let _ = writeln!(out, "            {UNKNOWN_TAGGED_FIELDS}: Vec::new(),");
     }
     out.push_str("        }\n    }\n}\n\n");
+}
+
+/// A `Debug` that prints `***` for the `sensitive` fields and everything else as derived
+/// `Debug` would.
+fn render_debug(out: &mut String, item: &Struct<'_>, flexible: bool, sensitive: &BTreeSet<&str>) {
+    let _ = writeln!(
+        out,
+        "impl std::fmt::Debug for {name} {{\n    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) \
+         -> std::fmt::Result {{\n        f.debug_struct({name:?})",
+        name = item.name
+    );
+    for field in item.fields {
+        let name = names::identifier(&field.name);
+        if sensitive.contains(field.name.as_str()) {
+            let _ = writeln!(out, "            .field({name:?}, &format_args!(\"***\"))");
+        } else {
+            let _ = writeln!(out, "            .field({name:?}, &self.{name})");
+        }
+    }
+    if flexible {
+        let _ = writeln!(
+            out,
+            "            .field({UNKNOWN_TAGGED_FIELDS:?}, &self.{UNKNOWN_TAGGED_FIELDS})"
+        );
+    }
+    out.push_str("            .finish()\n    }\n}\n\n");
+}
+
+/// A typed accessor, named like the field, for each field an overlay gives known values.
+fn render_known_values(out: &mut String, item: &Struct<'_>, overlays: &Overlays, runtime: &str) {
+    let accessors: Vec<String> = item
+        .fields
+        .iter()
+        .filter_map(|field| {
+            let known = overlays.known_value(field)?;
+            let name = names::identifier(&field.name);
+            let rust = overlays::rust_path(&known.rust, runtime);
+            let error = overlays::rust_path(&known.error, runtime);
+            let convert = overlays::rust_path(&known.convert, runtime);
+            let summary = docs::wrap(
+                &format!(
+                    "`{name}` as a [`{rust}`]. The field keeps the raw value, so a value the \
+                     enum doesn't know still round-trips."
+                ),
+                "    /// ",
+            );
+            Some(format!(
+                "{summary}    ///\n    /// # Errors\n    ///\n    /// [`{error}`] if the value \
+                 is not one the enum defines.\n    pub fn {name}(&self) -> Result<{rust}, {error}> \
+                 {{\n        {convert}(self.{name})\n    }}\n"
+            ))
+        })
+        .collect();
+    if !accessors.is_empty() {
+        let _ = writeln!(out, "impl {} {{\n{}}}\n", item.name, accessors.join("\n"));
+    }
+}
+
+/// `find` and `find_all` for a struct with `mapKey` fields: Kafka generates them on the
+/// collection class of a keyed array, taking the key fields in declaration order.
+/// Generated arrays are plain `Vec`s in wire order, so these are associated functions
+/// over a slice, and they keep duplicate keys, as Kafka's multi-collection does.
+// Parity: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java@4.4.0 MessageDataGenerator.generateHashSetFindMethod, MessageDataGenerator.generateHashSetFindAllMethod
+fn render_find(out: &mut String, item: &Struct<'_>) -> Result<(), String> {
+    let mut parameters = Vec::new();
+    let mut tests = Vec::new();
+    let mut names = Vec::new();
+    for field in item.fields.iter().filter(|field| field.map_key) {
+        let name = names::identifier(&field.name);
+        if name == "elements" {
+            return Err(format!(
+                "in struct {}: the key field {} clashes with `find`'s `elements` parameter",
+                item.name, field.name
+            ));
+        }
+        let nullable = is_nullable(field);
+        let parameter = match (&field.field_type, nullable) {
+            (FieldType::String, false) => "&str".to_owned(),
+            (FieldType::String, true) => "Option<&str>".to_owned(),
+            (
+                field_type @ (FieldType::Bool
+                | FieldType::Int8
+                | FieldType::Int16
+                | FieldType::Uint16
+                | FieldType::Int32
+                | FieldType::Uint32
+                | FieldType::Int64
+                | FieldType::Uuid),
+                false,
+            ) => value_type(field_type, ""),
+            _ => {
+                return Err(format!(
+                    "in struct {}: the key field {} has a type the generator can't compare",
+                    item.name, field.name
+                ));
+            }
+        };
+        let test = if nullable {
+            format!("element.{name}.as_deref() == {name}")
+        } else {
+            format!("element.{name} == {name}")
+        };
+        parameters.push(format!("{name}: {parameter}"));
+        tests.push(test);
+        names.push(format!("`{}`", field.name));
+    }
+    let key = names.join(", ");
+    // A borrowed key parameter needs the result's lifetime named; otherwise it elides.
+    let (generic, lifetime) = if parameters.iter().any(|parameter| parameter.contains('&')) {
+        ("<'a>", "'a ")
+    } else {
+        ("", "")
+    };
+    let parameters = parameters.join(", ");
+    let test = tests.join(" && ");
+    let find_doc = docs::wrap(
+        &format!("The first of `elements`, in wire order, whose key ({key}) equals the arguments."),
+        "    /// ",
+    );
+    let find_all_doc = docs::wrap(
+        &format!(
+            "Every element of `elements` whose key ({key}) equals the arguments, in wire order."
+        ),
+        "    /// ",
+    );
+    let _ = writeln!(
+        out,
+        "impl {name} {{\n{find_doc}    pub fn find{generic}(elements: &{lifetime}[{name}], \
+         {parameters}) -> Option<&{lifetime}{name}> {{\n        elements.iter().find(|element| \
+         {test})\n    }}\n\n{find_all_doc}    pub fn find_all{generic}(elements: \
+         &{lifetime}[{name}], {parameters}) -> impl Iterator<Item = &{lifetime}{name}> {{\n        \
+         elements.iter().filter(move |element| {test})\n    }}\n}}\n",
+        name = item.name
+    );
+    Ok(())
 }
 
 /// A `Versions` constant expression.
@@ -386,7 +554,7 @@ fn render_constants(out: &mut String, message: &MessageSpec, runtime: &str) {
 
 #[cfg(test)]
 mod tests {
-    use super::{MAX_NESTING_DEPTH, float_literal, integer_literal, module};
+    use super::{MAX_NESTING_DEPTH, Overlays, float_literal, integer_literal, module};
     use crate::message_spec::{self, MessageSpec};
 
     fn fixture(json: &str) -> MessageSpec {
@@ -423,7 +591,7 @@ mod tests {
                 {
                     let text = std::fs::read_to_string(&path).unwrap();
                     let message = message_spec::load(&path.display().to_string(), &text).unwrap();
-                    module(&message, "crate")
+                    module(&message, "crate", &Overlays::default())
                         .unwrap_or_else(|problem| panic!("{}: {problem}", path.display()));
                     rendered += 1;
                 }
@@ -441,7 +609,9 @@ mod tests {
             &std::fs::read_to_string(path).unwrap(),
         )
         .unwrap();
-        let source = module(&message, "crate").unwrap().source;
+        let source = module(&message, "crate", &Overlays::default())
+            .unwrap()
+            .source;
         assert_eq!(source.matches("pub struct ReplicaState {").count(), 1);
         assert!(source.contains("pub current_voters: Vec<ReplicaState>,"));
         assert!(source.contains("pub observers: Vec<ReplicaState>,"));
@@ -450,13 +620,32 @@ mod tests {
     #[test]
     fn nesting_deeper_than_the_limit_fails_and_the_limit_itself_is_allowed() {
         assert_eq!(
-            module(&nested(MAX_NESTING_DEPTH), "crate").unwrap().depth,
+            module(&nested(MAX_NESTING_DEPTH), "crate", &Overlays::default())
+                .unwrap()
+                .depth,
             MAX_NESTING_DEPTH
         );
-        let problem = module(&nested(MAX_NESTING_DEPTH + 1), "crate")
+        let problem = module(
+            &nested(MAX_NESTING_DEPTH + 1),
+            "crate",
+            &Overlays::default(),
+        )
+        .err()
+        .unwrap();
+        assert!(problem.contains("nests structs 9 levels deep"), "{problem}");
+    }
+
+    #[test]
+    fn a_key_the_generator_cannot_compare_fails() {
+        let message = fixture(
+            r#"{ "type": "data", "name": "Outer", "validVersions": "0", "flexibleVersions": "none", "fields": [
+                { "name": "Items", "type": "[]Item", "versions": "0+", "fields": [
+                    { "name": "Payload", "type": "bytes", "versions": "0+", "mapKey": true } ] } ] }"#,
+        );
+        let problem = module(&message, "crate", &Overlays::default())
             .err()
             .unwrap();
-        assert!(problem.contains("nests structs 9 levels deep"), "{problem}");
+        assert!(problem.contains("key field Payload"), "{problem}");
     }
 
     #[test]
@@ -468,7 +657,9 @@ mod tests {
                 { "name": "New", "type": "New", "versions": "2+", "fields": [
                     { "name": "Value", "type": "int8", "versions": "0+" } ] } ] }"#,
         );
-        let source = module(&message, "crate").unwrap().source;
+        let source = module(&message, "crate", &Overlays::default())
+            .unwrap()
+            .source;
         let body = |name: &str| {
             let (_, after) = source.split_once(&format!("pub struct {name} {{")).unwrap();
             after.split_once("\n}").unwrap().0.to_owned()

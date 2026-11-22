@@ -31,6 +31,23 @@ pub struct TopicPartition {
     pub partitions: Vec<i32>,
 }
 
+impl TopicPartition {
+    /// The first of `elements`, in wire order, whose key (`Topic`) equals the arguments.
+    pub fn find<'a>(elements: &'a [TopicPartition], topic: &str) -> Option<&'a TopicPartition> {
+        elements.iter().find(|element| element.topic == topic)
+    }
+
+    /// Every element of `elements` whose key (`Topic`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [TopicPartition],
+        topic: &str,
+    ) -> impl Iterator<Item = &'a TopicPartition> {
+        elements
+            .iter()
+            .filter(move |element| element.topic == topic)
+    }
+}
+
 impl ConsumerProtocolAssignment {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 3);

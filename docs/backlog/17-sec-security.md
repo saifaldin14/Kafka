@@ -234,7 +234,7 @@ Scope: StandardAuthorizer semantics: literal, prefixed and wildcard patterns, de
 
 ### [To Do] SEC-0051 ACL model: resource types, pattern types, operations, permission types and `StandardAcl` with Kafka codes
 P0 · M4 · Task · deps: none · ref: metadata/src/main/java/org/apache/kafka/metadata/authorizer/StandardAcl.java, clients/src/main/java/org/apache/kafka/common/acl/AclOperation.java @4.4.0
-Done when: Enums carry Kafka's byte codes (operations up to TWO_PHASE_COMMIT, resource types up to USER); `StandardAcl` holds resource, pattern, principal, host, operation and permission; conversions from metadata records; unit tests.
+Done when: Enums carry Kafka's byte codes (operations up to TWO_PHASE_COMMIT, resource types up to USER); `StandardAcl` holds resource, pattern, principal, host, operation and permission; conversions from metadata records; the resource, pattern, operation and permission type fields of the ACL APIs get typed accessors through `xtask/codegen/known_values.toml` (PROTO-0062); unit tests.
 
 ### [To Do] SEC-0052 ACL binding validation rules shared with the controller
 P0 · M4 · Task · deps: SEC-0051 · ref: metadata/src/main/java/org/apache/kafka/controller/AclControlManager.java validateNewAcl, validateHostPattern @4.4.0

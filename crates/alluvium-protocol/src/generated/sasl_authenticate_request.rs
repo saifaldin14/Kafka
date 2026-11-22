@@ -6,7 +6,7 @@
 //! The `SaslAuthenticateRequest` request.
 
 /// The `SaslAuthenticateRequest` request, API key 36: versions 0-2, flexible versions 2+.
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Clone, PartialEq, Default)]
 pub struct SaslAuthenticateRequest {
     /// The SASL authentication bytes from the client, as defined by the SASL mechanism.
     ///
@@ -14,6 +14,15 @@ pub struct SaslAuthenticateRequest {
     pub auth_bytes: bytes::Bytes,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl std::fmt::Debug for SaslAuthenticateRequest {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SaslAuthenticateRequest")
+            .field("auth_bytes", &format_args!("***"))
+            .field("unknown_tagged_fields", &self.unknown_tagged_fields)
+            .finish()
+    }
 }
 
 impl SaslAuthenticateRequest {

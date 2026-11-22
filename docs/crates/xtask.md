@@ -19,7 +19,7 @@ It is a dev-layer crate in the [code map](../architecture.md#4-code-map): it may
 | [`check_workflows`](../../xtask/src/check_workflows.rs) | Pinned actions, triggers, job timeouts and permissions, ci.yml running every step, then actionlint and shellcheck |
 | [`schemas`](../../xtask/src/schemas.rs) | `schemas verify`: the vendored Kafka schemas and error sources against their manifests, each schema loaded as a schema; `schemas vendor`: copying them from a Kafka tag |
 | [`message_spec`](../../xtask/src/message_spec.rs) | Kafka's message schemas, read and checked as Kafka's generator reads them (`MessageSpec`, `FieldSpec`, version ranges, field types, defaults, the struct registry): the input to codegen |
-| [`codegen`](../../xtask/src/codegen.rs) | `cargo xtask codegen [--check]`: Rust types from the schemas, one module per message, with their defaults and version constants; `ErrorCode` and docs/errors.md from `Errors.java` ([codegen](../protocol/codegen.md)) |
+| [`codegen`](../../xtask/src/codegen.rs) | `cargo xtask codegen [--check]`: Rust types from the schemas, one module per message, with their defaults and version constants; `ErrorCode` and docs/errors.md from `Errors.java`; the overlays in `xtask/codegen/` for known values and sensitive fields ([codegen](../protocol/codegen.md)) |
 | [`errors_dump`](../../xtask/src/errors_dump.rs) | `schemas dump-errors`: Kafka's runtime error table from the client jar, the golden file for `ErrorCode` |
 | [`crate_docs`](../../xtask/src/crate_docs.rs) | `docs check-crates` and `docs new-crate-doc` ([crate deep dives](README.md)) |
 | [`lint_canary`](../../xtask/src/lint_canary.rs) | Running clippy on [`lint-canary`](../../xtask/lint-canary/src/lib.rs) and matching its `expect-lint:` annotations |

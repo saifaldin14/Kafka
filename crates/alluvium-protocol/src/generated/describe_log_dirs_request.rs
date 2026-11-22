@@ -40,6 +40,26 @@ pub struct DescribableLogDirTopic {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl DescribableLogDirTopic {
+    /// The first of `elements`, in wire order, whose key (`Topic`) equals the arguments.
+    pub fn find<'a>(
+        elements: &'a [DescribableLogDirTopic],
+        topic: &str,
+    ) -> Option<&'a DescribableLogDirTopic> {
+        elements.iter().find(|element| element.topic == topic)
+    }
+
+    /// Every element of `elements` whose key (`Topic`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [DescribableLogDirTopic],
+        topic: &str,
+    ) -> impl Iterator<Item = &'a DescribableLogDirTopic> {
+        elements
+            .iter()
+            .filter(move |element| element.topic == topic)
+    }
+}
+
 impl DescribeLogDirsRequest {
     /// The API key.
     pub const API_KEY: i16 = 35;

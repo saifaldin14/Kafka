@@ -36,6 +36,24 @@ pub struct DeleteRecordsTopicResult {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl DeleteRecordsTopicResult {
+    /// The first of `elements`, in wire order, whose key (`Name`) equals the arguments.
+    pub fn find<'a>(
+        elements: &'a [DeleteRecordsTopicResult],
+        name: &str,
+    ) -> Option<&'a DeleteRecordsTopicResult> {
+        elements.iter().find(|element| element.name == name)
+    }
+
+    /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [DeleteRecordsTopicResult],
+        name: &str,
+    ) -> impl Iterator<Item = &'a DeleteRecordsTopicResult> {
+        elements.iter().filter(move |element| element.name == name)
+    }
+}
+
 /// An element of `DeleteRecordsTopicResult`'s `Partitions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DeleteRecordsPartitionResult {
@@ -53,6 +71,42 @@ pub struct DeleteRecordsPartitionResult {
     pub error_code: i16,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl DeleteRecordsPartitionResult {
+    /// The first of `elements`, in wire order, whose key (`PartitionIndex`) equals the
+    /// arguments.
+    pub fn find(
+        elements: &[DeleteRecordsPartitionResult],
+        partition_index: i32,
+    ) -> Option<&DeleteRecordsPartitionResult> {
+        elements
+            .iter()
+            .find(|element| element.partition_index == partition_index)
+    }
+
+    /// Every element of `elements` whose key (`PartitionIndex`) equals the arguments, in
+    /// wire order.
+    pub fn find_all(
+        elements: &[DeleteRecordsPartitionResult],
+        partition_index: i32,
+    ) -> impl Iterator<Item = &DeleteRecordsPartitionResult> {
+        elements
+            .iter()
+            .filter(move |element| element.partition_index == partition_index)
+    }
+}
+
+impl DeleteRecordsPartitionResult {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
 }
 
 impl DeleteRecordsResponse {

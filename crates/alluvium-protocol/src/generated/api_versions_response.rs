@@ -59,6 +59,18 @@ impl Default for ApiVersionsResponse {
     }
 }
 
+impl ApiVersionsResponse {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
 /// An element of `ApiVersionsResponse`'s `ApiKeys` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ApiVersion {
@@ -76,6 +88,21 @@ pub struct ApiVersion {
     pub max_version: i16,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl ApiVersion {
+    /// The first of `elements`, in wire order, whose key (`ApiKey`) equals the arguments.
+    pub fn find(elements: &[ApiVersion], api_key: i16) -> Option<&ApiVersion> {
+        elements.iter().find(|element| element.api_key == api_key)
+    }
+
+    /// Every element of `elements` whose key (`ApiKey`) equals the arguments, in wire
+    /// order.
+    pub fn find_all(elements: &[ApiVersion], api_key: i16) -> impl Iterator<Item = &ApiVersion> {
+        elements
+            .iter()
+            .filter(move |element| element.api_key == api_key)
+    }
 }
 
 /// An element of `ApiVersionsResponse`'s `SupportedFeatures` array.
@@ -97,6 +124,24 @@ pub struct SupportedFeatureKey {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl SupportedFeatureKey {
+    /// The first of `elements`, in wire order, whose key (`Name`) equals the arguments.
+    pub fn find<'a>(
+        elements: &'a [SupportedFeatureKey],
+        name: &str,
+    ) -> Option<&'a SupportedFeatureKey> {
+        elements.iter().find(|element| element.name == name)
+    }
+
+    /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [SupportedFeatureKey],
+        name: &str,
+    ) -> impl Iterator<Item = &'a SupportedFeatureKey> {
+        elements.iter().filter(move |element| element.name == name)
+    }
+}
+
 /// An element of `ApiVersionsResponse`'s `FinalizedFeatures` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct FinalizedFeatureKey {
@@ -114,6 +159,24 @@ pub struct FinalizedFeatureKey {
     pub min_version_level: i16,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl FinalizedFeatureKey {
+    /// The first of `elements`, in wire order, whose key (`Name`) equals the arguments.
+    pub fn find<'a>(
+        elements: &'a [FinalizedFeatureKey],
+        name: &str,
+    ) -> Option<&'a FinalizedFeatureKey> {
+        elements.iter().find(|element| element.name == name)
+    }
+
+    /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [FinalizedFeatureKey],
+        name: &str,
+    ) -> impl Iterator<Item = &'a FinalizedFeatureKey> {
+        elements.iter().filter(move |element| element.name == name)
+    }
 }
 
 impl ApiVersionsResponse {

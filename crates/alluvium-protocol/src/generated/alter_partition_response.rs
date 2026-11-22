@@ -25,6 +25,18 @@ pub struct AlterPartitionResponse {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl AlterPartitionResponse {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
 /// An element of `AlterPartitionResponse`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TopicData {
@@ -83,6 +95,18 @@ pub struct PartitionData {
     pub partition_epoch: i32,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl PartitionData {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
 }
 
 impl AlterPartitionResponse {

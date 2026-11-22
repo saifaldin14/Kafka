@@ -7,7 +7,7 @@
 
 /// The `ExpireDelegationTokenRequest` request, API key 40: versions 1-2, flexible versions
 /// 2+.
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Clone, PartialEq, Default)]
 pub struct ExpireDelegationTokenRequest {
     /// The HMAC of the delegation token to be expired.
     ///
@@ -19,6 +19,16 @@ pub struct ExpireDelegationTokenRequest {
     pub expiry_time_period_ms: i64,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl std::fmt::Debug for ExpireDelegationTokenRequest {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ExpireDelegationTokenRequest")
+            .field("hmac", &format_args!("***"))
+            .field("expiry_time_period_ms", &self.expiry_time_period_ms)
+            .field("unknown_tagged_fields", &self.unknown_tagged_fields)
+            .finish()
+    }
 }
 
 impl ExpireDelegationTokenRequest {

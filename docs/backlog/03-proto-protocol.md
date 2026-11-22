@@ -230,7 +230,7 @@ Done when: benchmarks run in the benchmark CI job with baselines recorded.
 P1 · M1 · Task · deps: PROTO-0051 · labels: perf
 Done when: the PROTO-0051 gated benchmarks show fewer instructions for varint and string reads, and none more elsewhere; the decode tests pass unchanged.
 
-## [In Progress] PROTO-F04 Generator: message types
+## [Done] PROTO-F04 Generator: message types
 P0 · M1 · Feature · deps: PROTO-F02
 Scope: Generate structs, nested structs, enums for known values, defaults and version metadata.
 
@@ -270,15 +270,15 @@ Done when: the field exists exactly on structs with at least one flexible versio
 P0 · M1 · Task · deps: PROTO-0055 · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateShortAccessor; clients/src/main/java/org/apache/kafka/common/protocol/ApiMessage.java @4.4.0
 Done when: constants are generated for every request, response and data schema; unit test cross-checks them against the schema model.
 
-### [To Do] PROTO-0061 mapKey arrays: generate key types and `find`/`find_all` helpers that keep wire order and duplicates
+### [Done] PROTO-0061 mapKey arrays: generate key types and `find`/`find_all` helpers that keep wire order and duplicates
 P1 · M1 · Task · deps: PROTO-0056 · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateHashSetFindMethod/generateHashSetFindAllMethod @4.4.0
 Done when: helpers exist for every struct array with keys; duplicates are kept like Kafka's ImplicitLinkedHashMultiCollection; tests on CreateTopicsRequest topics.
 
-### [To Do] PROTO-0062 Typed accessors for known-value integer fields via `xtask/codegen/known_values.toml` (error codes, isolation level, acks, coordinator key type, ACL resource/pattern/operation/permission types)
+### [Done] PROTO-0062 Typed accessors for known-value integer fields via `xtask/codegen/known_values.toml` (error codes, isolation level, acks, coordinator key type, ACL resource/pattern/operation/permission types)
 P1 · M1 · Task · deps: PROTO-0055, ERR-F01, TYPE-F12
-Done when: the overlay is validated (field exists, integer type matches); wire structs keep raw integers so unknown values round-trip; accessors return `Result<Enum, UnknownValue>` using ERR-F01 `ErrorCode` and TYPE-F12 enums.
+Done when: the overlay is validated (field exists, integer type matches); wire structs keep raw integers so unknown values round-trip; accessors return `Result<Enum, Error>` with each enum's own error type, for ERR-F01 `ErrorCode` and the TYPE-F12 `IsolationLevel` and `Acks`. The coordinator key type and the ACL enums don't exist in M1; GRP-0039 and SEC-0051 add their overlay entries when they define them.
 
-### [To Do] PROTO-0063 Redacting `Debug` for generated types: records fields print a `PayloadSummary`; fields listed in `xtask/codegen/sensitive_fields.toml` print `***`
+### [Done] PROTO-0063 Redacting `Debug` for generated types: records fields print a `PayloadSummary`; fields listed in `xtask/codegen/sensitive_fields.toml` print `***`
 P0 · M1 · Task · deps: PROTO-0055, TYPE-F09 · labels: security
 Done when: the list covers SaslAuthenticateRequest/Response `AuthBytes`, AlterUserScramCredentialsRequest `Salt` and `SaltedPassword`, and `Hmac` in CreateDelegationTokenResponse, DescribeDelegationTokenResponse, RenewDelegationTokenRequest and ExpireDelegationTokenRequest; unknown entries are codegen errors; tests assert no secret or payload bytes in Debug output.
 
@@ -286,7 +286,7 @@ Done when: the list covers SaslAuthenticateRequest/Response `AuthBytes`, AlterUs
 P0 · M1 · Task · deps: PROTO-0056
 Done when: the types are generated without API keys under `generated::data`; zeroCopy fields of the consumer protocol schemas are `Bytes`; output compiles.
 
-### [To Do] PROTO-0065 Generated code passes clippy `-D warnings` with the decoder lints and contains no lint suppressions
+### [Done] PROTO-0065 Generated code passes clippy `-D warnings` with the decoder lints and contains no lint suppressions
 P0 · M1 · Task · deps: PROTO-0058, PROTO-0057, PROTO-0064, PROTO-0059, PROTO-0060 · labels: security
 Done when: `cargo clippy -p alluvium-protocol -- -D warnings` passes with `deny(clippy::indexing_slicing, clippy::arithmetic_side_effects)` and missing_docs; the generator never emits `#[allow]` (test greps output).
 
@@ -294,7 +294,7 @@ Done when: `cargo clippy -p alluvium-protocol -- -D warnings` passes with `deny(
 P1 · M1 · Task · deps: PROTO-0052
 Done when: `codegen::generate(inputs, out_dir, filter)` is the single entry point used by `cargo xtask codegen`; a test generates a metadata fixture into a temp dir.
 
-### [To Do] PROTO-0067 `docs/protocol/codegen.md`: how each schema feature maps to generated Rust types
+### [Done] PROTO-0067 `docs/protocol/codegen.md`: how each schema feature maps to generated Rust types
 P1 · M1 · Task · deps: PROTO-0058, PROTO-0061, PROTO-0062, PROTO-0063 · labels: docs
 Done when: covers versions, nullable, defaults, common and inline structs, mapKey, known-value accessors, unknown tagged fields and redaction, with one worked example (ProduceRequest).
 

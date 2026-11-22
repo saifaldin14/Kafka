@@ -87,6 +87,20 @@ impl Default for FetchRequest {
     }
 }
 
+impl FetchRequest {
+    /// `isolation_level` as a [`alluvium_types::IsolationLevel`]. The field keeps the raw
+    /// value, so a value the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`alluvium_types::DeliveryError`] if the value is not one the enum defines.
+    pub fn isolation_level(
+        &self,
+    ) -> Result<alluvium_types::IsolationLevel, alluvium_types::DeliveryError> {
+        alluvium_types::IsolationLevel::from_wire(self.isolation_level)
+    }
+}
+
 /// The `ReplicaState` field of `FetchRequest`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ReplicaState {

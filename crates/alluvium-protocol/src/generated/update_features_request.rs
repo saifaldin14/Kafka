@@ -76,6 +76,27 @@ impl Default for FeatureUpdateKey {
     }
 }
 
+impl FeatureUpdateKey {
+    /// The first of `elements`, in wire order, whose key (`Feature`) equals the arguments.
+    pub fn find<'a>(
+        elements: &'a [FeatureUpdateKey],
+        feature: &str,
+    ) -> Option<&'a FeatureUpdateKey> {
+        elements.iter().find(|element| element.feature == feature)
+    }
+
+    /// Every element of `elements` whose key (`Feature`) equals the arguments, in wire
+    /// order.
+    pub fn find_all<'a>(
+        elements: &'a [FeatureUpdateKey],
+        feature: &str,
+    ) -> impl Iterator<Item = &'a FeatureUpdateKey> {
+        elements
+            .iter()
+            .filter(move |element| element.feature == feature)
+    }
+}
+
 impl UpdateFeaturesRequest {
     /// The API key.
     pub const API_KEY: i16 = 57;

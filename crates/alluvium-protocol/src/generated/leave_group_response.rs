@@ -24,6 +24,18 @@ pub struct LeaveGroupResponse {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl LeaveGroupResponse {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
 /// An element of `LeaveGroupResponse`'s `Members` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct MemberResponse {
@@ -51,6 +63,18 @@ impl Default for MemberResponse {
             error_code: 0,
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl MemberResponse {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
     }
 }
 

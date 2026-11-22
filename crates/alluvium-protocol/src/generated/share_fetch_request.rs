@@ -107,6 +107,24 @@ impl Default for FetchTopic {
     }
 }
 
+impl FetchTopic {
+    /// The first of `elements`, in wire order, whose key (`TopicId`) equals the arguments.
+    pub fn find(elements: &[FetchTopic], topic_id: alluvium_types::Uuid) -> Option<&FetchTopic> {
+        elements.iter().find(|element| element.topic_id == topic_id)
+    }
+
+    /// Every element of `elements` whose key (`TopicId`) equals the arguments, in wire
+    /// order.
+    pub fn find_all(
+        elements: &[FetchTopic],
+        topic_id: alluvium_types::Uuid,
+    ) -> impl Iterator<Item = &FetchTopic> {
+        elements
+            .iter()
+            .filter(move |element| element.topic_id == topic_id)
+    }
+}
+
 /// An element of `FetchTopic`'s `Partitions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct FetchPartition {
@@ -125,6 +143,27 @@ pub struct FetchPartition {
     pub acknowledgement_batches: Vec<AcknowledgementBatch>,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl FetchPartition {
+    /// The first of `elements`, in wire order, whose key (`PartitionIndex`) equals the
+    /// arguments.
+    pub fn find(elements: &[FetchPartition], partition_index: i32) -> Option<&FetchPartition> {
+        elements
+            .iter()
+            .find(|element| element.partition_index == partition_index)
+    }
+
+    /// Every element of `elements` whose key (`PartitionIndex`) equals the arguments, in
+    /// wire order.
+    pub fn find_all(
+        elements: &[FetchPartition],
+        partition_index: i32,
+    ) -> impl Iterator<Item = &FetchPartition> {
+        elements
+            .iter()
+            .filter(move |element| element.partition_index == partition_index)
+    }
 }
 
 /// An element of `FetchPartition`'s `AcknowledgementBatches` array.

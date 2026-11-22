@@ -36,6 +36,30 @@ pub struct AlterShareGroupOffsetsRequestTopic {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl AlterShareGroupOffsetsRequestTopic {
+    /// The first of `elements`, in wire order, whose key (`TopicName`) equals the
+    /// arguments.
+    pub fn find<'a>(
+        elements: &'a [AlterShareGroupOffsetsRequestTopic],
+        topic_name: &str,
+    ) -> Option<&'a AlterShareGroupOffsetsRequestTopic> {
+        elements
+            .iter()
+            .find(|element| element.topic_name == topic_name)
+    }
+
+    /// Every element of `elements` whose key (`TopicName`) equals the arguments, in wire
+    /// order.
+    pub fn find_all<'a>(
+        elements: &'a [AlterShareGroupOffsetsRequestTopic],
+        topic_name: &str,
+    ) -> impl Iterator<Item = &'a AlterShareGroupOffsetsRequestTopic> {
+        elements
+            .iter()
+            .filter(move |element| element.topic_name == topic_name)
+    }
+}
+
 /// An element of `AlterShareGroupOffsetsRequestTopic`'s `Partitions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AlterShareGroupOffsetsRequestPartition {

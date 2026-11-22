@@ -28,6 +28,18 @@ pub struct OffsetFetchResponse {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl OffsetFetchResponse {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
 /// An element of `OffsetFetchResponse`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct OffsetFetchResponseTopic {
@@ -83,6 +95,18 @@ impl Default for OffsetFetchResponsePartition {
     }
 }
 
+impl OffsetFetchResponsePartition {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
+}
+
 /// An element of `OffsetFetchResponse`'s `Groups` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct OffsetFetchResponseGroup {
@@ -100,6 +124,18 @@ pub struct OffsetFetchResponseGroup {
     pub error_code: i16,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl OffsetFetchResponseGroup {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
+    }
 }
 
 /// An element of `OffsetFetchResponseGroup`'s `Topics` array.
@@ -169,6 +205,18 @@ impl Default for OffsetFetchResponsePartitions {
             error_code: 0,
             unknown_tagged_fields: Vec::new(),
         }
+    }
+}
+
+impl OffsetFetchResponsePartitions {
+    /// `error_code` as a [`crate::ErrorCode`]. The field keeps the raw value, so a value
+    /// the enum doesn't know still round-trips.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::UnknownErrorCode`] if the value is not one the enum defines.
+    pub fn error_code(&self) -> Result<crate::ErrorCode, crate::UnknownErrorCode> {
+        crate::ErrorCode::from_code(self.error_code)
     }
 }
 

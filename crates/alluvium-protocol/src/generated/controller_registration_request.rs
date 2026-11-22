@@ -69,6 +69,21 @@ pub struct Listener {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl Listener {
+    /// The first of `elements`, in wire order, whose key (`Name`) equals the arguments.
+    pub fn find<'a>(elements: &'a [Listener], name: &str) -> Option<&'a Listener> {
+        elements.iter().find(|element| element.name == name)
+    }
+
+    /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [Listener],
+        name: &str,
+    ) -> impl Iterator<Item = &'a Listener> {
+        elements.iter().filter(move |element| element.name == name)
+    }
+}
+
 /// An element of `ControllerRegistrationRequest`'s `Features` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Feature {
@@ -86,6 +101,18 @@ pub struct Feature {
     pub max_supported_version: i16,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl Feature {
+    /// The first of `elements`, in wire order, whose key (`Name`) equals the arguments.
+    pub fn find<'a>(elements: &'a [Feature], name: &str) -> Option<&'a Feature> {
+        elements.iter().find(|element| element.name == name)
+    }
+
+    /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
+    pub fn find_all<'a>(elements: &'a [Feature], name: &str) -> impl Iterator<Item = &'a Feature> {
+        elements.iter().filter(move |element| element.name == name)
+    }
 }
 
 impl ControllerRegistrationRequest {

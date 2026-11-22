@@ -10,6 +10,9 @@
 //! depends only on its inputs and the generator: no timestamps or absolute paths, and
 //! the same bytes on every run.
 //!
+//! The overlays in `xtask/codegen/` ([`overlays`]) add what the schemas don't say:
+//! which integer fields have typed values, and which fields hold secrets.
+//!
 //! `cargo xtask codegen --check` ([`check`]) renders the same files in memory and fails,
 //! naming each stale file and its first differing line, when the committed ones differ.
 //! Both first check the vendored Kafka directory against its manifest, so a vendored file
@@ -19,6 +22,7 @@
 mod docs;
 mod errors;
 mod names;
+mod overlays;
 mod structs;
 
 use std::collections::BTreeMap;
@@ -41,6 +45,8 @@ pub(crate) struct Filter {
     pub(crate) runtime: String,
     /// Whether to generate `ErrorCode` too, and from where.
     pub(crate) error_codes: Option<ErrorCodes>,
+    /// The directory of the overlay files (`overlays`) applied to the messages, if any.
+    pub(crate) overlays: Option<PathBuf>,
 }
 
 /// The inputs and outputs of `ErrorCode`.
@@ -74,6 +80,7 @@ fn protocol() -> (Vec<PathBuf>, PathBuf, Filter) {
                 source: root.join(VENDORED).join("errors"),
                 page: root.join("docs/errors.md"),
             }),
+            overlays: Some(root.join("xtask/codegen")),
         },
     )
 }
@@ -267,6 +274,7 @@ fn render(inputs: &[PathBuf], filter: &Filter) -> Result<Rendered, String> {
         deepest: None,
         error_codes: 0,
     };
+    let mut messages = Vec::new();
     for path in schema_files(inputs)? {
         let shown = shown_path(&path);
         let text = std::fs::read_to_string(&path)
@@ -274,10 +282,25 @@ fn render(inputs: &[PathBuf], filter: &Filter) -> Result<Rendered, String> {
         let message = message_spec::load(&shown, &text).map_err(|error| error.to_string())?;
         // Parity: generator/src/main/java/org/apache/kafka/message/MessageGenerator.java@4.4.0 MessageGenerator.generateAndWriteMessageClasses
         // Kafka generates nothing for a message without valid versions.
-        if !filter.kinds.contains(&message.kind) || message.valid_versions.is_empty() {
-            continue;
+        if filter.kinds.contains(&message.kind) && !message.valid_versions.is_empty() {
+            messages.push((path, shown, message));
         }
-        let module = structs::module(&message, &filter.runtime)
+    }
+    let overlays = match &filter.overlays {
+        Some(dir) => {
+            let overlays = overlays::Overlays::load(dir)
+                .map_err(|problem| format!("{}/{problem}", shown_path(dir)))?;
+            let specs: Vec<_> = messages
+                .iter()
+                .map(|(_, _, message)| message.clone())
+                .collect();
+            overlays.check(&specs)?;
+            overlays
+        }
+        None => overlays::Overlays::default(),
+    };
+    for (path, shown, message) in &messages {
+        let module = structs::module(message, &filter.runtime, &overlays)
             .map_err(|problem| format!("{shown}: {problem}"))?;
         if report
             .deepest
@@ -294,8 +317,8 @@ fn render(inputs: &[PathBuf], filter: &Filter) -> Result<Rendered, String> {
         let file = directory.join(format!("{}.rs", names::identifier(&message.name)));
         let source = format!(
             "{}\n{}\n{}",
-            header(&format!("from {shown}{}", kafka_version(&path))),
-            docs::wrap(&module_doc(&message), "//! "),
+            header(&format!("from {shown}{}", kafka_version(path))),
+            docs::wrap(&module_doc(message), "//! "),
             module.source
         );
         if modules.insert(file.clone(), source).is_some() {
@@ -577,6 +600,7 @@ mod tests {
             kinds: vec![MessageKind::Metadata],
             runtime: "alluvium_protocol".to_owned(),
             error_codes: None,
+            overlays: None,
         };
 
         let report = generate(std::slice::from_ref(&inputs), &out_dir, &filter).unwrap();
@@ -799,6 +823,12 @@ mod tests {
             let versions = registered.versions.intersect(registered.parent_versions);
             let flexible = !versions.intersect(flexible_versions).is_empty();
             check_struct(source, name, registered.fields, flexible);
+            if registered.has_keys() {
+                assert!(
+                    source.contains(&format!("impl {name} {{\n    /// The first of `elements`")),
+                    "keyed struct {name} has no find"
+                );
+            }
             check_structs(source, registry, registered.fields, flexible_versions);
         }
     }
@@ -830,5 +860,20 @@ mod tests {
             checked += 1;
         }
         assert_eq!(checked, 195);
+    }
+
+    #[test]
+    fn generated_code_suppresses_no_lint() {
+        let (_, out_dir, _) = protocol();
+        for file in existing_files(&out_dir).unwrap() {
+            let source = std::fs::read_to_string(&file).unwrap();
+            for suppression in ["#[allow", "#![allow", "#[expect", "#![expect"] {
+                assert!(
+                    !source.contains(suppression),
+                    "{}: {suppression}",
+                    file.display()
+                );
+            }
+        }
     }
 }

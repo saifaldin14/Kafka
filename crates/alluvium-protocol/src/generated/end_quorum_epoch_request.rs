@@ -110,6 +110,21 @@ pub struct LeaderEndpoint {
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
 }
 
+impl LeaderEndpoint {
+    /// The first of `elements`, in wire order, whose key (`Name`) equals the arguments.
+    pub fn find<'a>(elements: &'a [LeaderEndpoint], name: &str) -> Option<&'a LeaderEndpoint> {
+        elements.iter().find(|element| element.name == name)
+    }
+
+    /// Every element of `elements` whose key (`Name`) equals the arguments, in wire order.
+    pub fn find_all<'a>(
+        elements: &'a [LeaderEndpoint],
+        name: &str,
+    ) -> impl Iterator<Item = &'a LeaderEndpoint> {
+        elements.iter().filter(move |element| element.name == name)
+    }
+}
+
 impl EndQuorumEpochRequest {
     /// The API key.
     pub const API_KEY: i16 = 54;

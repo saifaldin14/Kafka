@@ -37,7 +37,7 @@ pub struct ScramCredentialDeletion {
 }
 
 /// An element of `AlterUserScramCredentialsRequest`'s `Upsertions` array.
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Clone, PartialEq, Default)]
 pub struct ScramCredentialUpsertion {
     /// The user name.
     ///
@@ -61,6 +61,19 @@ pub struct ScramCredentialUpsertion {
     pub salted_password: bytes::Bytes,
     /// Tagged fields this version doesn't define, kept to be written back unchanged.
     pub unknown_tagged_fields: Vec<crate::RawTaggedField>,
+}
+
+impl std::fmt::Debug for ScramCredentialUpsertion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ScramCredentialUpsertion")
+            .field("name", &self.name)
+            .field("mechanism", &self.mechanism)
+            .field("iterations", &self.iterations)
+            .field("salt", &format_args!("***"))
+            .field("salted_password", &format_args!("***"))
+            .field("unknown_tagged_fields", &self.unknown_tagged_fields)
+            .finish()
+    }
 }
 
 impl AlterUserScramCredentialsRequest {
