@@ -264,7 +264,7 @@ Done when: NOTICE names the included material (vendored schemas under `schemas/k
 P1 · M0 · Task · deps: FND-0046 · labels: docs · ref: ADR-0008
 Done when: The header template appears once (CONTRIBUTING) and is linked from ADR-0008 and docs/standards/testing.md rule 10; it states when attribution is required (close port) and when not (`// Parity:` references); the PR template's Kafka-reference section asks whether code was closely ported.
 
-## [In Progress] FND-F09 Developer environment
+## [Done] FND-F09 Developer environment
 P2 · M0 · Feature · deps: FND-F04
 Scope: `cargo xtask doctor` (toolchain, rustup and tool checks), editor settings, optional git hooks, devcontainer.
 
@@ -280,9 +280,10 @@ Done when: `cargo fmt` and the editor settings agree (no reformatting churn on s
 P3 · M0 · Task · deps: FND-0021 · labels: good-first-task
 Done when: Hooks are never installed automatically; installing twice is idempotent; an existing hook that xtask did not write is left alone, with a warning.
 
-### [To Do] FND-0053 `.devcontainer/` with a base image pinned by digest, rustup honouring `rust-toolchain.toml`, tools from `cargo xtask tools install`, and Docker-in-Docker for compatibility tests
+### [Done] FND-0053 `.devcontainer/` with a base image pinned by digest, rustup honouring `rust-toolchain.toml`, tools from `cargo xtask tools install`, and Docker-in-Docker for compatibility tests
 P3 · M0 · Task · deps: FND-0020
 Done when: In the container, `cargo xtask doctor` reports all required checks ok and `cargo xtask ci` passes; the image digest is updated by Dependabot (`devcontainers` ecosystem).
+Notes: Built with `devcontainer up` (Docker Desktop, Apple M3, so linux/aarch64). Inside it `cargo xtask doctor` reported every required check ok (actionlint and shellcheck came from the release-download path) and Docker-in-Docker ran server 29.9.3; `cargo xtask ci` passed all 13 steps. The rust feature's `version: none` skips rustup itself, so it installs rustup with a minimal stable toolchain and `rust-toolchain.toml` selects 1.99.0 inside the repository. Dependabot watches the Dockerfile digest (`docker`) and the features (`devcontainers`).
 
 ## [In Progress] FND-F10 Documentation build checks
 P1 · M0 · Feature · deps: FND-F04

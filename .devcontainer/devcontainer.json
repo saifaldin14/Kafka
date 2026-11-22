@@ -1,0 +1,34 @@
+// A ready-to-work environment: `cargo xtask doctor` passes and `cargo xtask ci` runs.
+// See CONTRIBUTING.md §2.
+{
+  "name": "Alluvium",
+  "build": { "dockerfile": "Dockerfile" },
+  "features": {
+    // rustup, which verifies rustup-init's published SHA-256. The feature also installs
+    // a minimal stable toolchain (its "none" option skips rustup itself), but inside
+    // the repository rust-toolchain.toml selects the pinned one; `cargo xtask doctor`
+    // checks that.
+    "ghcr.io/devcontainers/features/rust:1": {
+      "version": "latest",
+      "profile": "minimal",
+      "components": "none"
+    },
+    // Docker inside the container, for the compatibility tests' Kafka and clients.
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  // Build output on a volume: faster than a bind mount on macOS, and container builds
+  // never overwrite the host's target/.
+  "mounts": [
+    "source=alluvium-target,target=${containerWorkspaceFolder}/target,type=volume"
+  ],
+  "postCreateCommand": "sudo chown vscode ${containerWorkspaceFolder}/target && rustup toolchain install && cargo xtask tools install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml",
+        "editorconfig.editorconfig"
+      ]
+    }
+  }
+}
