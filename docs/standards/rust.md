@@ -197,9 +197,9 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 
 | Command | Does |
 |---|---|
-| `cargo xtask ci` | Runs every step below in order; stops at the first failure unless `--keep-going` is given. Run it before pushing. |
+| `cargo xtask ci` | Runs every step below in order, except the on-demand ones; stops at the first failure unless `--keep-going` is given. Run it before pushing. |
 | `cargo xtask ci --list` | Lists the steps in run order |
-| `cargo xtask ci --step <name>` | Runs only the named steps (repeatable), still in run order |
+| `cargo xtask ci --step <name>` | Runs only the named steps (repeatable), still in run order. On-demand steps run only this way |
 | `cargo xtask doctor` | Checks the local setup: rustup's `cargo` first on `PATH`, the pinned toolchain and components, and the pinned tools (required); Docker, nightly and cargo-fuzz (optional). Prints the fix for each problem; exits 1 only when a required check fails |
 | `cargo xtask install-hooks [--uninstall]` | Optional: installs (or removes) a pre-push hook that runs `cargo xtask ci --step fmt --step clippy`. Never installed automatically; a hook xtask didn't write is left alone, with a warning |
 | `cargo xtask tools install [--step <name>]...` | Installs the pinned versions of the external tools, or only those the named steps need (`xtask/src/tools.rs` is the only place versions appear). Rust tools come from crates.io; others (actionlint, shellcheck) from release archives whose SHA-256 must match the table |
@@ -218,6 +218,7 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 | `deny` | `cargo deny --locked check bans licenses sources`: banned and duplicate crates, licenses, sources ([`deny.toml`](../../deny.toml)) |
 | `advisories` | `cargo deny --locked check advisories`: security advisories against `Cargo.lock`. Separate from `deny` because a new advisory depends on the date, not the change, so CI reports it without blocking unrelated PRs |
 | `links` | `lychee --offline --include-fragments` over README.md, AGENTS.md, CLAUDE.md, CONTRIBUTING.md, `docs/`, `.agents/` and `.github/`: relative links and `#anchors` resolve. External URLs are not checked here |
+| `links-external` | On demand: `lychee` online, with retries and a neutral user agent, over the same files as `links`. External sites can fail without a change here, so no PR runs it; [`links.yml`](../../.github/workflows/links.yml) runs it weekly and opens or updates a tracking issue listing each dead link's `file:line` and URL |
 | `test` | `cargo nextest run --workspace --locked --profile ci` ([`.config/nextest.toml`](../../.config/nextest.toml)) |
 | `doctest` | `cargo test --workspace --doc --locked`: the examples in doc comments compile and pass, and `compile_fail` examples fail to compile. A separate step because nextest does not run doctests |
 

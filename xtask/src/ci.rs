@@ -37,6 +37,9 @@ pub(crate) struct CiStep {
     pub(crate) env: &'static [(&'static str, &'static str)],
     /// Pinned tools the step needs, checked before it runs.
     pub(crate) requires: &'static [&'static Tool],
+    /// Runs only when named with `--step`, never in the full `cargo xtask ci` run: for
+    /// checks of things outside the repository, which can fail without a change here.
+    pub(crate) on_demand: bool,
 }
 
 /// Every CI step, in run order.
@@ -48,6 +51,7 @@ pub(crate) const STEPS: &[CiStep] = &[
         args: &["fmt", "--all", "--check"],
         env: &[],
         requires: &[],
+        on_demand: false,
     },
     CiStep {
         name: "clippy",
@@ -64,6 +68,7 @@ pub(crate) const STEPS: &[CiStep] = &[
         ],
         env: &[],
         requires: &[],
+        on_demand: false,
     },
     CiStep {
         name: "doc",
@@ -78,6 +83,7 @@ pub(crate) const STEPS: &[CiStep] = &[
         ],
         env: &[("RUSTDOCFLAGS", "-D warnings")],
         requires: &[],
+        on_demand: false,
     },
     CiStep {
         name: "layers",
@@ -94,6 +100,7 @@ pub(crate) const STEPS: &[CiStep] = &[
         ],
         env: &[],
         requires: &[],
+        on_demand: false,
     },
     CiStep {
         name: "manifests",
@@ -110,6 +117,7 @@ pub(crate) const STEPS: &[CiStep] = &[
         ],
         env: &[],
         requires: &[],
+        on_demand: false,
     },
     CiStep {
         name: "workflows",
@@ -126,6 +134,7 @@ pub(crate) const STEPS: &[CiStep] = &[
         ],
         env: &[],
         requires: &[&tools::ACTIONLINT, &tools::SHELLCHECK],
+        on_demand: false,
     },
     CiStep {
         name: "backlog",
@@ -143,6 +152,7 @@ pub(crate) const STEPS: &[CiStep] = &[
         ],
         env: &[],
         requires: &[],
+        on_demand: false,
     },
     CiStep {
         name: "lint-canary",
@@ -159,6 +169,7 @@ pub(crate) const STEPS: &[CiStep] = &[
         ],
         env: &[],
         requires: &[],
+        on_demand: false,
     },
     CiStep {
         name: "deny",
@@ -167,6 +178,7 @@ pub(crate) const STEPS: &[CiStep] = &[
         args: &["deny", "--locked", "check", "bans", "licenses", "sources"],
         env: &[],
         requires: &[&tools::DENY],
+        on_demand: false,
     },
     // Separate from `deny`: a newly published advisory depends on the date, not on the
     // change being tested, so CI reports it without blocking unrelated PRs.
@@ -177,6 +189,7 @@ pub(crate) const STEPS: &[CiStep] = &[
         args: &["deny", "--locked", "check", "advisories"],
         env: &[],
         requires: &[&tools::DENY],
+        on_demand: false,
     },
     CiStep {
         name: "links",
@@ -196,6 +209,36 @@ pub(crate) const STEPS: &[CiStep] = &[
         ],
         env: &[],
         requires: &[&tools::LYCHEE],
+        on_demand: false,
+    },
+    CiStep {
+        name: "links-external",
+        summary: "External URLs in the same files, online, with retries (lychee); on demand, run weekly by .github/workflows/links.yml",
+        program: Program::Tool(&tools::LYCHEE),
+        args: &[
+            "--no-progress",
+            "--max-retries",
+            "3",
+            "--retry-wait-time",
+            "10",
+            // Some sites (eprint.iacr.org) refuse lychee's default user agent with 403.
+            "--user-agent",
+            "Mozilla/5.0 (compatible; alluvium-link-check)",
+            "--format",
+            "json",
+            "--output",
+            "target/links-external.json",
+            "README.md",
+            "AGENTS.md",
+            "CLAUDE.md",
+            "CONTRIBUTING.md",
+            "docs",
+            ".agents",
+            ".github",
+        ],
+        env: &[],
+        requires: &[&tools::LYCHEE],
+        on_demand: true,
     },
     CiStep {
         name: "test",
@@ -212,6 +255,7 @@ pub(crate) const STEPS: &[CiStep] = &[
         env: &[],
         // The deny.toml fixture tests in xtask run cargo-deny.
         requires: &[&tools::NEXTEST, &tools::DENY],
+        on_demand: false,
     },
     CiStep {
         name: "doctest",
@@ -220,6 +264,7 @@ pub(crate) const STEPS: &[CiStep] = &[
         args: &["test", "--workspace", "--doc", "--locked"],
         env: &[],
         requires: &[],
+        on_demand: false,
     },
 ];
 
@@ -268,14 +313,45 @@ pub(crate) fn run(options: &CiOptions, out: &mut impl Write) -> Exit {
 
 /// The steps to run, in registered order: all of them, or only those named.
 fn selected(names: &[String]) -> impl Iterator<Item = &'static CiStep> + '_ {
-    STEPS
-        .iter()
-        .filter(move |step| names.is_empty() || names.iter().any(|name| name == step.name))
+    STEPS.iter().filter(move |step| {
+        if names.is_empty() {
+            !step.on_demand
+        } else {
+            names.iter().any(|name| name == step.name)
+        }
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::{STEPS, is_step, selected};
+
+    /// The inputs of a lychee step: its arguments after the last option value.
+    fn link_inputs(name: &str) -> Vec<&'static str> {
+        let step = STEPS.iter().find(|step| step.name == name).unwrap();
+        let first_input = step
+            .args
+            .iter()
+            .position(|arg| *arg == "README.md")
+            .unwrap();
+        step.args[first_input..].to_vec()
+    }
+
+    #[test]
+    fn the_external_link_check_covers_the_same_files_as_the_offline_one() {
+        assert_eq!(link_inputs("links-external"), link_inputs("links"));
+    }
+
+    #[test]
+    fn on_demand_steps_run_only_when_named() {
+        let all: Vec<&str> = selected(&[]).map(|step| step.name).collect();
+        assert!(!all.contains(&"links-external"), "{all:?}");
+        assert!(all.contains(&"links"));
+        let named: Vec<&str> = selected(&["links-external".to_owned()])
+            .map(|step| step.name)
+            .collect();
+        assert_eq!(named, ["links-external"]);
+    }
 
     #[test]
     fn step_names_are_unique() {
@@ -298,8 +374,11 @@ mod tests {
     }
 
     #[test]
-    fn no_selection_means_every_step() {
-        assert_eq!(selected(&[]).count(), STEPS.len());
+    fn no_selection_means_every_step_that_is_not_on_demand() {
+        assert_eq!(
+            selected(&[]).count(),
+            STEPS.iter().filter(|step| !step.on_demand).count()
+        );
     }
 
     #[test]
@@ -316,6 +395,7 @@ mod tests {
             "deny",
             "advisories",
             "links",
+            "links-external",
             "test",
             "doctest",
         ] {
