@@ -268,7 +268,7 @@ Done when: The header template appears once (CONTRIBUTING) and is linked from AD
 P2 · M0 · Feature · deps: FND-F04
 Scope: `cargo xtask doctor` (toolchain, rustup and tool checks), editor settings, optional git hooks, devcontainer.
 
-### [To Do] FND-0050 `cargo xtask doctor`: check the local toolchain and tools, with fix commands
+### [Done] FND-0050 `cargo xtask doctor`: check the local toolchain and tools, with fix commands
 P2 · M0 · Task · deps: FND-0020 · labels: good-first-task
 Done when: Required checks: `cargo` is rustup's proxy (not Homebrew's or a distribution's), the active toolchain matches `rust-toolchain.toml` with rustfmt and clippy, and every tool in the xtask tool table is installed at its pinned version; optional checks: Docker (compat tests), a nightly toolchain and cargo-fuzz (fuzzing). Each check prints `ok` or `missing` with the exact fix command; the exit code is 1 only when a required check fails; a unit test feeds fake `rustup which cargo` and version outputs for the Homebrew-cargo case and the wrong-toolchain case; CONTRIBUTING §2 tells new engineers to run it.
 
