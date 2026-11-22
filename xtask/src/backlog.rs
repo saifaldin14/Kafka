@@ -919,7 +919,7 @@ mod tests {
             .get("STOR-0031")
             .unwrap_or_else(|| panic!("no task"));
         assert_eq!(task.deps, ["STOR-0030"]);
-        assert_eq!(task.labels, ["storage", "decoder"]);
+        assert_eq!(task.labels, ["decoder"]);
         assert_eq!(task.reference, "storage/…/OffsetIndex.java lookup @4.4.0");
         assert_eq!(task.feature.as_deref(), Some("STOR-F04"));
         let feature = parsed

@@ -1,0 +1,41 @@
+# Creates and updates the labels in .github/labels.yml. Never deletes a label.
+name: Labels
+
+on:
+  push:
+    branches: [main]
+    paths: [.github/labels.yml]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: labels
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: sync
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    # Only labels: the file is read from raw.githubusercontent.com (the repository is
+    # public), so the job needs no `contents` permission and no checkout.
+    permissions:
+      issues: write
+    steps:
+      - name: Create or update each label
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          curl --silent --show-error --fail --location --retry 3 \
+            --output labels.yml "https://raw.githubusercontent.com/$REPO/$SHA/.github/labels.yml"
+          count=$(yq 'length' labels.yml)
+          for index in $(seq 0 $((count - 1))); do
+            name=$(yq -r ".[$index].name" labels.yml)
+            color=$(yq -r ".[$index].color" labels.yml)
+            description=$(yq -r ".[$index].description" labels.yml)
+            gh label create "$name" --repo "$REPO" --color "$color" \
+              --description "$description" --force
+          done

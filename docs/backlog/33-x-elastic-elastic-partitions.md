@@ -529,7 +529,7 @@ P1 · M12 · Task · deps: OBS-F08
 Done when: Route returns JSON with the current image view and the controller's elastic flight recorder for the topic; requires the diagnostics endpoint's authentication when not on loopback; test.
 
 ### [To Do] X-ELASTIC-0119 Human and JSON rendering of elastic records and images for `alluvium dump metadata`
-P2 · M12 · Task · deps: CLI-F04 · labels: debuggability
+P2 · M12 · Task · deps: CLI-F04 · labels: observability
 Done when: Each elastic record type has a stable text and `--json` rendering consumed by the CLI-F04 dump command; golden-output tests cover every record and state; keys never appear (only ranges and hashes).
 
 ### [To Do] X-ELASTIC-0120 Alert rules and dashboard panels for stuck seals and redirect storms

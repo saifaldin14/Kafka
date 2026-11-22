@@ -125,7 +125,7 @@ P0 · M12 · Task · deps: X-KV-0018, STOR-F25
 Done when: Index bytes count toward STOR-F25 reserved-space checks; a full disk stops index flushes with event `kv_index_disk_full` without affecting log appends; metric `alluvium_kv_index_bytes{topic}`; tests.
 
 ### [To Do] X-KV-0028 Index decoder and printer for `alluvium dump kv-index` and `verify kv-index`
-P2 · M12 · Task · deps: X-KV-0017, CLI-F04 · labels: debuggability
+P2 · M12 · Task · deps: X-KV-0017, CLI-F04 · labels: observability
 Done when: Printer outputs runs, key counts, offset ranges and key hashes (never key bytes unless `--payload`); verify compares the index with a log scan; golden tests; wired by CLI-F04.
 
 ## [To Do] X-KV-F04 Point lookups
