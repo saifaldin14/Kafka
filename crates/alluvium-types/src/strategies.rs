@@ -15,6 +15,8 @@
 //! maximum length. Generated message strategies (codegen) and record batch strategies
 //! are built from them, so a boundary bug in any field is found the same way.
 
+pub mod composite;
+
 use proptest::collection::{btree_set, vec};
 use proptest::option;
 use proptest::prelude::{Just, Strategy, any, prop_oneof};

@@ -44,6 +44,8 @@ Every strategy for a plain wire value is built from the boundary-bias helpers in
 | `non_negative_i32`, `non_negative_i64` | Values a count or id can hold, biased towards 0, 1, `i32::MAX` and the maximum |
 | `string_up_to(max_bytes)`, `bytes_up_to(max_len)` | Empty, exactly the maximum length (for strings once ending in a multi-byte character), and anything in between |
 
+`alluvium_types::strategies::composite` has strategies for values that must hold together, each tested against its invariant: ordered partition `watermarks`, an idempotent producer's `producer_batches` (checked against Kafka's `ProducerAppendInfo` rules), and `colliding_topic_partitions`. Where a test needs the broken case, an `invalid_` strategy breaks the invariant in one labelled way, such as `invalid_producer_batches` returning a `ProducerBatchViolation`.
+
 Generated message strategies come from the code generator (PROTO-0081) and record batch strategies from REC-F14. Both are built from these helpers rather than from `any::<T>()`.
 
 ## Simulation harness (`alluvium-testkit`)

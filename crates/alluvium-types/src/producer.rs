@@ -100,6 +100,9 @@ impl fmt::Display for ProducerEpoch {
 const SEQUENCE_MASK: u32 = 0x7fff_ffff;
 
 impl Sequence {
+    /// Sequence 0: where a producer's first batch in a new epoch starts.
+    pub const ZERO: Sequence = Sequence(0);
+
     /// The sequence number as Kafka writes it.
     pub fn get(self) -> i32 {
         self.0

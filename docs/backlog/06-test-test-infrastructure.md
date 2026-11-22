@@ -573,7 +573,7 @@ Scope: Shared proptest building blocks and strategies for domain types. Record s
 P0 · M1 · Task · deps: none · labels: test · ref: docs/standards/testing.md#test-levels
 Done when: testing.md lists the convention and the boundary-bias helpers; the helpers live in `alluvium_types::strategies` and are used by the TYPE strategies; the doc states that generated message strategies come from codegen (PROTO) and record batch strategies from REC-F14, both built on these helpers.
 
-### [To Do] TEST-0126 Composite domain strategies: consistent partition watermark tuples (`log_start_offset ≤ high_watermark ≤ log_end_offset`), producer id/epoch/sequence streams with valid and invalid transitions, and topic-partition sets with colliding names
+### [Done] TEST-0126 Composite domain strategies: consistent partition watermark tuples (`log_start_offset ≤ high_watermark ≤ log_end_offset`), producer id/epoch/sequence streams with valid and invalid transitions, and topic-partition sets with colliding names
 P0 · M1 · Task · deps: TEST-0125 · labels: test
 Done when: Each strategy has a test asserting its generated values satisfy (or, for the invalid variants, violate) the stated invariant; STOR, REPL and TXN tests can use them.
 
