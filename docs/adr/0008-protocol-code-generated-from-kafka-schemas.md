@@ -26,7 +26,7 @@ Kafka is licensed under Apache-2.0. Alluvium currently has no license (all right
 ## Consequences
 
 - All APIs get correct encoding for every version from one generator. A generator bug shows up everywhere at once, so it is caught early.
-- Moving to a new Kafka version starts with vendoring new schemas and reviewing the generated diff.
+- Moving to a new Kafka version starts with vendoring new schemas and reviewing the generated diff ([updating the Kafka schemas](../guides/updating-kafka-schemas.md)).
 - The generator is a significant piece of code, owned by `xtask` and tested with golden files.
 
 ## Alternatives considered

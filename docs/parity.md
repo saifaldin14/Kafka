@@ -6,7 +6,7 @@ An API counts as supported only when its backlog feature is `Done`. That means i
 
 ## APIs
 
-Generated from the request schemas at Kafka tag `4.4.0` (`clients/src/main/resources/common/message/*Request.json`). "Listeners" shows where Kafka serves the API: `broker` means the client-facing broker listeners, `controller` means the KRaft controller listeners.
+Generated from the request schemas at Kafka tag `4.4.0` (`clients/src/main/resources/common/message/*Request.json`, vendored in [`schemas/kafka-4.4.0/clients/`](../schemas/kafka-4.4.0/clients/); [updating the Kafka schemas](guides/updating-kafka-schemas.md) covers a version change). "Listeners" shows where Kafka serves the API: `broker` means the client-facing broker listeners, `controller` means the KRaft controller listeners.
 
 | Key | API | Kafka 4.4.0 versions | Listeners | Backlog |
 |---|---|---|---|---|

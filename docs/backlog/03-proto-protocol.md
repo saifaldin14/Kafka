@@ -4,7 +4,7 @@
 
 Byte-exact Kafka 4.4.0 wire protocol: vendored schemas and a code generator producing committed, readable Rust codecs for every request, response and header version, with bounded allocation and fuzzing.
 
-## [In Progress] PROTO-F01 Vendored schemas
+## [Done] PROTO-F01 Vendored schemas
 P0 · M1 · Feature · deps: FND-F08
 Scope: `schemas/kafka-4.4.0/` copied unmodified from tag 4.4.0 with LICENSE/NOTICE, checksum manifest and an update procedure.
 
@@ -25,7 +25,7 @@ Done when: the manifest lists every vendored file with its SHA-256 and the tag c
 P2 · M1 · Task · deps: PROTO-0003
 Done when: the command sparse-clones the tag into `target/`, replaces `schemas/kafka-<tag>/`, regenerates the manifest, and `--dry-run` prints added, removed and changed schema files; never runs in CI (network).
 
-### [To Do] PROTO-0005 Document the Kafka schema update procedure in `docs/guides/updating-kafka-schemas.md`
+### [Done] PROTO-0005 Document the Kafka schema update procedure in `docs/guides/updating-kafka-schemas.md`
 P2 · M1 · Task · deps: PROTO-0004 · labels: docs
 Done when: the guide covers vendoring, manifest, reviewing the generated diff, regenerating golden vectors, updating docs/parity.md and when an ADR is needed; linked from ADR-0008 and docs/parity.md.
 
