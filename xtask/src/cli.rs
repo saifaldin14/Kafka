@@ -25,6 +25,10 @@ pub(crate) enum Command {
     LintCanary,
     Backlog(BacklogCommand),
     Doctor,
+    /// `install-hooks [--uninstall]`.
+    InstallHooks {
+        uninstall: bool,
+    },
 }
 
 /// A `cargo xtask backlog` subcommand.
@@ -75,6 +79,10 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
     (
         "doctor",
         "Check the local toolchain and tools, and print the fix for each problem",
+    ),
+    (
+        "install-hooks [--uninstall]",
+        "Install (or remove) an optional pre-push hook that runs the fmt and clippy steps",
     ),
     (
         "lint-canary",
@@ -181,6 +189,18 @@ pub(crate) fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Command,
         "backlog" => parse_backlog(rest).map(Command::Backlog),
         "lint-canary" => no_arguments("lint-canary", rest).map(|()| Command::LintCanary),
         "doctor" => no_arguments("doctor", rest).map(|()| Command::Doctor),
+        "install-hooks" => match rest {
+            [] => Ok(Command::InstallHooks { uninstall: false }),
+            [flag] if flag == "--uninstall" => Ok(Command::InstallHooks { uninstall: true }),
+            [flag, extra, ..] if flag == "--uninstall" => Err(UsageError::UnexpectedArgument {
+                command: "install-hooks",
+                argument: extra.clone(),
+            }),
+            [argument, ..] => Err(UsageError::UnexpectedArgument {
+                command: "install-hooks",
+                argument: argument.clone(),
+            }),
+        },
         "tools" => match rest.split_first() {
             None => Err(UsageError::MissingSubcommand { command: "tools" }),
             Some((sub, rest)) if sub == "install" => {
@@ -515,6 +535,36 @@ mod tests {
             Ok(Command::CheckManifests)
         );
         assert_eq!(parse(args(&["lint-canary"])), Ok(Command::LintCanary));
+        assert_eq!(parse(args(&["doctor"])), Ok(Command::Doctor));
+        assert_eq!(
+            parse(args(&["install-hooks"])),
+            Ok(Command::InstallHooks { uninstall: false })
+        );
+        assert_eq!(
+            parse(args(&["install-hooks", "--uninstall"])),
+            Ok(Command::InstallHooks { uninstall: true })
+        );
+        assert_eq!(
+            parse(args(&["install-hooks", "--force"])),
+            Err(UsageError::UnexpectedArgument {
+                command: "install-hooks",
+                argument: "--force".to_owned()
+            })
+        );
+        assert_eq!(
+            parse(args(&["install-hooks", "x", "--uninstall"])),
+            Err(UsageError::UnexpectedArgument {
+                command: "install-hooks",
+                argument: "x".to_owned()
+            })
+        );
+        assert_eq!(
+            parse(args(&["install-hooks", "--uninstall", "x"])),
+            Err(UsageError::UnexpectedArgument {
+                command: "install-hooks",
+                argument: "x".to_owned()
+            })
+        );
         assert_eq!(
             parse(args(&["check-workflows"])),
             Ok(Command::CheckWorkflows)

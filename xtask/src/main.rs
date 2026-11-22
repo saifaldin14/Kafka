@@ -41,6 +41,7 @@ mod cli;
 mod clock;
 mod doctor;
 mod graph;
+mod hooks;
 mod install;
 mod layers;
 mod lint_canary;
@@ -105,6 +106,7 @@ fn run(command: &Command, out: &mut impl std::io::Write) -> Exit {
         Command::Backlog(BacklogCommand::Check(options)) => backlog_check::run(options, out),
         Command::LintCanary => lint_canary::run(out),
         Command::Doctor => doctor::run(out),
+        Command::InstallHooks { uninstall } => hooks::run(*uninstall, out),
     }
 }
 

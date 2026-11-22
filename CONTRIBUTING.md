@@ -24,6 +24,7 @@ Keep [docs/standards/](docs/standards/) open as a reference. You don't need to m
 - The pinned toolchain installs automatically on the first `cargo` command.
 - Tools: `cargo xtask tools install` installs the pinned versions of cargo-nextest, cargo-deny and lychee. `cargo-fuzz` and a nightly toolchain are needed only for fuzzing.
 - Then run `cargo xtask doctor`. It checks all of the above and prints the exact command that fixes each problem.
+- Optionally, `cargo xtask install-hooks` adds a pre-push hook that runs the formatting and clippy checks, so they fail on your machine before CI; `--uninstall` removes it.
 - Docker, only for compatibility and differential tests (they run real Kafka clients and a real Kafka 4.4.0 broker).
 - Editors: [`.editorconfig`](.editorconfig) sets UTF-8, LF, final newlines and indentation to match `cargo fmt`. VS Code picks up [`.vscode/settings.json`](.vscode/settings.json) (rust-analyzer runs clippy, and Rust formats on save) and offers the extensions in [`.vscode/extensions.json`](.vscode/extensions.json).
 
