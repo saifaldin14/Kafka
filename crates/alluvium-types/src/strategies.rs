@@ -9,12 +9,14 @@
 //! Each strategy produces valid values only, and favours the boundaries where bugs
 //! cluster: 0, 1 and the maximum.
 
+use proptest::collection::vec;
 use proptest::prelude::{Just, Strategy, any, prop_oneof};
+use proptest::sample::{Index, select};
 
 use crate::{
     BrokerEpoch, BrokerId, CorrelationId, GenerationId, LeaderEpoch, MemberEpoch, MonotonicInstant,
     NodeId, Offset, OffsetRange, OffsetSpec, PartitionIndex, ProducerEpoch, ProducerId, Sequence,
-    TopicId, Uuid, WallTime,
+    TopicId, TopicName, Uuid, WallTime,
 };
 
 /// Non-negative `i32` values, with extra weight on 0, 1 and `i32::MAX`.
@@ -188,5 +190,41 @@ pub fn topic_id() -> impl Strategy<Value = TopicId> {
     prop_oneof![
         1 => Just(TopicId::METADATA),
         9 => uuid().prop_filter_map("non-zero", |id| TopicId::try_from(id).ok()),
+    ]
+}
+
+const TOPIC_ALPHABET: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-";
+
+/// Valid [`TopicName`]s of 1 to 249 characters, biased towards 1, 248 and 249.
+pub fn topic_name() -> impl Strategy<Value = TopicName> {
+    prop_oneof![
+        1 => Just(1_usize),
+        1 => Just(248),
+        1 => Just(249),
+        7 => 1..=249_usize,
+    ]
+    .prop_flat_map(|length| vec(select(TOPIC_ALPHABET), length))
+    .prop_filter_map("not `.` or `..`", |bytes| {
+        TopicName::try_from(String::from_utf8(bytes).ok()?).ok()
+    })
+}
+
+/// Strings that break each of Kafka's topic name rules: empty, `.`, `..`, 250 or more
+/// characters (legal or not), and an illegal character anywhere in a valid name.
+pub fn invalid_topic_name() -> impl Strategy<Value = String> {
+    let illegal = any::<char>().prop_filter("illegal in topic names", |character| {
+        !(character.is_ascii_alphanumeric() || matches!(character, '.' | '_' | '-'))
+    });
+    prop_oneof![
+        1 => Just(String::new()),
+        1 => Just(".".to_owned()),
+        1 => Just("..".to_owned()),
+        2 => (250..=300_usize, select(&["a", " ", "é"][..]))
+            .prop_map(|(length, unit)| unit.repeat(length)),
+        5 => (topic_name(), illegal, any::<Index>()).prop_map(|(name, character, at)| {
+            let mut characters: Vec<char> = name.as_str().chars().collect();
+            characters.insert(at.index(characters.len() + 1), character);
+            characters.into_iter().collect()
+        }),
     ]
 }
