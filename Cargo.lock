@@ -6,8 +6,11 @@ version = 4
 name = "alluvium-types"
 version = "0.0.0"
 dependencies = [
+ "chacha20",
  "crc32c",
+ "getrandom",
  "proptest",
+ "siphasher",
  "thiserror",
  "zeroize",
 ]
@@ -278,6 +281,12 @@ checksum = "9c187e0a369471c550af028cba56d4f4fa2a489ad28151ae95a4d340a2a8b782"
 dependencies = [
  "serde_core",
 ]
+
+[[package]]
+name = "siphasher"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "33f4fe9184a62d842c9ef383018f3306d8ba224fd9d836f56d7288308847c256"
 
 [[package]]
 name = "syn"

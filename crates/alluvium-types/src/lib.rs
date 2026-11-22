@@ -4,9 +4,11 @@
 //!
 //! Layer: 0 ([ADR-0009](../../../docs/adr/0009-crate-layering-and-dependency-rules.md)).
 //! It depends on no other Alluvium crate, and every crate may depend on it. Like all
-//! layer 0 crates it does no I/O and uses no randomness. It defines [`SystemClock`], the
-//! one reader of the operating system's clocks, but never constructs it: only layer 3–5
-//! code does ([ADR-0011](../../../docs/adr/0011-time-model-and-clock-injection.md)).
+//! layer 0 crates it does no I/O. It defines the only readers of the operating system's
+//! clocks and entropy, [`SystemClock`] and [`SeededRng::from_os_entropy`], but never
+//! calls them: only layer 3–5 code does
+//! ([ADR-0011](../../../docs/adr/0011-time-model-and-clock-injection.md),
+//! [ADR-0012](../../../docs/adr/0012-seeded-randomness-and-hashing.md)).
 //!
 //! Kafka counterparts at 4.4.0, each cited with `// Parity:` where it is mirrored:
 //!
@@ -47,6 +49,8 @@
 //!   operating system ([`WallClockError`] when its wall clock is out of range);
 //!   [`ManualClock`] moves only when told to, for tests and simulation.
 //! - [`Deadline`]: when a wait must end; a timeout too long to represent saturates.
+//! - [`SeededRng`]: the only random number generator, replayable from a `u64` seed,
+//!   with independent `fork`s per component ([`EntropyError`] if the OS has none).
 //! - [`IdError`]: why a value was rejected.
 //! - [`Secret`]: a value that is never printed and is zeroized on drop.
 //! - [`PayloadSummary`]: how record payloads are printed (length and CRC32C only).
@@ -63,6 +67,7 @@ mod id;
 mod offset;
 mod payload;
 mod producer;
+mod rng;
 mod secret;
 #[cfg(any(test, feature = "proptest-strategies"))]
 pub mod strategies;
@@ -75,5 +80,6 @@ pub use id::{BrokerId, CorrelationId, IdError, IdKind, NodeId, PartitionIndex};
 pub use offset::{Offset, OffsetError, OffsetRange, OffsetSpec};
 pub use payload::PayloadSummary;
 pub use producer::{ProducerEpoch, ProducerId, Sequence};
+pub use rng::{EntropyError, SeededRng};
 pub use secret::Secret;
 pub use time::{MonotonicInstant, TimeError, WallTime};

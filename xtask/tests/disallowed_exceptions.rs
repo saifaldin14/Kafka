@@ -20,6 +20,11 @@ const SANCTIONED: &[(&str, usize, &str)] = &[
         "SystemClock: Instant::now and SystemTime::now (ADR-0011)",
     ),
     (
+        "crates/alluvium-types/src/rng.rs",
+        1,
+        "SeededRng::from_os_entropy: getrandom::fill (ADR-0012)",
+    ),
+    (
         "xtask/src/clock.rs",
         2,
         "xtask's Stopwatch, the dev-tool exception: Instant::now and Instant::elapsed (ADR-0011)",
