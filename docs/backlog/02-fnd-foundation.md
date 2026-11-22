@@ -300,9 +300,10 @@ Done when: A test PR with a broken relative link and a wrong heading anchor fail
 P2 · M0 · Task · deps: FND-0055, FND-0031 · labels: docs
 Done when: The workflow never runs on PRs; a dead link creates an issue listing file:line and URL; permissions are `contents: read` and `issues: write` only.
 
-### [To Do] FND-0057 `check-manifests` rule: each library crate's `lib.rs` starts with a `//!` doc that has `Layer:` (matching the xtask layer table) and `Kafka counterpart:` lines
+### [Done] FND-0057 `check-manifests` rule: each library crate's `lib.rs` starts with a `//!` doc that has `Layer:` (matching the xtask layer table) and `Kafka counterpart:` lines
 P2 · M0 · Task · deps: FND-0023, FND-0007, TYPE-F01 · labels: docs · ref: docs/standards/rust.md#modules-and-documentation
 Done when: Fixture crates with a missing doc, a missing line or a wrong layer are rejected; rust.md's "Modules and documentation" section shows the required lines; `alluvium-types` and `xtask` pass.
+Notes: The rule reads only the crate root's text, so its fixtures are inline `lib.rs` texts in the unit test (missing doc, missing `Layer:`, wrong layer, missing or empty `Kafka counterpart:`, lines outside the leading doc, unknown crate) rather than fixture crates. Binary-only crates are checked through `src/main.rs`, which is how `xtask` passes. Also proved on the real workspace by changing `alluvium-types`' doc.
 
 ## [In Progress] FND-F11 Repository hygiene
 P2 · M0 · Feature · deps: none

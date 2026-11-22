@@ -10,7 +10,8 @@
 //! ([ADR-0011](../../../docs/adr/0011-time-model-and-clock-injection.md),
 //! [ADR-0012](../../../docs/adr/0012-seeded-randomness-and-hashing.md)).
 //!
-//! Kafka counterparts at 4.4.0, each cited with `// Parity:` where it is mirrored:
+//! Kafka counterpart: these classes at 4.4.0, each cited with `// Parity:` where it is
+//! mirrored:
 //!
 //! - `clients/.../common/Node.java` (node ids and the `-1` "no node" sentinel);
 //! - `clients/.../common/Uuid.java` (base64 form, signed ordering, reserved ids);

@@ -16,6 +16,10 @@
 //!    `reason` and an `expiry` (docs/standards/security.md#dependencies). cargo-deny
 //!    itself rejects a malformed date and reports the advisory again once the date
 //!    passes; it does not require either field.
+//! 6. Every member's crate root (`src/lib.rs`, or `src/main.rs` for a binary-only
+//!    crate) starts with a `//!` doc that has a `Layer:` line naming the crate's layer
+//!    from the layer table, and a `Kafka counterpart:` line
+//!    (docs/standards/rust.md#modules-and-documentation).
 //!
 //! Files are parsed and compared as TOML values: comments, formatting, and the order of
 //! keys and of array entries don't matter. Every difference is reported in one run,
@@ -28,6 +32,7 @@ use serde_json::Value;
 
 use crate::Exit;
 use crate::graph;
+use crate::layers;
 use crate::output;
 
 /// The standard that the manifests must match, relative to the repository root.
@@ -106,8 +111,72 @@ fn check_repository(root: &Path) -> Result<Vec<String>, String> {
         let manifest = parse(&file, &text)?;
         problems.extend(check_member(&file, &manifest));
         problems.extend(check_member_dependencies(&file, &manifest));
+        let source = path.parent().unwrap_or(&root).join("src");
+        let crate_root = ["lib.rs", "main.rs"]
+            .into_iter()
+            .map(|name| source.join(name))
+            .find(|candidate| candidate.is_file())
+            .ok_or_else(|| format!("{file}: no src/lib.rs or src/main.rs"))?;
+        let doc_file = crate_root
+            .strip_prefix(&root)
+            .unwrap_or(&crate_root)
+            .to_string_lossy()
+            .into_owned();
+        let text = std::fs::read_to_string(&crate_root)
+            .map_err(|error| format!("could not read {doc_file}: {error}"))?;
+        problems.extend(check_crate_doc(&doc_file, graph.name(id), &text));
     }
     Ok(problems)
+}
+
+/// Rule 6: the crate root's leading `//!` doc names the crate's layer and its Kafka
+/// counterpart.
+pub(crate) fn check_crate_doc(file: &str, crate_name: &str, text: &str) -> Vec<String> {
+    let standard = "docs/standards/rust.md#modules-and-documentation";
+    let doc: Vec<&str> = text
+        .lines()
+        .map_while(|line| line.strip_prefix("//!"))
+        .map(str::trim)
+        .collect();
+    if doc.is_empty() {
+        return vec![format!(
+            "{file}: the crate root must start with a `//!` doc ({standard})"
+        )];
+    }
+    let mut problems = Vec::new();
+    let expected = layers::layer_of(crate_name);
+    match doc.iter().find_map(|line| line.strip_prefix("Layer:")) {
+        None => problems.push(format!(
+            "{file}: the crate doc has no `Layer:` line ({standard})"
+        )),
+        Some(rest) => {
+            let named = rest
+                .trim_start()
+                .split(|c: char| c.is_whitespace() || matches!(c, '(' | '.' | ','))
+                .next()
+                .unwrap_or_default();
+            match expected {
+                None => problems.push(format!(
+                    "{file}: {crate_name} is not in the layer table (xtask/src/layers.rs)"
+                )),
+                Some(layer) if layer.to_string() != named => problems.push(format!(
+                    "{file}: the crate doc says `Layer: {named}`, but the layer table puts \
+                     {crate_name} in layer {layer}"
+                )),
+                Some(_) => {}
+            }
+        }
+    }
+    if !doc.iter().any(|line| {
+        line.strip_prefix("Kafka counterpart:")
+            .is_some_and(|rest| !rest.trim().is_empty())
+    }) {
+        problems.push(format!(
+            "{file}: the crate doc has no `Kafka counterpart:` line; write `Kafka \
+             counterpart: none` if there is none ({standard})"
+        ));
+    }
+    problems
 }
 
 fn parse(file: &str, text: &str) -> Result<Value, String> {
@@ -322,7 +391,7 @@ mod tests {
     use serde_json::Value;
 
     use super::{
-        Standard, check_advisory_ignores, check_clippy, check_lints, check_member,
+        Standard, check_advisory_ignores, check_clippy, check_crate_doc, check_lints, check_member,
         check_member_dependencies, parse, standard,
     };
 
@@ -339,6 +408,66 @@ mod tests {
     const CARGO_TOML: &str = "[workspace]\nmembers = []\n\n# A comment and reordered keys don't matter.\n[workspace.lints.clippy]\ntodo = \"deny\"\npedantic = { priority = -1, level = \"warn\" }\n\n[workspace.lints.rust]\nunsafe_code = \"forbid\"\n";
 
     const CLIPPY_TOML: &str = "disallowed-methods = [\n  { path = \"rand::rng\", reason = \"use the seeded RNG\" },\n  { path = \"std::process::exit\", reason = \"return errors\" },\n]\nallow-unwrap-in-tests = true\n";
+
+    #[test]
+    fn crate_docs_need_the_layer_and_kafka_counterpart_lines() {
+        let good = "//! Domain types.\n//!\n//! Layer: 0 ([ADR-0009](x.md)).\n//! Kafka counterpart: `Uuid.java`.\n\nmod a;\n";
+        assert_eq!(
+            check_crate_doc("lib.rs", "alluvium-types", good),
+            Vec::<String>::new()
+        );
+        let dev = "//! Tooling.\n//!\n//! Layer: dev.\n//! Kafka counterpart: none.\n";
+        assert_eq!(
+            check_crate_doc("main.rs", "xtask", dev),
+            Vec::<String>::new()
+        );
+
+        let missing_doc = "// not a crate doc\nmod a;\n";
+        assert_eq!(
+            check_crate_doc("lib.rs", "alluvium-types", missing_doc),
+            ["lib.rs: the crate root must start with a `//!` doc \
+              (docs/standards/rust.md#modules-and-documentation)"]
+        );
+        let no_counterpart = "//! Domain types.\n//! Layer: 0.\n";
+        assert_eq!(
+            check_crate_doc("lib.rs", "alluvium-types", no_counterpart),
+            [
+                "lib.rs: the crate doc has no `Kafka counterpart:` line; write `Kafka \
+              counterpart: none` if there is none \
+              (docs/standards/rust.md#modules-and-documentation)"
+            ]
+        );
+        let empty_counterpart = "//! Layer: 0.\n//! Kafka counterpart:\n";
+        assert_eq!(
+            check_crate_doc("lib.rs", "alluvium-types", empty_counterpart).len(),
+            1
+        );
+        let no_layer = "//! Domain types.\n//! Kafka counterpart: none.\n";
+        assert_eq!(
+            check_crate_doc("lib.rs", "alluvium-types", no_layer),
+            ["lib.rs: the crate doc has no `Layer:` line \
+              (docs/standards/rust.md#modules-and-documentation)"]
+        );
+        let wrong_layer = "//! Layer: 2.\n//! Kafka counterpart: none.\n";
+        assert_eq!(
+            check_crate_doc("lib.rs", "alluvium-types", wrong_layer),
+            [
+                "lib.rs: the crate doc says `Layer: 2`, but the layer table puts alluvium-types \
+              in layer 0"
+            ]
+        );
+        // The lines count only inside the leading doc, not in a later module doc.
+        let late = "//! Domain types.\n\n//! Layer: 0.\n//! Kafka counterpart: none.\n";
+        assert_eq!(check_crate_doc("lib.rs", "alluvium-types", late).len(), 2);
+        assert_eq!(
+            check_crate_doc(
+                "lib.rs",
+                "mystery",
+                "//! Layer: 0.\n//! Kafka counterpart: none.\n"
+            ),
+            ["lib.rs: mystery is not in the layer table (xtask/src/layers.rs)"]
+        );
+    }
 
     #[test]
     fn the_blocks_are_found_in_their_section_only() {
