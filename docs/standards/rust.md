@@ -212,6 +212,7 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 | `advisories` | `cargo deny --locked check advisories`: security advisories against `Cargo.lock`. Separate from `deny` because a new advisory depends on the date, not the change, so CI reports it without blocking unrelated PRs |
 | `links` | `lychee --offline --include-fragments` over README.md, AGENTS.md, CLAUDE.md, CONTRIBUTING.md, `docs/`, `.agents/` and `.github/`: relative links and `#anchors` resolve. External URLs are not checked here |
 | `test` | `cargo nextest run --workspace --locked --profile ci` ([`.config/nextest.toml`](../../.config/nextest.toml)) |
+| `doctest` | `cargo test --workspace --doc --locked`: the examples in doc comments compile and pass, and `compile_fail` examples fail to compile. A separate step because nextest does not run doctests |
 
 Steps and commands still to come, each added by its backlog task:
 
