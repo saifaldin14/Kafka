@@ -533,17 +533,20 @@ P1 · M0 · Task · deps: DOCS-0120, FND-F04 · labels: docs
 Done when: `cargo xtask docs check-crates` (part of `cargo xtask ci`) fails when a crate under `crates/` or `xtask` has no `docs/crates/<crate>.md` or is missing from architecture §4; `cargo xtask docs new-crate-doc <crate>` writes a marked stub that satisfies the check, and the check lists remaining stubs.
 Notes: Every workspace member is checked, so `lint-canary` needs a deep dive too (DOCS-0143). That every member is in architecture §4 is already the `layers` step's rule (member in the layer table, layer table equals §4), so `crate-docs` doesn't repeat it; `cargo xtask ci` still fails when it breaks.
 
-### [To Do] DOCS-0122 Contributor deep dive: `alluvium-types`
+### [Done] DOCS-0122 Contributor deep dive: `alluvium-types`
 P1 · M0 · Task · deps: DOCS-0120, TYPE-F01, TYPE-F06, TYPE-F08 · labels: docs
 Done when: docs/crates/alluvium-types.md replaces the stub and fills every template section from the crate's actual code and module docs; it links the ADRs and Kafka 4.4.0 sources the crate mirrors; a reviewer new to the crate confirms they can locate its state machine, invariants and tests from it.
+Notes: An independent reviewer new to the crate read only the deep dive, then located every module, invariant enforcement point and test level from it. They confirmed that "State machines: None" is right, and found ten over-general claims: construction paths, shared error types, truncation, strategy coverage, the disallowed-exceptions test's boundary, and two missing Kafka differences (`Password`, UTF-16 ordering). All ten were corrected against the code before merging.
 
-### [To Do] DOCS-0123 Contributor deep dive: `xtask`
+### [Done] DOCS-0123 Contributor deep dive: `xtask`
 P1 · M0 · Task · deps: DOCS-0120, FND-F04, FND-F05 · labels: docs
 Done when: docs/crates/xtask.md replaces the stub and fills every template section from the crate's actual code and module docs; it links the ADRs and Kafka 4.4.0 sources the crate mirrors; a reviewer new to the crate confirms they can locate its state machine, invariants and tests from it.
+Notes: An independent reviewer new to the crate read only the deep dive, then located every module, invariant and test level from it. Their nine findings were corrected against the code: dependency on the binary, error capping, typed results, which tests check which exit code, and fixture coverage. One finding was a real gap, not a doc error: the lint canary didn't prove eight configured lints. FND-0068 closed it.
 
-### [To Do] DOCS-0143 Contributor deep dive: `lint-canary`
+### [Done] DOCS-0143 Contributor deep dive: `lint-canary`
 P2 · M0 · Task · deps: DOCS-0120, DOCS-0121 · labels: docs
 Done when: docs/crates/lint-canary.md replaces the stub and fills every template section from the crate's actual code and module docs, writing "None" with the reason for sections a fixture crate doesn't have; it explains how to add a fixture for a new lint or `clippy.toml` entry, and how to read a canary failure.
+Notes: Written from the code after FND-0068, so it describes all three canary rules. The fixture-module table is taken from each module's `//!` doc. The debugging section quotes each message `lint_canary.rs` prints.
 
 ### [To Do] DOCS-0124 Contributor deep dive: `alluvium-protocol`
 P1 · M1 · Task · deps: DOCS-0120, PROTO-F05, PROTO-F09 · labels: docs
