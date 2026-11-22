@@ -66,6 +66,25 @@ impl AlterPartitionRequest {
     }
 }
 
+impl AlterPartitionRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.broker_id);
+        writer.write_i64(self.broker_epoch);
+        writer.write_array_length(crate::Framing::Compact, self.topics.len())?;
+        for value in &self.topics {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `AlterPartitionRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TopicData {
@@ -112,6 +131,24 @@ impl TopicData {
             let (tag, size) = reader.read_tagged_field_header()?;
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
+    }
+}
+
+impl TopicData {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_uuid(self.topic_id);
+        writer.write_array_length(crate::Framing::Compact, self.partitions.len())?;
+        for value in &self.partitions {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
         Ok(())
     }
 }
@@ -182,6 +219,53 @@ impl PartitionData {
     }
 }
 
+impl PartitionData {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version > 2 {
+            check(!self.new_isr.is_empty(), "NewIsr")?;
+        }
+        if version < 3 {
+            check(!self.new_isr_with_epochs.is_empty(), "NewIsrWithEpochs")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_i32(self.partition_index);
+        writer.write_i32(self.leader_epoch);
+        if version == 2 {
+            writer.write_array_length(crate::Framing::Compact, self.new_isr.len())?;
+            for value in &self.new_isr {
+                writer.write_i32(*value);
+            }
+        }
+        if version == 3 {
+            writer.write_array_length(crate::Framing::Compact, self.new_isr_with_epochs.len())?;
+            for value in &self.new_isr_with_epochs {
+                value.write_fields(writer, version)?;
+            }
+        }
+        writer.write_i8(self.leader_recovery_state);
+        writer.write_i32(self.partition_epoch);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `PartitionData`'s `NewIsrWithEpochs` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct BrokerState {
@@ -226,6 +310,21 @@ impl BrokerState {
     }
 }
 
+impl BrokerState {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.broker_id);
+        writer.write_i64(self.broker_epoch);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl AlterPartitionRequest {
     /// The API key.
     pub const API_KEY: i16 = 56;
@@ -248,5 +347,15 @@ impl crate::Message for AlterPartitionRequest {
             return Err(reader.unsupported_version("AlterPartitionRequest", version));
         }
         AlterPartitionRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !AlterPartitionRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "AlterPartitionRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

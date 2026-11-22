@@ -89,6 +89,44 @@ impl BeginQuorumEpochRequest {
     }
 }
 
+impl BeginQuorumEpochRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_nullable_string(
+            if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.cluster_id.as_deref(),
+        )?;
+        if version == 1 {
+            writer.write_i32(self.voter_id);
+        }
+        writer.write_array_length(
+            if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.topics.len(),
+        )?;
+        for value in &self.topics {
+            value.write_fields(writer, version)?;
+        }
+        if version == 1 {
+            writer.write_array_length(crate::Framing::Compact, self.leader_endpoints.len())?;
+            for value in &self.leader_endpoints {
+                value.write_fields(writer, version)?;
+            }
+        }
+        if version == 1 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 1 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `BeginQuorumEpochRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopicData {
@@ -135,6 +173,35 @@ impl TopicData {
                 let (tag, size) = reader.read_tagged_field_header()?;
                 reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
             }
+        }
+        Ok(())
+    }
+}
+
+impl TopicData {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.topic_name,
+        )?;
+        writer.write_array_length(
+            if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.partitions.len(),
+        )?;
+        for value in &self.partitions {
+            value.write_fields(writer, version)?;
+        }
+        if version == 1 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 1 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
         }
         Ok(())
     }
@@ -204,6 +271,30 @@ impl PartitionData {
     }
 }
 
+impl PartitionData {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.partition_index);
+        if version == 1 {
+            writer.write_uuid(self.voter_directory_id);
+        }
+        writer.write_i32(self.leader_id);
+        writer.write_i32(self.leader_epoch);
+        if version == 1 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 1 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `BeginQuorumEpochRequest`'s `LeaderEndpoints` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct LeaderEndpoint {
@@ -265,6 +356,22 @@ impl LeaderEndpoint {
     }
 }
 
+impl LeaderEndpoint {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.name)?;
+        writer.write_string(crate::Framing::Compact, &self.host)?;
+        writer.write_u16(self.port);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl BeginQuorumEpochRequest {
     /// The API key.
     pub const API_KEY: i16 = 53;
@@ -287,5 +394,15 @@ impl crate::Message for BeginQuorumEpochRequest {
             return Err(reader.unsupported_version("BeginQuorumEpochRequest", version));
         }
         BeginQuorumEpochRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !BeginQuorumEpochRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "BeginQuorumEpochRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

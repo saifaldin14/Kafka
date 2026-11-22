@@ -49,6 +49,31 @@ impl DeleteAclsRequest {
     }
 }
 
+impl DeleteAclsRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_array_length(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.filters.len(),
+        )?;
+        for value in &self.filters {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DeleteAclsRequest`'s `Filters` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeleteAclsFilter {
@@ -150,6 +175,40 @@ impl DeleteAclsFilter {
     }
 }
 
+impl DeleteAclsFilter {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i8(self.resource_type_filter);
+        writer.write_nullable_string(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.resource_name_filter.as_deref(),
+        )?;
+        writer.write_i8(self.pattern_type_filter);
+        writer.write_nullable_string(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.principal_filter.as_deref(),
+        )?;
+        writer.write_nullable_string(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.host_filter.as_deref(),
+        )?;
+        writer.write_i8(self.operation);
+        writer.write_i8(self.permission_type);
+        if version >= 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl DeleteAclsRequest {
     /// The API key.
     pub const API_KEY: i16 = 31;
@@ -172,5 +231,15 @@ impl crate::Message for DeleteAclsRequest {
             return Err(reader.unsupported_version("DeleteAclsRequest", version));
         }
         DeleteAclsRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !DeleteAclsRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "DeleteAclsRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

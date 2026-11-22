@@ -130,6 +130,65 @@ impl ConsumerGroupHeartbeatRequest {
     }
 }
 
+impl ConsumerGroupHeartbeatRequest {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 1 {
+            check(self.subscribed_topic_regex.is_some(), "SubscribedTopicRegex")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_string(crate::Framing::Compact, &self.group_id)?;
+        writer.write_string(crate::Framing::Compact, &self.member_id)?;
+        writer.write_i32(self.member_epoch);
+        writer.write_nullable_string(crate::Framing::Compact, self.instance_id.as_deref())?;
+        writer.write_nullable_string(crate::Framing::Compact, self.rack_id.as_deref())?;
+        writer.write_i32(self.rebalance_timeout_ms);
+        writer.write_nullable_array_length(
+            crate::Framing::Compact,
+            self.subscribed_topic_names.as_ref().map(Vec::len),
+        )?;
+        if let Some(values) = &self.subscribed_topic_names {
+            for value in values {
+                writer.write_string(crate::Framing::Compact, value)?;
+            }
+        }
+        if version == 1 {
+            writer.write_nullable_string(
+                crate::Framing::Compact,
+                self.subscribed_topic_regex.as_deref(),
+            )?;
+        }
+        writer.write_nullable_string(crate::Framing::Compact, self.server_assignor.as_deref())?;
+        writer.write_nullable_array_length(
+            crate::Framing::Compact,
+            self.topic_partitions.as_ref().map(Vec::len),
+        )?;
+        if let Some(values) = &self.topic_partitions {
+            for value in values {
+                value.write_fields(writer, version)?;
+            }
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `ConsumerGroupHeartbeatRequest`'s `TopicPartitions` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TopicPartitions {
@@ -183,6 +242,24 @@ impl TopicPartitions {
     }
 }
 
+impl TopicPartitions {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_uuid(self.topic_id);
+        writer.write_array_length(crate::Framing::Compact, self.partitions.len())?;
+        for value in &self.partitions {
+            writer.write_i32(*value);
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl ConsumerGroupHeartbeatRequest {
     /// The API key.
     pub const API_KEY: i16 = 68;
@@ -205,5 +282,15 @@ impl crate::Message for ConsumerGroupHeartbeatRequest {
             return Err(reader.unsupported_version("ConsumerGroupHeartbeatRequest", version));
         }
         ConsumerGroupHeartbeatRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !ConsumerGroupHeartbeatRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "ConsumerGroupHeartbeatRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

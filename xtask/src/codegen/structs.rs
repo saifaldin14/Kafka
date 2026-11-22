@@ -26,7 +26,7 @@ use alluvium_types::Uuid;
 
 use super::names::{self, UNKNOWN_TAGGED_FIELDS};
 use super::overlays::{self, Overlays};
-use super::{decode, docs};
+use super::{decode, docs, encode};
 use crate::message_spec::{
     FieldDefault, FieldSpec, FieldType, MessageKind, MessageSpec, StructRegistry, Versions,
 };
@@ -86,6 +86,15 @@ pub(crate) fn module(
             message.name
         ));
     }
+    let to_write: Vec<encode::Struct<'_>> = structs
+        .iter()
+        .map(|item| encode::Struct {
+            name: item.name,
+            fields: item.fields,
+            versions: item.versions,
+        })
+        .collect();
+    let fallible = encode::fallible_structs(&to_write, message);
     let mut source = String::new();
     for item in &structs {
         names::check_struct_name(item.name)?;
@@ -117,9 +126,25 @@ pub(crate) fn module(
             message,
             runtime,
         )?;
+        encode::render_write(
+            &mut source,
+            &encode::Struct {
+                name: item.name,
+                fields: item.fields,
+                versions: item.versions,
+            },
+            message,
+            runtime,
+            &fallible,
+        )?;
     }
     render_constants(&mut source, message, runtime);
-    decode::render_message(&mut source, message, runtime);
+    decode::render_message(
+        &mut source,
+        message,
+        runtime,
+        &encode::render_encode(message, runtime, fallible.contains(&message.name)),
+    );
     if source.contains(".within(") {
         source.insert_str(0, &format!("use {runtime}::WithinField as _;\n\n"));
     }

@@ -107,6 +107,78 @@ impl BrokerHeartbeatRequest {
 }
 
 impl BrokerHeartbeatRequest {
+    fn write_tagged_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        let wanted_0 = version >= 1 && !self.offline_log_dirs.is_empty();
+        let wanted_1 = version == 2 && self.cordoned_log_dirs.is_some();
+        writer.write_tagged_field_count(
+            [wanted_0, wanted_1]
+                .into_iter()
+                .filter(|wanted| *wanted)
+                .count()
+                .saturating_add(raw.len()),
+        )?;
+        raw.write_known(writer, 0, wanted_0, |writer| {
+            writer.write_array_length(crate::Framing::Compact, self.offline_log_dirs.len())?;
+            for value in &self.offline_log_dirs {
+                writer.write_uuid(*value);
+            }
+            Ok(())
+        })?;
+        raw.write_known(writer, 1, wanted_1, |writer| {
+            writer.write_nullable_array_length(
+                crate::Framing::Compact,
+                self.cordoned_log_dirs.as_ref().map(Vec::len),
+            )?;
+            if let Some(values) = &self.cordoned_log_dirs {
+                for value in values {
+                    writer.write_uuid(*value);
+                }
+            }
+            Ok(())
+        })?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 1 {
+            check(!self.offline_log_dirs.is_empty(), "OfflineLogDirs")?;
+        }
+        if version < 2 {
+            check(self.cordoned_log_dirs.is_some(), "CordonedLogDirs")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_i32(self.broker_id);
+        writer.write_i64(self.broker_epoch);
+        writer.write_i64(self.current_metadata_offset);
+        writer.write_bool(self.want_fence);
+        writer.write_bool(self.want_shut_down);
+        self.write_tagged_fields(writer, version)?;
+        Ok(())
+    }
+}
+
+impl BrokerHeartbeatRequest {
     /// The API key.
     pub const API_KEY: i16 = 63;
     /// The versions of this message.
@@ -128,5 +200,15 @@ impl crate::Message for BrokerHeartbeatRequest {
             return Err(reader.unsupported_version("BrokerHeartbeatRequest", version));
         }
         BrokerHeartbeatRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !BrokerHeartbeatRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "BrokerHeartbeatRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

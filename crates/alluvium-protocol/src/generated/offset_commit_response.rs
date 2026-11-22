@@ -57,6 +57,34 @@ impl OffsetCommitResponse {
     }
 }
 
+impl OffsetCommitResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        if version >= 3 {
+            writer.write_i32(self.throttle_time_ms);
+        }
+        writer.write_array_length(
+            if version >= 8 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.topics.len(),
+        )?;
+        for value in &self.topics {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 8 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 8 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `OffsetCommitResponse`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct OffsetCommitResponseTopic {
@@ -131,6 +159,40 @@ impl OffsetCommitResponseTopic {
     }
 }
 
+impl OffsetCommitResponseTopic {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        if version <= 9 {
+            writer.write_string(
+                if version >= 8 { crate::Framing::Compact } else { crate::Framing::Classic },
+                &self.name,
+            )?;
+        }
+        if version == 10 {
+            writer.write_uuid(self.topic_id);
+        }
+        writer.write_array_length(
+            if version >= 8 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.partitions.len(),
+        )?;
+        for value in &self.partitions {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 8 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 8 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `OffsetCommitResponseTopic`'s `Partitions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct OffsetCommitResponsePartition {
@@ -186,6 +248,26 @@ impl OffsetCommitResponsePartition {
     }
 }
 
+impl OffsetCommitResponsePartition {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.partition_index);
+        writer.write_i16(self.error_code);
+        if version >= 8 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 8 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl OffsetCommitResponse {
     /// The API key.
     pub const API_KEY: i16 = 8;
@@ -205,5 +287,15 @@ impl crate::Message for OffsetCommitResponse {
             return Err(reader.unsupported_version("OffsetCommitResponse", version));
         }
         OffsetCommitResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !OffsetCommitResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "OffsetCommitResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

@@ -45,6 +45,23 @@ impl DescribeProducersRequest {
     }
 }
 
+impl DescribeProducersRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_array_length(crate::Framing::Compact, self.topics.len())?;
+        for value in &self.topics {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `DescribeProducersRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopicRequest {
@@ -100,6 +117,24 @@ impl TopicRequest {
     }
 }
 
+impl TopicRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.name)?;
+        writer.write_array_length(crate::Framing::Compact, self.partition_indexes.len())?;
+        for value in &self.partition_indexes {
+            writer.write_i32(*value);
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl DescribeProducersRequest {
     /// The API key.
     pub const API_KEY: i16 = 61;
@@ -122,5 +157,15 @@ impl crate::Message for DescribeProducersRequest {
             return Err(reader.unsupported_version("DescribeProducersRequest", version));
         }
         DescribeProducersRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !DescribeProducersRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "DescribeProducersRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

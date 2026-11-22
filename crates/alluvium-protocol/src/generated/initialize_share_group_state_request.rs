@@ -53,6 +53,24 @@ impl InitializeShareGroupStateRequest {
     }
 }
 
+impl InitializeShareGroupStateRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.group_id)?;
+        writer.write_array_length(crate::Framing::Compact, self.topics.len())?;
+        for value in &self.topics {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `InitializeShareGroupStateRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct InitializeStateData {
@@ -106,6 +124,24 @@ impl InitializeStateData {
     }
 }
 
+impl InitializeStateData {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_uuid(self.topic_id);
+        writer.write_array_length(crate::Framing::Compact, self.partitions.len())?;
+        for value in &self.partitions {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `InitializeStateData`'s `Partitions` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct PartitionData {
@@ -150,6 +186,22 @@ impl PartitionData {
     }
 }
 
+impl PartitionData {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.partition);
+        writer.write_i32(self.state_epoch);
+        writer.write_i64(self.start_offset);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl InitializeShareGroupStateRequest {
     /// The API key.
     pub const API_KEY: i16 = 83;
@@ -172,5 +224,15 @@ impl crate::Message for InitializeShareGroupStateRequest {
             return Err(reader.unsupported_version("InitializeShareGroupStateRequest", version));
         }
         InitializeShareGroupStateRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !InitializeShareGroupStateRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "InitializeShareGroupStateRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

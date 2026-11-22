@@ -54,6 +54,24 @@ impl AlterUserScramCredentialsResponse {
     }
 }
 
+impl AlterUserScramCredentialsResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.throttle_time_ms);
+        writer.write_array_length(crate::Framing::Compact, self.results.len())?;
+        for value in &self.results {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `AlterUserScramCredentialsResponse`'s `Results` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AlterUserScramCredentialsResult {
@@ -124,6 +142,22 @@ impl AlterUserScramCredentialsResult {
     }
 }
 
+impl AlterUserScramCredentialsResult {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.user)?;
+        writer.write_i16(self.error_code);
+        writer.write_nullable_string(crate::Framing::Compact, self.error_message.as_deref())?;
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl AlterUserScramCredentialsResponse {
     /// The API key.
     pub const API_KEY: i16 = 51;
@@ -143,5 +177,15 @@ impl crate::Message for AlterUserScramCredentialsResponse {
             return Err(reader.unsupported_version("AlterUserScramCredentialsResponse", version));
         }
         AlterUserScramCredentialsResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !AlterUserScramCredentialsResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "AlterUserScramCredentialsResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

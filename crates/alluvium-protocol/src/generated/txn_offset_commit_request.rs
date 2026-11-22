@@ -118,6 +118,66 @@ impl TxnOffsetCommitRequest {
     }
 }
 
+impl TxnOffsetCommitRequest {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 3 {
+            check(self.generation_id_or_member_epoch != -1, "GenerationIdOrMemberEpoch")?;
+            check(!self.member_id.is_empty(), "MemberId")?;
+            check(self.group_instance_id.is_some(), "GroupInstanceId")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_string(
+            if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.transactional_id,
+        )?;
+        writer.write_string(
+            if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.group_id,
+        )?;
+        writer.write_i64(self.producer_id);
+        writer.write_i16(self.producer_epoch);
+        if version >= 3 {
+            writer.write_i32(self.generation_id_or_member_epoch);
+            writer.write_string(crate::Framing::Compact, &self.member_id)?;
+            writer.write_nullable_string(
+                crate::Framing::Compact,
+                self.group_instance_id.as_deref(),
+            )?;
+        }
+        writer.write_array_length(
+            if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.topics.len(),
+        )?;
+        for value in &self.topics {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 3 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 3 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `TxnOffsetCommitRequest`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TxnOffsetCommitRequestTopic {
@@ -187,6 +247,40 @@ impl TxnOffsetCommitRequestTopic {
                 let (tag, size) = reader.read_tagged_field_header()?;
                 reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
             }
+        }
+        Ok(())
+    }
+}
+
+impl TxnOffsetCommitRequestTopic {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        if version <= 5 {
+            writer.write_string(
+                if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+                &self.name,
+            )?;
+        }
+        if version == 6 {
+            writer.write_uuid(self.topic_id);
+        }
+        writer.write_array_length(
+            if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.partitions.len(),
+        )?;
+        for value in &self.partitions {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 3 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 3 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
         }
         Ok(())
     }
@@ -265,6 +359,33 @@ impl TxnOffsetCommitRequestPartition {
     }
 }
 
+impl TxnOffsetCommitRequestPartition {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.partition_index);
+        writer.write_i64(self.committed_offset);
+        if version >= 2 {
+            writer.write_i32(self.committed_leader_epoch);
+        }
+        writer.write_nullable_string(
+            if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.committed_metadata.as_deref(),
+        )?;
+        if version >= 3 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 3 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl TxnOffsetCommitRequest {
     /// The API key.
     pub const API_KEY: i16 = 28;
@@ -287,5 +408,15 @@ impl crate::Message for TxnOffsetCommitRequest {
             return Err(reader.unsupported_version("TxnOffsetCommitRequest", version));
         }
         TxnOffsetCommitRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !TxnOffsetCommitRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "TxnOffsetCommitRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

@@ -61,6 +61,29 @@ impl LeaderChangeMessage {
     }
 }
 
+impl LeaderChangeMessage {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i16(self.version);
+        writer.write_i32(self.leader_id);
+        writer.write_array_length(crate::Framing::Compact, self.voters.len())?;
+        for value in &self.voters {
+            value.write_fields(writer, version)?;
+        }
+        writer.write_array_length(crate::Framing::Compact, self.granting_voters.len())?;
+        for value in &self.granting_voters {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// `Voter`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Voter {
@@ -111,6 +134,38 @@ impl Voter {
     }
 }
 
+impl Voter {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 1 {
+            check(self.voter_directory_id != alluvium_types::Uuid::ZERO, "VoterDirectoryId")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_i32(self.voter_id);
+        if version >= 1 {
+            writer.write_uuid(self.voter_directory_id);
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl LeaderChangeMessage {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 1);
@@ -128,5 +183,15 @@ impl crate::Message for LeaderChangeMessage {
             return Err(reader.unsupported_version("LeaderChangeMessage", version));
         }
         LeaderChangeMessage::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !LeaderChangeMessage::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "LeaderChangeMessage",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

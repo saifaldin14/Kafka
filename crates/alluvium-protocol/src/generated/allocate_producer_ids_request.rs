@@ -59,6 +59,21 @@ impl AllocateProducerIdsRequest {
 }
 
 impl AllocateProducerIdsRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.broker_id);
+        writer.write_i64(self.broker_epoch);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
+impl AllocateProducerIdsRequest {
     /// The API key.
     pub const API_KEY: i16 = 67;
     /// The versions of this message.
@@ -80,5 +95,15 @@ impl crate::Message for AllocateProducerIdsRequest {
             return Err(reader.unsupported_version("AllocateProducerIdsRequest", version));
         }
         AllocateProducerIdsRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !AllocateProducerIdsRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "AllocateProducerIdsRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

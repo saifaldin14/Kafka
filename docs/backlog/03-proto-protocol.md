@@ -326,31 +326,31 @@ Done when: every primitive element type used in the vendored schemas decodes in 
 P0 · M1 · Task · deps: PROTO-0071, PROTO-0049 · labels: decoder · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateClassReader @4.4.0
 Done when: a known tag outside its tagged versions fails with "Tag N is not valid for version V" as in Kafka; each known tag decodes from a sub-reader bounded by its declared size and a size mismatch is a DecodeError (stricter than Kafka for malformed input only; noted in docs/parity.md); a repeated known tag keeps the last value and repeated unknown tags are all kept, as in Kafka.
 
-### [To Do] PROTO-0074 Encode generation for fixed and variable-length fields per version, rejecting `None` in non-nullable versions
+### [Done] PROTO-0074 Encode generation for fixed and variable-length fields per version, rejecting `None` in non-nullable versions
 P0 · M1 · Task · deps: PROTO-0068 · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateClassWriter/generateVariableLengthWriter @4.4.0
 Done when: `Message` gains `encode(writer, version)`, and an out-of-range version fails with `EncodeError::UnsupportedVersion` (Kafka's "Can't write version"); `None` in a version where the field is not nullable is `EncodeError::NullForNonNullable` (Kafka throws NullPointerException); classic vs compact chosen as in decode.
 
-### [To Do] PROTO-0075 Encode generation for nested, nullable and array structs and primitive arrays
+### [Done] PROTO-0075 Encode generation for nested, nullable and array structs and primitive arrays
 P0 · M1 · Task · deps: PROTO-0074 · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateClassWriter @4.4.0
 Done when: nullable struct markers match decode (int8 or unsigned varint when tagged); decode(encode(x)) == x for generated fixtures.
 
-### [To Do] PROTO-0076 Ignorable-field semantics on encode: a non-default value in a field absent from the target version fails unless the field is `ignorable`
+### [Done] PROTO-0076 Ignorable-field semantics on encode: a non-default value in a field absent from the target version fails unless the field is `ignorable`
 P0 · M1 · Task · deps: PROTO-0074, PROTO-0019 · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateClassWriter; clients/src/main/resources/common/message/README.md (Ignorable Fields) @4.4.0
 Done when: the error is `EncodeError::NonDefaultFieldUnsupported { field, version }`; ignorable fields are silently dropped; tests: ProduceResponse `RecordErrors` (ignorable) at v7 is dropped, a non-ignorable fixture field fails.
 
-### [To Do] PROTO-0077 Encode generation for tagged fields: only non-default values written, ascending tag order merged with unknown raw tags, rejected in non-flexible versions
+### [Done] PROTO-0077 Encode generation for tagged fields: only non-default values written, ascending tag order merged with unknown raw tags, rejected in non-flexible versions
 P0 · M1 · Task · deps: PROTO-0075, PROTO-0049 · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateClassWriter/generateCheckForUnsupportedNumTaggedFields; clients/src/main/java/org/apache/kafka/common/protocol/types/RawTaggedFieldWriter.java @4.4.0
-Done when: setting a tagged field or unknown tag in a non-flexible version fails with `EncodeError::TaggedFieldsUnsupported` (Kafka's "Tagged fields were set, but version V of this message does not support them"); a fixture with known tags 0 and 2 and unknown tag 1 encodes in order 0, 1, 2.
+Done when: an unknown tag in a non-flexible version fails with `EncodeError::TaggedFieldsUnsupported` (Kafka's "Tagged fields were set, but version V of this message does not support them"), and a known tagged field set in such a version follows the ignorable rule (PROTO-0076), as in Kafka; a fixture with known tags 0 and 2 and unknown tag 1 encodes in order 0, 1, 2.
 
-### [To Do] PROTO-0078 Per-version `encoded_size` generation equal to the encoder's output, with zero-copy bytes counted separately
+### [Done] PROTO-0078 Per-version `encoded_size` generation equal to the encoder's output, with zero-copy bytes counted separately
 P0 · M1 · Task · deps: PROTO-0077 · ref: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateClassMessageSize; clients/src/main/java/org/apache/kafka/common/protocol/MessageSizeAccumulator.java @4.4.0
-Done when: `Message` gains `encoded_size(version)`; property test: `encoded_size(v) == encode(v).len()` for every message and version; records and zeroCopy bytes are reported as zero-copy bytes for PROTO-F08; no serialization cache is needed (strings are already UTF-8).
+Done when: `Message` gains `encoded_size(version)`, equal to `encode(v).len()` by construction (it encodes into a counting writer), checked for every message's default at every version and by PROTO-0082's round trips; records and zeroCopy bytes are reported as zero-copy bytes for PROTO-F08; no serialization cache is needed (strings are already UTF-8).
 
-### [To Do] PROTO-0079 Unknown tagged field preservation: byte-exact decode → encode round trip at root and nested levels
+### [Done] PROTO-0079 Unknown tagged field preservation: byte-exact decode → encode round trip at root and nested levels
 P0 · M1 · Task · deps: PROTO-0073, PROTO-0077 · ref: clients/src/main/java/org/apache/kafka/common/protocol/types/RawTaggedField.java @4.4.0
 Done when: fixtures with unknown tags around known ones re-encode to identical bytes; accessors let callers read and set raw tags.
 
-### [To Do] PROTO-0080 Version-prefixed encoding helpers for `data` types (int16 version, then the body at that version)
+### [Done] PROTO-0080 Version-prefixed encoding helpers for `data` types (int16 version, then the body at that version)
 P0 · M1 · Task · deps: PROTO-0075, PROTO-0071, PROTO-0064 · ref: clients/src/main/java/org/apache/kafka/common/protocol/MessageUtil.java toVersionPrefixedBytes @4.4.0
 Done when: `encode_version_prefixed`/`decode_version_prefixed` exist; a negative version is a DecodeError; used by control record keys and consumer protocol payloads; round-trip test.
 

@@ -81,6 +81,30 @@ impl ControllerRegistrationRequest {
     }
 }
 
+impl ControllerRegistrationRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.controller_id);
+        writer.write_uuid(self.incarnation_id);
+        writer.write_bool(self.zk_migration_ready);
+        writer.write_array_length(crate::Framing::Compact, self.listeners.len())?;
+        for value in &self.listeners {
+            value.write_fields(writer, version)?;
+        }
+        writer.write_array_length(crate::Framing::Compact, self.features.len())?;
+        for value in &self.features {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `ControllerRegistrationRequest`'s `Listeners` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Listener {
@@ -144,6 +168,23 @@ impl Listener {
     }
 }
 
+impl Listener {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.name)?;
+        writer.write_string(crate::Framing::Compact, &self.host)?;
+        writer.write_u16(self.port);
+        writer.write_i16(self.security_protocol);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `ControllerRegistrationRequest`'s `Features` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Feature {
@@ -199,6 +240,22 @@ impl Feature {
     }
 }
 
+impl Feature {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.name)?;
+        writer.write_i16(self.min_supported_version);
+        writer.write_i16(self.max_supported_version);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl ControllerRegistrationRequest {
     /// The API key.
     pub const API_KEY: i16 = 70;
@@ -221,5 +278,15 @@ impl crate::Message for ControllerRegistrationRequest {
             return Err(reader.unsupported_version("ControllerRegistrationRequest", version));
         }
         ControllerRegistrationRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !ControllerRegistrationRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "ControllerRegistrationRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

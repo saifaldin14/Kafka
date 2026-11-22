@@ -245,6 +245,141 @@ impl AllTypeMessage {
     }
 }
 
+impl AllTypeMessage {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version > 0 {
+            check(self.my_string != "string", "myString")?;
+            check(self.my_nullable_string.is_some(), "myNullableString")?;
+            check(!self.my_bytes.is_empty(), "myBytes")?;
+            check(self.my_nullable_bytes.is_some(), "myNullableBytes")?;
+            check(self.my_records.is_some(), "myRecords")?;
+            check(self.my_nullable_records.is_some(), "myNullableRecords")?;
+        }
+        if version < 1 {
+            check(self.my_compact_string != "compact string", "myCompactString")?;
+            check(self.my_compact_nullable_string.is_some(), "myCompactNullableString")?;
+            check(!self.my_compact_bytes.is_empty(), "myCompactBytes")?;
+            check(self.my_compact_nullable_bytes.is_some(), "myCompactNullableBytes")?;
+            check(self.my_compact_records.is_some(), "myCompactRecords")?;
+            check(self.my_compact_nullable_records.is_some(), "myCompactNullableRecords")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_bool(self.my_boolean);
+        writer.write_i8(self.my_int8);
+        writer.write_i16(self.my_int16);
+        writer.write_u16(self.my_uint16);
+        writer.write_i32(self.my_int32);
+        writer.write_u32(self.my_uint32);
+        writer.write_i64(self.my_uint64);
+        writer.write_uuid(self.my_uuid);
+        writer.write_f64(self.my_float64);
+        if version == 0 {
+            writer.write_string(crate::Framing::Classic, &self.my_string)?;
+            writer.write_nullable_string(
+                crate::Framing::Classic,
+                self.my_nullable_string.as_deref(),
+            )?;
+        }
+        if version == 1 {
+            writer.write_string(crate::Framing::Compact, &self.my_compact_string)?;
+            writer.write_nullable_string(
+                crate::Framing::Compact,
+                self.my_compact_nullable_string.as_deref(),
+            )?;
+        }
+        if version == 0 {
+            writer.write_bytes(crate::Framing::Classic, &self.my_bytes)?;
+            writer
+                .write_nullable_bytes(crate::Framing::Classic, self.my_nullable_bytes.as_deref())?;
+        }
+        if version == 1 {
+            writer.write_bytes(crate::Framing::Compact, &self.my_compact_bytes)?;
+            writer.write_nullable_bytes(
+                crate::Framing::Compact,
+                self.my_compact_nullable_bytes.as_deref(),
+            )?;
+        }
+        if version == 0 {
+            {
+                let value = self
+                    .my_records
+                    .as_ref()
+                    .ok_or(crate::EncodeError::NullForNonNullable { field: "myRecords" })?;
+                writer.write_records(crate::Framing::Classic, Some(value))?;
+            }
+            writer.write_records(crate::Framing::Classic, self.my_nullable_records.as_ref())?;
+        }
+        if version == 1 {
+            {
+                let value = self
+                    .my_compact_records
+                    .as_ref()
+                    .ok_or(crate::EncodeError::NullForNonNullable { field: "myCompactRecords" })?;
+                writer.write_records(crate::Framing::Compact, Some(value))?;
+            }
+            writer.write_records(
+                crate::Framing::Compact,
+                self.my_compact_nullable_records.as_ref(),
+            )?;
+        }
+        writer.write_array_length(
+            if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.my_int_array.len(),
+        )?;
+        for value in &self.my_int_array {
+            writer.write_i32(*value);
+        }
+        writer.write_nullable_array_length(
+            if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.my_nullable_int_array.as_ref().map(Vec::len),
+        )?;
+        if let Some(values) = &self.my_nullable_int_array {
+            for value in values {
+                writer.write_i32(*value);
+            }
+        }
+        if version == 1 {
+            match &self.my_common_struct {
+                None => writer.write_i8(-1),
+                Some(value) => {
+                    writer.write_i8(1);
+                    value.write_fields(writer, version)?;
+                }
+            }
+        } else {
+            let value = self
+                .my_common_struct
+                .as_ref()
+                .ok_or(crate::EncodeError::NullForNonNullable { field: "myCommonStruct" })?;
+            value.write_fields(writer, version)?;
+        }
+        if version == 1 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 1 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// `TestCommonStruct`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TestCommonStruct {
@@ -294,6 +429,26 @@ impl TestCommonStruct {
     }
 }
 
+impl TestCommonStruct {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.foo);
+        writer.write_i32(self.bar);
+        if version >= 1 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 1 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl AllTypeMessage {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 1);
@@ -311,5 +466,15 @@ impl crate::Message for AllTypeMessage {
             return Err(reader.unsupported_version("AllTypeMessage", version));
         }
         AllTypeMessage::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !AllTypeMessage::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "AllTypeMessage",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

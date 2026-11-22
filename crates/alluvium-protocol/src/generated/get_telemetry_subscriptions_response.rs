@@ -124,6 +124,35 @@ impl GetTelemetrySubscriptionsResponse {
 }
 
 impl GetTelemetrySubscriptionsResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.throttle_time_ms);
+        writer.write_i16(self.error_code);
+        writer.write_uuid(self.client_instance_id);
+        writer.write_i32(self.subscription_id);
+        writer
+            .write_array_length(crate::Framing::Compact, self.accepted_compression_types.len())?;
+        for value in &self.accepted_compression_types {
+            writer.write_i8(*value);
+        }
+        writer.write_i32(self.push_interval_ms);
+        writer.write_i32(self.telemetry_max_bytes);
+        writer.write_bool(self.delta_temporality);
+        writer.write_array_length(crate::Framing::Compact, self.requested_metrics.len())?;
+        for value in &self.requested_metrics {
+            writer.write_string(crate::Framing::Compact, value)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
+impl GetTelemetrySubscriptionsResponse {
     /// The API key.
     pub const API_KEY: i16 = 71;
     /// The versions of this message.
@@ -142,5 +171,15 @@ impl crate::Message for GetTelemetrySubscriptionsResponse {
             return Err(reader.unsupported_version("GetTelemetrySubscriptionsResponse", version));
         }
         GetTelemetrySubscriptionsResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !GetTelemetrySubscriptionsResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "GetTelemetrySubscriptionsResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

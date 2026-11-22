@@ -109,6 +109,99 @@ impl NullableStructMessage {
     }
 }
 
+impl NullableStructMessage {
+    fn write_tagged_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        let wanted_0 = self.nullable_struct3.is_some();
+        let wanted_1 = self.nullable_struct4 != Some(MyStruct4::default());
+        writer.write_tagged_field_count(
+            [wanted_0, wanted_1]
+                .into_iter()
+                .filter(|wanted| *wanted)
+                .count()
+                .saturating_add(raw.len()),
+        )?;
+        raw.write_known(writer, 0, wanted_0, |writer| {
+            match &self.nullable_struct3 {
+                None => writer.write_unsigned_varint(0),
+                Some(value) => {
+                    writer.write_unsigned_varint(1);
+                    value.write_fields(writer, version)?;
+                }
+            }
+            Ok(())
+        })?;
+        raw.write_known(writer, 1, wanted_1, |writer| {
+            match &self.nullable_struct4 {
+                None => writer.write_unsigned_varint(0),
+                Some(value) => {
+                    writer.write_unsigned_varint(1);
+                    value.write_fields(writer, version)?;
+                }
+            }
+            Ok(())
+        })?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 1 {
+            check(self.nullable_struct3.is_some(), "NullableStruct3")?;
+            check(self.nullable_struct4 != Some(MyStruct4::default()), "NullableStruct4")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        match &self.nullable_struct {
+            None => writer.write_i8(-1),
+            Some(value) => {
+                writer.write_i8(1);
+                value.write_fields(writer, version)?;
+            }
+        }
+        if version >= 1 {
+            match &self.nullable_struct2 {
+                None => writer.write_i8(-1),
+                Some(value) => {
+                    writer.write_i8(1);
+                    value.write_fields(writer, version)?;
+                }
+            }
+        } else {
+            let value = self
+                .nullable_struct2
+                .as_ref()
+                .ok_or(crate::EncodeError::NullForNonNullable { field: "NullableStruct2" })?;
+            value.write_fields(writer, version)?;
+        }
+        if version >= 1 {
+            self.write_tagged_fields(writer, version)?;
+        }
+        if version < 1 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// The `NullableStruct` field of `NullableStructMessage`.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct MyStruct {
@@ -150,6 +243,29 @@ impl MyStruct {
                 let (tag, size) = reader.read_tagged_field_header()?;
                 reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
             }
+        }
+        Ok(())
+    }
+}
+
+impl MyStruct {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version >= 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.my_string,
+        )?;
+        writer.write_i32(self.my_int);
+        if version >= 1 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 1 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
         }
         Ok(())
     }
@@ -201,6 +317,29 @@ impl MyStruct2 {
     }
 }
 
+impl MyStruct2 {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version >= 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.my_string,
+        )?;
+        writer.write_i32(self.my_int);
+        if version >= 1 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 1 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// The `NullableStruct3` field of `NullableStructMessage`.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct MyStruct3 {
@@ -235,6 +374,21 @@ impl MyStruct3 {
             let (tag, size) = reader.read_tagged_field_header()?;
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
+    }
+}
+
+impl MyStruct3 {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.my_string)?;
+        writer.write_i32(self.my_int);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
         Ok(())
     }
 }
@@ -277,6 +431,21 @@ impl MyStruct4 {
     }
 }
 
+impl MyStruct4 {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.my_string)?;
+        writer.write_i32(self.my_int);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl NullableStructMessage {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 2);
@@ -294,5 +463,15 @@ impl crate::Message for NullableStructMessage {
             return Err(reader.unsupported_version("NullableStructMessage", version));
         }
         NullableStructMessage::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !NullableStructMessage::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "NullableStructMessage",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

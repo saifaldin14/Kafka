@@ -56,6 +56,34 @@ impl DeleteGroupsRequest {
 }
 
 impl DeleteGroupsRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_array_length(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.groups_names.len(),
+        )?;
+        for value in &self.groups_names {
+            writer.write_string(
+                if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+                value,
+            )?;
+        }
+        if version >= 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
+impl DeleteGroupsRequest {
     /// The API key.
     pub const API_KEY: i16 = 42;
     /// The versions of this message.
@@ -77,5 +105,15 @@ impl crate::Message for DeleteGroupsRequest {
             return Err(reader.unsupported_version("DeleteGroupsRequest", version));
         }
         DeleteGroupsRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !DeleteGroupsRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "DeleteGroupsRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

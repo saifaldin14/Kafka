@@ -103,6 +103,65 @@ impl SyncGroupRequest {
     }
 }
 
+impl SyncGroupRequest {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 3 {
+            check(self.group_instance_id.is_some(), "GroupInstanceId")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_string(
+            if version >= 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.group_id,
+        )?;
+        writer.write_i32(self.generation_id);
+        writer.write_string(
+            if version >= 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.member_id,
+        )?;
+        if version >= 3 {
+            writer.write_nullable_string(
+                if version >= 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+                self.group_instance_id.as_deref(),
+            )?;
+        }
+        if version == 5 {
+            writer.write_nullable_string(crate::Framing::Compact, self.protocol_type.as_deref())?;
+            writer.write_nullable_string(crate::Framing::Compact, self.protocol_name.as_deref())?;
+        }
+        writer.write_array_length(
+            if version >= 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.assignments.len(),
+        )?;
+        for value in &self.assignments {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 4 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 4 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `SyncGroupRequest`'s `Assignments` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct SyncGroupRequestAssignment {
@@ -158,6 +217,32 @@ impl SyncGroupRequestAssignment {
     }
 }
 
+impl SyncGroupRequestAssignment {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version >= 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.member_id,
+        )?;
+        writer.write_bytes(
+            if version >= 4 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.assignment,
+        )?;
+        if version >= 4 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 4 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl SyncGroupRequest {
     /// The API key.
     pub const API_KEY: i16 = 14;
@@ -180,5 +265,15 @@ impl crate::Message for SyncGroupRequest {
             return Err(reader.unsupported_version("SyncGroupRequest", version));
         }
         SyncGroupRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !SyncGroupRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "SyncGroupRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

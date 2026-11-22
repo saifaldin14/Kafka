@@ -132,6 +132,71 @@ impl JoinGroupRequest {
     }
 }
 
+impl JoinGroupRequest {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 5 {
+            check(self.group_instance_id.is_some(), "GroupInstanceId")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_string(
+            if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.group_id,
+        )?;
+        writer.write_i32(self.session_timeout_ms);
+        if version >= 1 {
+            writer.write_i32(self.rebalance_timeout_ms);
+        }
+        writer.write_string(
+            if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.member_id,
+        )?;
+        if version >= 5 {
+            writer.write_nullable_string(
+                if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+                self.group_instance_id.as_deref(),
+            )?;
+        }
+        writer.write_string(
+            if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.protocol_type,
+        )?;
+        writer.write_array_length(
+            if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.protocols.len(),
+        )?;
+        for value in &self.protocols {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 8 {
+            writer.write_nullable_string(crate::Framing::Compact, self.reason.as_deref())?;
+        }
+        if version >= 6 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 6 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `JoinGroupRequest`'s `Protocols` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct JoinGroupRequestProtocol {
@@ -205,6 +270,32 @@ impl JoinGroupRequestProtocol {
     }
 }
 
+impl JoinGroupRequestProtocol {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.name,
+        )?;
+        writer.write_bytes(
+            if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.metadata,
+        )?;
+        if version >= 6 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 6 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl JoinGroupRequest {
     /// The API key.
     pub const API_KEY: i16 = 11;
@@ -227,5 +318,15 @@ impl crate::Message for JoinGroupRequest {
             return Err(reader.unsupported_version("JoinGroupRequest", version));
         }
         JoinGroupRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !JoinGroupRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "JoinGroupRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

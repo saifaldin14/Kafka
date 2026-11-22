@@ -116,6 +116,47 @@ impl DescribeClusterResponse {
     }
 }
 
+impl DescribeClusterResponse {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 1 {
+            check(self.endpoint_type != 1, "EndpointType")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_i32(self.throttle_time_ms);
+        writer.write_i16(self.error_code);
+        writer.write_nullable_string(crate::Framing::Compact, self.error_message.as_deref())?;
+        if version >= 1 {
+            writer.write_i8(self.endpoint_type);
+        }
+        writer.write_string(crate::Framing::Compact, &self.cluster_id)?;
+        writer.write_i32(self.controller_id);
+        writer.write_array_length(crate::Framing::Compact, self.brokers.len())?;
+        for value in &self.brokers {
+            value.write_fields(writer, version)?;
+        }
+        writer.write_i32(self.cluster_authorized_operations);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `DescribeClusterResponse`'s `Brokers` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DescribeClusterBroker {
@@ -193,6 +234,41 @@ impl DescribeClusterBroker {
     }
 }
 
+impl DescribeClusterBroker {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 2 {
+            check(self.is_fenced, "IsFenced")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_i32(self.broker_id);
+        writer.write_string(crate::Framing::Compact, &self.host)?;
+        writer.write_i32(self.port);
+        writer.write_nullable_string(crate::Framing::Compact, self.rack.as_deref())?;
+        if version == 2 {
+            writer.write_bool(self.is_fenced);
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl DescribeClusterResponse {
     /// The API key.
     pub const API_KEY: i16 = 60;
@@ -212,5 +288,15 @@ impl crate::Message for DescribeClusterResponse {
             return Err(reader.unsupported_version("DescribeClusterResponse", version));
         }
         DescribeClusterResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !DescribeClusterResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "DescribeClusterResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

@@ -57,6 +57,32 @@ impl DescribeClientQuotasRequest {
     }
 }
 
+impl DescribeClientQuotasRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_array_length(
+            if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.components.len(),
+        )?;
+        for value in &self.components {
+            value.write_fields(writer, version)?;
+        }
+        writer.write_bool(self.strict);
+        if version == 1 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 1 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribeClientQuotasRequest`'s `Components` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ComponentData {
@@ -125,6 +151,33 @@ impl ComponentData {
     }
 }
 
+impl ComponentData {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.entity_type,
+        )?;
+        writer.write_i8(self.match_type);
+        writer.write_nullable_string(
+            if version == 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.match_.as_deref(),
+        )?;
+        if version == 1 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 1 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl DescribeClientQuotasRequest {
     /// The API key.
     pub const API_KEY: i16 = 48;
@@ -147,5 +200,15 @@ impl crate::Message for DescribeClientQuotasRequest {
             return Err(reader.unsupported_version("DescribeClientQuotasRequest", version));
         }
         DescribeClientQuotasRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !DescribeClientQuotasRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "DescribeClientQuotasRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

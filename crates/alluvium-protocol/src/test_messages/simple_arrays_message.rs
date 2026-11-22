@@ -59,6 +59,52 @@ impl SimpleArraysMessage {
     }
 }
 
+impl SimpleArraysMessage {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 1 {
+            check(!self.goats.is_empty(), "Goats")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        if version >= 1 {
+            writer.write_array_length(crate::Framing::Compact, self.goats.len())?;
+            for value in &self.goats {
+                value.write_fields(writer, version)?;
+            }
+        }
+        writer.write_array_length(
+            if version >= 1 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.sheep.len(),
+        )?;
+        for value in &self.sheep {
+            writer.write_i32(*value);
+        }
+        if version >= 1 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 1 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `SimpleArraysMessage`'s `Goats` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct StructArray {
@@ -99,6 +145,38 @@ impl StructArray {
     }
 }
 
+impl StructArray {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 2 {
+            check(!self.name.is_empty(), "Name")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_i8(self.color);
+        if version == 2 {
+            writer.write_string(crate::Framing::Compact, &self.name)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl SimpleArraysMessage {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 2);
@@ -116,5 +194,15 @@ impl crate::Message for SimpleArraysMessage {
             return Err(reader.unsupported_version("SimpleArraysMessage", version));
         }
         SimpleArraysMessage::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !SimpleArraysMessage::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "SimpleArraysMessage",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

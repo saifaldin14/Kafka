@@ -87,6 +87,45 @@ impl AddRaftVoterRequest {
     }
 }
 
+impl AddRaftVoterRequest {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 1 {
+            check(!self.ack_when_committed, "AckWhenCommitted")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_nullable_string(crate::Framing::Compact, self.cluster_id.as_deref())?;
+        writer.write_i32(self.timeout_ms);
+        writer.write_i32(self.voter_id);
+        writer.write_uuid(self.voter_directory_id);
+        writer.write_array_length(crate::Framing::Compact, self.listeners.len())?;
+        for value in &self.listeners {
+            value.write_fields(writer, version)?;
+        }
+        if version == 1 {
+            writer.write_bool(self.ack_when_committed);
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `AddRaftVoterRequest`'s `Listeners` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Listener {
@@ -145,6 +184,22 @@ impl Listener {
     }
 }
 
+impl Listener {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.name)?;
+        writer.write_string(crate::Framing::Compact, &self.host)?;
+        writer.write_u16(self.port);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl AddRaftVoterRequest {
     /// The API key.
     pub const API_KEY: i16 = 80;
@@ -167,5 +222,15 @@ impl crate::Message for AddRaftVoterRequest {
             return Err(reader.unsupported_version("AddRaftVoterRequest", version));
         }
         AddRaftVoterRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !AddRaftVoterRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "AddRaftVoterRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

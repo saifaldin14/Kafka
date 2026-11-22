@@ -87,6 +87,60 @@ impl AddPartitionsToTxnResponse {
     }
 }
 
+impl AddPartitionsToTxnResponse {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 4 {
+            check(!self.results_by_transaction.is_empty(), "ResultsByTransaction")?;
+        }
+        if version > 3 {
+            check(!self.results_by_topic_v3_and_below.is_empty(), "ResultsByTopicV3AndBelow")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        writer.write_i32(self.throttle_time_ms);
+        if version >= 4 {
+            writer.write_i16(self.error_code);
+            writer
+                .write_array_length(crate::Framing::Compact, self.results_by_transaction.len())?;
+            for value in &self.results_by_transaction {
+                value.write_fields(writer, version)?;
+            }
+        }
+        if version <= 3 {
+            writer.write_array_length(
+                if version == 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+                self.results_by_topic_v3_and_below.len(),
+            )?;
+            for value in &self.results_by_topic_v3_and_below {
+                value.write_fields(writer, version)?;
+            }
+        }
+        if version >= 3 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 3 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `AddPartitionsToTxnResponse`'s `ResultsByTransaction` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AddPartitionsToTxnResult {
@@ -149,6 +203,24 @@ impl AddPartitionsToTxnResult {
             let (tag, size) = reader.read_tagged_field_header()?;
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
+    }
+}
+
+impl AddPartitionsToTxnResult {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.transactional_id)?;
+        writer.write_array_length(crate::Framing::Compact, self.topic_results.len())?;
+        for value in &self.topic_results {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
         Ok(())
     }
 }
@@ -220,6 +292,35 @@ impl AddPartitionsToTxnTopicResult {
                 let (tag, size) = reader.read_tagged_field_header()?;
                 reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
             }
+        }
+        Ok(())
+    }
+}
+
+impl AddPartitionsToTxnTopicResult {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.name,
+        )?;
+        writer.write_array_length(
+            if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.results_by_partition.len(),
+        )?;
+        for value in &self.results_by_partition {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 3 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 3 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
         }
         Ok(())
     }
@@ -300,6 +401,26 @@ impl AddPartitionsToTxnPartitionResult {
     }
 }
 
+impl AddPartitionsToTxnPartitionResult {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.partition_index);
+        writer.write_i16(self.partition_error_code);
+        if version >= 3 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 3 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl AddPartitionsToTxnResponse {
     /// The API key.
     pub const API_KEY: i16 = 24;
@@ -319,5 +440,15 @@ impl crate::Message for AddPartitionsToTxnResponse {
             return Err(reader.unsupported_version("AddPartitionsToTxnResponse", version));
         }
         AddPartitionsToTxnResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !AddPartitionsToTxnResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "AddPartitionsToTxnResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

@@ -188,8 +188,67 @@ impl Writer {
     ///
     /// [`EncodeError::UnsortedRawTags`] for a tag not higher than the one before it, and
     /// [`EncodeError::LengthTooLong`] for a count or size that doesn't fit a varint.
-    // Parity: clients/src/main/java/org/apache/kafka/common/protocol/types/RawTaggedFieldWriter.java@4.4.0 RawTaggedFieldWriter.writeRawTags
     pub fn write_tagged_fields(&mut self, fields: &[RawTaggedField]) -> Result<(), EncodeError> {
+        let mut raw = RawTaggedFieldWriter::new(fields)?;
+        self.write_tagged_field_count(raw.len())?;
+        raw.write_rest(self)
+    }
+
+    /// The field count that starts a tagged-field section.
+    ///
+    /// # Errors
+    ///
+    /// [`EncodeError::LengthTooLong`] for a count that doesn't fit a varint.
+    pub fn write_tagged_field_count(&mut self, count: usize) -> Result<(), EncodeError> {
+        self.write_unsigned_varint(varint_length(count)?);
+        Ok(())
+    }
+
+    /// A known tagged field: its tag, the size of its value, then the value `write`
+    /// writes. The value is written to a nested writer first, to learn its size.
+    ///
+    /// # Errors
+    ///
+    /// Any error of `write`, and [`EncodeError::LengthTooLong`] for a value whose size
+    /// doesn't fit a varint.
+    pub fn write_tagged_value(
+        &mut self,
+        tag: u32,
+        write: impl FnOnce(&mut Writer) -> Result<(), EncodeError>,
+    ) -> Result<(), EncodeError> {
+        let mut value = self.nested();
+        write(&mut value)?;
+        self.write_unsigned_varint(tag);
+        self.write_unsigned_varint(varint_length(value.len())?);
+        self.append(&value);
+        Ok(())
+    }
+
+    /// One raw tagged field.
+    fn write_raw_tagged_field(&mut self, field: &RawTaggedField) -> Result<(), EncodeError> {
+        self.write_unsigned_varint(field.tag);
+        self.write_unsigned_varint(varint_length(field.data.len())?);
+        self.put_slice(&field.data);
+        Ok(())
+    }
+}
+
+/// Writes a struct's unknown tagged fields between its known ones, so that the whole
+/// section is in ascending tag order.
+// Parity: clients/src/main/java/org/apache/kafka/common/protocol/types/RawTaggedFieldWriter.java@4.4.0 RawTaggedFieldWriter
+#[derive(Debug)]
+pub struct RawTaggedFieldWriter<'a> {
+    /// The fields not yet written.
+    fields: &'a [RawTaggedField],
+}
+
+impl<'a> RawTaggedFieldWriter<'a> {
+    /// A writer of `fields`, which must be in ascending tag order with no tag repeated.
+    ///
+    /// # Errors
+    ///
+    /// [`EncodeError::UnsortedRawTags`] for a tag not higher than the one before it.
+    pub fn new(fields: &'a [RawTaggedField]) -> Result<RawTaggedFieldWriter<'a>, EncodeError> {
         for pair in fields.windows(2) {
             if let [previous, next] = pair
                 && next.tag <= previous.tag
@@ -200,17 +259,78 @@ impl Writer {
                 });
             }
         }
-        self.write_unsigned_varint(varint_length(fields.len())?);
-        for field in fields {
-            self.write_unsigned_varint(field.tag);
-            self.write_unsigned_varint(varint_length(field.data.len())?);
-            self.put_slice(&field.data);
+        Ok(RawTaggedFieldWriter { fields })
+    }
+
+    /// The fields not yet written.
+    pub fn len(&self) -> usize {
+        self.fields.len()
+    }
+
+    /// Whether every field has been written.
+    pub fn is_empty(&self) -> bool {
+        self.fields.is_empty()
+    }
+
+    /// Writes the fields whose tags are below `next_defined`, the next tag the struct
+    /// defines.
+    ///
+    /// # Errors
+    ///
+    /// [`EncodeError::RawTagIsDefined`] for a field whose tag is `next_defined`, and
+    /// [`EncodeError::LengthTooLong`] for a size that doesn't fit a varint.
+    pub fn write_below(
+        &mut self,
+        writer: &mut Writer,
+        next_defined: u32,
+    ) -> Result<(), EncodeError> {
+        while let Some((field, rest)) = self.fields.split_first() {
+            if field.tag == next_defined {
+                return Err(EncodeError::RawTagIsDefined { tag: field.tag });
+            }
+            if field.tag > next_defined {
+                break;
+            }
+            writer.write_raw_tagged_field(field)?;
+            self.fields = rest;
         }
+        Ok(())
+    }
+
+    /// Writes the fields whose tags are below `tag`, a tag the struct defines, then the
+    /// known field `tag` if it is `wanted`: its size, and the value `write` writes.
+    ///
+    /// # Errors
+    ///
+    /// As [`RawTaggedFieldWriter::write_below`] and [`Writer::write_tagged_value`].
+    pub fn write_known(
+        &mut self,
+        writer: &mut Writer,
+        tag: u32,
+        wanted: bool,
+        write: impl FnOnce(&mut Writer) -> Result<(), EncodeError>,
+    ) -> Result<(), EncodeError> {
+        self.write_below(writer, tag)?;
+        if wanted {
+            writer.write_tagged_value(tag, write)?;
+        }
+        Ok(())
+    }
+
+    /// Writes every field not yet written.
+    ///
+    /// # Errors
+    ///
+    /// [`EncodeError::LengthTooLong`] for a size that doesn't fit a varint.
+    pub fn write_rest(&mut self, writer: &mut Writer) -> Result<(), EncodeError> {
+        for field in self.fields {
+            writer.write_raw_tagged_field(field)?;
+        }
+        self.fields = &[];
         Ok(())
     }
 }
 
-/// A count or size as Kafka writes it: a non-negative Java `int`.
 fn varint_length(length: usize) -> Result<u32, EncodeError> {
     i32::try_from(length)
         .map(i32::cast_unsigned)
@@ -223,7 +343,7 @@ mod tests {
     use proptest::collection::btree_map;
     use proptest::prelude::{any, prop_assert_eq, proptest};
 
-    use super::RawTaggedField;
+    use super::{RawTaggedField, RawTaggedFieldWriter};
     use crate::error::{DecodeError, DecodeErrorKind, EncodeError};
     use crate::limits::{DecodeLimits, Limit};
     use crate::reader::Reader;
@@ -388,5 +508,44 @@ mod tests {
             writer.write_tagged_fields(&fields).unwrap();
             prop_assert_eq!(Reader::new(writer.into_bytes()).read_tagged_fields(), Ok(fields));
         }
+    }
+
+    #[test]
+    fn unknown_tags_are_written_between_known_ones_in_tag_order() {
+        let unknown = [RawTaggedField {
+            tag: 1,
+            data: Bytes::from_static(b"u"),
+        }];
+        let mut writer = Writer::new();
+        let mut raw = RawTaggedFieldWriter::new(&unknown).unwrap();
+        writer.write_tagged_field_count(3).unwrap();
+        for tag in [0, 2] {
+            raw.write_known(&mut writer, tag, true, |writer| {
+                writer.write_i8(7);
+                Ok(())
+            })
+            .unwrap();
+        }
+        raw.write_rest(&mut writer).unwrap();
+        let written = writer.into_bytes();
+        assert_eq!(&written[..], [3, 0, 1, 7, 1, 1, b'u', 2, 1, 7]);
+        let tags: Vec<u32> = Reader::new(written)
+            .read_tagged_fields()
+            .unwrap()
+            .iter()
+            .map(|field| field.tag)
+            .collect();
+        assert_eq!(tags, [0, 1, 2]);
+    }
+
+    #[test]
+    fn an_unknown_field_cannot_use_a_defined_tag() {
+        let unknown = [RawTaggedField {
+            tag: 2,
+            data: Bytes::new(),
+        }];
+        let mut raw = RawTaggedFieldWriter::new(&unknown).unwrap();
+        let result = raw.write_known(&mut Writer::new(), 2, false, |_| Ok(()));
+        assert_eq!(result, Err(EncodeError::RawTagIsDefined { tag: 2 }));
     }
 }

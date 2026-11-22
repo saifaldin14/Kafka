@@ -56,6 +56,32 @@ impl CreatePartitionsResponse {
     }
 }
 
+impl CreatePartitionsResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.throttle_time_ms);
+        writer.write_array_length(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.results.len(),
+        )?;
+        for value in &self.results {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `CreatePartitionsResponse`'s `Results` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CreatePartitionsTopicResult {
@@ -128,6 +154,33 @@ impl CreatePartitionsTopicResult {
     }
 }
 
+impl CreatePartitionsTopicResult {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.name,
+        )?;
+        writer.write_i16(self.error_code);
+        writer.write_nullable_string(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.error_message.as_deref(),
+        )?;
+        if version >= 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl CreatePartitionsResponse {
     /// The API key.
     pub const API_KEY: i16 = 37;
@@ -147,5 +200,15 @@ impl crate::Message for CreatePartitionsResponse {
             return Err(reader.unsupported_version("CreatePartitionsResponse", version));
         }
         CreatePartitionsResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !CreatePartitionsResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "CreatePartitionsResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

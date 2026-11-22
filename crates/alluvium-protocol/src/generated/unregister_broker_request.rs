@@ -44,6 +44,20 @@ impl UnregisterBrokerRequest {
 }
 
 impl UnregisterBrokerRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.broker_id);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
+impl UnregisterBrokerRequest {
     /// The API key.
     pub const API_KEY: i16 = 64;
     /// The versions of this message.
@@ -65,5 +79,15 @@ impl crate::Message for UnregisterBrokerRequest {
             return Err(reader.unsupported_version("UnregisterBrokerRequest", version));
         }
         UnregisterBrokerRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !UnregisterBrokerRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "UnregisterBrokerRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

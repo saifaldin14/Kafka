@@ -37,6 +37,12 @@ impl ControlRecordTypeSchema {
 }
 
 impl ControlRecordTypeSchema {
+    fn write_fields(&self, writer: &mut crate::Writer, _version: i16) {
+        writer.write_i16(self.type_);
+    }
+}
+
+impl ControlRecordTypeSchema {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 0);
     /// The versions that use the flexible encoding.
@@ -53,5 +59,16 @@ impl crate::Message for ControlRecordTypeSchema {
             return Err(reader.unsupported_version("ControlRecordTypeSchema", version));
         }
         ControlRecordTypeSchema::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !ControlRecordTypeSchema::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "ControlRecordTypeSchema",
+                version,
+            });
+        }
+        self.write_fields(writer, version);
+        Ok(())
     }
 }

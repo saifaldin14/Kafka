@@ -89,6 +89,63 @@ impl OffsetFetchResponse {
     }
 }
 
+impl OffsetFetchResponse {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version > 7 {
+            check(!self.topics.is_empty(), "Topics")?;
+        }
+        if version < 8 {
+            check(!self.groups.is_empty(), "Groups")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        if version >= 3 {
+            writer.write_i32(self.throttle_time_ms);
+        }
+        if version <= 7 {
+            writer.write_array_length(
+                if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+                self.topics.len(),
+            )?;
+            for value in &self.topics {
+                value.write_fields(writer, version)?;
+            }
+        }
+        if (2..=7).contains(&version) {
+            writer.write_i16(self.error_code);
+        }
+        if version >= 8 {
+            writer.write_array_length(crate::Framing::Compact, self.groups.len())?;
+            for value in &self.groups {
+                value.write_fields(writer, version)?;
+            }
+        }
+        if version >= 6 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 6 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `OffsetFetchResponse`'s `Topics` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct OffsetFetchResponseTopic {
@@ -138,6 +195,35 @@ impl OffsetFetchResponseTopic {
                 let (tag, size) = reader.read_tagged_field_header()?;
                 reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
             }
+        }
+        Ok(())
+    }
+}
+
+impl OffsetFetchResponseTopic {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.name,
+        )?;
+        writer.write_array_length(
+            if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.partitions.len(),
+        )?;
+        for value in &self.partitions {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 6 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 6 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
         }
         Ok(())
     }
@@ -234,6 +320,34 @@ impl OffsetFetchResponsePartition {
     }
 }
 
+impl OffsetFetchResponsePartition {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.partition_index);
+        writer.write_i64(self.committed_offset);
+        if version >= 5 {
+            writer.write_i32(self.committed_leader_epoch);
+        }
+        writer.write_nullable_string(
+            if version >= 6 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.metadata.as_deref(),
+        )?;
+        writer.write_i16(self.error_code);
+        if version >= 6 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 6 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `OffsetFetchResponse`'s `Groups` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct OffsetFetchResponseGroup {
@@ -292,6 +406,25 @@ impl OffsetFetchResponseGroup {
             let (tag, size) = reader.read_tagged_field_header()?;
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
+    }
+}
+
+impl OffsetFetchResponseGroup {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.group_id)?;
+        writer.write_array_length(crate::Framing::Compact, self.topics.len())?;
+        for value in &self.topics {
+            value.write_fields(writer, version)?;
+        }
+        writer.write_i16(self.error_code);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
         Ok(())
     }
 }
@@ -357,6 +490,29 @@ impl OffsetFetchResponseTopics {
             let (tag, size) = reader.read_tagged_field_header()?;
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
+    }
+}
+
+impl OffsetFetchResponseTopics {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        if version <= 9 {
+            writer.write_string(crate::Framing::Compact, &self.name)?;
+        }
+        if version == 10 {
+            writer.write_uuid(self.topic_id);
+        }
+        writer.write_array_length(crate::Framing::Compact, self.partitions.len())?;
+        for value in &self.partitions {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
         Ok(())
     }
 }
@@ -442,6 +598,24 @@ impl OffsetFetchResponsePartitions {
     }
 }
 
+impl OffsetFetchResponsePartitions {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.partition_index);
+        writer.write_i64(self.committed_offset);
+        writer.write_i32(self.committed_leader_epoch);
+        writer.write_nullable_string(crate::Framing::Compact, self.metadata.as_deref())?;
+        writer.write_i16(self.error_code);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl OffsetFetchResponse {
     /// The API key.
     pub const API_KEY: i16 = 9;
@@ -461,5 +635,15 @@ impl crate::Message for OffsetFetchResponse {
             return Err(reader.unsupported_version("OffsetFetchResponse", version));
         }
         OffsetFetchResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !OffsetFetchResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "OffsetFetchResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

@@ -87,6 +87,58 @@ impl CreateDelegationTokenRequest {
     }
 }
 
+impl CreateDelegationTokenRequest {
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 3 {
+            check(self.owner_principal_type.as_deref() != Some(""), "OwnerPrincipalType")?;
+            check(self.owner_principal_name.as_deref() != Some(""), "OwnerPrincipalName")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        if version == 3 {
+            writer.write_nullable_string(
+                crate::Framing::Compact,
+                self.owner_principal_type.as_deref(),
+            )?;
+            writer.write_nullable_string(
+                crate::Framing::Compact,
+                self.owner_principal_name.as_deref(),
+            )?;
+        }
+        writer.write_array_length(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.renewers.len(),
+        )?;
+        for value in &self.renewers {
+            value.write_fields(writer, version)?;
+        }
+        writer.write_i64(self.max_lifetime_ms);
+        if version >= 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `CreateDelegationTokenRequest`'s `Renewers` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CreatableRenewers {
@@ -142,6 +194,32 @@ impl CreatableRenewers {
     }
 }
 
+impl CreatableRenewers {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.principal_type,
+        )?;
+        writer.write_string(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.principal_name,
+        )?;
+        if version >= 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl CreateDelegationTokenRequest {
     /// The API key.
     pub const API_KEY: i16 = 38;
@@ -164,5 +242,15 @@ impl crate::Message for CreateDelegationTokenRequest {
             return Err(reader.unsupported_version("CreateDelegationTokenRequest", version));
         }
         CreateDelegationTokenRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !CreateDelegationTokenRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "CreateDelegationTokenRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

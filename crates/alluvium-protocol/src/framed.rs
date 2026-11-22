@@ -285,7 +285,39 @@ impl Writer {
         framing: Framing,
         value: Option<&RecordsField>,
     ) -> Result<(), EncodeError> {
-        self.write_nullable_bytes(framing, value.map(|records| &records.as_bytes()[..]))
+        self.write_nullable_zero_copy_bytes(framing, value.map(|records| &records.as_bytes()[..]))
+    }
+
+    /// A `bytes` field marked `zeroCopy`: written like [`Writer::write_bytes`], and
+    /// counted among the bytes a frame can share.
+    ///
+    /// # Errors
+    ///
+    /// As [`Writer::write_bytes`].
+    pub fn write_zero_copy_bytes(
+        &mut self,
+        framing: Framing,
+        value: &[u8],
+    ) -> Result<(), EncodeError> {
+        self.write_length(framing, Width::Int, Some(value.len()))?;
+        self.put_shared(value);
+        Ok(())
+    }
+
+    /// A nullable `bytes` field marked `zeroCopy`.
+    ///
+    /// # Errors
+    ///
+    /// As [`Writer::write_bytes`].
+    pub fn write_nullable_zero_copy_bytes(
+        &mut self,
+        framing: Framing,
+        value: Option<&[u8]>,
+    ) -> Result<(), EncodeError> {
+        match value {
+            Some(value) => self.write_zero_copy_bytes(framing, value),
+            None => self.write_length(framing, Width::Int, None),
+        }
     }
 
     /// An array's element count.

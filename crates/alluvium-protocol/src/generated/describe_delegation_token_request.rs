@@ -61,6 +61,33 @@ impl DescribeDelegationTokenRequest {
     }
 }
 
+impl DescribeDelegationTokenRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_nullable_array_length(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.owners.as_ref().map(Vec::len),
+        )?;
+        if let Some(values) = &self.owners {
+            for value in values {
+                value.write_fields(writer, version)?;
+            }
+        }
+        if version >= 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `DescribeDelegationTokenRequest`'s `Owners` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DescribeDelegationTokenOwner {
@@ -116,6 +143,32 @@ impl DescribeDelegationTokenOwner {
     }
 }
 
+impl DescribeDelegationTokenOwner {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.principal_type,
+        )?;
+        writer.write_string(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.principal_name,
+        )?;
+        if version >= 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl DescribeDelegationTokenRequest {
     /// The API key.
     pub const API_KEY: i16 = 41;
@@ -138,5 +191,15 @@ impl crate::Message for DescribeDelegationTokenRequest {
             return Err(reader.unsupported_version("DescribeDelegationTokenRequest", version));
         }
         DescribeDelegationTokenRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !DescribeDelegationTokenRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "DescribeDelegationTokenRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

@@ -33,6 +33,12 @@ impl EndTxnMarker {
 }
 
 impl EndTxnMarker {
+    fn write_fields(&self, writer: &mut crate::Writer, _version: i16) {
+        writer.write_i32(self.coordinator_epoch);
+    }
+}
+
+impl EndTxnMarker {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 0);
     /// The versions that use the flexible encoding.
@@ -49,5 +55,16 @@ impl crate::Message for EndTxnMarker {
             return Err(reader.unsupported_version("EndTxnMarker", version));
         }
         EndTxnMarker::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !EndTxnMarker::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "EndTxnMarker",
+                version,
+            });
+        }
+        self.write_fields(writer, version);
+        Ok(())
     }
 }

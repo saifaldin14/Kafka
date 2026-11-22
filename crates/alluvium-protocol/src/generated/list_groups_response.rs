@@ -74,6 +74,35 @@ impl ListGroupsResponse {
     }
 }
 
+impl ListGroupsResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        if version >= 1 {
+            writer.write_i32(self.throttle_time_ms);
+        }
+        writer.write_i16(self.error_code);
+        writer.write_array_length(
+            if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.groups.len(),
+        )?;
+        for value in &self.groups {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 3 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 3 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `ListGroupsResponse`'s `Groups` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ListedGroup {
@@ -140,6 +169,38 @@ impl ListedGroup {
     }
 }
 
+impl ListedGroup {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.group_id,
+        )?;
+        writer.write_string(
+            if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.protocol_type,
+        )?;
+        if version >= 4 {
+            writer.write_string(crate::Framing::Compact, &self.group_state)?;
+        }
+        if version == 5 {
+            writer.write_string(crate::Framing::Compact, &self.group_type)?;
+        }
+        if version >= 3 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 3 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl ListGroupsResponse {
     /// The API key.
     pub const API_KEY: i16 = 16;
@@ -159,5 +220,15 @@ impl crate::Message for ListGroupsResponse {
             return Err(reader.unsupported_version("ListGroupsResponse", version));
         }
         ListGroupsResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !ListGroupsResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "ListGroupsResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

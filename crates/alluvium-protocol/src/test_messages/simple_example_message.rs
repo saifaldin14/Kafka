@@ -217,6 +217,167 @@ impl SimpleExampleMessage {
     }
 }
 
+impl SimpleExampleMessage {
+    fn write_tagged_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        let wanted_0 = !self.my_tagged_int_array.is_empty();
+        let wanted_1 = self.my_nullable_string.is_some();
+        let wanted_2 = self.my_int16 != 123;
+        let wanted_3 = self.my_float64.partial_cmp(&12.34) != Some(std::cmp::Ordering::Equal);
+        let wanted_4 = !self.my_string.is_empty();
+        let wanted_5 = self.my_bytes.as_ref().is_none_or(|value| !value.is_empty());
+        let wanted_6 = self.tagged_uuid
+            != alluvium_types::Uuid::from_bits(
+                2_266_025_550_731_756_790,
+                -9_053_694_137_127_414_036,
+            );
+        let wanted_7 = self.tagged_long != 914_172_222_550_880_202;
+        let wanted_8 = version == 2 && self.my_tagged_struct != TaggedStruct::default();
+        let wanted_9 = version == 2 && self.tagged_long_flexible_version_subset != 0;
+        writer.write_tagged_field_count(
+            [
+                wanted_0, wanted_1, wanted_2, wanted_3, wanted_4, wanted_5, wanted_6, wanted_7,
+                wanted_8, wanted_9,
+            ]
+            .into_iter()
+            .filter(|wanted| *wanted)
+            .count()
+            .saturating_add(raw.len()),
+        )?;
+        raw.write_known(writer, 0, wanted_0, |writer| {
+            writer.write_array_length(crate::Framing::Compact, self.my_tagged_int_array.len())?;
+            for value in &self.my_tagged_int_array {
+                writer.write_i32(*value);
+            }
+            Ok(())
+        })?;
+        raw.write_known(writer, 1, wanted_1, |writer| {
+            writer.write_nullable_string(
+                crate::Framing::Compact,
+                self.my_nullable_string.as_deref(),
+            )?;
+            Ok(())
+        })?;
+        raw.write_known(writer, 2, wanted_2, |writer| {
+            writer.write_i16(self.my_int16);
+            Ok(())
+        })?;
+        raw.write_known(writer, 3, wanted_3, |writer| {
+            writer.write_f64(self.my_float64);
+            Ok(())
+        })?;
+        raw.write_known(writer, 4, wanted_4, |writer| {
+            writer.write_string(crate::Framing::Compact, &self.my_string)?;
+            Ok(())
+        })?;
+        raw.write_known(writer, 5, wanted_5, |writer| {
+            writer.write_nullable_bytes(crate::Framing::Compact, self.my_bytes.as_deref())?;
+            Ok(())
+        })?;
+        raw.write_known(writer, 6, wanted_6, |writer| {
+            writer.write_uuid(self.tagged_uuid);
+            Ok(())
+        })?;
+        raw.write_known(writer, 7, wanted_7, |writer| {
+            writer.write_i64(self.tagged_long);
+            Ok(())
+        })?;
+        raw.write_known(writer, 8, wanted_8, |writer| {
+            self.my_tagged_struct.write_fields(writer, version)?;
+            Ok(())
+        })?;
+        raw.write_known(writer, 9, wanted_9, |writer| {
+            writer.write_i64(self.tagged_long_flexible_version_subset);
+            Ok(())
+        })?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+
+    /// Fails if a field `version` doesn't have holds a value other than its default,
+    /// unless the field is `ignorable`: writing would lose it.
+    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+        let check = |non_default: bool, field: &'static str| {
+            if non_default {
+                return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
+            }
+            Ok(())
+        };
+        if version < 1 {
+            check(self.process_id != alluvium_types::Uuid::ZERO, "processId")?;
+            check(!self.my_tagged_int_array.is_empty(), "myTaggedIntArray")?;
+            check(self.my_nullable_string.is_some(), "myNullableString")?;
+            check(self.my_int16 != 123, "myInt16")?;
+            check(
+                self.my_float64.partial_cmp(&12.34) != Some(std::cmp::Ordering::Equal),
+                "myFloat64",
+            )?;
+            check(!self.my_string.is_empty(), "myString")?;
+            check(self.my_bytes.as_ref().is_none_or(|value| !value.is_empty()), "myBytes")?;
+            check(
+                self.tagged_uuid
+                    != alluvium_types::Uuid::from_bits(
+                        2_266_025_550_731_756_790,
+                        -9_053_694_137_127_414_036,
+                    ),
+                "taggedUuid",
+            )?;
+            check(self.tagged_long != 914_172_222_550_880_202, "taggedLong")?;
+            check(self.my_uint16 != 33_000, "myUint16")?;
+            check(self.my_uint32 != 1_234_567, "myUint32")?;
+        }
+        if !(1..=1).contains(&version) {
+            check(!self.zero_copy_byte_buffer.is_empty(), "zeroCopyByteBuffer")?;
+            check(
+                self.nullable_zero_copy_byte_buffer.as_ref().is_none_or(|value| !value.is_empty()),
+                "nullableZeroCopyByteBuffer",
+            )?;
+        }
+        if version < 2 {
+            check(self.my_struct != MyStruct::default(), "myStruct")?;
+            check(self.my_tagged_struct != TaggedStruct::default(), "myTaggedStruct")?;
+        }
+        Ok(())
+    }
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        self.check_absent_fields(version)?;
+        if version >= 1 {
+            writer.write_uuid(self.process_id);
+        }
+        if version == 1 {
+            writer.write_zero_copy_bytes(crate::Framing::Compact, &self.zero_copy_byte_buffer)?;
+            writer.write_nullable_zero_copy_bytes(
+                crate::Framing::Compact,
+                self.nullable_zero_copy_byte_buffer.as_deref(),
+            )?;
+        }
+        if version == 2 {
+            self.my_struct.write_fields(writer, version)?;
+        }
+        self.my_common_struct.write_fields(writer, version)?;
+        self.my_other_common_struct.write_fields(writer, version)?;
+        if version >= 1 {
+            writer.write_u16(self.my_uint16);
+            writer.write_u32(self.my_uint32);
+        }
+        if version >= 1 {
+            self.write_tagged_fields(writer, version)?;
+        }
+        if version < 1 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// The `myStruct` field of `SimpleExampleMessage`.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct MyStruct {
@@ -257,6 +418,24 @@ impl MyStruct {
     }
 }
 
+impl MyStruct {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.struct_id);
+        writer.write_array_length(crate::Framing::Compact, self.array_in_struct.len())?;
+        for value in &self.array_in_struct {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// An element of `MyStruct`'s `arrayInStruct` array.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct StructArray {
@@ -290,6 +469,20 @@ impl StructArray {
     }
 }
 
+impl StructArray {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.array_field_id);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// The `myTaggedStruct` field of `SimpleExampleMessage`.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TaggedStruct {
@@ -319,6 +512,20 @@ impl TaggedStruct {
             let (tag, size) = reader.read_tagged_field_header()?;
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
+    }
+}
+
+impl TaggedStruct {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.struct_id)?;
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
         Ok(())
     }
 }
@@ -372,6 +579,26 @@ impl TestCommonStruct {
     }
 }
 
+impl TestCommonStruct {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.foo);
+        writer.write_i32(self.bar);
+        if version >= 1 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 1 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl SimpleExampleMessage {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 2);
@@ -389,5 +616,15 @@ impl crate::Message for SimpleExampleMessage {
             return Err(reader.unsupported_version("SimpleExampleMessage", version));
         }
         SimpleExampleMessage::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !SimpleExampleMessage::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "SimpleExampleMessage",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

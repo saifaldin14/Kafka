@@ -61,6 +61,28 @@ impl SaslAuthenticateRequest {
 }
 
 impl SaslAuthenticateRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_bytes(
+            if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.auth_bytes,
+        )?;
+        if version == 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
+impl SaslAuthenticateRequest {
     /// The API key.
     pub const API_KEY: i16 = 36;
     /// The versions of this message.
@@ -82,5 +104,15 @@ impl crate::Message for SaslAuthenticateRequest {
             return Err(reader.unsupported_version("SaslAuthenticateRequest", version));
         }
         SaslAuthenticateRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !SaslAuthenticateRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "SaslAuthenticateRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

@@ -167,6 +167,41 @@ pub enum EncodeError {
         /// The length.
         length: usize,
     },
+    /// A version the message doesn't have.
+    #[error("can't write version {version} of {message}")]
+    UnsupportedVersion {
+        /// The message, as Kafka's schemas name it.
+        message: &'static str,
+        /// The version asked for.
+        version: i16,
+    },
+    /// `None` in a field that can't be null in the version written.
+    #[error("non-nullable field {field} is null")]
+    NullForNonNullable {
+        /// The field, as Kafka's schemas name it.
+        field: &'static str,
+    },
+    /// A field the version written doesn't have holds a value other than its default,
+    /// and isn't `ignorable`, so writing would lose it.
+    #[error("attempted to write a non-default {field} at version {version}")]
+    NonDefaultFieldUnsupported {
+        /// The field, as Kafka's schemas name it.
+        field: &'static str,
+        /// The version written.
+        version: i16,
+    },
+    /// Unknown tagged fields in a version without tagged fields.
+    #[error("tagged fields were set, but version {version} of this message does not support them")]
+    TaggedFieldsUnsupported {
+        /// The version written.
+        version: i16,
+    },
+    /// An unknown tagged field whose tag the struct defines.
+    #[error("attempted to use tag {tag} as an undefined tag")]
+    RawTagIsDefined {
+        /// The tag.
+        tag: u32,
+    },
 }
 
 /// Formats a field path as ` in A.B.C`, or nothing when empty.

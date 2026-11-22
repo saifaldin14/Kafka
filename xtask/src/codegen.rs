@@ -26,6 +26,7 @@
 
 mod decode;
 mod docs;
+mod encode;
 mod errors;
 mod names;
 mod overlays;
@@ -539,31 +540,38 @@ fn mod_files(
         .collect()
 }
 
-/// A test-only table of functions that each decode their input as one message at every
-/// version, so a property test can show that no input makes a decoder panic. Each entry
-/// is `module::Message` with its lowest and highest version.
+/// Test-only tables over every message: functions that each decode their input as one
+/// message at every version, so a property test can show that no input makes a decoder
+/// panic; and functions that each encode one message's default at every version and
+/// decode it back. Each entry is `module::Message` with its lowest and highest version.
 fn decode_every_version(decodable: &[(String, i16, i16)]) -> String {
     if decodable.is_empty() {
         return String::new();
     }
-    let entries =
+    let entries = |function: &str| {
         decodable
             .iter()
             .fold(String::new(), |mut entries, (message, lowest, highest)| {
-                let _ = writeln!(
-                    entries,
-                    "    decode_at_every_version::<{message}, {lowest}, {highest}>,"
-                );
+                let _ = writeln!(entries, "    {function}::<{message}, {lowest}, {highest}>,");
                 entries
-            });
+            })
+    };
     format!(
         "\n/// Functions that decode their input as one message at each of its versions, for \
          the test\n/// that no input makes a decoder panic.\n#[cfg(test)]\npub(crate) const \
-         DECODE_EVERY_VERSION: &[fn(&bytes::Bytes)] = &[\n{entries}];\n\n#[cfg(test)]\nfn \
+         DECODE_EVERY_VERSION: &[fn(&bytes::Bytes)] = &[\n{}];\n\n#[cfg(test)]\nfn \
          decode_at_every_version<M: crate::Message, const LOWEST: i16, const HIGHEST: \
          i16>(input: &bytes::Bytes) {{\n    for version in LOWEST..=HIGHEST {{\n        // \
          Any result will do: the test is that decoding returns.\n        let _ = \
-         M::decode(&mut crate::Reader::new(input.clone()), version);\n    }}\n}}\n"
+         M::decode(&mut crate::Reader::new(input.clone()), version);\n    }}\n}}\n\n/// \
+         Functions that encode one message's default at each of its versions, check its \
+         size,\n/// and decode it back.\n#[cfg(test)]\npub(crate) const \
+         ROUND_TRIP_DEFAULT_EVERY_VERSION: &[fn()] = &[\n{}];\n\n#[cfg(test)]\nfn \
+         round_trip_default<M: crate::Message + Default + PartialEq + std::fmt::Debug, const \
+         LOWEST: i16, const HIGHEST: i16>() {{\n    crate::encode_tests::round_trip::<M>(&M::default(), \
+         LOWEST..=HIGHEST);\n}}\n",
+        entries("decode_at_every_version"),
+        entries("round_trip_default")
     )
 }
 

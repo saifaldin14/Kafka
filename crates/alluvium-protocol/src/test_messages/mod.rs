@@ -33,3 +33,24 @@ fn decode_at_every_version<M: crate::Message, const LOWEST: i16, const HIGHEST: 
         let _ = M::decode(&mut crate::Reader::new(input.clone()), version);
     }
 }
+
+/// Functions that encode one message's default at each of its versions, check its size,
+/// and decode it back.
+#[cfg(test)]
+pub(crate) const ROUND_TRIP_DEFAULT_EVERY_VERSION: &[fn()] = &[
+    round_trip_default::<all_type_message::AllTypeMessage, 0, 1>,
+    round_trip_default::<nullable_struct_message::NullableStructMessage, 0, 2>,
+    round_trip_default::<simple_arrays_message::SimpleArraysMessage, 0, 2>,
+    round_trip_default::<simple_example_message::SimpleExampleMessage, 0, 2>,
+    round_trip_default::<simple_keyed_arrays_message::SimpleKeyedArraysMessage, 0, 2>,
+    round_trip_default::<simple_records_message::SimpleRecordsMessage, 0, 1>,
+];
+
+#[cfg(test)]
+fn round_trip_default<
+    M: crate::Message + Default + PartialEq + std::fmt::Debug,
+    const LOWEST: i16,
+    const HIGHEST: i16,
+>() {
+    crate::encode_tests::round_trip::<M>(&M::default(), LOWEST..=HIGHEST);
+}

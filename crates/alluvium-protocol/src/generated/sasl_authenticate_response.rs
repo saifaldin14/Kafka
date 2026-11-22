@@ -112,6 +112,36 @@ impl SaslAuthenticateResponse {
 }
 
 impl SaslAuthenticateResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i16(self.error_code);
+        writer.write_nullable_string(
+            if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.error_message.as_deref(),
+        )?;
+        writer.write_bytes(
+            if version == 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.auth_bytes,
+        )?;
+        if version >= 1 {
+            writer.write_i64(self.session_lifetime_ms);
+        }
+        if version == 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
+impl SaslAuthenticateResponse {
     /// The API key.
     pub const API_KEY: i16 = 36;
     /// The versions of this message.
@@ -130,5 +160,15 @@ impl crate::Message for SaslAuthenticateResponse {
             return Err(reader.unsupported_version("SaslAuthenticateResponse", version));
         }
         SaslAuthenticateResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !SaslAuthenticateResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "SaslAuthenticateResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

@@ -62,6 +62,21 @@ impl PushTelemetryResponse {
 }
 
 impl PushTelemetryResponse {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.throttle_time_ms);
+        writer.write_i16(self.error_code);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
+impl PushTelemetryResponse {
     /// The API key.
     pub const API_KEY: i16 = 72;
     /// The versions of this message.
@@ -80,5 +95,15 @@ impl crate::Message for PushTelemetryResponse {
             return Err(reader.unsupported_version("PushTelemetryResponse", version));
         }
         PushTelemetryResponse::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !PushTelemetryResponse::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "PushTelemetryResponse",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

@@ -196,6 +196,96 @@ impl StreamsGroupHeartbeatRequest {
     }
 }
 
+impl StreamsGroupHeartbeatRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.group_id)?;
+        writer.write_string(crate::Framing::Compact, &self.member_id)?;
+        writer.write_i32(self.member_epoch);
+        writer.write_i32(self.endpoint_information_epoch);
+        writer.write_nullable_string(crate::Framing::Compact, self.instance_id.as_deref())?;
+        writer.write_nullable_string(crate::Framing::Compact, self.rack_id.as_deref())?;
+        writer.write_i32(self.rebalance_timeout_ms);
+        match &self.topology {
+            None => writer.write_i8(-1),
+            Some(value) => {
+                writer.write_i8(1);
+                value.write_fields(writer, version)?;
+            }
+        }
+        writer.write_nullable_array_length(
+            crate::Framing::Compact,
+            self.active_tasks.as_ref().map(Vec::len),
+        )?;
+        if let Some(values) = &self.active_tasks {
+            for value in values {
+                value.write_fields(writer, version)?;
+            }
+        }
+        writer.write_nullable_array_length(
+            crate::Framing::Compact,
+            self.standby_tasks.as_ref().map(Vec::len),
+        )?;
+        if let Some(values) = &self.standby_tasks {
+            for value in values {
+                value.write_fields(writer, version)?;
+            }
+        }
+        writer.write_nullable_array_length(
+            crate::Framing::Compact,
+            self.warmup_tasks.as_ref().map(Vec::len),
+        )?;
+        if let Some(values) = &self.warmup_tasks {
+            for value in values {
+                value.write_fields(writer, version)?;
+            }
+        }
+        writer.write_nullable_string(crate::Framing::Compact, self.process_id.as_deref())?;
+        match &self.user_endpoint {
+            None => writer.write_i8(-1),
+            Some(value) => {
+                writer.write_i8(1);
+                value.write_fields(writer, version)?;
+            }
+        }
+        writer.write_nullable_array_length(
+            crate::Framing::Compact,
+            self.client_tags.as_ref().map(Vec::len),
+        )?;
+        if let Some(values) = &self.client_tags {
+            for value in values {
+                value.write_fields(writer, version)?;
+            }
+        }
+        writer.write_nullable_array_length(
+            crate::Framing::Compact,
+            self.task_offsets.as_ref().map(Vec::len),
+        )?;
+        if let Some(values) = &self.task_offsets {
+            for value in values {
+                value.write_fields(writer, version)?;
+            }
+        }
+        writer.write_nullable_array_length(
+            crate::Framing::Compact,
+            self.task_end_offsets.as_ref().map(Vec::len),
+        )?;
+        if let Some(values) = &self.task_end_offsets {
+            for value in values {
+                value.write_fields(writer, version)?;
+            }
+        }
+        writer.write_bool(self.shutdown_application);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// The `Topology` field of `StreamsGroupHeartbeatRequest`.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Topology {
@@ -233,6 +323,24 @@ impl Topology {
             let (tag, size) = reader.read_tagged_field_header()?;
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
+    }
+}
+
+impl Topology {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i32(self.epoch);
+        writer.write_array_length(crate::Framing::Compact, self.subtopologies.len())?;
+        for value in &self.subtopologies {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
         Ok(())
     }
 }
@@ -322,6 +430,44 @@ impl Subtopology {
     }
 }
 
+impl Subtopology {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.subtopology_id)?;
+        writer.write_array_length(crate::Framing::Compact, self.source_topics.len())?;
+        for value in &self.source_topics {
+            writer.write_string(crate::Framing::Compact, value)?;
+        }
+        writer.write_array_length(crate::Framing::Compact, self.source_topic_regex.len())?;
+        for value in &self.source_topic_regex {
+            writer.write_string(crate::Framing::Compact, value)?;
+        }
+        writer.write_array_length(crate::Framing::Compact, self.state_changelog_topics.len())?;
+        for value in &self.state_changelog_topics {
+            value.write_fields(writer, version)?;
+        }
+        writer.write_array_length(crate::Framing::Compact, self.repartition_sink_topics.len())?;
+        for value in &self.repartition_sink_topics {
+            writer.write_string(crate::Framing::Compact, value)?;
+        }
+        writer.write_array_length(crate::Framing::Compact, self.repartition_source_topics.len())?;
+        for value in &self.repartition_source_topics {
+            value.write_fields(writer, version)?;
+        }
+        writer.write_array_length(crate::Framing::Compact, self.copartition_groups.len())?;
+        for value in &self.copartition_groups {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// `TopicInfo`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TopicInfo {
@@ -374,6 +520,26 @@ impl TopicInfo {
     }
 }
 
+impl TopicInfo {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.name)?;
+        writer.write_i32(self.partitions);
+        writer.write_i16(self.replication_factor);
+        writer.write_array_length(crate::Framing::Compact, self.topic_configs.len())?;
+        for value in &self.topic_configs {
+            value.write_fields(writer, version)?;
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// `KeyValue`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct KeyValue {
@@ -408,6 +574,21 @@ impl KeyValue {
             let (tag, size) = reader.read_tagged_field_header()?;
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
+    }
+}
+
+impl KeyValue {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.key)?;
+        writer.write_string(crate::Framing::Compact, &self.value)?;
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
         Ok(())
     }
 }
@@ -466,6 +647,31 @@ impl CopartitionGroup {
     }
 }
 
+impl CopartitionGroup {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_array_length(crate::Framing::Compact, self.source_topics.len())?;
+        for value in &self.source_topics {
+            writer.write_i16(*value);
+        }
+        writer.write_array_length(crate::Framing::Compact, self.source_topic_regex.len())?;
+        for value in &self.source_topic_regex {
+            writer.write_i16(*value);
+        }
+        writer.write_array_length(crate::Framing::Compact, self.repartition_source_topics.len())?;
+        for value in &self.repartition_source_topics {
+            writer.write_i16(*value);
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// `TaskIds`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TaskIds {
@@ -507,6 +713,24 @@ impl TaskIds {
     }
 }
 
+impl TaskIds {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.subtopology_id)?;
+        writer.write_array_length(crate::Framing::Compact, self.partitions.len())?;
+        for value in &self.partitions {
+            writer.write_i32(*value);
+        }
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 /// `Endpoint`, a struct several fields share.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Endpoint {
@@ -541,6 +765,21 @@ impl Endpoint {
             let (tag, size) = reader.read_tagged_field_header()?;
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
+        Ok(())
+    }
+}
+
+impl Endpoint {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.host)?;
+        writer.write_u16(self.port);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
         Ok(())
     }
 }
@@ -589,6 +828,22 @@ impl TaskOffset {
     }
 }
 
+impl TaskOffset {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(crate::Framing::Compact, &self.subtopology_id)?;
+        writer.write_i32(self.partition);
+        writer.write_i64(self.offset);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
 impl StreamsGroupHeartbeatRequest {
     /// The API key.
     pub const API_KEY: i16 = 88;
@@ -611,5 +866,15 @@ impl crate::Message for StreamsGroupHeartbeatRequest {
             return Err(reader.unsupported_version("StreamsGroupHeartbeatRequest", version));
         }
         StreamsGroupHeartbeatRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !StreamsGroupHeartbeatRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "StreamsGroupHeartbeatRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

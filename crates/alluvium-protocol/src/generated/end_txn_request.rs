@@ -63,6 +63,31 @@ impl EndTxnRequest {
 }
 
 impl EndTxnRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_string(
+            if version >= 3 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.transactional_id,
+        )?;
+        writer.write_i64(self.producer_id);
+        writer.write_i16(self.producer_epoch);
+        writer.write_bool(self.committed);
+        if version >= 3 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 3 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
+impl EndTxnRequest {
     /// The API key.
     pub const API_KEY: i16 = 26;
     /// The versions of this message.
@@ -84,5 +109,15 @@ impl crate::Message for EndTxnRequest {
             return Err(reader.unsupported_version("EndTxnRequest", version));
         }
         EndTxnRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !EndTxnRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "EndTxnRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

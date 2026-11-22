@@ -48,6 +48,21 @@ impl KRaftVersionRecord {
 }
 
 impl KRaftVersionRecord {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        _version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i16(self.version);
+        writer.write_i16(self.k_raft_version);
+        let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+        writer.write_tagged_field_count(raw.len())?;
+        raw.write_rest(writer)?;
+        Ok(())
+    }
+}
+
+impl KRaftVersionRecord {
     /// The versions of this message.
     pub const VERSIONS: crate::Versions = crate::Versions::new(0, 0);
     /// The versions that use the flexible encoding.
@@ -64,5 +79,15 @@ impl crate::Message for KRaftVersionRecord {
             return Err(reader.unsupported_version("KRaftVersionRecord", version));
         }
         KRaftVersionRecord::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !KRaftVersionRecord::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "KRaftVersionRecord",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }

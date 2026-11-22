@@ -49,6 +49,31 @@ impl CreateAclsRequest {
     }
 }
 
+impl CreateAclsRequest {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_array_length(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            self.creations.len(),
+        )?;
+        for value in &self.creations {
+            value.write_fields(writer, version)?;
+        }
+        if version >= 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 /// An element of `CreateAclsRequest`'s `Creations` array.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AclCreation {
@@ -147,6 +172,40 @@ impl AclCreation {
     }
 }
 
+impl AclCreation {
+    fn write_fields(
+        &self,
+        writer: &mut crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        writer.write_i8(self.resource_type);
+        writer.write_string(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.resource_name,
+        )?;
+        writer.write_i8(self.resource_pattern_type);
+        writer.write_string(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.principal,
+        )?;
+        writer.write_string(
+            if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
+            &self.host,
+        )?;
+        writer.write_i8(self.operation);
+        writer.write_i8(self.permission_type);
+        if version >= 2 {
+            let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
+            writer.write_tagged_field_count(raw.len())?;
+            raw.write_rest(writer)?;
+        }
+        if version < 2 && !self.unknown_tagged_fields.is_empty() {
+            return Err(crate::EncodeError::TaggedFieldsUnsupported { version });
+        }
+        Ok(())
+    }
+}
+
 impl CreateAclsRequest {
     /// The API key.
     pub const API_KEY: i16 = 30;
@@ -169,5 +228,15 @@ impl crate::Message for CreateAclsRequest {
             return Err(reader.unsupported_version("CreateAclsRequest", version));
         }
         CreateAclsRequest::read(reader, version)
+    }
+
+    fn encode(&self, writer: &mut crate::Writer, version: i16) -> Result<(), crate::EncodeError> {
+        if !CreateAclsRequest::VERSIONS.contains(version) {
+            return Err(crate::EncodeError::UnsupportedVersion {
+                message: "CreateAclsRequest",
+                version,
+            });
+        }
+        self.write_fields(writer, version)
     }
 }
