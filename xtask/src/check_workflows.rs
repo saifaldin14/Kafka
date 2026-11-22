@@ -11,6 +11,9 @@
 //! 2. No workflow uses the `pull_request_target` trigger, which runs with write
 //!    permissions and secrets on code from forks.
 //! 3. Every job in a workflow sets `timeout-minutes` and `permissions`.
+//! 4. The `steps:` inputs of ci.yml's jobs name only steps of `cargo xtask ci`, never an
+//!    on-demand one, and together run every step that isn't on demand. A step added to
+//!    `ci::STEPS` but to no job would pass locally and never run on a PR.
 //!
 //! The files are read line by line rather than parsed as YAML, so every problem has an
 //! exact `file:line`. That relies on the style the workflows use: block YAML, indented
@@ -26,7 +29,10 @@ use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 
+use std::collections::BTreeSet;
+
 use crate::Exit;
+use crate::ci::{self, CiStep};
 use crate::output;
 use crate::tools::{self, ACTIONLINT, SHELLCHECK};
 
@@ -88,8 +94,11 @@ fn actionlint(root: &Path) -> Vec<String> {
     }
 }
 
+/// The workflow whose jobs run the steps of `cargo xtask ci` on every PR.
+const CI_WORKFLOW: &str = ".github/workflows/ci.yml";
+
 fn check_repository(root: &Path) -> Result<Vec<String>, String> {
-    let mut problems = Vec::new();
+    let mut problems = check_ci_steps(CI_WORKFLOW, &read(root, CI_WORKFLOW)?, ci::STEPS);
     let workflows = yaml_files(&root.join(".github/workflows"), ".github/workflows")?;
     if workflows.is_empty() {
         return Err("no workflow files in .github/workflows".to_owned());
@@ -120,6 +129,40 @@ fn check_repository(root: &Path) -> Result<Vec<String>, String> {
         }
     }
     Ok(problems)
+}
+
+/// Rule 4, for ci.yml: every `steps:` input names known steps that aren't on demand, and
+/// every step that isn't on demand is named by some job.
+pub(crate) fn check_ci_steps(file: &str, text: &str, steps: &[CiStep]) -> Vec<String> {
+    let mut problems = Vec::new();
+    let mut run = BTreeSet::new();
+    for (number, line) in numbered(text) {
+        let Some(names) = without_comment(line).trim_start().strip_prefix("steps:") else {
+            continue;
+        };
+        for name in names.split_whitespace() {
+            match steps.iter().find(|step| step.name == name) {
+                None => problems.push(format!(
+                    "{file}:{number}: `{name}` is not a step of `cargo xtask ci` (xtask/src/ci.rs)"
+                )),
+                Some(step) if step.on_demand => problems.push(format!(
+                    "{file}:{number}: `{name}` runs only on demand, never on a PR"
+                )),
+                Some(step) => {
+                    run.insert(step.name);
+                }
+            }
+        }
+    }
+    for step in steps.iter().filter(|step| !step.on_demand) {
+        if !run.contains(step.name) {
+            problems.push(format!(
+                "{file}: no job runs the `{}` step; add it to a job's `steps:` input",
+                step.name
+            ));
+        }
+    }
+    problems
 }
 
 fn read(root: &Path, file: &str) -> Result<String, String> {
@@ -311,7 +354,8 @@ fn without_comment(line: &str) -> &str {
 
 #[cfg(test)]
 mod tests {
-    use super::{check_uses, check_workflow};
+    use super::{check_ci_steps, check_uses, check_workflow};
+    use crate::ci::STEPS;
 
     const SHA: &str = "3d3c42e5aac5ba805825da76410c181273ba90b1";
 
@@ -420,6 +464,55 @@ mod tests {
             [
                 "action.yml:5: `uses: owner/repo/path@main` must be pinned to a full 40-character commit SHA, not `main`",
                 "action.yml:6: `uses: docker://alpine:3.20` must pin the image by digest (`@sha256:<64 hex>`)",
+            ]
+        );
+    }
+
+    /// A ci.yml whose one job runs `names` through the xtask-ci action.
+    fn ci_yml(names: &[&str]) -> String {
+        format!(
+            "jobs:\n  all:\n    steps:\n      - uses: ./.github/actions/xtask-ci\n        with:\n          steps: {}  # every step\n",
+            names.join(" ")
+        )
+    }
+
+    fn pr_steps() -> Vec<&'static str> {
+        STEPS
+            .iter()
+            .filter(|step| !step.on_demand)
+            .map(|step| step.name)
+            .collect()
+    }
+
+    #[test]
+    fn ci_yml_running_every_pr_step_passes() {
+        assert_eq!(
+            check_ci_steps("ci.yml", &ci_yml(&pr_steps()), STEPS),
+            Vec::<String>::new()
+        );
+    }
+
+    #[test]
+    fn a_step_no_job_runs_is_reported() {
+        let names: Vec<&str> = pr_steps()
+            .into_iter()
+            .filter(|name| *name != "crate-docs")
+            .collect();
+        assert_eq!(
+            check_ci_steps("ci.yml", &ci_yml(&names), STEPS),
+            ["ci.yml: no job runs the `crate-docs` step; add it to a job's `steps:` input"]
+        );
+    }
+
+    #[test]
+    fn unknown_and_on_demand_steps_are_reported_at_their_line() {
+        let mut names = pr_steps();
+        names.extend(["links-external", "nope"]);
+        assert_eq!(
+            check_ci_steps("ci.yml", &ci_yml(&names), STEPS),
+            [
+                "ci.yml:6: `links-external` runs only on demand, never on a PR",
+                "ci.yml:6: `nope` is not a step of `cargo xtask ci` (xtask/src/ci.rs)",
             ]
         );
     }
