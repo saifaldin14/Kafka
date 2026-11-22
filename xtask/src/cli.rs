@@ -64,6 +64,8 @@ pub(crate) enum DocsCommand {
 pub(crate) enum SchemasCommand {
     /// `verify`.
     Verify,
+    /// `vendor --tag <tag> [--dry-run]`.
+    Vendor { tag: String, dry_run: bool },
 }
 
 /// Options for `cargo xtask ci`.
@@ -121,6 +123,10 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
     (
         "schemas verify",
         "Check that the vendored Kafka schemas match their MANIFEST.sha256",
+    ),
+    (
+        "schemas vendor --tag <tag> [--dry-run]",
+        "Copy the schemas from an apache/kafka tag and write the manifest (needs the network)",
     ),
     (
         "lint-canary",
@@ -429,6 +435,34 @@ fn parse_schemas(rest: &[String]) -> Result<SchemasCommand, UsageError> {
     };
     match sub.as_str() {
         "verify" => no_arguments("schemas verify", rest).map(|()| SchemasCommand::Verify),
+        "vendor" => {
+            let mut tag = None;
+            let mut dry_run = false;
+            let mut args = rest.iter();
+            while let Some(arg) = args.next() {
+                match arg.as_str() {
+                    "--dry-run" => dry_run = true,
+                    "--tag" => {
+                        tag = Some(
+                            args.next()
+                                .ok_or(UsageError::MissingValue { flag: "--tag" })?
+                                .clone(),
+                        );
+                    }
+                    _ => {
+                        return Err(UsageError::UnexpectedArgument {
+                            command: "schemas vendor",
+                            argument: arg.clone(),
+                        });
+                    }
+                }
+            }
+            let tag = tag.ok_or(UsageError::MissingArgument {
+                command: "schemas vendor",
+                name: "`--tag <tag>`",
+            })?;
+            Ok(SchemasCommand::Vendor { tag, dry_run })
+        }
         _ => Err(UsageError::UnknownSubcommand {
             command: "schemas",
             name: sub.clone(),
@@ -751,6 +785,20 @@ mod tests {
         assert_eq!(
             parse(args(&["schemas", "verify"])),
             Ok(Command::Schemas(SchemasCommand::Verify))
+        );
+        assert_eq!(
+            parse(args(&["schemas", "vendor", "--dry-run", "--tag", "4.4.0"])),
+            Ok(Command::Schemas(SchemasCommand::Vendor {
+                tag: "4.4.0".to_owned(),
+                dry_run: true
+            }))
+        );
+        assert_eq!(
+            parse(args(&["schemas", "vendor"])),
+            Err(UsageError::MissingArgument {
+                command: "schemas vendor",
+                name: "`--tag <tag>`"
+            })
         );
         assert_eq!(
             parse(args(&["schemas"])),

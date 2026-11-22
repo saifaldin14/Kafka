@@ -111,6 +111,9 @@ fn run(command: &Command, out: &mut impl std::io::Write) -> Exit {
         Command::Docs(DocsCommand::NewCrateDoc { name }) => crate_docs::run_new(name, out),
         Command::DepsDiff { base_ref } => deps_diff::run(base_ref, out),
         Command::Schemas(SchemasCommand::Verify) => schemas::run_verify(out),
+        Command::Schemas(SchemasCommand::Vendor { tag, dry_run }) => {
+            schemas::run_vendor(tag, *dry_run, out)
+        }
         Command::LintCanary => lint_canary::run(out),
         Command::Doctor => doctor::run(out),
         Command::InstallHooks { uninstall } => hooks::run(*uninstall, out),
