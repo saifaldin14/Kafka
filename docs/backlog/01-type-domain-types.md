@@ -189,13 +189,14 @@ P1 · M0 · Task · deps: TYPE-0034 · labels: security, test · ref: docs/stand
 Done when: The property test covers ASCII, UTF-8 and binary payloads; the benchmark result is in the PR; debuggability.md links to `PayloadSummary` instead of describing the format a second time.
 Notes: The benchmark uses the criterion setup and conventions from TEST-0094 (pulled into M0 for this task), which lands first; the backlog can't express a task-level dependency across epics.
 
-## [To Do] TYPE-F10 Namespace identity
+## [In Progress] TYPE-F10 Namespace identity
 P1 · M0 · Feature · deps: TYPE-F04 · labels: foundation-for:X-TENANT
 Scope: `NamespaceId`, namespace-qualified names and the default-namespace mapping that keeps plain Kafka names valid.
 
-### [To Do] TYPE-0036 Spike: namespace identity ADR, limited to the types
+### [Done] TYPE-0036 Spike: namespace identity ADR, limited to the types
 P1 · M0 · Spike · deps: none · labels: foundation-for:X-TENANT · ref: ADR-0010
 Done when: Scope: `NamespaceId` representation and validation, the default namespace, how a namespace-qualified topic, group or transactional id relates to Kafka's 249-character limit, and the promise that every valid Kafka name is valid unchanged in the default namespace. An accepted ADR "Namespace identity" records these decisions and states that X-TENANT-F01 owns the full tenancy model and may supersede it; nothing in it changes behavior visible to Kafka clients (ADR-0010).
+Notes: Accepted as [ADR-0014](../adr/0014-namespace-identity.md): `NamespaceId` is 1–63 characters of `[a-z0-9-]` (DNS-label shape), `default` is implicit and never stored, and a qualified name is a `(NamespaceId, name)` pair, never a prefix, so Kafka's 249-character limit is untouched.
 
 ### [To Do] TYPE-0037 `NamespaceId` type per the ADR, with `NamespaceId::DEFAULT`, validated construction, a typed error and log-safe display
 P1 · M0 · Task · deps: TYPE-0036 · labels: foundation-for:X-TENANT
