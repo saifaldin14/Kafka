@@ -68,7 +68,7 @@ Done when: `TopicId::try_from(Uuid::ZERO)` fails; nullable wire mapping turns `Z
 P0 · M0 · Task · deps: TYPE-0012, TYPE-0029 · ref: clients/src/main/java/org/apache/kafka/common/Uuid.java randomUuid @4.4.0
 Done when: A fixed seed always produces the same sequence (golden values are committed); a property test over many seeds never yields a reserved UUID or a string containing `-`, and every value has version 4 and the IETF variant; nothing reads OS entropy.
 
-## [To Do] TYPE-F04 Validated names
+## [In Progress] TYPE-F04 Validated names
 P0 · M0 · Feature · deps: TYPE-F01
 Scope: `TopicName`, `GroupId`, `TransactionalId`, `ClientId`, `ListenerName` with Kafka's validation rules, internal-topic detection and `.`/`_` collision detection.
 
@@ -84,7 +84,7 @@ Done when: Tests assert exactly these three names are internal and that `__clust
 P0 · M0 · Task · deps: TYPE-0014 · ref: clients/src/main/java/org/apache/kafka/common/internals/Topic.java hasCollision @4.4.0
 Done when: A property test shows `a.collides_with(b)` exactly when the collision keys are equal; tests cover `a.b` and `a_b`, identical names, and names without collision characters; strategies generate colliding pairs for CTRL topic-creation tests; the doc explains that the reason is metric-name collisions.
 
-### [To Do] TYPE-0017 Log-safe display for client-supplied strings: one escaping routine used by the `Debug`/`Display` of every client-controlled name type, escaping control characters and non-printable code points so a value can't forge log lines
+### [Done] TYPE-0017 Log-safe display for client-supplied strings: one escaping routine used by the `Debug`/`Display` of every client-controlled name type, escaping control characters and non-printable code points so a value can't forge log lines
 P0 · M0 · Task · deps: TYPE-0001 · labels: security · ref: docs/standards/debuggability.md#printing-values
 Done when: A property test shows the output never contains `\n`, `\r` or other control characters, for any input; printable ASCII and Unicode are unchanged; the escaping format is documented in debuggability.md "Printing values"; TYPE's group, transactional, client and instance id types use it.
 

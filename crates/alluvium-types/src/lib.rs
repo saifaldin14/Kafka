@@ -60,6 +60,8 @@
 //! - [`IdError`]: why a value was rejected.
 //! - [`Secret`]: a value that is never printed and is zeroized on drop.
 //! - [`PayloadSummary`]: how record payloads are printed (length and CRC32C only).
+//! - [`LogSafe`]: how client-supplied strings are printed, with characters that could
+//!   forge a log line escaped.
 //! - `strategies` (feature `proptest-strategies`): proptest strategies for these types,
 //!   for property tests in other crates.
 //!
@@ -71,6 +73,7 @@ pub mod collections;
 mod deadline;
 mod epoch;
 mod id;
+mod log_safe;
 mod offset;
 mod payload;
 mod producer;
@@ -85,6 +88,7 @@ pub use clock::{Clock, ManualClock, SystemClock, WallClockError};
 pub use deadline::Deadline;
 pub use epoch::{BrokerEpoch, GenerationId, LeaderEpoch, MemberEpoch, PositiveEpoch};
 pub use id::{BrokerId, CorrelationId, IdError, IdKind, NodeId, PartitionIndex};
+pub use log_safe::LogSafe;
 pub use offset::{Offset, OffsetError, OffsetRange, OffsetSpec};
 pub use payload::PayloadSummary;
 pub use producer::{ProducerEpoch, ProducerId, Sequence};
