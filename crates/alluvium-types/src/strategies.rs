@@ -12,8 +12,8 @@
 use proptest::prelude::{Just, Strategy, any, prop_oneof};
 
 use crate::{
-    BrokerEpoch, BrokerId, CorrelationId, GenerationId, LeaderEpoch, MemberEpoch, NodeId,
-    PartitionIndex, ProducerEpoch, ProducerId, Sequence,
+    BrokerEpoch, BrokerId, CorrelationId, GenerationId, LeaderEpoch, MemberEpoch, NodeId, Offset,
+    OffsetRange, OffsetSpec, PartitionIndex, ProducerEpoch, ProducerId, Sequence,
 };
 
 /// Non-negative `i32` values, with extra weight on 0, 1 and `i32::MAX`.
@@ -111,4 +111,36 @@ pub fn member_epoch() -> impl Strategy<Value = MemberEpoch> {
 /// Valid [`GenerationId`]s, biased towards 0, 1 and `i32::MAX`.
 pub fn generation_id() -> impl Strategy<Value = GenerationId> {
     non_negative_i32().prop_filter_map("non-negative", |value| GenerationId::try_from(value).ok())
+}
+
+/// Valid [`Offset`]s, biased towards 0, 1, `i32::MAX` and `i64::MAX`.
+pub fn offset() -> impl Strategy<Value = Offset> {
+    prop_oneof![
+        1 => Just(0),
+        1 => Just(1),
+        1 => Just(i64::from(i32::MAX)),
+        1 => Just(i64::MAX),
+        6 => 0..=i64::MAX,
+    ]
+    .prop_filter_map("non-negative", |value| Offset::try_from(value).ok())
+}
+
+/// Valid [`OffsetRange`]s, including empty ones.
+pub fn offset_range() -> impl Strategy<Value = OffsetRange> {
+    (offset(), offset()).prop_filter_map("ordered", |(a, b)| {
+        OffsetRange::new(a.min(b), a.max(b)).ok()
+    })
+}
+
+/// Every special [`OffsetSpec`], and timestamps biased towards 0 and `i64::MAX`.
+pub fn offset_spec() -> impl Strategy<Value = OffsetSpec> {
+    prop_oneof![
+        3 => -6_i64..=-1,
+        1 => Just(0),
+        1 => Just(i64::MAX),
+        5 => 0..=i64::MAX,
+    ]
+    .prop_filter_map("accepted wire value", |value| {
+        OffsetSpec::from_wire(value).ok()
+    })
 }
