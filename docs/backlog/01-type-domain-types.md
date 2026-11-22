@@ -176,7 +176,7 @@ Done when: For random secret values (a property test), none of the outputs conta
 P0 · M0 · Task · deps: TYPE-0031 · labels: security, test · ref: docs/standards/security.md#secrets
 Done when: The test fails if `Drop` stops calling `zeroize` (shown in the PR by temporarily removing it); no `unsafe` and no memory inspection are used.
 
-## [In Progress] TYPE-F09 Payload display
+## [Done] TYPE-F09 Payload display
 P1 · M0 · Feature · deps: FND-F02
 Scope: `PayloadSummary` that prints length and CRC32C instead of bytes, for logging payload-bearing types.
 
@@ -184,7 +184,7 @@ Scope: `PayloadSummary` that prints length and CRC32C instead of bytes, for logg
 P1 · M0 · Task · deps: TYPE-0001 · labels: security · ref: docs/standards/debuggability.md#printing-values
 Done when: `crc32c` is added to `[workspace.dependencies]` (it is in rust.md's preferred list); the CRC of `b"123456789"` is `0xe3069283`, checked with a `// Parity:` citation of `clients/src/main/java/org/apache/kafka/common/utils/internals/Crc32C.java`; the empty payload prints `len: 0`; the doc tells engineers to wrap every payload-bearing field in log output with it.
 
-### [To Do] TYPE-0035 Payload non-disclosure tests: for random payloads, the summary output never contains the payload bytes as text, hex or base64, and formatting a 1 MiB payload stays within a time budget set by a criterion benchmark
+### [Done] TYPE-0035 Payload non-disclosure tests: for random payloads, the summary output never contains the payload bytes as text, hex or base64, and formatting a 1 MiB payload stays within a time budget set by a criterion benchmark
 P1 · M0 · Task · deps: TYPE-0034 · labels: security, test · ref: docs/standards/debuggability.md#printing-values
 Done when: The property test covers ASCII, UTF-8 and binary payloads; the benchmark result is in the PR; debuggability.md links to `PayloadSummary` instead of describing the format a second time.
 Notes: The benchmark uses the criterion setup and conventions from TEST-0094 (pulled into M0 for this task), which lands first; the backlog can't express a task-level dependency across epics.
