@@ -25,6 +25,10 @@ pub(crate) enum Command {
     LintCanary,
     Backlog(BacklogCommand),
     Docs(DocsCommand),
+    /// `deps-diff <base-ref>`.
+    DepsDiff {
+        base_ref: String,
+    },
     Doctor,
     /// `install-hooks [--uninstall]`.
     InstallHooks {
@@ -93,6 +97,10 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
     (
         "docs new-crate-doc <crate>",
         "Write a stub deep dive for a workspace crate from docs/crates/template.md",
+    ),
+    (
+        "deps-diff <base-ref>",
+        "List the registry crates added, removed and upgraded in Cargo.lock since <base-ref>",
     ),
     (
         "doctor",
@@ -206,6 +214,19 @@ pub(crate) fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Command,
         }
         "backlog" => parse_backlog(rest).map(Command::Backlog),
         "docs" => parse_docs(rest).map(Command::Docs),
+        "deps-diff" => match rest {
+            [base_ref] => Ok(Command::DepsDiff {
+                base_ref: base_ref.clone(),
+            }),
+            [] => Err(UsageError::MissingArgument {
+                command: "deps-diff",
+                name: "a base git ref, such as origin/main",
+            }),
+            [_, extra, ..] => Err(UsageError::UnexpectedArgument {
+                command: "deps-diff",
+                argument: extra.clone(),
+            }),
+        },
         "lint-canary" => no_arguments("lint-canary", rest).map(|()| Command::LintCanary),
         "doctor" => no_arguments("doctor", rest).map(|()| Command::Doctor),
         "install-hooks" => match rest {
@@ -694,6 +715,30 @@ mod tests {
         assert_eq!(
             parse(args(&["backlog"])),
             Err(UsageError::MissingSubcommand { command: "backlog" })
+        );
+    }
+
+    #[test]
+    fn deps_diff_takes_exactly_one_base_ref() {
+        assert_eq!(
+            parse(args(&["deps-diff", "origin/main"])),
+            Ok(Command::DepsDiff {
+                base_ref: "origin/main".to_owned()
+            })
+        );
+        assert_eq!(
+            parse(args(&["deps-diff"])),
+            Err(UsageError::MissingArgument {
+                command: "deps-diff",
+                name: "a base git ref, such as origin/main"
+            })
+        );
+        assert_eq!(
+            parse(args(&["deps-diff", "a", "b"])),
+            Err(UsageError::UnexpectedArgument {
+                command: "deps-diff",
+                argument: "b".to_owned()
+            })
         );
     }
 

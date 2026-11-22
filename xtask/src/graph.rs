@@ -1,7 +1,8 @@
 //! The crate dependency graph, loaded from `cargo metadata`.
 //!
-//! Only the fields the layer and manifest checks need are read: workspace members,
-//! package names and manifest paths, and resolved edges with their dependency kinds.
+//! Only the fields the checks need are read: workspace members, package names and
+//! manifest paths, and resolved edges with their dependency kinds for the layer and
+//! manifest checks; package licenses for `deps-diff`.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
@@ -44,6 +45,8 @@ pub(crate) struct Graph {
     pub(crate) manifest_paths: BTreeMap<String, PathBuf>,
     /// Package ids of the workspace members.
     pub(crate) members: BTreeSet<String>,
+    /// The SPDX license expression of each package that declares one, by name and version.
+    pub(crate) licenses: BTreeMap<(String, String), String>,
     pub(crate) edges: Vec<Edge>,
 }
 
@@ -107,6 +110,15 @@ pub(crate) fn parse(json: &[u8]) -> Result<Graph, GraphError> {
         graph
             .manifest_paths
             .insert(id.to_owned(), string(package, "manifest_path")?.into());
+        if let Some(license) = package.get("license").and_then(Value::as_str) {
+            graph.licenses.insert(
+                (
+                    string(package, "name")?.to_owned(),
+                    string(package, "version")?.to_owned(),
+                ),
+                license.to_owned(),
+            );
+        }
     }
     for member in array(&root, "workspace_members")? {
         let id = member
@@ -204,5 +216,22 @@ mod tests {
             parse(br#"{"packages": [], "workspace_members": []}"#),
             Err(GraphError::MissingField("resolve"))
         ));
+    }
+
+    #[test]
+    fn licenses_are_read_by_name_and_version_when_declared() -> Result<(), GraphError> {
+        let json = br#"{"packages": [
+            {"id": "a", "name": "serde", "version": "1.0.0", "manifest_path": "/a/Cargo.toml", "license": "MIT OR Apache-2.0"},
+            {"id": "b", "name": "app", "version": "0.1.0", "manifest_path": "/b/Cargo.toml", "license": null}
+        ], "workspace_members": ["b"], "resolve": {"nodes": []}}"#;
+        let graph = parse(json)?;
+        assert_eq!(
+            graph.licenses.into_iter().collect::<Vec<_>>(),
+            [(
+                ("serde".to_owned(), "1.0.0".to_owned()),
+                "MIT OR Apache-2.0".to_owned()
+            )]
+        );
+        Ok(())
     }
 }

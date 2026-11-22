@@ -4,7 +4,7 @@
 
 `xtask` is the repository's automation, run as `cargo xtask <command>`. Every check CI runs is a step of `cargo xtask ci`, so CI and a developer's machine run exactly the same thing. It also holds the tools around the checks: the backlog commands, the pinned-tool installer, `doctor` and the optional pre-push hook. It never ships in a product binary. Codegen and the compatibility runner arrive later with their backlog tasks ([planned commands](../standards/rust.md#tooling-commands-contract-implemented-in-m0)).
 
-It is a dev-layer crate in the [code map](../architecture.md#4-code-map): it may depend on anything except the binary, and nothing except tests depends on it ([ADR-0009](../adr/0009-crate-layering-and-dependency-rules.md)). Its only dependencies are `serde_json`, which reads `cargo metadata` and clippy's JSON, and `toml`, which reads manifests and `clippy.toml`. Argument parsing is std-only.
+It is a dev-layer crate in the [code map](../architecture.md#4-code-map): it may depend on anything except the binary, and nothing except tests depends on it ([ADR-0009](../adr/0009-crate-layering-and-dependency-rules.md)). Its only dependencies are `serde_json`, which reads `cargo metadata` and clippy's JSON, and `toml`, which reads manifests, `clippy.toml` and lockfiles. Argument parsing is std-only.
 
 [`src/main.rs`](../../xtask/src/main.rs) is the entry point. Its module doc gives the exit codes and how to add a command; [`src/ci.rs`](../../xtask/src/ci.rs) gives how to add a CI step. [rust.md's tooling table](../standards/rust.md#tooling-commands-contract-implemented-in-m0) is the user-facing contract for every command and step.
 
@@ -20,6 +20,7 @@ It is a dev-layer crate in the [code map](../architecture.md#4-code-map): it may
 | [`crate_docs`](../../xtask/src/crate_docs.rs) | `docs check-crates` and `docs new-crate-doc` ([crate deep dives](README.md)) |
 | [`lint_canary`](../../xtask/src/lint_canary.rs) | Running clippy on [`lint-canary`](../../xtask/lint-canary/src/lib.rs) and matching its `expect-lint:` annotations |
 | [`backlog`](../../xtask/src/backlog.rs), [`backlog_check`](../../xtask/src/backlog_check.rs), [`backlog_next`](../../xtask/src/backlog_next.rs), [`backlog_stats`](../../xtask/src/backlog_stats.rs) | Parsing docs/backlog/, its rules, task selection and `show`, and the README totals ([backlog rules](../backlog/README.md)) |
+| [`deps_diff`](../../xtask/src/deps_diff.rs) | `deps-diff`: the crates a change adds, removes or upgrades in `Cargo.lock`, for dependency review |
 | [`doctor`](../../xtask/src/doctor.rs), [`hooks`](../../xtask/src/hooks.rs) | Local setup checks; the optional pre-push hook |
 | [`output`](../../xtask/src/output.rs), [`clock`](../../xtask/src/clock.rs) | The only terminal writer; the only clock reader (`Stopwatch`) |
 
