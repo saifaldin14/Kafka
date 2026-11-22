@@ -26,3 +26,4 @@ An ADR records a decision that is hard to reverse, crosses crates, deviates from
 | [0011](0011-time-model-and-clock-injection.md) | Time model and clock injection | Accepted |
 | [0012](0012-seeded-randomness-and-hashing.md) | Seeded randomness and hashing | Accepted |
 | [0013](0013-key-hash-space.md) | Key hash space | Accepted |
+| [0014](0014-namespace-identity.md) | Namespace identity | Accepted |
