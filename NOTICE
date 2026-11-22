@@ -30,8 +30,13 @@ that it was modified, and marks every ported part `// Ported from:` with its sou
 - xtask/src/message_spec/versions.rs: tests ported from
   generator/src/test/java/org/apache/kafka/message/VersionsTest.java.
 - xtask/src/message_spec/spec.rs: tests ported from
-  generator/src/test/java/org/apache/kafka/message/StructSpecTest.java and
-  generator/src/test/java/org/apache/kafka/message/EntityTypeTest.java.
+  generator/src/test/java/org/apache/kafka/message/StructSpecTest.java,
+  generator/src/test/java/org/apache/kafka/message/EntityTypeTest.java and
+  generator/src/test/java/org/apache/kafka/message/MessageDataGeneratorTest.java
+  (the invalid-schema cases).
+- xtask/src/codegen.rs: tests ported from
+  generator/src/test/java/org/apache/kafka/message/MessageGeneratorTest.java
+  (testToSnakeCase, testGenerateAndWriteMessageClasses).
 - xtask/src/message_spec/registry.rs: tests ported from
   generator/src/test/java/org/apache/kafka/message/StructRegistryTest.java.
 
@@ -41,6 +46,7 @@ header naming the Kafka file it was generated from:
 - crates/alluvium-protocol/src/generated/: from schemas/kafka-4.4.0/clients/, with
   each schema's `about` text, edited for rustdoc, as doc comments; and error_code.rs,
   from schemas/kafka-4.4.0/errors/Errors.java, with Kafka's default error messages.
+- crates/alluvium-protocol/src/test_messages/: from schemas/kafka-4.4.0/clients-test/.
 - docs/errors.md: from schemas/kafka-4.4.0/errors/Errors.java, with Kafka's default
   error messages.
 

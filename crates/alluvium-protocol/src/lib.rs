@@ -33,6 +33,8 @@ mod limits;
 mod reader;
 mod records;
 mod tagged_fields;
+#[cfg(test)]
+pub mod test_messages;
 mod varint;
 mod versions;
 mod writer;

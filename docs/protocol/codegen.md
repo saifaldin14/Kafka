@@ -15,6 +15,7 @@ The generator is [`xtask/src/codegen.rs`](../../xtask/src/codegen.rs). It reads 
   - Files are formatted with the pinned `rustfmt` and written in sorted order.
   - A run writes only the files whose contents changed, and removes files it no longer generates.
 - **Error codes too.** `generated::error_code` holds `ErrorCode`, one variant per constant of Kafka's `Errors.java`, and [docs/errors.md](../errors.md) lists every code. `xtask/src/codegen/errors.rs` reads the Java source, and a golden test compares the result with the table Kafka's client jar reports at runtime (`cargo xtask schemas dump-errors`).
+- **Golden output for Kafka's test schemas.** The six schemas Kafka's own generator tests use (`schemas/kafka-4.4.0/clients-test/`) generate into `crates/alluvium-protocol/src/test_messages/`, compiled only for tests. Together they use every schema feature: each field type, nullable and tagged fields with defaults, nullable structs, keyed arrays and records. A generator change shows as a reviewable diff of these files, and the tests of the generated code use them.
 - **Checked in CI.** `cargo xtask codegen --check` fails, naming the file and line, when committed output differs from what the generator writes.
 - **Usable as a library.** `codegen::generate(inputs, out_dir, filter)` takes the schema directories, the output directory and a filter of message kinds. The metadata record generator (META-F01) reuses it.
 

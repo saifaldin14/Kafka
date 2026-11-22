@@ -598,15 +598,15 @@ Done when: a counting allocator fails the target on budget overrun; a deliberate
 P1 · M1 · Feature · deps: PROTO-F04
 Scope: Golden-output tests for the generator, drift check `cargo xtask codegen --check`.
 
-### [In Progress] PROTO-0135 Vendor Kafka's generator test schemas (AllTypeMessage, NullableStructMessage, SimpleArraysMessage, SimpleExampleMessage, SimpleKeyedArraysMessage, SimpleRecordsMessage) as fixtures
+### [Done] PROTO-0135 Vendor Kafka's generator test schemas (AllTypeMessage, NullableStructMessage, SimpleArraysMessage, SimpleExampleMessage, SimpleKeyedArraysMessage, SimpleRecordsMessage) as fixtures
 P1 · M1 · Task · deps: none · labels: test · ref: clients/src/test/resources/common/message @4.4.0
 Done when: fixtures are unmodified copies listed in the schema manifest and generate compiling code.
 
-### [To Do] PROTO-0136 Golden-output tests: generator output for each fixture compared with committed expected files (`UPDATE_EXPECT=1` refreshes)
+### [Done] PROTO-0136 Golden-output tests: generator output for each fixture compared with committed expected files (`cargo xtask codegen` refreshes them)
 P1 · M1 · Task · deps: PROTO-0135 · labels: test
 Done when: a change to generated code shows as a reviewable diff of the expected files.
 
-### [To Do] PROTO-0137 Negative schema fixtures: one per SchemaError variant, ported from Kafka's VersionsTest, StructSpecTest, StructRegistryTest, EntityTypeTest and MessageGeneratorTest
+### [Done] PROTO-0137 Negative schema fixtures: one per SchemaError variant, ported from Kafka's VersionsTest, StructSpecTest, StructRegistryTest, EntityTypeTest, MessageGeneratorTest and MessageDataGeneratorTest
 P1 · M1 · Task · deps: PROTO-0135, PROTO-0024 · labels: test · ref: generator/src/test/java/org/apache/kafka/message/StructSpecTest.java @4.4.0
 Done when: every SchemaError variant has a fixture asserting its message; attribution comments present.
 
@@ -614,7 +614,7 @@ Done when: every SchemaError variant has a fixture asserting its message; attrib
 P0 · M1 · Task · deps: none · labels: test · ref: ADR-0008
 Done when: hand-editing a generated file fails CI with a clear message; the check covers generated code, fuzz targets and generated docs.
 
-### [To Do] PROTO-0139 Determinism test: codegen output is independent of filesystem order and repeated runs, and contains no timestamps or absolute paths
+### [Done] PROTO-0139 Determinism test: codegen output is independent of filesystem order and repeated runs, and contains no timestamps or absolute paths
 P1 · M1 · Task · deps: PROTO-0138 · labels: test
 Done when: two runs over shuffled input order produce identical bytes.
 

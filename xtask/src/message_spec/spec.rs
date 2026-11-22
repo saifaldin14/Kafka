@@ -831,6 +831,122 @@ mod tests {
         field(value).unwrap_err().message
     }
 
+    // Ported from: generator/src/test/java/org/apache/kafka/message/MessageDataGeneratorTest.java@4.4.0
+    // (testInvalidNullDefaultForInt through testInvalidNullDefaultForPotentiallyNonNullableStruct).
+    // Each schema fails to load with Kafka's message, at the JSON pointer of the offending value.
+    fn assert_rejected(flexible: &str, fields: &str, expected: &str, pointer: &str) {
+        use crate::message_spec::{Location, load};
+
+        let text = format!(
+            r#"{{ "type": "request", "name": "FooBar", "validVersions": "0-2",
+                 "flexibleVersions": "{flexible}", "fields": [{fields}] }}"#
+        );
+        let error = load("FooBar.json", &text).unwrap_err();
+        assert!(error.message.contains(expected), "{fields}: {error}");
+        assert_eq!(
+            error.location,
+            Location::Pointer(pointer.to_owned()),
+            "{fields}"
+        );
+    }
+
+    #[test]
+    fn kafkas_invalid_fields_fail_with_kafkas_messages() {
+        for (flexible, fields, expected, pointer) in [
+            (
+                "none",
+                r#"{ "name": "field1", "type": "int32", "versions": "0+", "default": "null" }"#,
+                "Invalid default for int32",
+                "/fields/0/default",
+            ),
+            (
+                "none",
+                r#"{ "name": "field1", "type": "[]int32", "versions": "0+", "nullableVersions": "1+", "default": "null" }"#,
+                "not all versions of this field are nullable",
+                "/fields/0/default",
+            ),
+            (
+                "0+",
+                r#"{ "name": "_badName", "type": "[]int32", "versions": "0+" }"#,
+                "Invalid field name",
+                "/fields/0",
+            ),
+            (
+                "0+",
+                r#"{ "name": "field1", "type": "int32", "versions": "0+", "tag": 0 }"#,
+                "If a tag is specified, taggedVersions must be specified as well.",
+                "/fields/0",
+            ),
+            (
+                "0+",
+                r#"{ "name": "field1", "type": "int32", "versions": "0+", "tag": -1, "taggedVersions": "0+" }"#,
+                "Tags cannot be negative",
+                "/fields/0",
+            ),
+            (
+                "0-2",
+                r#"{ "name": "field1", "type": "int32", "versions": "0+" }"#,
+                "flexibleVersions must be either none, or an open-ended range",
+                "/flexibleVersions",
+            ),
+            (
+                "0+",
+                r#"{ "name": "field1", "type": "string", "versions": "0+", "tag": 0, "taggedVersions": "0+", "nullableVersions": "1+" }"#,
+                "Either all tagged versions must be nullable, or none must be",
+                "/fields/0",
+            ),
+            (
+                "0+",
+                r#"{ "name": "field1", "type": "string", "versions": "0-2", "tag": 0, "taggedVersions": "1+" }"#,
+                "taggedVersions must be a subset of versions",
+                "/fields/0",
+            ),
+            (
+                "0+",
+                r#"{ "name": "field1", "type": "string", "versions": "0+", "taggedVersions": "1+" }"#,
+                "Please specify a tag, or remove the taggedVersions",
+                "/fields/0",
+            ),
+            (
+                "0+",
+                r#"{ "name": "field1", "type": "string", "versions": "0+", "tag": 0, "taggedVersions": "1-2" }"#,
+                "taggedVersions must be either none, or an open-ended range",
+                "/fields/0",
+            ),
+            (
+                "0+",
+                r#"{ "name": "field1", "type": "string", "versions": "0+", "tag": 0, "taggedVersions": "0+" },
+                   { "name": "field2", "type": "int64", "versions": "0+", "tag": 0, "taggedVersions": "0+" }"#,
+                "duplicate tag",
+                "",
+            ),
+        ] {
+            assert_rejected(flexible, fields, expected, pointer);
+        }
+    }
+
+    #[test]
+    fn kafkas_invalid_struct_defaults_fail_with_kafkas_messages() {
+        let field = |nullable: &str, default: &str| {
+            format!(
+                r#"{{ "name": "struct1", "type": "MyStruct", "versions": "0+", "nullableVersions": "{nullable}",
+                     "default": "{default}", "fields": [ {{ "name": "field1", "type": "string", "versions": "0+" }} ] }}"#
+            )
+        };
+        assert_rejected(
+            "none",
+            &field("0+", "not-null"),
+            "Invalid default for struct field struct1.  The only valid default for a struct field ",
+            "/fields/0/default",
+        );
+        assert_rejected(
+            "none",
+            &field("1+", "null"),
+            "not all versions of this field are nullable",
+            "/fields/0/default",
+        );
+    }
+
     // Ported from: generator/src/test/java/org/apache/kafka/message/StructSpecTest.java@4.4.0.
 
     #[test]
