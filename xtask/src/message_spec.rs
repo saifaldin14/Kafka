@@ -26,8 +26,11 @@ mod versions;
 use std::collections::BTreeMap;
 use std::fmt;
 
+pub(crate) use defaults::FieldDefault;
+pub(crate) use field_type::FieldType;
 pub(crate) use registry::StructRegistry;
-pub(crate) use spec::{MessageKind, MessageSpec};
+pub(crate) use spec::{FieldSpec, MessageKind, MessageSpec};
+pub(crate) use versions::Versions;
 
 /// Why a schema file can't be used, and where in it.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -140,7 +143,7 @@ impl Inventory {
     }
 }
 
-fn count_keyed(registry: &StructRegistry<'_>, fields: &[spec::FieldSpec]) -> usize {
+fn count_keyed(registry: &StructRegistry<'_>, fields: &[FieldSpec]) -> usize {
     fields
         .iter()
         .map(|field| {

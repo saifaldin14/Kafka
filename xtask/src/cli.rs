@@ -38,6 +38,7 @@ pub(crate) enum Command {
         uninstall: bool,
     },
     Fuzz(FuzzCommand),
+    Codegen,
     /// `bench [--base <ref>]`.
     Bench {
         base: Option<String>,
@@ -123,6 +124,10 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
         "Run one input through a target with the standard limits, such as a crash artifact",
     ),
     ("fuzz --list", "List the fuzz targets"),
+    (
+        "codegen",
+        "Generate the protocol crate's message types from the vendored Kafka schemas",
+    ),
     (
         "bench [--base <ref>]",
         "Run the gated benchmarks (Linux, valgrind); with --base, fail on an instruction-count regression against <ref>",
@@ -322,6 +327,7 @@ pub(crate) fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Command,
             }),
         },
         "fuzz" => parse_fuzz(rest).map(Command::Fuzz),
+        "codegen" => no_arguments("codegen", rest).map(|()| Command::Codegen),
         "bench" => match rest {
             [] => Ok(Command::Bench { base: None }),
             [flag] if flag == "--base" => Err(UsageError::MissingValue { flag: "--base" }),

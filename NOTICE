@@ -35,6 +35,12 @@ that it was modified, and marks every ported part `// Ported from:` with its sou
 - xtask/src/message_spec/registry.rs: tests ported from
   generator/src/test/java/org/apache/kafka/message/StructRegistryTest.java.
 
+Files generated from Apache Kafka material by `cargo xtask codegen`. Each starts with a
+header naming the schema it was generated from; its doc comments carry the schema's
+`about` text, edited for rustdoc:
+
+- crates/alluvium-protocol/src/generated/: from schemas/kafka-4.4.0/clients/.
+
 Apache Kafka files copied unmodified, with Kafka's own LICENSE and NOTICE beside them:
 
 - schemas/kafka-4.4.0/: the message schemas of Apache Kafka 4.4.0 (see its README.md

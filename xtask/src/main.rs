@@ -40,6 +40,7 @@ mod check_workflows;
 mod ci;
 mod cli;
 mod clock;
+mod codegen;
 mod crate_docs;
 mod deps_diff;
 mod doctor;
@@ -121,6 +122,7 @@ fn run(command: &Command, out: &mut impl std::io::Write) -> Exit {
         Command::Doctor => doctor::run(out),
         Command::InstallHooks { uninstall } => hooks::run(*uninstall, out),
         Command::Fuzz(command) => fuzz::run(command, out),
+        Command::Codegen => codegen::run(out),
         Command::Bench { base } => bench::run(base.as_deref(), out),
     }
 }
