@@ -216,9 +216,10 @@ Done when: The nightly compatibility job runs the matrix; each pin is recorded i
 P2 · M0 · Feature · deps: FND-F06
 Scope: Build time, crate size and doc coverage tracking.
 
-### [In Review] NFR-0045 Build time tracking: CI records clean and incremental build times on main (`cargo build --timings` report as an artifact) and writes the totals to the job summary
+### [Done] NFR-0045 Build time tracking: CI records clean and incremental build times on main (`cargo build --timings` report as an artifact) and writes the totals to the job summary
 P2 · M0 · Task · deps: none · labels: nfr
 Done when: The timings artifact is available for every main build; the summary shows the change against the previous main build; nothing fails on build time.
+Notes: Proven on main by two consecutive runs. [45021811502](https://github.com/saifaldin14/Kafka/actions/runs/45021811502) (7b92126, clean 25.5 s, incremental 2.3 s) had no previous build, so its summary shows `none`. [45022611108](https://github.com/saifaldin14/Kafka/actions/runs/45022611108) (d32bacc, clean 21.1 s, incremental 3.1 s) downloaded the first run's `totals.json` without error, so its summary shows the change: −4.4 s and +0.8 s. Both runs uploaded the `build-times` artifact with the `--timings` reports. No step has a threshold, so a slow build never fails.
 
 ### [To Do] NFR-0046 `cargo xtask metrics`: lines of code per crate (excluding generated code and tests counted separately), modules over 600 lines (rust.md's split signal), and transitive dependency count per crate, as JSON and a table
 P2 · M1 · Task · deps: none · labels: nfr · ref: docs/standards/rust.md#modules-and-documentation
