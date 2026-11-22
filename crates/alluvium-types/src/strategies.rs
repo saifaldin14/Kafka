@@ -334,3 +334,29 @@ pub fn topic_id_partition() -> impl Strategy<Value = TopicIdPartition> {
         },
     )
 }
+
+/// `isolation_level` wire values: the valid 0 and 1, their neighbours, the extremes and
+/// any other `i8`.
+pub fn isolation_level_wire_value() -> impl Strategy<Value = i8> {
+    prop_oneof![
+        4 => 0..=1_i8,
+        1 => Just(-1),
+        1 => Just(2),
+        1 => Just(i8::MIN),
+        1 => Just(i8::MAX),
+        2 => any::<i8>(),
+    ]
+}
+
+/// `acks` wire values: the valid -1, 0 and 1, their neighbours, the extremes and any
+/// other `i16`.
+pub fn acks_wire_value() -> impl Strategy<Value = i16> {
+    prop_oneof![
+        4 => -1..=1_i16,
+        1 => Just(-2),
+        1 => Just(2),
+        1 => Just(i16::MIN),
+        1 => Just(i16::MAX),
+        2 => any::<i16>(),
+    ]
+}
