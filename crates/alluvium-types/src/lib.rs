@@ -31,6 +31,8 @@
 //!   and monotonic readings, saturating deadlines);
 //! - `clients/.../common/network/ListenerName.java` (listener name normalisation);
 //! - `clients/.../common/TopicPartition.java` and `TopicIdPartition.java` (display);
+//! - `clients/.../common/config/ConfigDef.java` `ValidList` (the `cleanup.policy` list
+//!   rules);
 //! - `clients/.../common/config/types/Password.java` and
 //!   `clients/.../common/utils/internals/Crc32C.java`.
 //!
@@ -72,6 +74,7 @@
 //! - [`ListenerName`]: a listener's name, upper-cased as Kafka normalises it.
 //! - [`TimestampType`] and [`CompressionType`]: record batch attributes, by Kafka id
 //!   and name ([`AttributeError`] for others).
+//! - [`CleanupPolicy`]: delete, compact, both or neither ([`CleanupPolicyError`]).
 //! - [`Acks`] and [`IsolationLevel`]: what a write waits for and what a read may see
 //!   ([`DeliveryError`] for other wire values).
 //! - [`TopicPartition`] and [`TopicIdPartition`]: a partition named by topic name, or by
@@ -87,6 +90,7 @@
 //! Errors here carry no Kafka error code: the Kafka error depends on where the value
 //! came from, so the decoder or handler that rejects it maps it.
 
+mod cleanup_policy;
 mod client_ids;
 mod clock;
 pub mod collections;
@@ -109,6 +113,7 @@ mod time;
 mod topic;
 mod uuid;
 
+pub use cleanup_policy::{CleanupPolicy, CleanupPolicyError};
 pub use client_ids::{ClientId, GroupId, GroupInstanceId, TransactionalId};
 pub use clock::{Clock, ManualClock, SystemClock, WallClockError};
 pub use deadline::Deadline;

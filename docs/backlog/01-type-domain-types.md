@@ -240,7 +240,7 @@ Done when: Tests over every `i8`/`i16` value show only the listed values decode 
 P1 · M0 · Task · deps: TYPE-0002 · ref: clients/src/main/java/org/apache/kafka/common/record/internal/CompressionType.java forId/forName @4.4.0
 Done when: Id and name round-trips are tested for every variant; unknown ids and names return typed errors; the doc states that Kafka's `NO_TIMESTAMP_TYPE` (message formats v0/v1, not supported) is `Option::None` where it can appear, and that the topic-level `producer` compression value belongs to CFG; `// Parity:` cites `TimestampType` and `CompressionType`.
 
-### [To Do] TYPE-0046 `CleanupPolicy`: the set of `{Delete, Compact}` built from a list of tokens (`delete`, `compact`, both in either order, or an empty list meaning no cleanup) with a canonical `Display`
+### [Done] TYPE-0046 `CleanupPolicy`: the set of `{Delete, Compact}` built from a list of tokens (`delete`, `compact`, both in either order, or an empty list meaning no cleanup) with a canonical `Display`
 P1 · M0 · Task · deps: TYPE-0002 · ref: storage/src/main/java/org/apache/kafka/storage/internals/log/LogConfig.java @4.4.0
 Done when: Tests cover each accepted list, unknown tokens (rejected with the token named), duplicates handled as Kafka's `ConfigDef.ValidList` does at 4.4.0, and the empty list (infinite retention, per `TopicConfig.CLEANUP_POLICY_DOC`); parsing the config string into tokens is CFG's job.
 
