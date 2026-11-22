@@ -11,7 +11,10 @@
 
 use proptest::prelude::{Just, Strategy, any, prop_oneof};
 
-use crate::{BrokerId, CorrelationId, NodeId, PartitionIndex, ProducerEpoch, ProducerId, Sequence};
+use crate::{
+    BrokerEpoch, BrokerId, CorrelationId, GenerationId, LeaderEpoch, MemberEpoch, NodeId,
+    PartitionIndex, ProducerEpoch, ProducerId, Sequence,
+};
 
 /// Non-negative `i32` values, with extra weight on 0, 1 and `i32::MAX`.
 pub(crate) fn non_negative_i32() -> impl Strategy<Value = i32> {
@@ -72,4 +75,40 @@ pub fn producer_epoch() -> impl Strategy<Value = ProducerEpoch> {
 /// Valid [`Sequence`]s, biased towards 0, 1 and the wrap point `i32::MAX`.
 pub fn sequence() -> impl Strategy<Value = Sequence> {
     non_negative_i32().prop_filter_map("non-negative", |value| Sequence::try_from(value).ok())
+}
+
+/// Valid [`LeaderEpoch`]s, biased towards 0, 1 and `i32::MAX`.
+pub fn leader_epoch() -> impl Strategy<Value = LeaderEpoch> {
+    non_negative_i32().prop_filter_map("non-negative", |value| LeaderEpoch::try_from(value).ok())
+}
+
+/// Valid [`BrokerEpoch`]s, biased towards 0, 1 and `i64::MAX`.
+pub fn broker_epoch() -> impl Strategy<Value = BrokerEpoch> {
+    prop_oneof![
+        1 => Just(0),
+        1 => Just(1),
+        1 => Just(i64::MAX),
+        7 => 0..=i64::MAX,
+    ]
+    .prop_filter_map("non-negative", |value| BrokerEpoch::try_from(value).ok())
+}
+
+/// Every [`MemberEpoch`] sentinel, and positive epochs biased towards 1 and `i32::MAX`.
+pub fn member_epoch() -> impl Strategy<Value = MemberEpoch> {
+    prop_oneof![
+        1 => Just(0),
+        1 => Just(-1),
+        1 => Just(-2),
+        1 => Just(1),
+        1 => Just(i32::MAX),
+        5 => 1..=i32::MAX,
+    ]
+    .prop_filter_map("accepted wire value", |value| {
+        MemberEpoch::from_wire(value).ok()
+    })
+}
+
+/// Valid [`GenerationId`]s, biased towards 0, 1 and `i32::MAX`.
+pub fn generation_id() -> impl Strategy<Value = GenerationId> {
+    non_negative_i32().prop_filter_map("non-negative", |value| GenerationId::try_from(value).ok())
 }

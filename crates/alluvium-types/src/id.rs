@@ -42,6 +42,14 @@ pub enum IdKind {
     ProducerEpoch,
     /// A [`Sequence`](crate::Sequence).
     Sequence,
+    /// A [`LeaderEpoch`](crate::LeaderEpoch).
+    LeaderEpoch,
+    /// A [`BrokerEpoch`](crate::BrokerEpoch).
+    BrokerEpoch,
+    /// A [`MemberEpoch`](crate::MemberEpoch).
+    MemberEpoch,
+    /// A [`GenerationId`](crate::GenerationId).
+    Generation,
 }
 
 impl fmt::Display for IdKind {
@@ -53,6 +61,10 @@ impl fmt::Display for IdKind {
             IdKind::Producer => "producer id",
             IdKind::ProducerEpoch => "producer epoch",
             IdKind::Sequence => "sequence number",
+            IdKind::LeaderEpoch => "leader epoch",
+            IdKind::BrokerEpoch => "broker epoch",
+            IdKind::MemberEpoch => "member epoch",
+            IdKind::Generation => "generation id",
         })
     }
 }
