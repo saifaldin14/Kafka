@@ -29,6 +29,7 @@ Decisions are in [ADR-0003](../adr/0003-deterministic-simulation-testing.md).
 8. **Names describe the behavior**: `fetch_beyond_high_watermark_returns_no_records`, not `test_fetch_3`.
 9. **Cover each supported API version.** Version-dependent behavior is tested for every version in the advertised range.
 10. **Port Kafka's tests where they encode tricky semantics.** Name the source in a comment: `// Ported from: core/src/test/scala/unit/kafka/cluster/PartitionTest.scala@4.4.0 testXyz`. A ported test is Kafka material, so its file also takes the header in [Attributing Kafka material](../../CONTRIBUTING.md#attributing-kafka-material) and is listed in `NOTICE` ([ADR-0008](../adr/0008-protocol-code-generated-from-kafka-schemas.md)).
+11. **Every fixed fuzz crash adds a regression unit test** in the crate that owns the broken rule, and adds its input to `fuzz/seeds/<target>/`. Fuzzing finds a bug once, and the test keeps it fixed even when no fuzzer runs ([crash triage](../guides/debugging.md#fuzz-crashes)).
 
 ## Shared strategies
 

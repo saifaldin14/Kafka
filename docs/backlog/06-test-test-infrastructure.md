@@ -220,7 +220,7 @@ Done when: The example in the guide is a real test that runs in CI (the guide li
 P1 · M3 · Task · deps: TEST-0045 · labels: test, perf
 Done when: The criterion benchmark result is recorded in the PR; the nightly seed count is derived from it so the nightly job fits its time budget (stated in the nightly workflow comment).
 
-## [In Progress] TEST-F07 Fuzzing infrastructure
+## [Done] TEST-F07 Fuzzing infrastructure
 P0 · M1 · Feature · deps: FND-F06
 Scope: cargo-fuzz layout, corpus management, short CI runs per PR, nightly long runs, crash triage workflow.
 
@@ -252,7 +252,7 @@ Done when: A planted crash in a PR fails the job and the artifact reproduces it 
 P0 · M1 · Task · deps: TEST-0053 · labels: test, security · ref: docs/standards/security.md#untrusted-input
 Done when: The job runs only on schedule, with write permissions limited to corpus storage and issues; a planted crash creates one issue (not one per run) with the reproducer and the `cargo xtask fuzz` command.
 
-### [To Do] TEST-0055 Crash triage workflow in docs/guides/debugging.md: minimize with `cargo fuzz tmin`, reproduce, write the failing unit test in the owning crate (named after the crash), fix, and add the input to `fuzz/seeds/`
+### [Done] TEST-0055 Crash triage workflow in docs/guides/debugging.md: minimize with `cargo fuzz tmin`, reproduce, write the failing unit test in the owning crate (named after the crash), fix, and add the input to `fuzz/seeds/`
 P0 · M1 · Task · deps: TEST-0054 · labels: test, docs · ref: docs/guides/debugging.md
 Done when: The guide walks through one real or planted crash end to end; the issue template from FND-F11 links to it; the rule "every fixed fuzz crash adds a regression unit test" is in testing.md.
 

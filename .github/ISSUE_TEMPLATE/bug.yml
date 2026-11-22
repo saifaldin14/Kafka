@@ -18,7 +18,7 @@ body:
     attributes:
       label: Reproduction
       description: |
-        The smallest steps, commands or test that show the bug. For a simulation failure, give the seed and the replay command it printed: `ALLUVIUM_SIM_SEED=<seed> cargo nextest run <test>`.
+        The smallest steps, commands or test that show the bug. For a simulation failure, give the seed and the replay command it printed: `ALLUVIUM_SIM_SEED=<seed> cargo nextest run <test>`. For a fuzz crash, attach the input and the `cargo xtask fuzz <target> <input>` command, and see the [crash triage](https://github.com/saifaldin14/Kafka/blob/main/docs/guides/debugging.md#fuzz-crashes).
     validations:
       required: true
   - type: textarea
