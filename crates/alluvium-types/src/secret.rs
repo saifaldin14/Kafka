@@ -72,9 +72,116 @@ mod tests {
     use std::sync::Arc;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
+    use std::fmt::{self, Write};
+    use std::sync::Mutex;
+
+    use proptest::prelude::{any, prop_assert, prop_assert_eq, proptest};
+    use tracing::field::{Field, Visit};
+    use tracing::span::{Attributes, Id, Record};
+    use tracing::{Event, Metadata, Subscriber};
     use zeroize::Zeroize;
 
     use super::Secret;
+
+    /// A `tracing` subscriber that writes every event and span field it sees, formatted
+    /// as a log line would format it, into one string.
+    #[derive(Clone, Default)]
+    struct Capture(Arc<Mutex<String>>);
+
+    struct Fields<'a>(&'a mut String);
+
+    impl Visit for Fields<'_> {
+        fn record_debug(&mut self, field: &Field, value: &dyn fmt::Debug) {
+            write!(self.0, "{}={value:?} ", field.name()).unwrap();
+        }
+    }
+
+    impl Subscriber for Capture {
+        fn enabled(&self, _: &Metadata<'_>) -> bool {
+            true
+        }
+        fn new_span(&self, span: &Attributes<'_>) -> Id {
+            span.record(&mut Fields(&mut self.0.lock().unwrap()));
+            Id::from_u64(1)
+        }
+        fn record(&self, _: &Id, values: &Record<'_>) {
+            values.record(&mut Fields(&mut self.0.lock().unwrap()));
+        }
+        fn record_follows_from(&self, _: &Id, _: &Id) {}
+        fn event(&self, event: &Event<'_>) {
+            event.record(&mut Fields(&mut self.0.lock().unwrap()));
+        }
+        fn enter(&self, _: &Id) {}
+        fn exit(&self, _: &Id) {}
+    }
+
+    /// Every way a secret could be printed: `{:?}`, `{:#?}`, `{}`, inside a derived
+    /// `Debug`, and as `?` and `%` fields of a `tracing` event and span.
+    fn every_printing_of(value: &str) -> Vec<String> {
+        #[derive(Debug)]
+        #[expect(dead_code, reason = "only printed with Debug")]
+        struct Login {
+            user: &'static str,
+            password: Secret<String>,
+        }
+        let secret = Secret::new(value.to_owned());
+        let login = Login {
+            user: "alice",
+            password: secret.clone(),
+        };
+        let capture = Capture::default();
+        tracing::subscriber::with_default(capture.clone(), || {
+            tracing::info!(debug = ?secret, display = %secret, "login");
+            let _span = tracing::info_span!("auth", password = ?secret, shown = %secret);
+        });
+        let captured = capture.0.lock().unwrap().clone();
+        vec![
+            format!("{secret:?}"),
+            format!("{secret:#?}"),
+            format!("{secret}"),
+            format!("{login:?}"),
+            format!("{login:#?}"),
+            captured,
+        ]
+    }
+
+    #[test]
+    fn every_printing_is_redacted() {
+        let printed = every_printing_of("hunter2");
+        assert_eq!(printed[..3], ["Secret(***)", "Secret(***)", "Secret(***)"]);
+        assert_eq!(
+            printed[3],
+            r#"Login { user: "alice", password: Secret(***) }"#
+        );
+        assert_eq!(
+            printed[5],
+            "message=login debug=Secret(***) display=Secret(***) password=Secret(***) \
+             shown=Secret(***) "
+        );
+    }
+
+    proptest! {
+        // The printed text is the same whatever the secret, so it can't reveal it. The
+        // window check states the requirement directly: no run of 4 or more of the
+        // secret's characters appears, except runs that are part of the fixed text
+        // (a secret containing "cret" matches "Secret(***)" by coincidence).
+        #[test]
+        fn no_printing_reveals_any_part_of_the_secret(value in any::<String>()) {
+            let printed = every_printing_of(&value);
+            let fixed = every_printing_of("x");
+            prop_assert_eq!(&printed, &fixed);
+            let characters: Vec<char> = value.chars().collect();
+            for window in characters.windows(4) {
+                let run: String = window.iter().collect();
+                for (output, template) in printed.iter().zip(&fixed) {
+                    prop_assert!(
+                        !output.contains(&run) || template.contains(&run),
+                        "{:?} appears in {:?}", run, output
+                    );
+                }
+            }
+        }
+    }
 
     /// A value that counts how many times it was zeroized.
     #[derive(Clone)]
@@ -84,30 +191,6 @@ mod tests {
         fn zeroize(&mut self) {
             self.0.fetch_add(1, Ordering::SeqCst);
         }
-    }
-
-    #[test]
-    fn debug_and_display_hide_the_value() {
-        #[derive(Debug)]
-        #[expect(dead_code, reason = "only printed with Debug")]
-        struct Credentials {
-            user: String,
-            password: Secret<String>,
-        }
-        let secret = Secret::new("hunter2".to_owned());
-        assert_eq!(format!("{secret:?}"), "Secret(***)");
-        assert_eq!(secret.to_string(), "Secret(***)");
-        let printed = format!(
-            "{:?}",
-            Credentials {
-                user: "alice".to_owned(),
-                password: secret,
-            }
-        );
-        assert_eq!(
-            printed,
-            "Credentials { user: \"alice\", password: Secret(***) }"
-        );
     }
 
     #[test]
@@ -121,6 +204,23 @@ mod tests {
         let count = Arc::new(AtomicUsize::new(0));
         drop(Secret::new(Tracked(Arc::clone(&count))));
         assert_eq!(count.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn secrets_in_dropped_containers_are_zeroized() {
+        struct Config {
+            _password: Secret<Tracked>,
+        }
+        let count = Arc::new(AtomicUsize::new(0));
+        let secret = || Secret::new(Tracked(Arc::clone(&count)));
+        drop(vec![secret(), secret(), secret()]);
+        assert_eq!(count.load(Ordering::SeqCst), 3);
+        drop(Some(Box::new(secret())));
+        assert_eq!(count.load(Ordering::SeqCst), 4);
+        drop(Config {
+            _password: secret(),
+        });
+        assert_eq!(count.load(Ordering::SeqCst), 5);
     }
 
     #[test]

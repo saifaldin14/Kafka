@@ -142,6 +142,7 @@ On-disk formats are documented in `docs/formats/` (created with storage in M2) p
 ## Printing values
 
 - Every type implements `Debug` (lint-enforced).
-- `Secret<T>` prints `Secret(***)`.
+- `Secret<T>` prints `Secret(***)` in every form: `{:?}`, `{:#?}`, `{}`, inside a derived `Debug`, and as a `?` or `%` field of a `tracing` event or span. The property test `alluvium_types::secret::tests::no_printing_reveals_any_part_of_the_secret` checks all of them for random values.
 - Payload bytes print as their length and a CRC, for example `Bytes { len: 1048576, crc32c: 0x1a2b3c4d }`, never their contents: wrap them in `alluvium_types::PayloadSummary`.
 - Never log credentials, SASL tokens, record keys, values or headers. Topic names, group ids, client ids and principals may be logged, as Kafka does.
+- Strings a client chooses (group, instance, transactional and client ids, and any other free-form name) print through `alluvium_types::LogSafe`, and the `Debug` and `Display` of their types use it. It escapes control characters, U+2028 and U+2029, and the bidirectional formatting characters as `\n`, `\r`, `\t` or `\u{hex}`, so a value can't start a fake log line or make the rest of a line read backwards. Everything else, including `\` and printable Unicode, prints unchanged. Topic names need no escaping: their alphabet is `[a-zA-Z0-9._-]`.

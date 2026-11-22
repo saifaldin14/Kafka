@@ -100,7 +100,7 @@ disallowed-types = [
 ]
 ```
 
-Each disallowed item has exactly one sanctioned wrapper, and the wrapper carries a single `#[expect(clippy::disallowed_methods, reason = "…")]`. For example, `SystemClock` is the one place that calls `Instant::now`. The seeded hash maps take their seed from the injected RNG: random per process in production, so attacker-chosen keys can't cause hash flooding, and fixed in simulation, so runs replay exactly.
+Each disallowed item has exactly one sanctioned wrapper, and the wrapper carries a single `#[expect(clippy::disallowed_methods, reason = "…")]`. For example, `SystemClock` is the one place that calls `Instant::now`. [`xtask/tests/disallowed_exceptions.rs`](../../xtask/tests/disallowed_exceptions.rs) lists every such exception by file, so a new one fails the tests until it is reviewed and added there. The seeded hash maps take their seed from the injected RNG: random per process in production, so attacker-chosen keys can't cause hash flooding, and fixed in simulation, so runs replay exactly.
 
 Clippy matches functions, not paths, so one entry bans every path to a function: `tokio::spawn` also covers `tokio::task::spawn`. A second entry for the same function would silently replace the first one's reason. Clippy also can't ban a trait method by path (`ThreadRng::default`), so such cases ban the type in `disallowed-types`. The `tokio` and `rand` entries carry `allow-invalid = true`: their functions exist only with some of the crates' features (rand's `thread_rng`, tokio's `rt` and `time`), and without it clippy warns in every crate that uses fewer features. A misspelled entry is still caught, because the lint canary compiles them all and requires every entry to fire. Every entry needs a fixture in the lint canary, which also checks that clippy reports the configured reason.
 
@@ -212,6 +212,7 @@ Defined by [ADR-0004](../adr/0004-error-model-and-panic-policy.md).
 | `advisories` | `cargo deny --locked check advisories`: security advisories against `Cargo.lock`. Separate from `deny` because a new advisory depends on the date, not the change, so CI reports it without blocking unrelated PRs |
 | `links` | `lychee --offline --include-fragments` over README.md, AGENTS.md, CLAUDE.md, CONTRIBUTING.md, `docs/`, `.agents/` and `.github/`: relative links and `#anchors` resolve. External URLs are not checked here |
 | `test` | `cargo nextest run --workspace --locked --profile ci` ([`.config/nextest.toml`](../../.config/nextest.toml)) |
+| `doctest` | `cargo test --workspace --doc --locked`: the examples in doc comments compile and pass, and `compile_fail` examples fail to compile. A separate step because nextest does not run doctests |
 
 Steps and commands still to come, each added by its backlog task:
 

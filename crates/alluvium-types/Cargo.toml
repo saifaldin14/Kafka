@@ -11,13 +11,17 @@ publish.workspace = true
 proptest-strategies = ["dep:proptest"]
 
 [dependencies]
+chacha20 = { workspace = true }
 crc32c = { workspace = true }
+getrandom = { workspace = true }
 proptest = { workspace = true, optional = true }
+siphasher = { workspace = true }
 thiserror = { workspace = true }
 zeroize = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
+tracing = { workspace = true }
 
 [lints]
 workspace = true

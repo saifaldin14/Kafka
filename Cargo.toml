@@ -8,13 +8,16 @@ rust-version = "1.99"
 publish = false
 
 [workspace.dependencies]
+chacha20 = { version = "0.10.2", default-features = false, features = ["rng"] }
 crc32c = { version = "0.6.9", default-features = false }
 getrandom = { version = "0.4.3", default-features = false }
 proptest = { version = "1.12.0", default-features = false, features = ["std"] }
 rand = { version = "0.10.4", default-features = false }
 serde_json = { version = "1.0.154", default-features = false, features = ["std"] }
+siphasher = { version = "1.0.4", default-features = false }
 thiserror = { version = "2.0.21", default-features = false }
 tokio = { version = "1.54.1", default-features = false }
+tracing = { version = "0.1.44", default-features = false, features = ["std"] }
 toml = { version = "1.2.2", default-features = false, features = ["parse", "serde", "std"] }
 zeroize = { version = "1.9.2", default-features = false, features = ["alloc"] }
 

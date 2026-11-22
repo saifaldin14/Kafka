@@ -4,7 +4,7 @@
 
 Shared domain vocabulary: identifier newtypes, validated names, time and randomness injection, secrets, and the type-level foundations for namespaces and key ranges.
 
-## [In Progress] TYPE-F01 Identifier newtypes
+## [Done] TYPE-F01 Identifier newtypes
 P0 · M0 · Feature · deps: FND-F02
 Scope: `BrokerId`, `NodeId`, `PartitionIndex`, `ProducerId`, `ProducerEpoch`, `Sequence`, `LeaderEpoch`, `BrokerEpoch`, `MemberEpoch`, `GenerationId`, `CorrelationId` with checked construction and `Debug`/`Display`.
 
@@ -16,99 +16,100 @@ Done when: The crate lives at `crates/alluvium-types` (the workspace switches to
 P0 · M0 · Task · deps: TYPE-0001 · labels: test · ref: docs/standards/testing.md#test-levels
 Done when: docs/standards/testing.md states where shared strategies live (in the owning crate behind `proptest-strategies`, not in `alluvium-testkit`, because a dev-dependency cycle would compile two copies of the types); property tests show `TryFrom<i32>` accepts exactly the non-negative values; the `proptest` justification follows security.md#dependencies; the module is absent without the feature.
 
-### [To Do] TYPE-0003 `PartitionIndex` (non-negative `i32`, `checked_next`) and `CorrelationId` (any `i32`, no validation, as in the request header)
+### [Done] TYPE-0003 `PartitionIndex` (non-negative `i32`, `checked_next`) and `CorrelationId` (any `i32`, no validation, as in the request header)
 P0 · M0 · Task · deps: TYPE-0002 · ref: clients/src/main/java/org/apache/kafka/common/TopicPartition.java @4.4.0
 Done when: Unit tests cover 0, `i32::MAX` and negatives for `PartitionIndex`, and the overflow of `checked_next` at `i32::MAX`; `CorrelationId` round-trips every `i32`, including negatives; strategies for both are added; `Display` prints the plain number.
 
-### [To Do] TYPE-0004 `ProducerId` (non-negative `i64`, `NO_PRODUCER_ID = -1` → `None`) and `ProducerEpoch` (non-negative `i16`, `-1` → `None`) with `is_exhausted()` (epoch ≥ `i16::MAX - 1`) and `checked_bump()`
+### [Done] TYPE-0004 `ProducerId` (non-negative `i64`, `NO_PRODUCER_ID = -1` → `None`) and `ProducerEpoch` (non-negative `i16`, `-1` → `None`) with `is_exhausted()` (epoch ≥ `i16::MAX - 1`) and `checked_bump()`
 P0 · M0 · Task · deps: TYPE-0002 · ref: transaction-coordinator/src/main/java/org/apache/kafka/coordinator/transaction/TransactionMetadata.java isEpochExhausted @4.4.0
 Done when: `// Parity:` cites `TransactionMetadata.isEpochExhausted` and `RecordBatch.NO_PRODUCER_ID`/`NO_PRODUCER_EPOCH`; tests cover epochs 32765, 32766 and 32767 for `is_exhausted` and `checked_bump` (which returns `None` at `i16::MAX`); strategies cover the boundaries.
 
-### [To Do] TYPE-0005 `Sequence` (non-negative `i32`, `NO_SEQUENCE = -1` → `None`) with `wrapping_add(n)` and `wrapping_sub(n)` matching `DefaultRecordBatch.incrementSequence`/`decrementSequence` (wrap from `i32::MAX` to 0)
+### [Done] TYPE-0005 `Sequence` (non-negative `i32`, `NO_SEQUENCE = -1` → `None`) with `wrapping_add(n)` and `wrapping_sub(n)` matching `DefaultRecordBatch.incrementSequence`/`decrementSequence` (wrap from `i32::MAX` to 0)
 P0 · M0 · Task · deps: TYPE-0002 · ref: clients/src/main/java/org/apache/kafka/common/record/internal/DefaultRecordBatch.java incrementSequence @4.4.0
 Done when: Ported cases cover wrap-around at `i32::MAX`; a property test shows `wrapping_sub(wrapping_add(s, n), n) == s` for all valid `s` and `n`; `// Parity:` cites both Kafka methods.
 
-### [To Do] TYPE-0006 `LeaderEpoch` (non-negative `i32`, `NO_PARTITION_LEADER_EPOCH = -1` → `None`, total order) and `BrokerEpoch` (non-negative `i64`, `-1` → `None`)
+### [Done] TYPE-0006 `LeaderEpoch` (non-negative `i32`, `NO_PARTITION_LEADER_EPOCH = -1` → `None`, total order) and `BrokerEpoch` (non-negative `i64`, `-1` → `None`)
 P0 · M0 · Task · deps: TYPE-0002 · ref: clients/src/main/java/org/apache/kafka/common/record/internal/RecordBatch.java NO_PARTITION_LEADER_EPOCH @4.4.0
 Done when: Comparisons are by numeric value (the rule "a replica rejects a stale epoch" relies on them); unit tests cover the sentinels, the boundaries and other negatives; strategies are added.
 
-### [To Do] TYPE-0007 `MemberEpoch` with the KIP-848 sentinels as an enum (`Join` = 0, `Leave` = -1, `LeaveStatic` = -2, `Epoch(n)` for n > 0) and `GenerationId` (`UNKNOWN_GENERATION_ID = -1` → `None`)
+### [Done] TYPE-0007 `MemberEpoch` with the KIP-848 sentinels as an enum (`Join` = 0, `Leave` = -1, `LeaveStatic` = -2, `Epoch(n)` for n > 0) and `GenerationId` (`UNKNOWN_GENERATION_ID = -1` → `None`)
 P0 · M0 · Task · deps: TYPE-0002 · ref: clients/src/main/java/org/apache/kafka/common/requests/ConsumerGroupHeartbeatRequest.java @4.4.0
 Done when: Wire conversion round-trips every `i32` that Kafka accepts, and other negative values return a typed error; `// Parity:` cites `ConsumerGroupHeartbeatRequest` (`JOIN_GROUP_MEMBER_EPOCH`, `LEAVE_GROUP_MEMBER_EPOCH`, `LEAVE_GROUP_STATIC_MEMBER_EPOCH`) and `JoinGroupRequest.UNKNOWN_GENERATION_ID`; strategies cover every sentinel.
 
-## [To Do] TYPE-F02 Offsets and positions
+## [Done] TYPE-F02 Offsets and positions
 P0 · M0 · Feature · deps: FND-F02
 Scope: `Offset`, offset ranges, checked offset arithmetic, sentinel values (latest/earliest) as explicit enums.
 
-### [To Do] TYPE-0008 `Offset` (non-negative `i64`) with `checked_add`/`checked_sub` returning `OffsetError::Overflow { offset, delta }`, `next()`, and nullable wire mapping (`-1` → `None`, as in `OffsetFetchResponse.INVALID_OFFSET`)
+### [Done] TYPE-0008 `Offset` (non-negative `i64`) with `checked_add`/`checked_sub` returning `OffsetError::Overflow { offset, delta }`, `next()`, and nullable wire mapping (`-1` → `None`, as in `OffsetFetchResponse.INVALID_OFFSET`)
 P0 · M0 · Task · deps: TYPE-0002 · ref: clients/src/main/java/org/apache/kafka/common/requests/OffsetFetchResponse.java INVALID_OFFSET @4.4.0
 Done when: Property tests show that checked arithmetic never panics and agrees with `i128` reference arithmetic over the whole `i64` range; `next()` at `i64::MAX` returns an error; `Display` prints the plain number; strategies are biased to 0, 1, `i32::MAX` and `i64::MAX`.
 
-### [To Do] TYPE-0009 `OffsetRange`: half-open `[start, end)` with `contains`, `len() -> u64`, `is_empty`, `split_at(offset)` and `intersect`, rejecting `start > end` at construction
+### [Done] TYPE-0009 `OffsetRange`: half-open `[start, end)` with `contains`, `len() -> u64`, `is_empty`, `split_at(offset)` and `intersect`, rejecting `start > end` at construction
 P0 · M0 · Task · deps: TYPE-0008
 Done when: Property tests compare every operation with a naive model over small ranges and check that `split_at` gives two adjacent ranges whose union is the original; the `//!` doc states that ranges are half-open and why (no `end + 1` overflow).
 
-### [To Do] TYPE-0010 `OffsetSpec` enum for ListOffsets timestamps, with wire mapping: `Latest` (-1), `Earliest` (-2), `MaxTimestamp` (-3), `EarliestLocal` (-4), `LatestTiered` (-5), `EarliestPendingUpload` (-6), `Timestamp(ms)` (≥ 0)
+### [Done] TYPE-0010 `OffsetSpec` enum for ListOffsets timestamps, with wire mapping: `Latest` (-1), `Earliest` (-2), `MaxTimestamp` (-3), `EarliestLocal` (-4), `LatestTiered` (-5), `EarliestPendingUpload` (-6), `Timestamp(ms)` (≥ 0)
 P0 · M0 · Task · deps: TYPE-0002 · ref: clients/src/main/java/org/apache/kafka/common/requests/ListOffsetsRequest.java @4.4.0
 Done when: A property test over all `i64` shows that decode then encode is the identity for accepted values and that every other negative returns a typed error; `// Parity:` cites the `ListOffsetsRequest` constants; the doc states that which spec each API version may send is checked by the handler (API epic), not here.
 
-## [To Do] TYPE-F03 Kafka-compatible UUID
+## [Done] TYPE-F03 Kafka-compatible UUID
 P0 · M0 · Feature · deps: FND-F02
 Scope: `Uuid` and `TopicId` with Kafka's base64url display, reserved zero/metadata ids, generation from the injected RNG.
 
-### [To Do] TYPE-0011 `Uuid`: Kafka's base64url `Display`, `FromStr` and signed ordering
+### [Done] TYPE-0011 `Uuid`: Kafka's base64url `Display`, `FromStr` and signed ordering
 P0 · M0 · Task · deps: TYPE-0002 · labels: decoder, security · ref: clients/src/main/java/org/apache/kafka/common/Uuid.java toString/fromString/compareTo @4.4.0
 Done when: `Display` is unpadded base64url (22 characters); `FromStr` follows `Uuid.fromString` (rejects input over 24 characters before decoding, accepts optional padding, requires exactly 16 bytes); `Ord` matches Kafka's signed `compareTo`. Ported `UuidTest` cases pass; property tests show string round-trips for all values and that ordering equals signed comparison of the most significant then least significant bits; errors are a typed `UuidError` that echoes at most the first 24 characters of the input; no panic on any input; no new dependency unless justified per security.md#dependencies.
+Notes: Every decoder edge case was checked against JDK 17's `Base64.getUrlDecoder()` in JShell (`eclipse-temurin:17-jdk`): `…AB` and `…==` decode to 16 bytes, `…AAA=` to 17, `AAAAAA` to 4 and the empty string to 0; `…AA=` and `…AA=A` are a wrong ending unit, `…A=` a dangling unit, `…==A` an incorrect ending byte at 20, `+` an illegal character, and `A` too short. Each matches the `Base64Problem` or `WrongLength` the Rust decoder returns.
 
-### [To Do] TYPE-0012 Reserved UUIDs and `TopicId`: `Uuid::ZERO` (null/unset, `ZERO_UUID`), `Uuid::ONE` (`ONE_UUID`), and a `TopicId` newtype with `TopicId::METADATA` (`METADATA_TOPIC_ID`) that cannot hold `ZERO`
+### [Done] TYPE-0012 Reserved UUIDs and `TopicId`: `Uuid::ZERO` (null/unset, `ZERO_UUID`), `Uuid::ONE` (`ONE_UUID`), and a `TopicId` newtype with `TopicId::METADATA` (`METADATA_TOPIC_ID`) that cannot hold `ZERO`
 P0 · M0 · Task · deps: TYPE-0011 · ref: clients/src/main/java/org/apache/kafka/common/Uuid.java RESERVED @4.4.0
 Done when: `TopicId::try_from(Uuid::ZERO)` fails; nullable wire mapping turns `ZERO` into `None`; `TopicId::METADATA` displays as `AAAAAAAAAAAAAAAAAAAAAQ`; `// Parity:` cites `Uuid.RESERVED`.
 
-### [To Do] TYPE-0013 `Uuid::random(&mut rng)` from the injected RNG: version-4/IETF-variant bits like `java.util.UUID.randomUUID`, retrying while the value is reserved or its string form contains `-`, as `Uuid.randomUuid` does
+### [Done] TYPE-0013 `Uuid::random(&mut rng)` from the injected RNG: version-4/IETF-variant bits like `java.util.UUID.randomUUID`, retrying while the value is reserved or its string form contains `-`, as `Uuid.randomUuid` does
 P0 · M0 · Task · deps: TYPE-0012, TYPE-0029 · ref: clients/src/main/java/org/apache/kafka/common/Uuid.java randomUuid @4.4.0
 Done when: A fixed seed always produces the same sequence (golden values are committed); a property test over many seeds never yields a reserved UUID or a string containing `-`, and every value has version 4 and the IETF variant; nothing reads OS entropy.
 
-## [To Do] TYPE-F04 Validated names
+## [Done] TYPE-F04 Validated names
 P0 · M0 · Feature · deps: TYPE-F01
 Scope: `TopicName`, `GroupId`, `TransactionalId`, `ClientId`, `ListenerName` with Kafka's validation rules, internal-topic detection and `.`/`_` collision detection.
 
-### [To Do] TYPE-0014 `TopicName` validated by `TryFrom<&str>`/`TryFrom<String>` with Kafka's rules in Kafka's order: empty, `.`, `..`, longer than 249, characters outside `[a-zA-Z0-9._-]`; `TopicNameError` has one variant per rule
+### [Done] TYPE-0014 `TopicName` validated by `TryFrom<&str>`/`TryFrom<String>` with Kafka's rules in Kafka's order: empty, `.`, `..`, longer than 249, characters outside `[a-zA-Z0-9._-]`; `TopicNameError` has one variant per rule
 P0 · M0 · Task · deps: none · labels: decoder, security · ref: clients/src/main/java/org/apache/kafka/common/internals/Topic.java detectInvalidTopic @4.4.0
 Done when: Ported `TopicTest` cases pass; property tests show all strings over the legal alphabet with length 1-249 (except `.` and `..`) are accepted, and any string containing an illegal character or of length 250+ is rejected with the same rule Kafka reports first; strategies for valid names, invalid names per rule, and the 249/250 boundary are added; `// Parity:` cites `Topic.detectInvalidTopic`; mapping to `INVALID_TOPIC_EXCEPTION` is left to the handlers.
 
-### [To Do] TYPE-0015 Internal topic constants and `TopicName::is_internal()`: `__consumer_offsets`, `__transaction_state` and `__share_group_state` are internal; `__cluster_metadata` is a separate constant that `is_internal` does not include, as in `Topic.isInternal`
+### [Done] TYPE-0015 Internal topic constants and `TopicName::is_internal()`: `__consumer_offsets`, `__transaction_state` and `__share_group_state` are internal; `__cluster_metadata` is a separate constant that `is_internal` does not include, as in `Topic.isInternal`
 P0 · M0 · Task · deps: TYPE-0014 · ref: clients/src/main/java/org/apache/kafka/common/internals/Topic.java isInternal @4.4.0
 Done when: Tests assert exactly these three names are internal and that `__cluster_metadata` and look-alikes (`__consumer_offsets_`, `__Consumer_offsets`) are not; the doc explains the `__cluster_metadata` difference with a `// Parity:` citation; the `CLUSTER_METADATA_TOPIC_PARTITION` constant is added with TYPE-F05.
 
-### [To Do] TYPE-0016 Topic name collision detection: `has_collision_chars()`, `collision_key()` (`.` replaced by `_`) and `collides_with(&other)`, mirroring `Topic.hasCollisionChars`, `unifyCollisionChars` and `hasCollision`
+### [Done] TYPE-0016 Topic name collision detection: `has_collision_chars()`, `collision_key()` (`.` replaced by `_`) and `collides_with(&other)`, mirroring `Topic.hasCollisionChars`, `unifyCollisionChars` and `hasCollision`
 P0 · M0 · Task · deps: TYPE-0014 · ref: clients/src/main/java/org/apache/kafka/common/internals/Topic.java hasCollision @4.4.0
 Done when: A property test shows `a.collides_with(b)` exactly when the collision keys are equal; tests cover `a.b` and `a_b`, identical names, and names without collision characters; strategies generate colliding pairs for CTRL topic-creation tests; the doc explains that the reason is metric-name collisions.
 
-### [To Do] TYPE-0017 Log-safe display for client-supplied strings: one escaping routine used by the `Debug`/`Display` of every client-controlled name type, escaping control characters and non-printable code points so a value can't forge log lines
+### [Done] TYPE-0017 Log-safe display for client-supplied strings: one escaping routine used by the `Debug`/`Display` of every client-controlled name type, escaping control characters and non-printable code points so a value can't forge log lines
 P0 · M0 · Task · deps: TYPE-0001 · labels: security · ref: docs/standards/debuggability.md#printing-values
 Done when: A property test shows the output never contains `\n`, `\r` or other control characters, for any input; printable ASCII and Unicode are unchanged; the escaping format is documented in debuggability.md "Printing values"; TYPE's group, transactional, client and instance id types use it.
 
-### [To Do] TYPE-0018 `GroupId` (any string; `is_empty()` because coordinators reject empty ids with `INVALID_GROUP_ID`) and `GroupInstanceId` (validated with the topic-name rules, as `JoinGroupRequest.validateGroupInstanceId` does)
+### [Done] TYPE-0018 `GroupId` (any string; `is_empty()` because coordinators reject empty ids with `INVALID_GROUP_ID`) and `GroupInstanceId` (validated with the topic-name rules, as `JoinGroupRequest.validateGroupInstanceId` does)
 P0 · M0 · Task · deps: TYPE-0014, TYPE-0017 · ref: clients/src/main/java/org/apache/kafka/common/requests/JoinGroupRequest.java validateGroupInstanceId @4.4.0
 Done when: An empty `GroupId` can be built (the rejection belongs to the group coordinator, citing `GroupCoordinatorService.isGroupIdNotEmpty`); `GroupInstanceId` rejects exactly what `TopicName` rejects; both use the log-safe display; strategies are added.
 
-### [To Do] TYPE-0019 `TransactionalId` (non-empty: the nullable wire value maps `null` to `None`, and an empty string is a typed error the handler maps to Kafka's response) and `ClientId` (any string, including empty)
+### [Done] TYPE-0019 `TransactionalId` (non-empty: the nullable wire value maps `null` to `None`, and an empty string is a typed error the handler maps to Kafka's response) and `ClientId` (any string, including empty)
 P0 · M0 · Task · deps: TYPE-0017 · ref: core/src/main/scala/kafka/coordinator/transaction/TransactionCoordinator.scala handleInitProducerId @4.4.0
 Done when: Tests cover null, empty and non-empty transactional ids, with a `// Parity:` citation of the `TransactionCoordinator` null/empty branches; `ClientId` accepts every string, including control characters, and displays them escaped; strategies are added.
 
-### [To Do] TYPE-0020 `ListenerName::normalised(&str)`: rejects blank values (Kafka's `Utils.isBlank`) and converts to uppercase as `toUpperCase(Locale.ROOT)` does; equality is case-sensitive after normalization
+### [Done] TYPE-0020 `ListenerName::normalised(&str)`: rejects blank values (Kafka's `Utils.isBlank`) and converts to uppercase as `toUpperCase(Locale.ROOT)` does; equality is case-sensitive after normalization
 P0 · M0 · Task · deps: TYPE-0001 · ref: clients/src/main/java/org/apache/kafka/common/network/ListenerName.java normalised @4.4.0
 Done when: Tests cover `plaintext` → `PLAINTEXT`, the empty string, whitespace-only input, and a non-ASCII case documented against Java's behavior; `// Parity:` cites `ListenerName.normalised`.
 
-## [To Do] TYPE-F05 Partition identities
+## [Done] TYPE-F05 Partition identities
 P0 · M0 · Feature · deps: TYPE-F03, TYPE-F04
 Scope: `TopicPartition`, `TopicIdPartition`, ordering and display conventions.
 
-### [To Do] TYPE-0021 `TopicPartition { topic: TopicName, partition: PartitionIndex }`: `Display` as `<topic>-<partition>` (Kafka's `toString`), `Ord` by topic then partition, and the `__cluster_metadata-0` constant (`Topic.CLUSTER_METADATA_TOPIC_PARTITION`)
+### [Done] TYPE-0021 `TopicPartition { topic: TopicName, partition: PartitionIndex }`: `Display` as `<topic>-<partition>` (Kafka's `toString`), `Ord` by topic then partition, and the `__cluster_metadata-0` constant (`Topic.CLUSTER_METADATA_TOPIC_PARTITION`)
 P0 · M0 · Task · deps: none · ref: clients/src/main/java/org/apache/kafka/common/TopicPartition.java toString @4.4.0
 Done when: Tests assert the display format and that a `BTreeSet` of partitions iterates in (topic, partition) order; strategies generate sets of partitions over few topics, for collisions; `// Parity:` cites `TopicPartition.toString`.
 
-### [To Do] TYPE-0022 `TopicIdPartition { topic_id: TopicId, partition: PartitionIndex, topic: Option<TopicName> }` for contexts where only the id is known (Fetch v13+); `Display` as `<topic_id>:<topic or null>-<partition>`; equality over all fields as in Kafka
+### [Done] TYPE-0022 `TopicIdPartition { topic_id: TopicId, partition: PartitionIndex, topic: Option<TopicName> }` for contexts where only the id is known (Fetch v13+); `Display` as `<topic_id>:<topic or null>-<partition>`; equality over all fields as in Kafka
 P0 · M0 · Task · deps: TYPE-0021 · ref: clients/src/main/java/org/apache/kafka/common/TopicIdPartition.java @4.4.0
 Done when: Tests cover the display with and without a name and equality when the name differs; the doc explains when the name is `None` and that resolving it is the metadata image's job (META); strategies are added.
 
@@ -121,19 +122,19 @@ P0 · M0 · Spike · deps: none · ref: ADR-0002
 Done when: Scope: the `Clock` trait surface (monotonic and wall readings), the monotonic and wall-clock types, the representation of Kafka's millisecond timestamps, and how drivers wait on timers under `SystemClock` and in simulation without `tokio::time::sleep`. An accepted ADR "Time model and clock injection" decides the trait methods, the types and their units, the sanctioned `#[expect]` call sites, and the timer approach that SRV-F02/SRV-F07 and TEST-F01 will use, citing Kafka's `Time.milliseconds()`/`nanoseconds()` split.
 Notes: Accepted as [ADR-0011](../adr/0011-time-model-and-clock-injection.md). It added TYPE-0048, SRV-0149, TEST-0131, FND-0064 and FND-0065.
 
-### [To Do] TYPE-0024 Time value types from ADR-0011: `MonotonicInstant` (`u64` nanoseconds since the clock's origin, never goes backwards) and `WallTime` (non-negative `i64` Unix epoch milliseconds) (Kafka record and config timestamps), with checked arithmetic and no implicit conversion between them
+### [Done] TYPE-0024 Time value types from ADR-0011: `MonotonicInstant` (`u64` nanoseconds since the clock's origin, never goes backwards) and `WallTime` (non-negative `i64` Unix epoch milliseconds) (Kafka record and config timestamps), with checked arithmetic and no implicit conversion between them
 P0 · M0 · Task · deps: TYPE-0023, TYPE-0001 · ref: ADR-0011, clients/src/main/java/org/apache/kafka/common/utils/Time.java @4.4.0
 Done when: Adding a `Duration` to either type is checked and returns an error at overflow; `saturating_duration_since` never panics; there is no `From` conversion between the two types (a compile-fail doc test shows it); `Display` for wall time prints the millisecond value and an RFC 3339 UTC form.
 
-### [To Do] TYPE-0025 `Clock` trait and `SystemClock`: the only callers of `Instant::now` and `SystemTime::now`, each with one `#[expect(clippy::disallowed_methods, reason = "…")]`
+### [Done] TYPE-0025 `Clock` trait and `SystemClock`: the only callers of `Instant::now` and `SystemTime::now`, each with one `#[expect(clippy::disallowed_methods, reason = "…")]`
 P0 · M0 · Task · deps: TYPE-0024 · ref: clients/src/main/java/org/apache/kafka/common/utils/SystemTime.java @4.4.0
 Done when: A grep check in the test suite finds no other `#[expect(clippy::disallowed_methods` for time functions in the workspace except `xtask`'s `Stopwatch` (the dev-tool exception in ADR-0011); `SystemClock` can convert a `MonotonicInstant` back to a `std::time::Instant` (for `TokioTimer`); a wall clock before the Unix epoch returns a typed error instead of panicking; `Clock` is `Send + Sync + Debug`; the module doc links to the ADR.
 
-### [To Do] TYPE-0026 `ManualClock` for tests and simulation: starts at a given monotonic and wall time, `advance(Duration)` moves both, and `set_wall(…)` makes the wall clock jump forwards or backwards without touching monotonic time
+### [Done] TYPE-0026 `ManualClock` for tests and simulation: starts at a given monotonic and wall time, `advance(Duration)` moves both, and `set_wall(…)` makes the wall clock jump forwards or backwards without touching monotonic time
 P0 · M0 · Task · deps: TYPE-0025 · labels: test · ref: clients/src/testFixtures/java/org/apache/kafka/common/utils/MockTime.java @4.4.0
 Done when: Tests show the monotonic reading never decreases under any sequence of `advance`/`set_wall` (a property test), that wall jumps are visible, and that clones share state; it is usable from other crates' tests without enabling a feature, and the doc explains why it is not test-gated (the simulation in `alluvium-testkit` builds on it).
 
-### [To Do] TYPE-0027 `Deadline`: a monotonic instant plus a timeout with saturating construction (a timeout that overflows means "never"), `remaining(now)` and `is_expired(now)`, as Kafka's `Timer` saturates
+### [Done] TYPE-0027 `Deadline`: a monotonic instant plus a timeout with saturating construction (a timeout that overflows means "never"), `remaining(now)` and `is_expired(now)`, as Kafka's `Timer` saturates
 P0 · M0 · Task · deps: TYPE-0024 · ref: clients/src/main/java/org/apache/kafka/common/utils/Timer.java @4.4.0
 Done when: Tests cover a zero timeout, `Duration::MAX`, an expired deadline, and `remaining` at and after expiry (zero, never negative); `// Parity:` cites `Timer`; the doc ties it to the rule "every network wait has a timeout".
 
@@ -141,7 +142,7 @@ Done when: Tests cover a zero timeout, `Duration::MAX`, an expired deadline, and
 P0 · M2 · Task · deps: TYPE-0024 · ref: ADR-0011
 Done when: The trait is `Send + Sync + Debug` and object-safe (`Arc<dyn Timer>` compiles); its doc says state machines never wait and links ADR-0011; `alluvium-types` gains no dependency; a unit test polls a hand-written implementation's future to completion without a runtime.
 
-## [In Progress] TYPE-F07 Seeded randomness and deterministic collections
+## [Done] TYPE-F07 Seeded randomness and deterministic collections
 P0 · M0 · Feature · deps: FND-F02
 Scope: Injected RNG trait, `SeededHashMap`/`SeededHashSet`, process-random seed in production, fixed seed in simulation.
 
@@ -150,15 +151,16 @@ P0 · M0 · Spike · deps: none · labels: security · ref: ADR-0003
 Done when: Scope: the PRNG algorithm (stable output across platforms and crate versions), the RNG trait surface, deterministic per-component sub-streams, the keyed hasher for `SeededHashMap` (resistant to hash flooding), and the seed sources in production and simulation. An accepted ADR "Seeded randomness and hashing" names the crates (justified per security.md#dependencies), the single sanctioned OS-entropy call site, and the rule that hash seeds are never logged (DoS protection) while simulation seeds always are.
 Notes: Accepted as [ADR-0012](../adr/0012-seeded-randomness-and-hashing.md). It added the `getrandom` bans to FND-0064.
 
-### [To Do] TYPE-0029 Injected RNG: a deterministic RNG type with `from_seed(u64)` and `fork(label)` for independent sub-streams, plus `SeededRng::from_os_entropy()` (`getrandom::fill`) as the only entropy source, with one `#[expect(clippy::disallowed_methods, reason = "…")]`
+### [Done] TYPE-0029 Injected RNG: a deterministic RNG type with `from_seed(u64)` and `fork(label)` for independent sub-streams, plus `SeededRng::from_os_entropy()` (`getrandom::fill`) as the only entropy source, with one `#[expect(clippy::disallowed_methods, reason = "…")]`
 P0 · M0 · Task · deps: TYPE-0028, TYPE-0001 · ref: ADR-0012
 Done when: The type is `SeededRng` (ChaCha12 via `chacha20`, with `from_seed`'s SplitMix64 key expansion and `below` as ADR-0012 specifies); `chacha20` and `getrandom` are justified per security.md#dependencies; `Debug` prints no key or position; golden tests commit the first values for fixed seeds and forks and pass on Linux and macOS; `fork` with the same parent seed and label always gives the same stream, and adding a new fork doesn't change existing ones; no other code calls `rand::rng` (the lint canary already proves the lint fires).
 
-### [To Do] TYPE-0030 `alluvium_types::collections::{SeededHashMap, SeededHashSet}` using SipHash-1-3 (`siphasher`), keyed by a `HashSeed` drawn from the injected RNG and passed to `with_seed`/`with_capacity_and_seed`
+### [Done] TYPE-0030 `alluvium_types::collections::{SeededHashMap, SeededHashSet}` using SipHash-1-3 (`siphasher`), keyed by a `HashSeed` drawn from the injected RNG and passed to `with_seed`/`with_capacity_and_seed`
 P0 · M0 · Task · deps: TYPE-0029 · labels: security · ref: ADR-0012
 Done when: `siphasher` is justified per security.md#dependencies; `HashSeed`'s `Debug` prints `HashSeed(***)`; the same seed gives the same iteration order across runs (test); different seeds give different hashes for the same key (test); the module doc says iteration order must never reach output or decisions (use `BTreeMap` where order is observable); the clippy messages in clippy.toml point to these types, and the names match.
+Notes: Built with std's `with_hasher(seed)` and `with_capacity_and_hasher(capacity, seed)`, because `HashSeed` is itself the `BuildHasher`: no wrapper type or extension trait is needed for `with_seed` names, and `HashSeed` has no `Default`, so an unseeded `default()` or `collect()` doesn't compile.
 
-## [In Progress] TYPE-F08 Secrets
+## [Done] TYPE-F08 Secrets
 P0 · M0 · Feature · deps: FND-F02
 Scope: `Secret<T>` with redacted `Debug`/`Display`, zeroize on drop, explicit `expose_secret()`.
 
@@ -166,11 +168,11 @@ Scope: `Secret<T>` with redacted `Debug`/`Display`, zeroize on drop, explicit `e
 P0 · M0 · Task · deps: TYPE-0001 · labels: security · ref: clients/src/main/java/org/apache/kafka/common/config/types/Password.java @4.4.0
 Done when: `zeroize` is added to `[workspace.dependencies]` with the security.md#dependencies justification; `Clone` exists only where `T: Clone + Zeroize`, and both copies zeroize; the doc explains the difference from Kafka's `Password` (`[hidden]`) and the security.md rule that secrets never come from command-line arguments.
 
-### [To Do] TYPE-0032 Redaction tests for `Secret<T>`: `{:?}`, `{:#?}`, `{}`, a derived `Debug` of a struct containing a secret, and capture by a `tracing` test subscriber of `?secret` and `%secret` fields
+### [Done] TYPE-0032 Redaction tests for `Secret<T>`: `{:?}`, `{:#?}`, `{}`, a derived `Debug` of a struct containing a secret, and capture by a `tracing` test subscriber of `?secret` and `%secret` fields
 P0 · M0 · Task · deps: TYPE-0031 · labels: security, test · ref: docs/standards/security.md#secrets
 Done when: For random secret values (a property test), none of the outputs contains the secret or any substring of 4 or more of its characters; `tracing` is a dev-dependency only; the test is named in debuggability.md "Printing values".
 
-### [To Do] TYPE-0033 Zeroize-on-drop test for `Secret<T>` without `unsafe`: a test type whose `Zeroize` impl records the call proves drop zeroizes, including after `Clone` and when the secret sits inside a dropped container
+### [Done] TYPE-0033 Zeroize-on-drop test for `Secret<T>` without `unsafe`: a test type whose `Zeroize` impl records the call proves drop zeroizes, including after `Clone` and when the secret sits inside a dropped container
 P0 · M0 · Task · deps: TYPE-0031 · labels: security, test · ref: docs/standards/security.md#secrets
 Done when: The test fails if `Drop` stops calling `zeroize` (shown in the PR by temporarily removing it); no `unsafe` and no memory inspection are used.
 

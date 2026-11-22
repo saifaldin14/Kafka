@@ -213,6 +213,14 @@ pub(crate) const STEPS: &[CiStep] = &[
         // The deny.toml fixture tests in xtask run cargo-deny.
         requires: &[&tools::NEXTEST, &tools::DENY],
     },
+    CiStep {
+        name: "doctest",
+        summary: "Doc tests, including compile_fail examples (nextest does not run them)",
+        program: Program::Cargo,
+        args: &["test", "--workspace", "--doc", "--locked"],
+        env: &[],
+        requires: &[],
+    },
 ];
 
 /// True if `name` is a registered step.
@@ -309,6 +317,7 @@ mod tests {
             "advisories",
             "links",
             "test",
+            "doctest",
         ] {
             assert!(is_step(name), "{name}");
         }
