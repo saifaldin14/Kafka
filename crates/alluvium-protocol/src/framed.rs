@@ -315,9 +315,12 @@ impl Writer {
 
 #[cfg(test)]
 mod tests {
+    use alluvium_types::strategies::adversarial::{
+        lying_compact_length, lying_int32_length, truncated as cut_short,
+    };
     use bytes::Bytes;
     use proptest::option;
-    use proptest::prelude::{any, prop_assert_eq, proptest};
+    use proptest::prelude::{Just, Strategy, any, prop_assert, prop_assert_eq, proptest};
 
     use super::Framing::{self, Classic, Compact};
     use crate::error::{DecodeError, DecodeErrorKind, EncodeError};
@@ -557,11 +560,30 @@ mod tests {
         );
     }
 
-    fn framing() -> impl proptest::strategy::Strategy<Value = Framing> {
-        proptest::prop_oneof![
-            proptest::strategy::Just(Classic),
-            proptest::strategy::Just(Compact)
-        ]
+    fn framing() -> impl Strategy<Value = Framing> {
+        proptest::prop_oneof![Just(Classic), Just(Compact)]
+    }
+
+    proptest! {
+        #[test]
+        fn a_lying_length_is_an_error_before_anything_is_read(
+            classic in lying_int32_length(64),
+            compact in lying_compact_length(64),
+        ) {
+            prop_assert!(reader(&classic).read_bytes(Classic).is_err());
+            prop_assert!(reader(&compact).read_bytes(Compact).is_err());
+            prop_assert!(reader(&compact).read_string(Compact).is_err());
+        }
+
+        #[test]
+        fn a_string_cut_short_is_an_error(
+            (framing, cut) in (framing(), ".{1,40}").prop_flat_map(|(framing, text)| {
+                let bytes = written(|w| w.write_string(framing, &text));
+                (Just(framing), cut_short(bytes))
+            })
+        ) {
+            prop_assert!(reader(&cut).read_string(framing).is_err());
+        }
     }
 
     proptest! {

@@ -46,6 +46,14 @@ Every strategy for a plain wire value is built from the boundary-bias helpers in
 
 `alluvium_types::strategies::composite` has strategies for values that must hold together, each tested against its invariant: ordered partition `watermarks`, an idempotent producer's `producer_batches` (checked against Kafka's `ProducerAppendInfo` rules), and `colliding_topic_partitions`. Where a test needs the broken case, an `invalid_` strategy breaks the invariant in one labelled way, such as `invalid_producer_batches` returning a `ProducerBatchViolation`.
 
+`alluvium_types::strategies::adversarial` attacks decoders with raw bytes in Kafka's encodings:
+- `lying_int32_length` and `lying_compact_length`: length prefixes larger than the body, negative, `i32::MAX`, `0x80000000` and `0xFFFFFFFF`;
+- `truncated(valid)`: valid input cut short;
+- `bad_varint(max_bytes)`: overlong, too long and unterminated varints, each labelled with its `VarintShape`;
+- `nested(prefix, depth)`: nesting deeper than a limit.
+
+Every decoder's property tests use them. A decoder must return an error or a value, never panic, and never reserve memory for a declared size it hasn't checked: a test in that module shows a toy decoder that trusts the declared length failing such a property.
+
 Generated message strategies come from the code generator (PROTO-0081) and record batch strategies from REC-F14. Both are built from these helpers rather than from `any::<T>()`.
 
 ## Simulation harness (`alluvium-testkit`)

@@ -144,8 +144,9 @@ fn bytes_for(bits: u32) -> usize {
 
 #[cfg(test)]
 mod tests {
+    use alluvium_types::strategies::adversarial::{VarintShape, bad_varint};
     use bytes::Bytes;
-    use proptest::prelude::{any, prop_assert_eq, proptest};
+    use proptest::prelude::{any, prop_assert, prop_assert_eq, proptest};
 
     use super::{size_of_unsigned_varint, size_of_varint, size_of_varlong};
     use crate::error::{DecodeError, DecodeErrorKind};
@@ -370,6 +371,50 @@ mod tests {
                 }
             ))
         );
+    }
+
+    proptest! {
+        #[test]
+        fn bad_varints_are_read_as_kafka_reads_them((bytes, shape) in bad_varint(5)) {
+            let result = Reader::new(Bytes::from(bytes.clone())).read_unsigned_varint();
+            match shape {
+                // Padding adds no bits, so the value is the first byte's seven.
+                VarintShape::Overlong => prop_assert_eq!(result, Ok(u32::from(bytes[0] & 0x7f))),
+                VarintShape::TooLong => prop_assert_eq!(
+                    result,
+                    Err(DecodeError::new(0, DecodeErrorKind::VarintTooLong))
+                ),
+                VarintShape::Unterminated => {
+                    let truncated = matches!(
+                        result,
+                        Err(DecodeError { kind: DecodeErrorKind::Truncated { .. }, .. })
+                    );
+                    prop_assert!(truncated, "{result:?}");
+                }
+            }
+        }
+
+        #[test]
+        fn bad_varlongs_are_read_as_kafka_reads_them((bytes, shape) in bad_varint(10)) {
+            let result = Reader::new(Bytes::from(bytes.clone())).read_varlong();
+            match shape {
+                VarintShape::Overlong => {
+                    let raw = i64::from(bytes[0] & 0x7f);
+                    prop_assert_eq!(result, Ok((raw >> 1) ^ (raw & 1).wrapping_neg()));
+                }
+                VarintShape::TooLong => prop_assert_eq!(
+                    result,
+                    Err(DecodeError::new(0, DecodeErrorKind::VarlongTooLong))
+                ),
+                VarintShape::Unterminated => {
+                    let truncated = matches!(
+                        result,
+                        Err(DecodeError { kind: DecodeErrorKind::Truncated { .. }, .. })
+                    );
+                    prop_assert!(truncated, "{result:?}");
+                }
+            }
+        }
     }
 
     proptest! {
