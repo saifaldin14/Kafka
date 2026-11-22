@@ -240,7 +240,7 @@ Done when: The command fails with the target list on an unknown target, and with
 P0 · M1 · Spike · deps: TEST-0048 · labels: test
 Done when: An accepted ADR "Fuzz corpus storage" names where corpora live, how CI reads and writes them with least-privilege tokens, retention, and a size budget; `.gitignore`'s `/fuzz/corpus/` entry is kept or changed accordingly.
 
-### [To Do] TEST-0052 Corpus management per ADR-0018: `cargo xtask fuzz corpus pull`, committed seed inputs under `fuzz/seeds/<target>/`, and weekly corpus minimization (`cargo xtask fuzz corpus minimize`, libFuzzer `-merge=1`)
+### [In Review] TEST-0052 Corpus management per ADR-0018: `cargo xtask fuzz corpus pull`, committed seed inputs under `fuzz/seeds/<target>/`, and weekly corpus minimization (`cargo xtask fuzz corpus minimize`, libFuzzer `-merge=1`)
 P0 · M1 · Task · deps: TEST-0051, TEST-0050 · labels: test
 Done when: A fresh clone can pull the corpus and run a target from it; the minimization job reduces the corpus without losing coverage (libFuzzer's coverage and feature counts before and after, from the same binary, in the job log). Only CI writes corpora (ADR-0018), so there is no push command.
 
