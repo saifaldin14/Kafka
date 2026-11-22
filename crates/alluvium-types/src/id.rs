@@ -50,6 +50,8 @@ pub enum IdKind {
     MemberEpoch,
     /// A [`GenerationId`](crate::GenerationId).
     Generation,
+    /// A [`TopicId`](crate::TopicId).
+    Topic,
 }
 
 impl fmt::Display for IdKind {
@@ -65,6 +67,7 @@ impl fmt::Display for IdKind {
             IdKind::BrokerEpoch => "broker epoch",
             IdKind::MemberEpoch => "member epoch",
             IdKind::Generation => "generation id",
+            IdKind::Topic => "topic id",
         })
     }
 }
@@ -81,6 +84,13 @@ pub enum IdError {
         kind: IdKind,
         /// The rejected value, widened to `i64`.
         value: i64,
+    },
+    /// The zero UUID means "no id" in Kafka, so it is never a UUID id; a nullable
+    /// field turns it into `None`.
+    #[error("the zero UUID is not a {kind}")]
+    Zero {
+        /// The kind of id expected.
+        kind: IdKind,
     },
 }
 

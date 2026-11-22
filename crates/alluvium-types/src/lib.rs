@@ -13,7 +13,7 @@
 //! Kafka counterparts at 4.4.0, each cited with `// Parity:` where it is mirrored:
 //!
 //! - `clients/.../common/Node.java` (node ids and the `-1` "no node" sentinel);
-//! - `clients/.../common/Uuid.java` (base64 form and signed ordering);
+//! - `clients/.../common/Uuid.java` (base64 form, signed ordering, reserved ids);
 //! - `clients/.../common/record/internal/RecordBatch.java` and `DefaultRecordBatch.java`
 //!   (producer id, epoch and sequence sentinels and arithmetic);
 //! - `transaction-coordinator/.../TransactionMetadata.java` (epoch exhaustion);
@@ -30,8 +30,8 @@
 //!
 //! - An id holds a valid value only. Construction goes through `TryFrom` or
 //!   `from_wire_nullable`, which reject negative values with [`IdError`].
-//! - A wire sentinel such as `-1` ("no node") is never stored as an id: it becomes
-//!   `None`.
+//! - A wire sentinel such as `-1` ("no node") or the zero UUID ("no topic id") is
+//!   never stored as an id: it becomes `None`.
 //!
 //! # Entry points
 //!
@@ -55,7 +55,7 @@
 //! - [`collections`]: `SeededHashMap` and `SeededHashSet`, hashed under a `HashSeed`
 //!   drawn from a `SeededRng`, replacing `std`'s randomly seeded maps.
 //! - [`Uuid`]: Kafka's 128-bit ids, printed and parsed in Kafka's base64url form
-//!   ([`UuidError`] when a string isn't one).
+//!   ([`UuidError`] when a string isn't one), and [`TopicId`], which is never zero.
 //! - [`IdError`]: why a value was rejected.
 //! - [`Secret`]: a value that is never printed and is zeroized on drop.
 //! - [`PayloadSummary`]: how record payloads are printed (length and CRC32C only).
@@ -90,4 +90,4 @@ pub use producer::{ProducerEpoch, ProducerId, Sequence};
 pub use rng::{EntropyError, SeededRng};
 pub use secret::Secret;
 pub use time::{MonotonicInstant, TimeError, WallTime};
-pub use uuid::{Base64Problem, Uuid, UuidError};
+pub use uuid::{Base64Problem, TopicId, Uuid, UuidError};
