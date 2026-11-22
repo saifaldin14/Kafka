@@ -309,9 +309,10 @@ Notes: The rule reads only the crate root's text, so its fixtures are inline `li
 P2 · M0 · Feature · deps: none
 Scope: CODEOWNERS, issue templates, labels, branch protection settings documented.
 
-### [To Do] FND-0058 `.github/CODEOWNERS`: an owner for every path, with security-sensitive paths listed explicitly (`deny.toml`, `Cargo.lock`, `.github/workflows/`, `docs/adr/`, `docs/standards/`, `.agents/`)
+### [Done] FND-0058 `.github/CODEOWNERS`: an owner for every path, with security-sensitive paths listed explicitly (`deny.toml`, `Cargo.lock`, `.github/workflows/`, `docs/adr/`, `docs/standards/`, `.agents/`)
 P2 · M0 · Task · deps: none · labels: security
 Done when: GitHub validates the file without errors (CODEOWNERS errors view is clean); a PR that touches `deny.toml` requests review from its owner.
+Notes: GitHub's `codeowners/errors` API returned `{"errors":[]}` for the file on the PR branch. The repository has one maintainer, who owns every path and authors every PR; GitHub never requests a review from a PR's own author, so the review request on a `deny.toml` change appears once a second owner is added. Until then the ruleset can't require code-owner review either (FND-0061).
 
 ### [Done] FND-0059 Issue forms in `.github/ISSUE_TEMPLATE/` for bugs, parity gaps, design proposals and flaky tests
 P2 · M0 · Task · deps: none · labels: docs

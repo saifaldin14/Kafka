@@ -1,0 +1,17 @@
+# Who reviews what. The last matching pattern wins, so the explicit paths below are
+# owned even if the default changes.
+#
+# Default owner for every path.
+*                       @saifaldin14
+
+# Security-sensitive paths (docs/standards/security.md): changes here weaken or
+# strengthen what every other change is checked against, so they are listed on their
+# own and keep an explicit owner.
+/deny.toml              @saifaldin14
+/Cargo.lock             @saifaldin14
+/clippy.toml            @saifaldin14
+/rust-toolchain.toml    @saifaldin14
+/.github/               @saifaldin14
+/docs/adr/              @saifaldin14
+/docs/standards/        @saifaldin14
+/.agents/               @saifaldin14
