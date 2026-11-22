@@ -209,6 +209,11 @@ P2 · M0 · Task · deps: FND-0038
 Done when: A workflow with an invalid expression or an unknown runner label fails the step locally and in CI; shellcheck findings in `run:` blocks are reported (actionlint's integration); the current workflows pass.
 Notes: In CI, a probe workflow with an unknown runner label, a malformed expression and an unquoted `$VAR` ([#16](https://github.com/saifaldin14/Kafka/pull/16), run [45021106188](https://github.com/saifaldin14/Kafka/actions/runs/45021106188)) failed `policy` with exactly those three findings, after `tools install` fetched and verified actionlint and shellcheck on the Linux runner. The current workflows pass.
 
+### [Done] FND-0067 `check-workflows` rule: the jobs in ci.yml together run every `cargo xtask ci` step that isn't on demand, and name only real, PR-safe steps
+P1 · M0 · Task · deps: FND-0038
+Done when: Removing a step from every job's `steps:` input fails the `workflows` step naming the step; an unknown or on-demand step in ci.yml fails with its file:line; the current ci.yml passes.
+Notes: Found while adding `crate-docs` (DOCS-0121): the step passed `cargo xtask ci` locally but no job ran it, and nothing noticed. Proven against the real ci.yml by removing `crate-docs` from the `docs` job.
+
 ### [Done] FND-0066 CI `doctest` step: `cargo test --workspace --doc --locked`, run in the `test` job on both OSes, because nextest does not run doctests
 P0 · M0 · Task · deps: FND-0021, FND-0033
 Done when: `cargo xtask ci --list` shows `doctest` after `test`; a failing doctest and a `compile_fail` doctest that compiles each fail the step; docs/standards/rust.md lists the step; the `test` job runs `test doctest`.
