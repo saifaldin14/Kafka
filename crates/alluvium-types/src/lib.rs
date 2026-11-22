@@ -13,6 +13,7 @@
 //! Kafka counterparts at 4.4.0, each cited with `// Parity:` where it is mirrored:
 //!
 //! - `clients/.../common/Node.java` (node ids and the `-1` "no node" sentinel);
+//! - `clients/.../common/Uuid.java` (base64 form and signed ordering);
 //! - `clients/.../common/record/internal/RecordBatch.java` and `DefaultRecordBatch.java`
 //!   (producer id, epoch and sequence sentinels and arithmetic);
 //! - `transaction-coordinator/.../TransactionMetadata.java` (epoch exhaustion);
@@ -53,6 +54,8 @@
 //!   with independent `fork`s per component ([`EntropyError`] if the OS has none).
 //! - [`collections`]: `SeededHashMap` and `SeededHashSet`, hashed under a `HashSeed`
 //!   drawn from a `SeededRng`, replacing `std`'s randomly seeded maps.
+//! - [`Uuid`]: Kafka's 128-bit ids, printed and parsed in Kafka's base64url form
+//!   ([`UuidError`] when a string isn't one).
 //! - [`IdError`]: why a value was rejected.
 //! - [`Secret`]: a value that is never printed and is zeroized on drop.
 //! - [`PayloadSummary`]: how record payloads are printed (length and CRC32C only).
@@ -75,6 +78,7 @@ mod secret;
 #[cfg(any(test, feature = "proptest-strategies"))]
 pub mod strategies;
 mod time;
+mod uuid;
 
 pub use clock::{Clock, ManualClock, SystemClock, WallClockError};
 pub use deadline::Deadline;
@@ -86,3 +90,4 @@ pub use producer::{ProducerEpoch, ProducerId, Sequence};
 pub use rng::{EntropyError, SeededRng};
 pub use secret::Secret;
 pub use time::{MonotonicInstant, TimeError, WallTime};
+pub use uuid::{Base64Problem, Uuid, UuidError};
