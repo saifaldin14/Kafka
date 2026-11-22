@@ -216,9 +216,10 @@ Done when: The `UtilsTest.testMurmur2` vectors pass (`"21"` → -973932308, `"fo
 P1 · M0 · Task · deps: TYPE-0039 · labels: foundation-for:X-ELASTIC · ref: clients/src/main/java/org/apache/kafka/clients/producer/internals/BuiltInPartitioner.java partitionForKey @4.4.0
 Done when: A golden file of 10,000 (key, partition count 1-64) pairs computed by Kafka 4.4.0's `BuiltInPartitioner.partitionForKey` matches; tests cover the empty key and `i32::MIN` hashes; the doc says keyless records use the client's sticky partitioner and are never hashed; `// Parity:` cites both Kafka methods.
 
-### [To Do] TYPE-0041 Spike: key hash space ADR
+### [Done] TYPE-0041 Spike: key hash space ADR
 P1 · M0 · Spike · deps: TYPE-0040 · labels: foundation-for:X-ELASTIC · ref: ADR-0010
 Done when: Options: `KeyHash` as Kafka's positive murmur2 (31 bits, `[0, 2^31)`) so key ranges line up with `partitionForKey`, or a wider hash; also how null keys are handled and how ranges map to a fixed Kafka partition count for the virtual partition view (X-ELASTIC-F10). An accepted ADR "Key hash space" fixes the hash function, the space bounds, and the compatibility argument, and states that X-ELASTIC-F01 may extend it but not change the hash.
+Notes: Accepted as [ADR-0013](../adr/0013-key-hash-space.md): `KeyHash` is Kafka's `toPositive(murmur2)` over `[0, 2^31)`, null keys are never hashed, and because Kafka partitions by modulo, the virtual partition view maps partition indexes, not hash ranges.
 
 ### [To Do] TYPE-0042 `KeyHash` (a value in the ADR's hash space, `KeyHash::of(key)`) and `KeyRange` (half-open over the hash space) with `contains`, `split_at`, `merge` of adjacent ranges, `is_adjacent` and `FULL`
 P1 · M0 · Task · deps: TYPE-0041 · labels: foundation-for:X-ELASTIC
