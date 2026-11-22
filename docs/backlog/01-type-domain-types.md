@@ -121,7 +121,7 @@ P0 · M0 · Spike · deps: none · ref: ADR-0002
 Done when: Scope: the `Clock` trait surface (monotonic and wall readings), the monotonic and wall-clock types, the representation of Kafka's millisecond timestamps, and how drivers wait on timers under `SystemClock` and in simulation without `tokio::time::sleep`. An accepted ADR "Time model and clock injection" decides the trait methods, the types and their units, the sanctioned `#[expect]` call sites, and the timer approach that SRV-F02/SRV-F07 and TEST-F01 will use, citing Kafka's `Time.milliseconds()`/`nanoseconds()` split.
 Notes: Accepted as [ADR-0011](../adr/0011-time-model-and-clock-injection.md). It added TYPE-0048, SRV-0149, TEST-0131, FND-0064 and FND-0065.
 
-### [To Do] TYPE-0024 Time value types from ADR-0011: `MonotonicInstant` (`u64` nanoseconds since the clock's origin, never goes backwards) and `WallTime` (non-negative `i64` Unix epoch milliseconds) (Kafka record and config timestamps), with checked arithmetic and no implicit conversion between them
+### [Done] TYPE-0024 Time value types from ADR-0011: `MonotonicInstant` (`u64` nanoseconds since the clock's origin, never goes backwards) and `WallTime` (non-negative `i64` Unix epoch milliseconds) (Kafka record and config timestamps), with checked arithmetic and no implicit conversion between them
 P0 · M0 · Task · deps: TYPE-0023, TYPE-0001 · ref: ADR-0011, clients/src/main/java/org/apache/kafka/common/utils/Time.java @4.4.0
 Done when: Adding a `Duration` to either type is checked and returns an error at overflow; `saturating_duration_since` never panics; there is no `From` conversion between the two types (a compile-fail doc test shows it); `Display` for wall time prints the millisecond value and an RFC 3339 UTC form.
 

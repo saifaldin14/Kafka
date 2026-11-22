@@ -16,6 +16,7 @@
 //!   `JoinGroupRequest.java` (member epoch and generation sentinels);
 //! - `clients/.../common/requests/OffsetFetchResponse.java` and `ListOffsetsRequest.java`
 //!   (offset sentinels and `ListOffsets` special timestamps);
+//! - `clients/.../common/utils/Time.java` (wall-clock and monotonic readings);
 //! - `clients/.../common/config/types/Password.java` and
 //!   `clients/.../common/utils/internals/Crc32C.java`.
 //!
@@ -37,6 +38,8 @@
 //!   counters for leaders, brokers and group members.
 //! - [`Offset`], [`OffsetRange`] and [`OffsetSpec`]: log positions, half-open ranges of
 //!   them, and what `ListOffsets` asks for.
+//! - [`MonotonicInstant`] and [`WallTime`]: points in time for deadlines and for
+//!   timestamps, never converted into each other ([`TimeError`] when out of range).
 //! - [`IdError`]: why a value was rejected.
 //! - [`Secret`]: a value that is never printed and is zeroized on drop.
 //! - [`PayloadSummary`]: how record payloads are printed (length and CRC32C only).
@@ -54,6 +57,7 @@ mod producer;
 mod secret;
 #[cfg(any(test, feature = "proptest-strategies"))]
 pub mod strategies;
+mod time;
 
 pub use epoch::{BrokerEpoch, GenerationId, LeaderEpoch, MemberEpoch, PositiveEpoch};
 pub use id::{BrokerId, CorrelationId, IdError, IdKind, NodeId, PartitionIndex};
@@ -61,3 +65,4 @@ pub use offset::{Offset, OffsetError, OffsetRange, OffsetSpec};
 pub use payload::PayloadSummary;
 pub use producer::{ProducerEpoch, ProducerId, Sequence};
 pub use secret::Secret;
+pub use time::{MonotonicInstant, TimeError, WallTime};
