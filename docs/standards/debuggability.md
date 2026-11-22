@@ -46,7 +46,7 @@ Use exactly these names, so a single query works across all components:
 | `segment_base_offset` | Segment identity |
 | `group_id`, `member_id`, `generation_id`, `member_epoch` | Group state |
 | `producer_id`, `producer_epoch`, `sequence`, `transactional_id` | Producer state |
-| `error_code` | Kafka error name (`NOT_LEADER_OR_FOLLOWER`) |
+| `error_code`, `error_name` | Kafka error code and name (`6`, `NOT_LEADER_OR_FOLLOWER`), from `ErrorCode::code` and `ErrorCode::name`. `ErrorCode`'s `Display` prints both: `NOT_LEADER_OR_FOLLOWER (6)` |
 | `reason` | Reason enum for a transition or decision |
 | `elapsed_ms` | Duration of the operation being reported |
 

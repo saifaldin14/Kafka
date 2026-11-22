@@ -1,14 +1,23 @@
-//! `cargo xtask codegen`: Rust types from Kafka's message schemas, committed under each
-//! crate's `src/generated/` ([ADR-0008](../../docs/adr/0008-protocol-code-generated-from-kafka-schemas.md)).
+//! `cargo xtask codegen`: Rust types from Kafka's message schemas and error codes,
+//! committed under each crate's `src/generated/`
+//! ([ADR-0008](../../docs/adr/0008-protocol-code-generated-from-kafka-schemas.md)).
 //!
 //! [`generate`] is the single entry point: it loads the schemas a [`Filter`] selects
-//! with the checks of `message_spec`, renders one module per message, formats each with
-//! the pinned toolchain's `rustfmt`, and writes them in sorted order with the `mod.rs`
-//! files, removing any file it no longer generates. The output depends only on the
-//! schemas and the generator: no timestamps or absolute paths, and the same bytes on
-//! every run. How each schema feature maps to Rust is in docs/protocol/codegen.md.
+//! with the checks of `message_spec`, renders one module per message, and, for the
+//! protocol crate, `ErrorCode` and docs/errors.md from `Errors.java` ([`errors`]). It
+//! formats each module with the pinned toolchain's `rustfmt` and writes them in sorted
+//! order with the `mod.rs` files, removing any file it no longer generates. The output
+//! depends only on its inputs and the generator: no timestamps or absolute paths, and
+//! the same bytes on every run.
+//!
+//! `cargo xtask codegen --check` ([`check`]) renders the same files in memory and fails,
+//! naming each stale file and its first differing line, when the committed ones differ.
+//! Both first check the vendored Kafka directory against its manifest, so a vendored file
+//! changed without `schemas vendor` fails here as well as in `schemas verify`. How each
+//! schema feature maps to Rust is in docs/protocol/codegen.md.
 
 mod docs;
+mod errors;
 mod names;
 mod structs;
 
@@ -20,6 +29,7 @@ use std::process::{Command, Stdio};
 use crate::Exit;
 use crate::message_spec::{self, MessageKind};
 use crate::output;
+use crate::schemas;
 
 /// What one run generates, and from what.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -29,14 +39,28 @@ pub(crate) struct Filter {
     /// The path the generated code uses for `alluvium-protocol`'s types: `crate` inside
     /// that crate, `alluvium_protocol` elsewhere.
     pub(crate) runtime: String,
+    /// Whether to generate `ErrorCode` too, and from where.
+    pub(crate) error_codes: Option<ErrorCodes>,
 }
 
+/// The inputs and outputs of `ErrorCode`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ErrorCodes {
+    /// The directory holding `Errors.java` and the exception classes.
+    pub(crate) source: PathBuf,
+    /// The Markdown page listing every code.
+    pub(crate) page: PathBuf,
+}
+
+/// The vendored Kafka directory the protocol crate is generated from.
+const VENDORED: &str = "schemas/kafka-4.4.0";
+
 /// The protocol crate's generated code: every request, response, header and data type
-/// in Kafka's `clients` schemas.
+/// in Kafka's `clients` schemas, and `ErrorCode`.
 fn protocol() -> (Vec<PathBuf>, PathBuf, Filter) {
     let root = crate::repo_root();
     (
-        vec![root.join("schemas/kafka-4.4.0/clients")],
+        vec![root.join(VENDORED).join("clients")],
         root.join("crates/alluvium-protocol/src/generated"),
         Filter {
             kinds: vec![
@@ -46,6 +70,10 @@ fn protocol() -> (Vec<PathBuf>, PathBuf, Filter) {
                 MessageKind::Data,
             ],
             runtime: "crate".to_owned(),
+            error_codes: Some(ErrorCodes {
+                source: root.join(VENDORED).join("errors"),
+                page: root.join("docs/errors.md"),
+            }),
         },
     )
 }
@@ -57,28 +85,67 @@ pub(crate) struct Report {
     pub(crate) modules: usize,
     /// The most deeply nested message, and its depth.
     pub(crate) deepest: Option<(String, usize)>,
+    /// The error codes in the generated `ErrorCode`.
+    pub(crate) error_codes: usize,
 }
 
-pub(crate) fn run(out: &mut impl Write) -> Exit {
+/// The most problems `--check` prints before summarizing the rest.
+const SHOWN_PROBLEMS: usize = 10;
+
+pub(crate) fn run(check_only: bool, out: &mut impl Write) -> Exit {
     let (inputs, out_dir, filter) = protocol();
-    match generate(&inputs, &out_dir, &filter) {
-        Ok(report) => {
+    let result = verify_vendored().and_then(|()| {
+        if check_only {
+            check(&inputs, &out_dir, &filter)
+        } else {
+            generate(&inputs, &out_dir, &filter).map(|report| (report, Vec::new()))
+        }
+    });
+    match result {
+        Ok((report, problems)) if problems.is_empty() => {
             let deepest = report.deepest.map_or_else(String::new, |(name, depth)| {
                 format!(
                     "; deepest {name} ({depth} levels, limit {})",
                     structs::MAX_NESTING_DEPTH
                 )
             });
-            let shown = out_dir
-                .strip_prefix(crate::repo_root())
-                .unwrap_or(&out_dir)
-                .display()
-                .to_string();
+            let verb = if check_only {
+                "up to date"
+            } else {
+                "generated"
+            };
             output::line(
                 out,
-                &format!("codegen: {} modules in {shown}{deepest}", report.modules),
+                &format!(
+                    "codegen: {verb}: {} message modules and {} error codes in {}{deepest}",
+                    report.modules,
+                    report.error_codes,
+                    shown_path(&out_dir)
+                ),
             );
             Exit::Success
+        }
+        Ok((_, problems)) => {
+            for problem in problems.iter().take(SHOWN_PROBLEMS) {
+                output::line(out, problem);
+            }
+            if let Some(more) = problems
+                .len()
+                .checked_sub(SHOWN_PROBLEMS)
+                .filter(|n| *n > 0)
+            {
+                output::line(out, &format!("... and {more} more"));
+            }
+            output::line(
+                out,
+                &format!(
+                    "codegen --check: {} file(s) differ from the generated output; run `cargo \
+                     xtask codegen` and commit the result (generated files are never edited \
+                     by hand)",
+                    problems.len()
+                ),
+            );
+            Exit::CheckFailed
         }
         Err(error) => {
             output::line(out, &format!("error: {error}"));
@@ -87,27 +154,118 @@ pub(crate) fn run(out: &mut impl Write) -> Exit {
     }
 }
 
+/// Checks the vendored Kafka directory against its manifest.
+fn verify_vendored() -> Result<(), String> {
+    let (problems, _) = schemas::verify_dir(&crate::repo_root().join(VENDORED), VENDORED)?;
+    match problems.first() {
+        None => Ok(()),
+        Some(first) => Err(format!(
+            "{first} ({} problem(s); `cargo xtask schemas verify` lists them)",
+            problems.len()
+        )),
+    }
+}
+
 /// Generates the modules for the schemas in `inputs` that `filter` selects into
-/// `out_dir`, and removes the files there it no longer generates.
+/// `out_dir`, with `ErrorCode` and its page if the filter asks for them, and removes the
+/// files there it no longer generates.
 pub(crate) fn generate(
     inputs: &[PathBuf],
     out_dir: &Path,
     filter: &Filter,
 ) -> Result<Report, String> {
-    let (files, report) = render(inputs, filter)?;
-    write(out_dir, &files)?;
-    Ok(report)
+    let rendered = render(inputs, filter)?;
+    write(out_dir, &rendered.files)?;
+    for (page, contents) in &rendered.pages {
+        if std::fs::read_to_string(page).is_ok_and(|existing| existing == *contents) {
+            continue;
+        }
+        std::fs::write(page, contents)
+            .map_err(|error| format!("could not write {}: {error}", page.display()))?;
+    }
+    Ok(rendered.report)
 }
 
-/// Every file `generate` would write, by path within the output directory.
-fn render(
+/// What `generate` would report, and a line for each file that differs from what it
+/// would write: changed, missing, or no longer generated.
+pub(crate) fn check(
     inputs: &[PathBuf],
+    out_dir: &Path,
     filter: &Filter,
-) -> Result<(BTreeMap<PathBuf, String>, Report), String> {
+) -> Result<(Report, Vec<String>), String> {
+    let rendered = render(inputs, filter)?;
+    let mut problems = Vec::new();
+    let expected = rendered
+        .files
+        .iter()
+        .map(|(file, contents)| (out_dir.join(file), contents))
+        .chain(
+            rendered
+                .pages
+                .iter()
+                .map(|(page, contents)| (page.clone(), contents)),
+        );
+    for (path, contents) in expected {
+        if let Some(problem) = difference(&path, contents) {
+            problems.push(problem);
+        }
+    }
+    for stale in existing_files(out_dir)? {
+        let relative = stale.strip_prefix(out_dir).unwrap_or(&stale);
+        if !rendered.files.contains_key(relative) {
+            problems.push(format!(
+                "{}: no longer generated, so codegen would remove it",
+                shown_path(&stale)
+            ));
+        }
+    }
+    Ok((rendered.report, problems))
+}
+
+/// How the file at `path` differs from `expected`, if it does: its first differing
+/// line, both ways.
+fn difference(path: &Path, expected: &str) -> Option<String> {
+    let shown = shown_path(path);
+    let Ok(actual) = std::fs::read_to_string(path) else {
+        return Some(format!("{shown}: missing"));
+    };
+    if actual == expected {
+        return None;
+    }
+    let mut actual_lines = actual.lines();
+    let mut expected_lines = expected.lines();
+    let mut line = 1;
+    loop {
+        match (actual_lines.next(), expected_lines.next()) {
+            (Some(found), Some(wanted)) if found == wanted => line += 1,
+            (found, wanted) => {
+                return Some(format!(
+                    "{shown}:{line}: found {:?}, generated {:?}",
+                    found.unwrap_or("(end of file)"),
+                    wanted.unwrap_or("(end of file)")
+                ));
+            }
+        }
+    }
+}
+
+/// Everything one run writes.
+struct Rendered {
+    /// The generated modules and `mod.rs` files, by path within the output directory.
+    files: BTreeMap<PathBuf, String>,
+    /// Generated pages outside the output directory, by full path.
+    pages: BTreeMap<PathBuf, String>,
+    report: Report,
+}
+
+/// Every file `generate` would write.
+fn render(inputs: &[PathBuf], filter: &Filter) -> Result<Rendered, String> {
     let mut modules: BTreeMap<PathBuf, String> = BTreeMap::new();
+    let mut pages = BTreeMap::new();
     let mut report = Report {
         modules: 0,
         deepest: None,
+        error_codes: 0,
     };
     for path in schema_files(inputs)? {
         let shown = shown_path(&path);
@@ -145,13 +303,36 @@ fn render(
         }
         report.modules += 1;
     }
+    if let Some(error_codes) = &filter.error_codes {
+        let entries = errors::extract(&error_codes.source)
+            .map_err(|problem| format!("{}: {problem}", shown_path(&error_codes.source)))?;
+        let source = shown_path(&error_codes.source.join("Errors.java"));
+        let file = PathBuf::from("error_code.rs");
+        let module = format!(
+            "{}\n{}",
+            header(&format!(
+                "from {source}{}",
+                kafka_version(&error_codes.source)
+            )),
+            errors::module(&entries)
+        );
+        if modules.insert(file, module).is_some() {
+            return Err("a schema generates error_code.rs".to_owned());
+        }
+        pages.insert(error_codes.page.clone(), errors::page(&entries, &source));
+        report.error_codes = entries.len();
+    }
     let mut files = mod_files(&modules);
     files.extend(modules);
     let mut formatted = BTreeMap::new();
     for (file, source) in files {
         formatted.insert(file, rustfmt(&source)?);
     }
-    Ok((formatted, report))
+    Ok(Rendered {
+        files: formatted,
+        pages,
+        report,
+    })
 }
 
 /// The `.json` schema files in `inputs`, sorted, so the output doesn't depend on the
@@ -244,7 +425,8 @@ fn mod_files(modules: &BTreeMap<PathBuf, String>) -> BTreeMap<PathBuf, String> {
             names.sort();
             names.dedup();
             let doc = if directory.as_os_str().is_empty() {
-                "Message types generated from Kafka's schemas, one module per schema \
+                "Types generated from Kafka's sources: one module per message schema, and \
+                 `error_code` from `Errors.java` \
                  ([ADR-0008](../../../../docs/adr/0008-protocol-code-generated-from-kafka-schemas.md))."
             } else {
                 "Data types generated from Kafka's schemas: payloads that travel inside records \
@@ -347,7 +529,7 @@ mod tests {
 
     use alluvium_types::Uuid;
 
-    use super::{Filter, existing_files, generate, names, protocol, schema_files};
+    use super::{Filter, check, existing_files, generate, names, protocol, schema_files};
     use crate::message_spec::{
         self, FieldDefault, FieldSpec, FieldType, MessageKind, MessageSpec, StructRegistry,
         Versions,
@@ -394,6 +576,7 @@ mod tests {
         let filter = Filter {
             kinds: vec![MessageKind::Metadata],
             runtime: "alluvium_protocol".to_owned(),
+            error_codes: None,
         };
 
         let report = generate(std::slice::from_ref(&inputs), &out_dir, &filter).unwrap();
@@ -415,6 +598,21 @@ mod tests {
 
         generate(std::slice::from_ref(&inputs), &out_dir, &filter).unwrap();
         assert_eq!(contents(&out_dir), first);
+
+        let (_, problems) = check(std::slice::from_ref(&inputs), &out_dir, &filter).unwrap();
+        assert_eq!(problems, Vec::<String>::new());
+        let record = out_dir.join("test_record.rs");
+        let edited = first[Path::new("test_record.rs")].replace("epoch: -1,", "epoch: 0,");
+        std::fs::write(&record, edited).unwrap();
+        std::fs::write(out_dir.join("extra.rs"), "").unwrap();
+        let (_, problems) = check(std::slice::from_ref(&inputs), &out_dir, &filter).unwrap();
+        assert_eq!(problems.len(), 2, "{problems:?}");
+        assert!(
+            problems[0].contains("test_record.rs:")
+                && problems[0].contains(r#"found "            epoch: 0,""#),
+            "{problems:?}"
+        );
+        assert!(problems[1].ends_with("extra.rs: no longer generated, so codegen would remove it"));
         std::fs::remove_dir_all(inputs).unwrap();
         std::fs::remove_dir_all(out_dir).unwrap();
     }

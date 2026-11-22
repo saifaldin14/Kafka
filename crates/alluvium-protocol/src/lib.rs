@@ -26,6 +26,7 @@
 
 mod array;
 mod error;
+mod error_code;
 mod framed;
 pub mod generated;
 mod limits;
@@ -37,6 +38,7 @@ mod versions;
 mod writer;
 
 pub use error::{DecodeError, DecodeErrorKind, EncodeError};
+pub use error_code::{ErrorCode, UnknownErrorCode};
 pub use framed::Framing;
 pub use limits::{DecodeLimits, Limit};
 pub use reader::Reader;

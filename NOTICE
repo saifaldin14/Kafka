@@ -36,10 +36,18 @@ that it was modified, and marks every ported part `// Ported from:` with its sou
   generator/src/test/java/org/apache/kafka/message/StructRegistryTest.java.
 
 Files generated from Apache Kafka material by `cargo xtask codegen`. Each starts with a
-header naming the schema it was generated from; its doc comments carry the schema's
-`about` text, edited for rustdoc:
+header naming the Kafka file it was generated from:
 
-- crates/alluvium-protocol/src/generated/: from schemas/kafka-4.4.0/clients/.
+- crates/alluvium-protocol/src/generated/: from schemas/kafka-4.4.0/clients/, with
+  each schema's `about` text, edited for rustdoc, as doc comments; and error_code.rs,
+  from schemas/kafka-4.4.0/errors/Errors.java, with Kafka's default error messages.
+- docs/errors.md: from schemas/kafka-4.4.0/errors/Errors.java, with Kafka's default
+  error messages.
+
+Data read from Apache Kafka's released client jar by `cargo xtask schemas dump-errors`:
+
+- xtask/tests/fixtures/kafka-4.4.0-errors.json: the error table of kafka-clients 4.4.0
+  (names, codes and default messages), the golden file for the generated error codes.
 
 Apache Kafka files copied unmodified, with Kafka's own LICENSE and NOTICE beside them:
 

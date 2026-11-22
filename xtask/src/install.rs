@@ -7,7 +7,7 @@
 //! which tool. `--tool` names a tool directly, such as cargo-fuzz, which no step needs.
 
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use crate::Exit;
@@ -83,30 +83,7 @@ fn install_release(tool: &Tool) -> Result<PathBuf, String> {
     std::fs::create_dir_all(&work)
         .map_err(|error| format!("could not create {}: {error}", work.display()))?;
     let archive = work.join(format!("{}-{}.tar.gz", tool.name, tool.version));
-    run_quietly(
-        Command::new("curl")
-            .args([
-                "--silent",
-                "--show-error",
-                "--fail",
-                "--location",
-                "--retry",
-                "3",
-            ])
-            .arg("--output")
-            .arg(&archive)
-            .arg(asset.url),
-    )?;
-    let digest = run_quietly(Command::new("shasum").args(["-a", "256"]).arg(&archive))?;
-    let actual = sha256_of_shasum_output(&digest);
-    if actual != Some(asset.sha256) {
-        return Err(format!(
-            "{} has SHA-256 {}, not the pinned {}; refusing to install it",
-            asset.url,
-            actual.unwrap_or("(unreadable)"),
-            asset.sha256
-        ));
-    }
+    download(asset.url, &archive, asset.sha256)?;
     run_quietly(
         Command::new("tar")
             .arg("-xzf")
@@ -123,6 +100,33 @@ fn install_release(tool: &Tool) -> Result<PathBuf, String> {
         .map_err(|error| format!("could not copy to {}: {error}", target.display()))?;
     make_executable(&target)?;
     Ok(target)
+}
+
+/// Downloads `url` to `to` with curl and fails unless the file's SHA-256 is `sha256`.
+pub(crate) fn download(url: &str, to: &Path, sha256: &str) -> Result<(), String> {
+    run_quietly(
+        Command::new("curl")
+            .args([
+                "--silent",
+                "--show-error",
+                "--fail",
+                "--location",
+                "--retry",
+                "3",
+            ])
+            .arg("--output")
+            .arg(to)
+            .arg(url),
+    )?;
+    let digest = run_quietly(Command::new("shasum").args(["-a", "256"]).arg(to))?;
+    let actual = sha256_of_shasum_output(&digest);
+    if actual != Some(sha256) {
+        return Err(format!(
+            "{url} has SHA-256 {}, not the pinned {sha256}; refusing to use it",
+            actual.unwrap_or("(unreadable)"),
+        ));
+    }
+    Ok(())
 }
 
 /// The first word of `shasum -a 256 <file>` output, if it is a SHA-256.
@@ -159,14 +163,14 @@ fn run_quietly(command: &mut Command) -> Result<String, String> {
 }
 
 #[cfg(unix)]
-fn make_executable(path: &std::path::Path) -> Result<(), String> {
+fn make_executable(path: &Path) -> Result<(), String> {
     use std::os::unix::fs::PermissionsExt;
     std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755))
         .map_err(|error| format!("could not make {} executable: {error}", path.display()))
 }
 
 #[cfg(not(unix))]
-fn make_executable(_path: &std::path::Path) -> Result<(), String> {
+fn make_executable(_path: &Path) -> Result<(), String> {
     Ok(())
 }
 
