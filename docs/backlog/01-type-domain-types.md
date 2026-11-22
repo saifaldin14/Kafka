@@ -76,7 +76,7 @@ Scope: `TopicName`, `GroupId`, `TransactionalId`, `ClientId`, `ListenerName` wit
 P0 · M0 · Task · deps: none · labels: decoder, security · ref: clients/src/main/java/org/apache/kafka/common/internals/Topic.java detectInvalidTopic @4.4.0
 Done when: Ported `TopicTest` cases pass; property tests show all strings over the legal alphabet with length 1-249 (except `.` and `..`) are accepted, and any string containing an illegal character or of length 250+ is rejected with the same rule Kafka reports first; strategies for valid names, invalid names per rule, and the 249/250 boundary are added; `// Parity:` cites `Topic.detectInvalidTopic`; mapping to `INVALID_TOPIC_EXCEPTION` is left to the handlers.
 
-### [To Do] TYPE-0015 Internal topic constants and `TopicName::is_internal()`: `__consumer_offsets`, `__transaction_state` and `__share_group_state` are internal; `__cluster_metadata` is a separate constant that `is_internal` does not include, as in `Topic.isInternal`
+### [Done] TYPE-0015 Internal topic constants and `TopicName::is_internal()`: `__consumer_offsets`, `__transaction_state` and `__share_group_state` are internal; `__cluster_metadata` is a separate constant that `is_internal` does not include, as in `Topic.isInternal`
 P0 · M0 · Task · deps: TYPE-0014 · ref: clients/src/main/java/org/apache/kafka/common/internals/Topic.java isInternal @4.4.0
 Done when: Tests assert exactly these three names are internal and that `__cluster_metadata` and look-alikes (`__consumer_offsets_`, `__Consumer_offsets`) are not; the doc explains the `__cluster_metadata` difference with a `// Parity:` citation; the `CLUSTER_METADATA_TOPIC_PARTITION` constant is added with TYPE-F05.
 

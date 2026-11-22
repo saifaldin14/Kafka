@@ -49,7 +49,37 @@ pub enum TopicNameError {
 /// Kafka's `MAX_NAME_LENGTH`.
 pub(crate) const MAX_LENGTH: usize = 249;
 
+// Parity: clients/src/main/java/org/apache/kafka/common/internals/Topic.java@4.4.0 GROUP_METADATA_TOPIC_NAME, TRANSACTION_STATE_TOPIC_NAME, SHARE_GROUP_STATE_TOPIC_NAME, CLUSTER_METADATA_TOPIC_NAME, INTERNAL_TOPICS, Topic.isInternal
 impl TopicName {
+    /// `__consumer_offsets`: committed offsets and classic group metadata. Internal.
+    pub const CONSUMER_OFFSETS: TopicName = TopicName(Cow::Borrowed("__consumer_offsets"));
+
+    /// `__transaction_state`: the transaction coordinator's log. Internal.
+    pub const TRANSACTION_STATE: TopicName = TopicName(Cow::Borrowed("__transaction_state"));
+
+    /// `__share_group_state`: share-group delivery state. Internal.
+    pub const SHARE_GROUP_STATE: TopicName = TopicName(Cow::Borrowed("__share_group_state"));
+
+    /// `__cluster_metadata`: the controller quorum's metadata log. Not
+    /// [internal](Self::is_internal) in Kafka's sense: it is the quorum's own log, not a
+    /// topic in the cluster's metadata, so clients never see it listed and the
+    /// "internal" flag doesn't apply to it.
+    pub const CLUSTER_METADATA: TopicName = TopicName(Cow::Borrowed("__cluster_metadata"));
+
+    /// True for the internal topics Kafka manages and shows to clients as internal:
+    /// [`CONSUMER_OFFSETS`](Self::CONSUMER_OFFSETS),
+    /// [`TRANSACTION_STATE`](Self::TRANSACTION_STATE) and
+    /// [`SHARE_GROUP_STATE`](Self::SHARE_GROUP_STATE). Not
+    /// [`CLUSTER_METADATA`](Self::CLUSTER_METADATA), as in Kafka's `Topic.isInternal`.
+    pub fn is_internal(&self) -> bool {
+        [
+            TopicName::CONSUMER_OFFSETS,
+            TopicName::TRANSACTION_STATE,
+            TopicName::SHARE_GROUP_STATE,
+        ]
+        .contains(self)
+    }
+
     /// The name.
     pub fn as_str(&self) -> &str {
         &self.0
@@ -184,6 +214,39 @@ mod tests {
     }
 
     // End of the ported cases.
+
+    #[test]
+    fn exactly_three_topics_are_internal() {
+        for name in [
+            "__consumer_offsets",
+            "__transaction_state",
+            "__share_group_state",
+        ] {
+            assert!(TopicName::try_from(name).unwrap().is_internal(), "{name}");
+        }
+        for name in [
+            "__cluster_metadata",
+            "__consumer_offsets_",
+            "__Consumer_offsets",
+            "_consumer_offsets",
+            "consumer_offsets",
+            "orders",
+        ] {
+            assert!(!TopicName::try_from(name).unwrap().is_internal(), "{name}");
+        }
+    }
+
+    #[test]
+    fn the_constants_are_valid_names() {
+        for constant in [
+            TopicName::CONSUMER_OFFSETS,
+            TopicName::TRANSACTION_STATE,
+            TopicName::SHARE_GROUP_STATE,
+            TopicName::CLUSTER_METADATA,
+        ] {
+            assert_eq!(TopicName::try_from(constant.as_str()), Ok(constant));
+        }
+    }
 
     #[test]
     fn each_rule_in_kafkas_order() {
