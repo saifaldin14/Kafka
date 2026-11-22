@@ -26,6 +26,7 @@
 //! - `clients/.../common/utils/Time.java`, `SystemTime.java` and `Timer.java` (wall-clock
 //!   and monotonic readings, saturating deadlines);
 //! - `clients/.../common/network/ListenerName.java` (listener name normalisation);
+//! - `clients/.../common/TopicPartition.java` and `TopicIdPartition.java` (display);
 //! - `clients/.../common/config/types/Password.java` and
 //!   `clients/.../common/utils/internals/Crc32C.java`.
 //!
@@ -65,6 +66,8 @@
 //! - [`GroupId`], [`GroupInstanceId`], [`TransactionalId`] and [`ClientId`]: ids
 //!   clients choose, printed with [`LogSafe`].
 //! - [`ListenerName`]: a listener's name, upper-cased as Kafka normalises it.
+//! - [`TopicPartition`] and [`TopicIdPartition`]: a partition named by topic name, or by
+//!   topic id with the name when known.
 //! - [`IdError`]: why a value was rejected.
 //! - [`Secret`]: a value that is never printed and is zeroized on drop.
 //! - [`PayloadSummary`]: how record payloads are printed (length and CRC32C only).
@@ -85,6 +88,7 @@ mod id;
 mod listener;
 mod log_safe;
 mod offset;
+mod partition;
 mod payload;
 mod producer;
 mod rng;
@@ -103,6 +107,7 @@ pub use id::{BrokerId, CorrelationId, IdError, IdKind, NodeId, PartitionIndex};
 pub use listener::{BlankListenerName, ListenerName};
 pub use log_safe::LogSafe;
 pub use offset::{Offset, OffsetError, OffsetRange, OffsetSpec};
+pub use partition::{TopicIdPartition, TopicPartition};
 pub use payload::PayloadSummary;
 pub use producer::{ProducerEpoch, ProducerId, Sequence};
 pub use rng::{EntropyError, SeededRng};

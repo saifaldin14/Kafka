@@ -9,15 +9,16 @@
 //! Each strategy produces valid values only, and favours the boundaries where bugs
 //! cluster: 0, 1 and the maximum.
 
-use proptest::collection::vec;
+use proptest::collection::{btree_set, vec};
+use proptest::option;
 use proptest::prelude::{Just, Strategy, any, prop_oneof};
 use proptest::sample::{Index, select};
 
 use crate::{
     BrokerEpoch, BrokerId, ClientId, CorrelationId, GenerationId, GroupId, GroupInstanceId,
     LeaderEpoch, MemberEpoch, MonotonicInstant, NodeId, Offset, OffsetRange, OffsetSpec,
-    PartitionIndex, ProducerEpoch, ProducerId, Sequence, TopicId, TopicName, TransactionalId, Uuid,
-    WallTime,
+    PartitionIndex, ProducerEpoch, ProducerId, Sequence, TopicId, TopicIdPartition, TopicName,
+    TopicPartition, TransactionalId, Uuid, WallTime,
 };
 
 /// Non-negative `i32` values, with extra weight on 0, 1 and `i32::MAX`.
@@ -299,4 +300,37 @@ pub fn client_id() -> impl Strategy<Value = ClientId> {
         8 => any::<String>(),
     ]
     .prop_map(ClientId::from)
+}
+
+/// Valid [`TopicPartition`]s.
+pub fn topic_partition() -> impl Strategy<Value = TopicPartition> {
+    (topic_name(), partition_index())
+        .prop_map(|(topic, partition)| TopicPartition { topic, partition })
+}
+
+/// Sets of up to 32 [`TopicPartition`]s over at most four topics and partitions 0 to 7,
+/// so topics repeat and partitions collide.
+pub fn topic_partitions() -> impl Strategy<Value = std::collections::BTreeSet<TopicPartition>> {
+    vec(topic_name(), 1..=4).prop_flat_map(|topics| {
+        btree_set(
+            (select(topics), 0..8_i32).prop_filter_map("non-negative", |(topic, index)| {
+                Some(TopicPartition {
+                    topic,
+                    partition: PartitionIndex::try_from(index).ok()?,
+                })
+            }),
+            0..=32,
+        )
+    })
+}
+
+/// [`TopicIdPartition`]s, with and without a known topic name.
+pub fn topic_id_partition() -> impl Strategy<Value = TopicIdPartition> {
+    (topic_id(), partition_index(), option::of(topic_name())).prop_map(
+        |(topic_id, partition, topic)| TopicIdPartition {
+            topic_id,
+            partition,
+            topic,
+        },
+    )
 }

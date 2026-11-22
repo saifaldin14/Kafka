@@ -189,6 +189,9 @@ impl fmt::Display for BrokerId {
 }
 
 impl PartitionIndex {
+    /// Partition 0, which every topic has.
+    pub const ZERO: PartitionIndex = PartitionIndex(0);
+
     /// The index as Kafka writes it.
     pub fn get(self) -> i32 {
         self.0
