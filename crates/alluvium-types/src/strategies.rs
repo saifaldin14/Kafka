@@ -12,8 +12,9 @@
 use proptest::prelude::{Just, Strategy, any, prop_oneof};
 
 use crate::{
-    BrokerEpoch, BrokerId, CorrelationId, GenerationId, LeaderEpoch, MemberEpoch, NodeId, Offset,
-    OffsetRange, OffsetSpec, PartitionIndex, ProducerEpoch, ProducerId, Sequence,
+    BrokerEpoch, BrokerId, CorrelationId, GenerationId, LeaderEpoch, MemberEpoch, MonotonicInstant,
+    NodeId, Offset, OffsetRange, OffsetSpec, PartitionIndex, ProducerEpoch, ProducerId, Sequence,
+    WallTime,
 };
 
 /// Non-negative `i32` values, with extra weight on 0, 1 and `i32::MAX`.
@@ -143,4 +144,26 @@ pub fn offset_spec() -> impl Strategy<Value = OffsetSpec> {
     .prop_filter_map("accepted wire value", |value| {
         OffsetSpec::from_wire(value).ok()
     })
+}
+
+/// [`MonotonicInstant`]s over the whole `u64` range, biased towards 0, 1 and `u64::MAX`.
+pub fn monotonic_instant() -> impl Strategy<Value = MonotonicInstant> {
+    prop_oneof![
+        1 => Just(0),
+        1 => Just(1),
+        1 => Just(u64::MAX),
+        7 => any::<u64>(),
+    ]
+    .prop_map(MonotonicInstant::from_nanos)
+}
+
+/// Valid [`WallTime`]s, biased towards the epoch, 1 ms and `i64::MAX`.
+pub fn wall_time() -> impl Strategy<Value = WallTime> {
+    prop_oneof![
+        1 => Just(0),
+        1 => Just(1),
+        1 => Just(i64::MAX),
+        7 => 0..=i64::MAX,
+    ]
+    .prop_filter_map("non-negative", |value| WallTime::try_from(value).ok())
 }
