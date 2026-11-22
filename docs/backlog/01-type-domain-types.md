@@ -228,7 +228,7 @@ Done when: Property tests show `split_at` followed by `merge` is the identity, t
 P1 · M0 · Task · deps: TYPE-0042 · labels: foundation-for:X-ELASTIC
 Done when: Property tests generate valid partitions by random splits (accepted) and then remove, duplicate or shift one range (rejected with the right gap or overlap); META-F08 can call it to validate key-range mapping records.
 
-## [In Progress] TYPE-F12 Small domain enums and size types
+## [Done] TYPE-F12 Small domain enums and size types
 P1 · M0 · Feature · deps: FND-F02
 Scope: `IsolationLevel`, `Acks`, `TimestampType`, `CompressionType`, `CleanupPolicy`, `ByteSize`, with Kafka wire values.
 
@@ -244,6 +244,6 @@ Done when: Id and name round-trips are tested for every variant; unknown ids and
 P1 · M0 · Task · deps: TYPE-0002 · ref: storage/src/main/java/org/apache/kafka/storage/internals/log/LogConfig.java @4.4.0
 Done when: Tests cover each accepted list, unknown tokens (rejected with the token named), duplicates handled as Kafka's `ConfigDef.ValidList` does at 4.4.0, and the empty list (infinite retention, per `TopicConfig.CLEANUP_POLICY_DOC`); parsing the config string into tokens is CFG's job.
 
-### [To Do] TYPE-0047 `ByteSize(u64)` with checked arithmetic, checked conversion from Kafka's `i32`/`i64` size fields (negative values rejected), and `Display` as exact bytes plus an IEC approximation (`1048576 (1 MiB)`)
+### [Done] TYPE-0047 `ByteSize(u64)` with checked arithmetic, checked conversion from Kafka's `i32`/`i64` size fields (negative values rejected), and `Display` as exact bytes plus an IEC approximation (`1048576 (1 MiB)`)
 P1 · M0 · Task · deps: TYPE-0002
 Done when: Property tests show conversions never panic and reject exactly the negative inputs; arithmetic overflow returns a typed error; the doc states that config keys keep Kafka's plain byte numbers (no unit suffixes) for compatibility.
