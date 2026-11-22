@@ -17,14 +17,17 @@ pub(crate) const MAX_PREALLOCATED_ARRAY_CAPACITY: usize = 1000;
 pub struct DecodeLimits {
     /// The most elements one array may declare.
     pub max_array_length: usize,
+    /// The most fields one tagged-field section may declare.
+    pub max_tagged_field_count: usize,
 }
 
 impl Default for DecodeLimits {
     /// Kafka's limits.
-    // Parity: clients/src/main/java/org/apache/kafka/common/protocol/MessageUtil.java@4.4.0 MessageUtil.MAX_ARRAY_LENGTH
+    // Parity: clients/src/main/java/org/apache/kafka/common/protocol/MessageUtil.java@4.4.0 MessageUtil.MAX_ARRAY_LENGTH, MessageUtil.MAX_TAGGED_FIELD_COUNT
     fn default() -> DecodeLimits {
         DecodeLimits {
             max_array_length: 1_000_000,
+            max_tagged_field_count: 10_000,
         }
     }
 }
@@ -37,6 +40,8 @@ pub enum Limit {
     /// Kafka's 32767-byte string length. It is a rule of the format, which no
     /// encoder exceeds, so it is not one of the caller's limits.
     StringLength,
+    /// [`DecodeLimits::max_tagged_field_count`].
+    TaggedFieldCount,
 }
 
 impl fmt::Display for Limit {
@@ -44,6 +49,7 @@ impl fmt::Display for Limit {
         f.write_str(match self {
             Limit::ArrayLength => "array length",
             Limit::StringLength => "string length",
+            Limit::TaggedFieldCount => "tagged-field count",
         })
     }
 }

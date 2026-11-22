@@ -8,6 +8,7 @@
 use bytes::Bytes;
 
 use crate::error::{DecodeError, DecodeErrorKind, EncodeError};
+use crate::limits::Limit;
 use crate::reader::Reader;
 use crate::writer::Writer;
 
@@ -26,8 +27,9 @@ impl Reader {
     ///
     /// # Errors
     ///
-    /// [`DecodeErrorKind::NegativeTaggedFieldCount`] or
-    /// [`DecodeErrorKind::TaggedFieldCountExceedsInput`] for an impossible count,
+    /// [`DecodeErrorKind::NegativeTaggedFieldCount`],
+    /// [`DecodeErrorKind::TaggedFieldCountExceedsInput`] or
+    /// [`DecodeErrorKind::LimitExceeded`] for a count that can't be real,
     /// [`DecodeErrorKind::NegativeTaggedFieldSize`] for an impossible size, and
     /// [`DecodeErrorKind::Truncated`] if the input ends inside the section.
     // Parity: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java@4.4.0 MessageDataGenerator.generateClassReader
@@ -43,6 +45,16 @@ impl Reader {
                 DecodeErrorKind::TaggedFieldCountExceedsInput {
                     count,
                     remaining: self.remaining(),
+                },
+            ));
+        }
+        if count > self.limits.max_tagged_field_count {
+            return Err(Reader::error_at(
+                start,
+                DecodeErrorKind::LimitExceeded {
+                    limit: Limit::TaggedFieldCount,
+                    requested: count,
+                    allowed: self.limits.max_tagged_field_count,
                 },
             ));
         }
@@ -111,6 +123,7 @@ mod tests {
 
     use super::RawTaggedField;
     use crate::error::{DecodeError, DecodeErrorKind, EncodeError};
+    use crate::limits::{DecodeLimits, Limit};
     use crate::reader::Reader;
     use crate::writer::Writer;
 
@@ -177,6 +190,47 @@ mod tests {
                 DecodeErrorKind::Truncated {
                     needed: 3,
                     remaining: 1
+                }
+            ))
+        );
+    }
+
+    #[test]
+    fn kafkas_limit_is_ten_thousand_tagged_fields() {
+        let section = |count: u32| {
+            let mut writer = Writer::new();
+            writer.write_unsigned_varint(count);
+            // Tag 0 with size 0, two bytes per field: enough to pass the remaining check.
+            writer.put_slice(&vec![0; 2 * usize::try_from(count).unwrap()]);
+            writer.into_bytes()
+        };
+        // Rejected from the count, before any entry is read: tag 0 repeated would
+        // otherwise decode.
+        assert_eq!(
+            Reader::new(section(10_001)).read_tagged_fields(),
+            Err(DecodeError::new(
+                0,
+                DecodeErrorKind::LimitExceeded {
+                    limit: Limit::TaggedFieldCount,
+                    requested: 10_001,
+                    allowed: 10_000
+                }
+            ))
+        );
+        let at_limit = Reader::new(section(10_000)).read_tagged_fields();
+        assert_eq!(at_limit.map(|fields| fields.len()), Ok(10_000));
+        let limits = DecodeLimits {
+            max_tagged_field_count: 1,
+            ..DecodeLimits::default()
+        };
+        assert_eq!(
+            Reader::with_limits(section(2), limits).read_tagged_fields(),
+            Err(DecodeError::new(
+                0,
+                DecodeErrorKind::LimitExceeded {
+                    limit: Limit::TaggedFieldCount,
+                    requested: 2,
+                    allowed: 1
                 }
             ))
         );
