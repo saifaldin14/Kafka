@@ -4,7 +4,7 @@ use alluvium_types::Uuid;
 use bytes::Bytes;
 
 use crate::error::{DecodeError, DecodeErrorKind};
-use crate::limits::DecodeLimits;
+use crate::limits::{DecodeLimits, Limit};
 
 /// Reads Kafka primitives from the front of a [`Bytes`] buffer.
 ///
@@ -12,14 +12,18 @@ use crate::limits::DecodeLimits;
 /// [`DecodeErrorKind::Truncated`] at the offset where the value started, never a panic.
 /// Values sliced out of the input, such as byte arrays, share its allocation. Declared
 /// sizes are checked against the reader's [`DecodeLimits`] before anything is
-/// allocated for them.
+/// allocated for them, and every allocation is charged to its budget.
+///
+/// It is not `Clone`: a clone would have its own copy of the allocation budget left.
 // Parity: clients/src/main/java/org/apache/kafka/common/protocol/ByteBufferAccessor.java@4.4.0 ByteBufferAccessor
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Reader {
     buf: Bytes,
     /// The input's length, to report offsets from its start.
     total: usize,
     pub(crate) limits: DecodeLimits,
+    /// The bytes of [`DecodeLimits::allocation_budget`] not yet charged.
+    budget_left: usize,
 }
 
 impl Reader {
@@ -31,7 +35,12 @@ impl Reader {
     /// A reader over all of `buf`, with the caller's limits.
     pub fn with_limits(buf: Bytes, limits: DecodeLimits) -> Reader {
         let total = buf.len();
-        Reader { buf, total, limits }
+        Reader {
+            buf,
+            total,
+            limits,
+            budget_left: limits.allocation_budget,
+        }
     }
 
     /// The offset of the next byte to read, from the start of the input.
@@ -47,6 +56,22 @@ impl Reader {
     /// An error of `kind` at `offset`.
     pub(crate) fn error_at(offset: usize, kind: DecodeErrorKind) -> DecodeError {
         DecodeError::new(offset, kind)
+    }
+
+    /// Charges an allocation of `bytes` to the budget, before it is made. A failure is
+    /// reported at `start`, the offset of the value that needs it.
+    pub(crate) fn charge(&mut self, start: usize, bytes: usize) -> Result<(), DecodeError> {
+        self.budget_left = self.budget_left.checked_sub(bytes).ok_or_else(|| {
+            Reader::error_at(
+                start,
+                DecodeErrorKind::LimitExceeded {
+                    limit: Limit::AllocationBudget,
+                    requested: bytes,
+                    allowed: self.budget_left,
+                },
+            )
+        })?;
+        Ok(())
     }
 
     /// The next `len` bytes, sharing the input's allocation.

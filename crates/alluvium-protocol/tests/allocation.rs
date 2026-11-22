@@ -5,7 +5,9 @@
 
 use std::mem::size_of;
 
-use alluvium_protocol::{Framing, Reader, Writer};
+use alluvium_protocol::{
+    DecodeErrorKind, DecodeLimits, Framing, Limit, RawTaggedField, Reader, Writer,
+};
 use peak_alloc::PeakAlloc;
 
 #[global_allocator]
@@ -17,6 +19,17 @@ fn peak_during(decode: impl FnOnce()) -> usize {
     HEAP.reset_peak_usage();
     decode();
     HEAP.peak_usage().saturating_sub(before)
+}
+
+/// A struct with no fields in the version decoded, as a generated decoder holds it. On
+/// the wire it takes no bytes at all.
+struct Empty {
+    _unknown_tagged_fields: Vec<RawTaggedField>,
+}
+
+/// A struct holding an array of [`Empty`].
+struct Holder {
+    _empties: Vec<Empty>,
 }
 
 #[test]
@@ -40,5 +53,53 @@ fn declared_sizes_do_not_drive_allocation() {
     assert!(
         peak <= 1000 * size_of::<String>(),
         "peak {peak} bytes for a declared 1,000,000-element array"
+    );
+
+    // PROTO-0111: a 1 MiB frame of holders, each declaring a million empty structs.
+    // Every count passes Kafka's checks, and the empty structs cost no input, so only
+    // the budget stops the decode.
+    let holders = (1 << 20) / 4 - 1;
+    let mut writer = Writer::new();
+    writer
+        .write_array_length(Framing::Classic, holders)
+        .unwrap();
+    for _ in 0..holders {
+        writer
+            .write_array_length(Framing::Classic, 1_000_000)
+            .unwrap();
+    }
+    let frame = writer.into_bytes();
+    assert_eq!(frame.len(), 1 << 20);
+    let budget = DecodeLimits::default().allocation_budget;
+    let mut error = None;
+    let peak = peak_during(|| {
+        let holders = Reader::new(frame).read_array(Framing::Classic, |holder| {
+            let empties = holder.read_array(Framing::Classic, |_| {
+                Ok(Empty {
+                    _unknown_tagged_fields: Vec::new(),
+                })
+            })?;
+            Ok(Holder { _empties: empties })
+        });
+        error = holders.err();
+    });
+    // The holders, then four arrays of empties, fit in the budget; the fifth doesn't.
+    let empties = 1_000_000 * size_of::<Empty>();
+    let charged = holders * size_of::<Holder>() + 4 * empties;
+    let error = error.expect("the decode exhausts the budget");
+    assert_eq!(
+        (error.offset, error.kind),
+        (
+            4 + 4 * 4,
+            DecodeErrorKind::LimitExceeded {
+                limit: Limit::AllocationBudget,
+                requested: empties,
+                allowed: budget - charged,
+            }
+        )
+    );
+    assert!(
+        peak <= budget,
+        "peak {peak} bytes over the {budget}-byte budget"
     );
 }

@@ -486,7 +486,7 @@ Done when: 10,001 declared tags fail before reading entries; test for each bound
 P0 · M1 · Task · deps: PROTO-0105, PROTO-0056 · labels: security
 Done when: the deepest vendored message is reported in codegen output; a fixture deeper than the limit fails codegen; no recursive types exist so no runtime recursion is possible (documented).
 
-### [To Do] PROTO-0111 Rule: total allocation budget per decode charging `len × size_of::<T>()` for every Vec and String
+### [Done] PROTO-0111 Rule: total allocation budget per decode charging `len × size_of::<T>()` for every Vec and String
 P0 · M1 · Task · deps: PROTO-0105 · labels: security
 Done when: a 1 MiB frame of maximal empty-struct arrays fails once the budget is exhausted; peak allocation stays under the budget (counting-allocator test); the default budget is justified in docs.
 
