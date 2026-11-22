@@ -8,7 +8,7 @@
 use std::fmt;
 use std::str::FromStr;
 
-use crate::{IdError, IdKind};
+use crate::{IdError, IdKind, SeededRng};
 
 /// A Kafka UUID: the most significant 64 bits, then the least significant 64 bits.
 ///
@@ -106,6 +106,36 @@ impl Uuid {
             most: most_significant,
             least: least_significant,
         }
+    }
+
+    /// A random version 4 UUID that is not reserved and whose text has no `-`.
+    ///
+    /// Kafka avoids `-` so that an id can never be mistaken for a command-line option.
+    /// The bits come from `rng`, so a seeded simulation generates the same ids every
+    /// run, and production ids are as unpredictable as the root generator.
+    // Parity: clients/src/main/java/org/apache/kafka/common/Uuid.java@4.4.0 Uuid.randomUuid
+    pub fn random(rng: &mut SeededRng) -> Uuid {
+        loop {
+            let candidate = Uuid::random_version_4(rng);
+            // ZERO and ONE have version 0, so they can't occur; Kafka checks anyway, and
+            // so does this, so the rule doesn't depend on that reasoning.
+            if candidate != Uuid::ZERO
+                && candidate != Uuid::ONE
+                && !candidate.to_string().contains('-')
+            {
+                return candidate;
+            }
+        }
+    }
+
+    /// 16 random bytes with the version 4 and IETF variant bits set, as
+    /// `java.util.UUID.randomUUID` does.
+    fn random_version_4(rng: &mut SeededRng) -> Uuid {
+        let mut bytes = [0; 16];
+        rng.fill_bytes(&mut bytes);
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        Uuid::from_bytes(bytes)
     }
 
     /// The most significant 64 bits, the first `int64` on the wire.
@@ -309,12 +339,12 @@ fn decode_base64url(input: &[u8]) -> Result<([u8; 18], usize), Base64Problem> {
 mod tests {
     use std::cmp::Ordering;
 
-    use proptest::prelude::{any, prop_assert_eq, proptest};
+    use proptest::prelude::{any, prop_assert, prop_assert_eq, proptest};
     use proptest::sample::select;
 
     use super::{Base64Problem, TopicId, Uuid, UuidError};
     use crate::strategies::{topic_id, uuid};
-    use crate::{IdError, IdKind};
+    use crate::{IdError, IdKind, SeededRng};
 
     // Ported from clients/src/test/java/org/apache/kafka/common/UuidTest.java@4.4.0
     // (Apache License 2.0). testHashCode and the array helpers are not ported: Java's
@@ -390,6 +420,26 @@ mod tests {
         assert_eq!(
             format!("{:?}", TopicId::METADATA),
             "TopicId(AAAAAAAAAAAAAAAAAAAAAQ)"
+        );
+    }
+
+    #[test]
+    fn random_uuids_from_a_fixed_seed_are_fixed() {
+        // From the independent Python reference behind the SeededRng goldens, with
+        // Python's own base64. The seventh draw, EvqS83l7SyiHHZO8g--tTQ, contains `-`
+        // and is skipped, as Kafka skips it.
+        let mut rng = SeededRng::from_seed(42);
+        let ids: Vec<String> = (0..6).map(|_| Uuid::random(&mut rng).to_string()).collect();
+        assert_eq!(
+            ids,
+            [
+                "X143pZvJRcG9O9xrG39lfg",
+                "L7gUvESiQP6BXKZ7Y1vXPQ",
+                "StL8bPnfSJGjEjx5arVhyw",
+                "F5KnWwxfQ0myX3ohSoFAxg",
+                "X3ekr8rUS2amIAZ3TAcQxg",
+                "TBFSFPtkTXu3Gc0atLOXSw",
+            ]
         );
     }
 
@@ -509,6 +559,19 @@ mod tests {
         fn topic_ids_round_trip_through_nullable_fields(id in topic_id()) {
             prop_assert_eq!(TopicId::from_wire_nullable(id.get()), Some(id));
             prop_assert_eq!(id.to_string(), id.get().to_string());
+        }
+
+        #[test]
+        fn random_uuids_are_version_4_unreserved_and_dash_free(seed in any::<u64>()) {
+            let mut rng = SeededRng::from_seed(seed);
+            for _ in 0..16 {
+                let id = Uuid::random(&mut rng);
+                prop_assert!(id != Uuid::ZERO && id != Uuid::ONE);
+                prop_assert!(!id.to_string().contains('-'));
+                let bytes = id.to_bytes();
+                prop_assert_eq!(bytes[6] >> 4, 4, "version");
+                prop_assert_eq!(bytes[8] >> 6, 0b10, "IETF variant");
+            }
         }
 
         #[test]
