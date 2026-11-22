@@ -17,6 +17,7 @@
 
 pub mod adversarial;
 pub mod composite;
+pub mod state_machine;
 
 use proptest::collection::{btree_set, vec};
 use proptest::option;
