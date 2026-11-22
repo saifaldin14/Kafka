@@ -29,7 +29,7 @@ Done when: the command sparse-clones the tag into `target/`, replaces `schemas/k
 P2 · M1 · Task · deps: PROTO-0004 · labels: docs
 Done when: the guide covers vendoring, manifest, reviewing the generated diff, regenerating golden vectors, updating docs/parity.md and when an ADR is needed; linked from ADR-0008 and docs/parity.md.
 
-## [In Progress] PROTO-F02 Schema parser and model
+## [Done] PROTO-F02 Schema parser and model
 P0 · M1 · Feature · deps: PROTO-F01, FND-F04
 Scope: Parse Kafka's JSON-with-comments schemas into a typed model: versions, flexible/tagged/nullable versions, defaults, map keys, common structs, entity types, `latestVersionUnstable`.
 
@@ -37,77 +37,81 @@ Scope: Parse Kafka's JSON-with-comments schemas into a typed model: versions, fl
 P0 · M1 · Task · deps: none · ref: generator/src/main/java/org/apache/kafka/message/MessageGenerator.java JSON_SERDE (ALLOW_COMMENTS, FAIL_ON_TRAILING_TOKENS) @4.4.0
 Done when: comment markers inside string literals are preserved; unterminated block comments and trailing tokens are errors with file:line:column; every vendored file loads; unit tests cover each case.
 
-### [To Do] PROTO-0007 Version range parsing (`N`, `N-M`, `N+`, `none`, empty → default) with intersect, subtract and contains
+### [Done] PROTO-0007 Version range parsing (`N`, `N-M`, `N+`, `none`, empty → default) with intersect, subtract and contains
 P0 · M1 · Task · deps: none · ref: generator/src/main/java/org/apache/kafka/message/Versions.java parse/intersect/subtract @4.4.0
 Done when: negative bounds are rejected; `N+` ends at i16::MAX; property tests show intersect is commutative, `a.subtract(b)` ⊆ a and contains agrees with the bounds; VersionsTest cases ported.
 
-### [To Do] PROTO-0008 Typed schema model `MessageSpec`, `StructSpec`, `FieldSpec` covering every property Kafka's generator accepts, unknown properties rejected
+### [Done] PROTO-0008 Typed schema model `MessageSpec`, `StructSpec`, `FieldSpec` covering every property Kafka's generator accepts, unknown properties rejected
 P0 · M1 · Task · deps: PROTO-0006, PROTO-0007 · ref: generator/src/main/java/org/apache/kafka/message/MessageSpec.java, FieldSpec.java @4.4.0
 Done when: message properties (name, validVersions, deprecatedVersions, apiKey, type, commonStructs, flexibleVersions, listeners, latestVersionUnstable) and field properties (name, versions, fields, type, mapKey, nullableVersions, default, ignorable, entityType, about, taggedVersions, flexibleVersions, tag, zeroCopy) are modeled; an unknown key is a SchemaError naming file and pointer; single values are accepted where Kafka accepts arrays (ACCEPT_SINGLE_VALUE_AS_ARRAY).
+Notes: Properties are read as Jackson reads them: unknown properties fail, JSON `null` means absent, text properties also take numbers and booleans (30 vendored defaults are numbers, 4 booleans), and list properties take a single value. Numeric and boolean properties are strict, since no vendored schema writes them as text. The listeners rule's message names `listeners`, where Kafka's still says `requestScope`.
 
-### [To Do] PROTO-0009 Field type parsing: bool, int8, int16, uint16, int32, uint32, int64, float64, string, uuid, bytes, records, struct names and `[]T` arrays
+### [Done] PROTO-0009 Field type parsing: bool, int8, int16, uint16, int32, uint32, int64, float64, string, uuid, bytes, records, struct names and `[]T` arrays
 P0 · M1 · Task · deps: PROTO-0008 · ref: generator/src/main/java/org/apache/kafka/message/FieldType.java parse @4.4.0
 Done when: arrays of arrays, unknown primitive names and lower-case struct names are SchemaErrors; `can_be_nullable` is true only for string, bytes, records, struct and arrays; tests per type.
 
-### [To Do] PROTO-0010 Message-level validation: message type (request, response, header, metadata, data, coordinator-key, coordinator-value), apiKey, listeners and required flexibleVersions
+### [Done] PROTO-0010 Message-level validation: message type (request, response, header, metadata, data, coordinator-key, coordinator-value), apiKey, listeners and required flexibleVersions
 P0 · M1 · Task · deps: PROTO-0008 · ref: generator/src/main/java/org/apache/kafka/message/MessageSpec.java MessageSpec @4.4.0
 Done when: each rejection in MessageSpec's constructor (missing flexibleVersions, listeners on non-requests, latestVersionUnstable on non-requests, coordinator-key without apiKey or with versions other than 0 or with flexibleVersions, coordinator-value without apiKey) is a SchemaError with a fixture test.
 
-### [To Do] PROTO-0011 Field name validation (`[A-Za-z][A-Za-z0-9]*`) and per-struct uniqueness of names and tags with tags contiguous from 0
+### [Done] PROTO-0011 Field name validation (`[A-Za-z][A-Za-z0-9]*`) and per-struct uniqueness of names and tags with tags contiguous from 0
 P0 · M1 · Task · deps: PROTO-0008 · ref: generator/src/main/java/org/apache/kafka/message/StructSpec.java, FieldSpec.java VALID_FIELD_NAMES @4.4.0
 Done when: invalid names, duplicate names, duplicate tags and a gap in tag ids are SchemaErrors naming struct and field; tests port StructSpecTest.
 
-### [To Do] PROTO-0012 Field `versions` semantics: required unless `taggedVersions` is given (then defaulting to it); per-version presence = field versions ∩ parent struct versions
+### [Done] PROTO-0012 Field `versions` semantics: required unless `taggedVersions` is given (then defaulting to it); per-version presence = field versions ∩ parent struct versions
 P0 · M1 · Task · deps: PROTO-0008 · ref: generator/src/main/java/org/apache/kafka/message/FieldSpec.java FieldSpec, StructRegistry.java addStructSpecs @4.4.0
 Done when: `present_versions(field, parent)` returns the right set for subset ranges such as `0-2` and `3+`; a field with no versions and no taggedVersions is an error; tested on ProduceRequest `TransactionalId` (3+) and a removed `0-2` field fixture.
 
-### [To Do] PROTO-0013 Message `flexibleVersions` and per-field `flexibleVersions` overrides (string and bytes only)
+### [Done] PROTO-0013 Message `flexibleVersions` and per-field `flexibleVersions` overrides (string and bytes only)
 P0 · M1 · Task · deps: PROTO-0008, PROTO-0009 · ref: clients/src/main/resources/common/message/RequestHeader.json ClientId; generator/src/main/java/org/apache/kafka/message/FieldSpec.java @4.4.0
 Done when: an override on any other type is a SchemaError; effective flexible versions per field are exposed; RequestHeader `ClientId` with override `none` resolves to classic encoding in header v2 (unit test).
 
-### [To Do] PROTO-0014 `nullableVersions` parsing and validation
+### [Done] PROTO-0014 `nullableVersions` parsing and validation
 P0 · M1 · Task · deps: PROTO-0009 · ref: generator/src/main/java/org/apache/kafka/message/FieldSpec.java nullableVersions @4.4.0
 Done when: nullable ranges on bool, int, float or uuid fields are SchemaErrors; nullable ranges are exposed per field; ProduceResponse `ErrorMessage` (nullable 8+) is modeled correctly in a test.
 
-### [To Do] PROTO-0015 `tag` and `taggedVersions` rules
+### [Done] PROTO-0015 `tag` and `taggedVersions` rules
 P0 · M1 · Task · deps: PROTO-0012, PROTO-0013, PROTO-0014 · ref: generator/src/main/java/org/apache/kafka/message/FieldSpec.java checkTagInvariants; generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java generateClassReader @4.4.0
 Done when: fixture tests reject: negative tag; tag without taggedVersions and vice versa; taggedVersions not open-ended; taggedVersions not a subset of versions; nullable versions covering only part of the tagged versions; tagged mapKey fields; taggedVersions outside the flexible versions.
 
-### [To Do] PROTO-0016 Default values for int8, int16, uint16, int32, uint32 and int64: decimal and `0x` hex with range checks
+### [Done] PROTO-0016 Default values for int8, int16, uint16, int32, uint32 and int64: decimal and `0x` hex with range checks
 P0 · M1 · Task · deps: PROTO-0009 · ref: generator/src/main/java/org/apache/kafka/message/FieldSpec.java fieldDefault @4.4.0
 Done when: empty default means 0; out-of-range and non-numeric defaults are SchemaErrors naming the field; hex parses with the same base rules as Kafka (no octal); tests per type at both bounds.
 
-### [To Do] PROTO-0017 Default values for bool, float64, uuid, string, bytes, records, struct and array fields, including `null`
+### [Done] PROTO-0017 Default values for bool, float64, uuid, string, bytes, records, struct and array fields, including `null`
 P0 · M1 · Task · deps: PROTO-0009, PROTO-0014 · ref: generator/src/main/java/org/apache/kafka/message/FieldSpec.java fieldDefault @4.4.0
 Done when: bool accepts true/false case-insensitively; uuid defaults are base64url and decode to 16 bytes; float64 parses; bytes, struct and array accept only empty or `null`; `null` is allowed only when the field is nullable in all its versions; each rejection has a fixture test.
+Notes: `"default": null` reaches Kafka's constructor as Java null, so it means "no default" (the type's empty value), not null; four vendored fields write it. Only the text `"null"` asks for null. A `records` default is ignored, as in Kafka. Uuid defaults are checked with `alluvium_types::Uuid`, the parser of Kafka's `Uuid.fromString`, which the generated code calls. float64 defaults accept Java's decimal forms, `NaN` and `Infinity`, but not hex floats; no vendored schema has a float64 default.
 
-### [To Do] PROTO-0018 `mapKey` parsing and detection of struct arrays with keys
+### [Done] PROTO-0018 `mapKey` parsing and detection of struct arrays with keys
 P0 · M1 · Task · deps: PROTO-0008 · ref: generator/src/main/java/org/apache/kafka/message/StructRegistry.java isStructArrayWithKeys @4.4.0
 Done when: fields marked mapKey are exposed per struct; `is_struct_array_with_keys` matches Kafka's StructRegistry for every vendored schema (count asserted in a test).
 
-### [To Do] PROTO-0019 `ignorable` flag exposed per field for encode-time checks
+### [Done] PROTO-0019 `ignorable` flag exposed per field for encode-time checks
 P0 · M1 · Task · deps: PROTO-0008 · ref: generator/src/main/java/org/apache/kafka/message/FieldSpec.java ignorable @4.4.0
 Done when: the flag is in the model with its default false; ProduceResponse `RecordErrors` (ignorable) and a non-ignorable field are asserted in a test.
 
-### [To Do] PROTO-0020 `entityType` parsing (unknown, transactionalId, producerId, groupId, topicName, brokerId) with type verification
+### [Done] PROTO-0020 `entityType` parsing (unknown, transactionalId, producerId, groupId, topicName, brokerId) with type verification
 P0 · M1 · Task · deps: PROTO-0009 · ref: generator/src/main/java/org/apache/kafka/message/EntityType.java verifyTypeMatches @4.4.0
 Done when: a mismatched type (for example topicName on int32) is a SchemaError; arrays whose element type matches are accepted; values are exposed in the model; EntityTypeTest cases ported.
 
-### [To Do] PROTO-0021 `commonStructs` and the struct registry: registration, lookup, inline structs with intersected parent versions
+### [Done] PROTO-0021 `commonStructs` and the struct registry: registration, lookup, inline structs with intersected parent versions
 P0 · M1 · Task · deps: PROTO-0009, PROTO-0012 · ref: generator/src/main/java/org/apache/kafka/message/StructRegistry.java register/findStruct @4.4.0
 Done when: errors for lower-case struct names, a common struct defined twice, an inline re-specification of a common struct, an inline struct defined twice in a message and an unknown struct reference; StructRegistryTest cases ported.
+Notes: As in Kafka, a struct-typed message field with no inline fields and no common struct of that name defines an empty struct, so an unknown struct can only be named from a common struct's fields, which Kafka never registers. That case is reported as Kafka's `findStruct` would report it.
 
-### [To Do] PROTO-0022 `latestVersionUnstable` and `deprecatedVersions` in the model
+### [Done] PROTO-0022 `latestVersionUnstable` and `deprecatedVersions` in the model
 P0 · M1 · Task · deps: PROTO-0010, PROTO-0007 · ref: generator/src/main/java/org/apache/kafka/message/MessageSpec.java latestVersionUnstable @4.4.0
 Done when: both are exposed per message; InitProducerIdRequest is the only 4.4.0 schema with latestVersionUnstable=true (asserted); deprecated ranges parse with the version syntax.
 
-### [To Do] PROTO-0023 `zeroCopy` flag (bytes fields only)
+### [Done] PROTO-0023 `zeroCopy` flag (bytes fields only)
 P0 · M1 · Task · deps: PROTO-0009 · ref: generator/src/main/java/org/apache/kafka/message/FieldSpec.java zeroCopy @4.4.0
 Done when: zeroCopy on a non-bytes field is a SchemaError; EnvelopeRequest `RequestData` and PushTelemetryRequest `Metrics` are flagged in the model (test).
 
-### [To Do] PROTO-0024 Parse every vendored 4.4.0 schema and assert the inventory
+### [Done] PROTO-0024 Parse every vendored 4.4.0 schema and assert the inventory
 P0 · M1 · Task · deps: PROTO-0015, PROTO-0016, PROTO-0017, PROTO-0018, PROTO-0019, PROTO-0020, PROTO-0021, PROTO-0022, PROTO-0023, PROTO-0011
 Done when: a test loads all vendored files with zero errors and asserts the number of request schemas, unique API keys, matching request/response pairs per API key, and the valid-version ranges of Produce (3-13) and Fetch (4-18).
+Notes: 281 schemas load (the 282 vendored files minus Kafka's README). There are 95 request schemas; 91 have valid versions, and four ZooKeeper-era APIs keep their key with `none`. That gives 91 request and 91 response APIs with no unpaired key, and 76 keyed struct arrays. An independent script over the JSON gave the same numbers. `schemas verify` prints this inventory and fails on an unpaired API key.
 
 ## [To Do] PROTO-F03 Primitive codecs
 P0 · M1 · Feature · deps: TYPE-F01, TYPE-F03

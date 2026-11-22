@@ -217,9 +217,12 @@ fn collect_files(dir: &Path, prefix: &str, files: &mut Vec<String>) -> std::io::
     Ok(())
 }
 
-/// Checks one vendored directory, named `kafka-<tag>`, against its manifest. Problems
-/// name files as `<label>/<path>`.
-pub(crate) fn verify_dir(dir: &Path, label: &str) -> Result<Vec<String>, String> {
+/// Checks one vendored directory, named `kafka-<tag>`, against its manifest, and loads
+/// its schemas. Problems name files as `<label>/<path>`.
+pub(crate) fn verify_dir(
+    dir: &Path,
+    label: &str,
+) -> Result<(Vec<String>, message_spec::Inventory), String> {
     let manifest_path = dir.join(MANIFEST);
     let text = std::fs::read_to_string(&manifest_path)
         .map_err(|error| format!("could not read {label}/{MANIFEST}: {error}"))?;
@@ -236,15 +239,22 @@ pub(crate) fn verify_dir(dir: &Path, label: &str) -> Result<Vec<String>, String>
         ));
     }
     let actual = hash_tree(dir)?;
+    let mut inventory = message_spec::Inventory::default();
     for path in actual
         .keys()
         .filter(|path| Path::new(path).extension().is_some_and(|ext| ext == "json"))
     {
         let text = std::fs::read_to_string(dir.join(path))
             .map_err(|error| format!("could not read {label}/{path}: {error}"))?;
-        if let Err(error) = message_spec::load(&format!("{label}/{path}"), &text) {
-            problems.push(error.to_string());
+        match message_spec::load(&format!("{label}/{path}"), &text) {
+            Ok(message) => inventory.add(&message),
+            Err(error) => problems.push(error.to_string()),
         }
+    }
+    for api_key in inventory.unpaired() {
+        problems.push(format!(
+            "{label}: API key {api_key} needs both a request and a response schema"
+        ));
     }
     for change in compare(&manifest.hashes, &actual) {
         problems.push(match change {
@@ -258,22 +268,23 @@ pub(crate) fn verify_dir(dir: &Path, label: &str) -> Result<Vec<String>, String>
             ),
         });
     }
-    Ok(problems)
+    Ok((problems, inventory))
 }
 
 /// Runs `schemas verify` on every `schemas/kafka-*` directory.
 pub(crate) fn run_verify(out: &mut impl Write) -> Exit {
     match verify_all(&crate::repo_root()) {
-        Ok((0, _)) => {
+        Ok((summaries, _)) if summaries.is_empty() => {
             output::line(out, "error: no schemas/kafka-<tag>/ directory to verify");
             Exit::CheckFailed
         }
-        Ok((count, problems)) if problems.is_empty() => {
+        Ok((summaries, problems)) if problems.is_empty() => {
+            for summary in &summaries {
+                output::line(out, summary);
+            }
             output::line(
                 out,
-                &format!(
-                    "schemas verify: ok, {count} vendored directory(ies) match their manifests"
-                ),
+                "schemas verify: ok, every vendored directory matches its manifest and loads",
             );
             Exit::Success
         }
@@ -297,8 +308,8 @@ pub(crate) fn run_verify(out: &mut impl Write) -> Exit {
     }
 }
 
-/// The number of vendored directories checked, and every problem found.
-fn verify_all(root: &Path) -> Result<(usize, Vec<String>), String> {
+/// A summary line for each vendored directory checked, and every problem found.
+fn verify_all(root: &Path) -> Result<(Vec<String>, Vec<String>), String> {
     let schemas = root.join(SCHEMAS_DIR);
     let mut dirs = Vec::new();
     for entry in std::fs::read_dir(&schemas)
@@ -311,14 +322,15 @@ fn verify_all(root: &Path) -> Result<(usize, Vec<String>), String> {
         }
     }
     dirs.sort();
+    let mut summaries = Vec::new();
     let mut problems = Vec::new();
     for name in &dirs {
-        problems.extend(verify_dir(
-            &schemas.join(name),
-            &format!("{SCHEMAS_DIR}/{name}"),
-        )?);
+        let label = format!("{SCHEMAS_DIR}/{name}");
+        let (found, inventory) = verify_dir(&schemas.join(name), &label)?;
+        summaries.push(format!("{label}: {inventory}"));
+        problems.extend(found);
     }
-    Ok((dirs.len(), problems))
+    Ok((summaries, problems))
 }
 
 /// Runs `schemas vendor --tag <tag> [--dry-run]`.
@@ -670,11 +682,11 @@ mod tests {
     #[test]
     fn the_intact_fixture_passes_and_the_tampered_one_names_each_file() {
         assert_eq!(
-            verify_dir(&fixture("intact"), "intact").unwrap(),
+            verify_dir(&fixture("intact"), "intact").unwrap().0,
             Vec::<String>::new()
         );
         assert_eq!(
-            verify_dir(&fixture("tampered"), "t").unwrap(),
+            verify_dir(&fixture("tampered"), "t").unwrap().0,
             [
                 "t/clients/Added.json: not in MANIFEST.sha256; vendored files come only from \
                  `cargo xtask schemas vendor`",

@@ -18,7 +18,7 @@ It is a dev-layer crate in the [code map](../architecture.md#4-code-map): it may
 | [`check_manifests`](../../xtask/src/check_manifests.rs) | `[workspace.lints]` and `clippy.toml` against rust.md, member manifests, `deny.toml` ignores, crate-root docs |
 | [`check_workflows`](../../xtask/src/check_workflows.rs) | Pinned actions, triggers, job timeouts and permissions, ci.yml running every step, then actionlint and shellcheck |
 | [`schemas`](../../xtask/src/schemas.rs) | `schemas verify`: the vendored Kafka schemas against their manifests, each loaded as a schema; `schemas vendor`: copying them from a Kafka tag |
-| [`message_spec`](../../xtask/src/message_spec.rs) | Kafka's message schemas, read and checked as Kafka's generator reads them: the input to codegen |
+| [`message_spec`](../../xtask/src/message_spec.rs) | Kafka's message schemas, read and checked as Kafka's generator reads them (`MessageSpec`, `FieldSpec`, version ranges, field types, defaults, the struct registry): the input to codegen |
 | [`crate_docs`](../../xtask/src/crate_docs.rs) | `docs check-crates` and `docs new-crate-doc` ([crate deep dives](README.md)) |
 | [`lint_canary`](../../xtask/src/lint_canary.rs) | Running clippy on [`lint-canary`](../../xtask/lint-canary/src/lib.rs) and matching its `expect-lint:` annotations |
 | [`backlog`](../../xtask/src/backlog.rs), [`backlog_check`](../../xtask/src/backlog_check.rs), [`backlog_next`](../../xtask/src/backlog_next.rs), [`backlog_stats`](../../xtask/src/backlog_stats.rs) | Parsing docs/backlog/, its rules, task selection and `show`, and the README totals ([backlog rules](../backlog/README.md)) |
@@ -60,7 +60,7 @@ None. `xtask` is a short-lived command-line tool with no runtime to observe. Its
 
 - **Usage.** `cli::UsageError` names the problem (unknown command, step or subcommand, a missing value or argument, non-UTF-8 input) and exits 2 after printing the usage text.
 - **Loading.** `graph::GraphError` (running or parsing `cargo metadata`) and `tools::ToolProblem` (a tool missing or at the wrong version, with the install command) are typed.
-- **Check results.** Most are lines of text naming the file (with a line, or a manifest key such as `workspace.lints.clippy.todo`), the rule and the fix, and they exit 1. They are reports for people, so they stay strings. Where tests or the output need structure, the result is typed: `check_layers::Violation` (an ordered enum, so violations print in a stable order), `lint_canary::Mismatch` (expected and reported lints at one location), and `crate_docs::Findings`.
+- **Check results.** Most are lines of text naming the file (with a line, or a manifest key such as `workspace.lints.clippy.todo`), the rule and the fix, and they exit 1. They are reports for people, so they stay strings. Where tests or the output need structure, the result is typed: `message_spec::SchemaError` (file, with a line and column for JSON syntax or a JSON pointer for a broken rule), `check_layers::Violation` (an ordered enum, so violations print in a stable order), `lint_canary::Mismatch` (expected and reported lints at one location), and `crate_docs::Findings`.
 
 There is no Kafka error mapping: `xtask` never speaks the Kafka protocol. `anyhow` is allowed here by [ADR-0004](../adr/0004-error-model-and-panic-policy.md), but isn't needed.
 
@@ -70,6 +70,7 @@ There is no Kafka error mapping: `xtask` never speaks the Kafka protocol. `anyho
 |---|---|---|
 | Unit | `mod tests` in each module except `clock` | Parsing; every checker rule, mostly on in-memory input (`backlog_check` reads the fixture backlogs); the step runner with small real commands, including one that can't start; `doctor::evaluate` with fake command output |
 | Integration | [`tests/`](../../xtask/tests/) | `cli.rs`: the binary's dispatch, exit codes and step order. `check_layers.rs`: offline fixture workspaces for a correct workspace and five violations (rule 4, depending on the binary, is a unit test). `deny.rs`: deny.toml against fixture workspaces (needs the pinned cargo-deny). `disallowed_exceptions.rs`: the sanctioned clippy exceptions |
+| Ported | `message_spec`'s `versions`, `spec` and `registry` modules | Kafka's `VersionsTest`, `StructSpecTest`, `EntityTypeTest` and `StructRegistryTest`, each marked `// Ported from:`. `message_spec`'s own tests load all 281 vendored schemas and check the model against them |
 | Golden | [`tests/fixtures/backlog/`](../../xtask/tests/fixtures/backlog/) | The backlog parser's items and error messages, and the output of `check`, `next` and `stats` |
 | Lint canary | [`xtask/lint-canary`](../../xtask/lint-canary/src/lib.rs), run by the `lint-canary` step | That every lint `[workspace.lints]` sets one by one, and every `clippy.toml` entry, still fires ([`lint-canary` deep dive](lint-canary.md)) |
 | Property, simulation, fuzz, compatibility | None | `xtask` reads only repository files and tool output, not untrusted input, and has no distributed behavior |
