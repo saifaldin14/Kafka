@@ -71,6 +71,31 @@ impl FindCoordinatorRequest {
     }
 }
 
+#[cfg(test)]
+impl FindCoordinatorRequest {
+    /// Values of `FindCoordinatorRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<FindCoordinatorRequest> {
+        use crate::test_strategies::{array, boundary_i8, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            present(version <= 3, string(), String::new()).boxed(),
+            present(version >= 1, boundary_i8(), 0).boxed(),
+            present(version >= 4, array(string()), Vec::new()).boxed(),
+            present(version >= 3, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| FindCoordinatorRequest {
+                key: value_0,
+                key_type: value_1,
+                coordinator_keys: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl FindCoordinatorRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -158,4 +183,13 @@ impl crate::Message for FindCoordinatorRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        FindCoordinatorRequest::arbitrary,
+        FindCoordinatorRequest::VERSIONS,
+    );
 }

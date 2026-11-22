@@ -70,6 +70,39 @@ impl ShareGroupHeartbeatRequest {
     }
 }
 
+#[cfg(test)]
+impl ShareGroupHeartbeatRequest {
+    /// Values of `ShareGroupHeartbeatRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ShareGroupHeartbeatRequest> {
+        use crate::test_strategies::{
+            array, boundary_i32, nullable, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            string().boxed(),
+            boundary_i32().boxed(),
+            nullable(true, string()).boxed(),
+            nullable(true, array(string())).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5),)| {
+                ShareGroupHeartbeatRequest {
+                    group_id: value_0,
+                    member_id: value_1,
+                    member_epoch: value_2,
+                    rack_id: value_3,
+                    subscribed_topic_names: value_4,
+                    unknown_tagged_fields: value_5,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl ShareGroupHeartbeatRequest {
     fn write_fields(
         &self,
@@ -129,4 +162,13 @@ impl crate::Message for ShareGroupHeartbeatRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ShareGroupHeartbeatRequest::arbitrary,
+        ShareGroupHeartbeatRequest::VERSIONS,
+    );
 }

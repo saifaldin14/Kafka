@@ -126,6 +126,69 @@ impl ShareFetchRequest {
     }
 }
 
+#[cfg(test)]
+impl ShareFetchRequest {
+    /// Values of `ShareFetchRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<ShareFetchRequest> {
+        use crate::test_strategies::{
+            array, boundary_i8, boundary_i32, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        (
+            (
+                nullable(true, string()).boxed(),
+                nullable(true, string()).boxed(),
+                boundary_i32().boxed(),
+                boundary_i32().boxed(),
+                boundary_i32().boxed(),
+                boundary_i32().boxed(),
+                boundary_i32().boxed(),
+                boundary_i32().boxed(),
+                present(version == 2, boundary_i8(), 0).boxed(),
+                present(version == 2, any::<bool>(), false).boxed(),
+            ),
+            (
+                array(FetchTopic::arbitrary(version)).boxed(),
+                array(ForgottenTopic::arbitrary(version)).boxed(),
+                unknown_tagged_fields(0).boxed(),
+            ),
+        )
+            .prop_map(
+                |(
+                    (
+                        value_0,
+                        value_1,
+                        value_2,
+                        value_3,
+                        value_4,
+                        value_5,
+                        value_6,
+                        value_7,
+                        value_8,
+                        value_9,
+                    ),
+                    (value_10, value_11, value_12),
+                )| ShareFetchRequest {
+                    group_id: value_0,
+                    member_id: value_1,
+                    share_session_epoch: value_2,
+                    max_wait_ms: value_3,
+                    min_bytes: value_4,
+                    max_bytes: value_5,
+                    max_records: value_6,
+                    batch_size: value_7,
+                    share_acquire_mode: value_8,
+                    is_renew_ack: value_9,
+                    topics: value_10,
+                    forgotten_topics_data: value_11,
+                    unknown_tagged_fields: value_12,
+                },
+            )
+            .boxed()
+    }
+}
+
 impl ShareFetchRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -240,6 +303,27 @@ impl FetchTopic {
     }
 }
 
+#[cfg(test)]
+impl FetchTopic {
+    /// Values of `FetchTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<FetchTopic> {
+        use crate::test_strategies::{array, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((
+            uuid().boxed(),
+            array(FetchPartition::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| FetchTopic {
+                topic_id: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl FetchTopic {
     fn write_fields(
         &self,
@@ -325,6 +409,29 @@ impl FetchPartition {
     }
 }
 
+#[cfg(test)]
+impl FetchPartition {
+    /// Values of `FetchPartition` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<FetchPartition> {
+        use crate::test_strategies::{array, boundary_i32, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            Just(0).boxed(),
+            array(AcknowledgementBatch::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| FetchPartition {
+                partition_index: value_0,
+                partition_max_bytes: value_1,
+                acknowledgement_batches: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl FetchPartition {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -404,6 +511,31 @@ impl AcknowledgementBatch {
     }
 }
 
+#[cfg(test)]
+impl AcknowledgementBatch {
+    /// Values of `AcknowledgementBatch` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AcknowledgementBatch> {
+        use crate::test_strategies::{array, boundary_i8, boundary_i64, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i64().boxed(),
+            boundary_i64().boxed(),
+            array(boundary_i8()).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| AcknowledgementBatch {
+                first_offset: value_0,
+                last_offset: value_1,
+                acknowledge_types: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl AcknowledgementBatch {
     fn write_fields(
         &self,
@@ -476,6 +608,23 @@ impl ForgottenTopic {
     }
 }
 
+#[cfg(test)]
+impl ForgottenTopic {
+    /// Values of `ForgottenTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<ForgottenTopic> {
+        use crate::test_strategies::{array, boundary_i32, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((uuid().boxed(), array(boundary_i32()).boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| ForgottenTopic {
+                topic_id: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl ForgottenTopic {
     fn write_fields(
         &self,
@@ -527,4 +676,13 @@ impl crate::Message for ShareFetchRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ShareFetchRequest::arbitrary,
+        ShareFetchRequest::VERSIONS,
+    );
 }

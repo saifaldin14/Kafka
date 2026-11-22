@@ -43,6 +43,24 @@ impl ConsumerProtocolAssignment {
     }
 }
 
+#[cfg(test)]
+impl ConsumerProtocolAssignment {
+    /// Values of `ConsumerProtocolAssignment` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ConsumerProtocolAssignment> {
+        use crate::test_strategies::{array, bytes, nullable};
+        use proptest::prelude::*;
+        ((array(TopicPartition::arbitrary(version)).boxed(), nullable(true, bytes()).boxed()),)
+            .prop_map(|((value_0, value_1),)| ConsumerProtocolAssignment {
+                assigned_partitions: value_0,
+                user_data: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl ConsumerProtocolAssignment {
     fn write_fields(
         &self,
@@ -110,6 +128,22 @@ impl TopicPartition {
     }
 }
 
+#[cfg(test)]
+impl TopicPartition {
+    /// Values of `TopicPartition` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<TopicPartition> {
+        use crate::test_strategies::{array, boundary_i32, string};
+        use proptest::prelude::*;
+        ((string().boxed(), array(boundary_i32()).boxed()),)
+            .prop_map(|((value_0, value_1),)| TopicPartition {
+                topic: value_0,
+                partitions: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl TopicPartition {
     fn write_fields(
         &self,
@@ -153,4 +187,13 @@ impl crate::Message for ConsumerProtocolAssignment {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ConsumerProtocolAssignment::arbitrary,
+        ConsumerProtocolAssignment::VERSIONS,
+    );
 }

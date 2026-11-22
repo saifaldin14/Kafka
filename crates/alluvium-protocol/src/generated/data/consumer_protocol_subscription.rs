@@ -80,6 +80,35 @@ impl ConsumerProtocolSubscription {
     }
 }
 
+#[cfg(test)]
+impl ConsumerProtocolSubscription {
+    /// Values of `ConsumerProtocolSubscription` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ConsumerProtocolSubscription> {
+        use crate::test_strategies::{array, boundary_i32, bytes, nullable, present, string};
+        use proptest::prelude::*;
+        ((
+            array(string()).boxed(),
+            nullable(true, bytes()).boxed(),
+            present(version >= 1, array(TopicPartition::arbitrary(version)), Vec::new()).boxed(),
+            present(version >= 2, boundary_i32(), -1).boxed(),
+            present(version == 3, nullable(true, string()), None).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| {
+                ConsumerProtocolSubscription {
+                    topics: value_0,
+                    user_data: value_1,
+                    owned_partitions: value_2,
+                    generation_id: value_3,
+                    rack_id: value_4,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl ConsumerProtocolSubscription {
     fn write_fields(
         &self,
@@ -159,6 +188,22 @@ impl TopicPartition {
     }
 }
 
+#[cfg(test)]
+impl TopicPartition {
+    /// Values of `TopicPartition` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<TopicPartition> {
+        use crate::test_strategies::{array, boundary_i32, string};
+        use proptest::prelude::*;
+        ((string().boxed(), array(boundary_i32()).boxed()),)
+            .prop_map(|((value_0, value_1),)| TopicPartition {
+                topic: value_0,
+                partitions: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl TopicPartition {
     fn write_fields(
         &self,
@@ -202,4 +247,13 @@ impl crate::Message for ConsumerProtocolSubscription {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ConsumerProtocolSubscription::arbitrary,
+        ConsumerProtocolSubscription::VERSIONS,
+    );
 }

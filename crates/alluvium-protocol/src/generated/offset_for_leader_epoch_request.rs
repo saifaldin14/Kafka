@@ -68,6 +68,29 @@ impl OffsetForLeaderEpochRequest {
     }
 }
 
+#[cfg(test)]
+impl OffsetForLeaderEpochRequest {
+    /// Values of `OffsetForLeaderEpochRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<OffsetForLeaderEpochRequest> {
+        use crate::test_strategies::{array, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            present(version >= 3, boundary_i32(), -2).boxed(),
+            array(OffsetForLeaderTopic::arbitrary(version)).boxed(),
+            present(version == 4, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| OffsetForLeaderEpochRequest {
+                replica_id: value_0,
+                topics: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl OffsetForLeaderEpochRequest {
     fn write_fields(
         &self,
@@ -168,6 +191,29 @@ impl OffsetForLeaderTopic {
     }
 }
 
+#[cfg(test)]
+impl OffsetForLeaderTopic {
+    /// Values of `OffsetForLeaderTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<OffsetForLeaderTopic> {
+        use crate::test_strategies::{array, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(OffsetForLeaderPartition::arbitrary(version)).boxed(),
+            present(version == 4, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| OffsetForLeaderTopic {
+                topic: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl OffsetForLeaderTopic {
     fn write_fields(
         &self,
@@ -259,6 +305,31 @@ impl OffsetForLeaderPartition {
     }
 }
 
+#[cfg(test)]
+impl OffsetForLeaderPartition {
+    /// Values of `OffsetForLeaderPartition` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<OffsetForLeaderPartition> {
+        use crate::test_strategies::{boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i32().boxed(),
+            boundary_i32().boxed(),
+            present(version == 4, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| OffsetForLeaderPartition {
+                partition: value_0,
+                current_leader_epoch: value_1,
+                leader_epoch: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl OffsetForLeaderPartition {
     fn write_fields(
         &self,
@@ -313,4 +384,13 @@ impl crate::Message for OffsetForLeaderEpochRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        OffsetForLeaderEpochRequest::arbitrary,
+        OffsetForLeaderEpochRequest::VERSIONS,
+    );
 }

@@ -42,6 +42,8 @@ mod tagged_fields;
 #[cfg(test)]
 #[rustfmt::skip]
 pub mod test_messages;
+#[cfg(test)]
+mod test_strategies;
 mod varint;
 mod versions;
 mod writer;

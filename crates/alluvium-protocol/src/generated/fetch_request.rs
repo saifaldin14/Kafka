@@ -174,6 +174,71 @@ impl FetchRequest {
     }
 }
 
+#[cfg(test)]
+impl FetchRequest {
+    /// Values of `FetchRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<FetchRequest> {
+        use crate::test_strategies::{
+            array, boundary_i8, boundary_i32, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        (
+            (
+                present(version >= 12, nullable(true, string()), None).boxed(),
+                present(version <= 14, boundary_i32(), -1).boxed(),
+                present(version >= 15, ReplicaState::arbitrary(version), ReplicaState::default())
+                    .boxed(),
+                boundary_i32().boxed(),
+                boundary_i32().boxed(),
+                boundary_i32().boxed(),
+                boundary_i8().boxed(),
+                present(version >= 7, boundary_i32(), 0).boxed(),
+                present(version >= 7, boundary_i32(), -1).boxed(),
+                array(FetchTopic::arbitrary(version)).boxed(),
+            ),
+            (
+                present(version >= 7, array(ForgottenTopic::arbitrary(version)), Vec::new())
+                    .boxed(),
+                present(version >= 11, string(), String::new()).boxed(),
+                present(version >= 12, unknown_tagged_fields(2), Vec::new()).boxed(),
+            ),
+        )
+            .prop_map(
+                |(
+                    (
+                        value_0,
+                        value_1,
+                        value_2,
+                        value_3,
+                        value_4,
+                        value_5,
+                        value_6,
+                        value_7,
+                        value_8,
+                        value_9,
+                    ),
+                    (value_10, value_11, value_12),
+                )| FetchRequest {
+                    cluster_id: value_0,
+                    replica_id: value_1,
+                    replica_state: value_2,
+                    max_wait_ms: value_3,
+                    min_bytes: value_4,
+                    max_bytes: value_5,
+                    isolation_level: value_6,
+                    session_id: value_7,
+                    session_epoch: value_8,
+                    topics: value_9,
+                    forgotten_topics_data: value_10,
+                    rack_id: value_11,
+                    unknown_tagged_fields: value_12,
+                },
+            )
+            .boxed()
+    }
+}
+
 impl FetchRequest {
     fn write_tagged_fields(
         &self,
@@ -315,6 +380,23 @@ impl ReplicaState {
     }
 }
 
+#[cfg(test)]
+impl ReplicaState {
+    /// Values of `ReplicaState` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<ReplicaState> {
+        use crate::test_strategies::{boundary_i32, boundary_i64, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((boundary_i32().boxed(), boundary_i64().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| ReplicaState {
+                replica_id: value_0,
+                replica_epoch: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl ReplicaState {
     fn write_fields(
         &self,
@@ -398,6 +480,29 @@ impl FetchTopic {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl FetchTopic {
+    /// Values of `FetchTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<FetchTopic> {
+        use crate::test_strategies::{array, present, string, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((
+            present(version <= 12, string(), String::new()).boxed(),
+            present(version >= 13, uuid(), alluvium_types::Uuid::ZERO).boxed(),
+            array(FetchPartition::arbitrary(version)).boxed(),
+            present(version >= 12, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| FetchTopic {
+                topic: value_0,
+                topic_id: value_1,
+                partitions: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
     }
 }
 
@@ -545,6 +650,53 @@ impl FetchPartition {
     }
 }
 
+#[cfg(test)]
+impl FetchPartition {
+    /// Values of `FetchPartition` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<FetchPartition> {
+        use crate::test_strategies::{
+            boundary_i32, boundary_i64, present, unknown_tagged_fields, uuid,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            present(version >= 9, boundary_i32(), -1).boxed(),
+            boundary_i64().boxed(),
+            present(version >= 12, boundary_i32(), -1).boxed(),
+            present(version >= 5, boundary_i64(), -1).boxed(),
+            boundary_i32().boxed(),
+            present(version >= 17, uuid(), alluvium_types::Uuid::ZERO).boxed(),
+            present(version == 18, boundary_i64(), 9_223_372_036_854_775_807).boxed(),
+            present(version >= 12, unknown_tagged_fields(2), Vec::new()).boxed(),
+        ),)
+            .prop_map(
+                |((
+                    value_0,
+                    value_1,
+                    value_2,
+                    value_3,
+                    value_4,
+                    value_5,
+                    value_6,
+                    value_7,
+                    value_8,
+                ),)| FetchPartition {
+                    partition: value_0,
+                    current_leader_epoch: value_1,
+                    fetch_offset: value_2,
+                    last_fetched_epoch: value_3,
+                    log_start_offset: value_4,
+                    partition_max_bytes: value_5,
+                    replica_directory_id: value_6,
+                    high_watermark: value_7,
+                    unknown_tagged_fields: value_8,
+                },
+            )
+            .boxed()
+    }
+}
+
 impl FetchPartition {
     fn write_tagged_fields(
         &self,
@@ -689,6 +841,31 @@ impl ForgottenTopic {
     }
 }
 
+#[cfg(test)]
+impl ForgottenTopic {
+    /// Values of `ForgottenTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<ForgottenTopic> {
+        use crate::test_strategies::{
+            array, boundary_i32, present, string, unknown_tagged_fields, uuid,
+        };
+        use proptest::prelude::*;
+        ((
+            present(version <= 12, string(), String::new()).boxed(),
+            present(version >= 13, uuid(), alluvium_types::Uuid::ZERO).boxed(),
+            array(boundary_i32()).boxed(),
+            present(version >= 12, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| ForgottenTopic {
+                topic: value_0,
+                topic_id: value_1,
+                partitions: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl ForgottenTopic {
     fn write_fields(
         &self,
@@ -756,4 +933,10 @@ impl crate::Message for FetchRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(FetchRequest::arbitrary, FetchRequest::VERSIONS);
 }

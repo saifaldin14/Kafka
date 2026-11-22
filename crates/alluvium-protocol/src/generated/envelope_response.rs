@@ -60,6 +60,27 @@ impl EnvelopeResponse {
     }
 }
 
+#[cfg(test)]
+impl EnvelopeResponse {
+    /// Values of `EnvelopeResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<EnvelopeResponse> {
+        use crate::test_strategies::{boundary_i16, bytes, nullable, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            nullable(true, bytes()).boxed(),
+            boundary_i16().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| EnvelopeResponse {
+                response_data: value_0,
+                error_code: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl EnvelopeResponse {
     fn write_fields(
         &self,
@@ -108,4 +129,13 @@ impl crate::Message for EnvelopeResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        EnvelopeResponse::arbitrary,
+        EnvelopeResponse::VERSIONS,
+    );
 }

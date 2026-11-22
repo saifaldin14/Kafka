@@ -65,6 +65,29 @@ impl EnvelopeRequest {
     }
 }
 
+#[cfg(test)]
+impl EnvelopeRequest {
+    /// Values of `EnvelopeRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<EnvelopeRequest> {
+        use crate::test_strategies::{bytes, nullable, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            bytes().boxed(),
+            nullable(true, bytes()).boxed(),
+            bytes().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| EnvelopeRequest {
+                request_data: value_0,
+                request_principal: value_1,
+                client_host_address: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl EnvelopeRequest {
     fn write_fields(
         &self,
@@ -114,4 +137,13 @@ impl crate::Message for EnvelopeRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        EnvelopeRequest::arbitrary,
+        EnvelopeRequest::VERSIONS,
+    );
 }

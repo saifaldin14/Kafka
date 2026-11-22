@@ -74,6 +74,33 @@ impl DescribeDelegationTokenResponse {
     }
 }
 
+#[cfg(test)]
+impl DescribeDelegationTokenResponse {
+    /// Values of `DescribeDelegationTokenResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeDelegationTokenResponse> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, present, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            array(DescribedDelegationToken::arbitrary(version)).boxed(),
+            boundary_i32().boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| DescribeDelegationTokenResponse {
+                error_code: value_0,
+                tokens: value_1,
+                throttle_time_ms: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeDelegationTokenResponse {
     fn write_fields(
         &self,
@@ -237,6 +264,65 @@ impl DescribedDelegationToken {
     }
 }
 
+#[cfg(test)]
+impl DescribedDelegationToken {
+    /// Values of `DescribedDelegationToken` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribedDelegationToken> {
+        use crate::test_strategies::{
+            array, boundary_i64, bytes, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        (
+            (
+                string().boxed(),
+                string().boxed(),
+                present(version == 3, string(), String::new()).boxed(),
+                present(version == 3, string(), String::new()).boxed(),
+                boundary_i64().boxed(),
+                boundary_i64().boxed(),
+                boundary_i64().boxed(),
+                string().boxed(),
+                bytes().boxed(),
+                array(DescribedDelegationTokenRenewer::arbitrary(version)).boxed(),
+            ),
+            (present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),),
+        )
+            .prop_map(
+                |(
+                    (
+                        value_0,
+                        value_1,
+                        value_2,
+                        value_3,
+                        value_4,
+                        value_5,
+                        value_6,
+                        value_7,
+                        value_8,
+                        value_9,
+                    ),
+                    (value_10,),
+                )| DescribedDelegationToken {
+                    principal_type: value_0,
+                    principal_name: value_1,
+                    token_requester_principal_type: value_2,
+                    token_requester_principal_name: value_3,
+                    issue_timestamp: value_4,
+                    expiry_timestamp: value_5,
+                    max_timestamp: value_6,
+                    token_id: value_7,
+                    hmac: value_8,
+                    renewers: value_9,
+                    unknown_tagged_fields: value_10,
+                },
+            )
+            .boxed()
+    }
+}
+
 impl DescribedDelegationToken {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -356,6 +442,29 @@ impl DescribedDelegationTokenRenewer {
     }
 }
 
+#[cfg(test)]
+impl DescribedDelegationTokenRenewer {
+    /// Values of `DescribedDelegationTokenRenewer` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribedDelegationTokenRenewer> {
+        use crate::test_strategies::{present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            string().boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| DescribedDelegationTokenRenewer {
+                principal_type: value_0,
+                principal_name: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl DescribedDelegationTokenRenewer {
     fn write_fields(
         &self,
@@ -412,4 +521,13 @@ impl crate::Message for DescribeDelegationTokenResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeDelegationTokenResponse::arbitrary,
+        DescribeDelegationTokenResponse::VERSIONS,
+    );
 }

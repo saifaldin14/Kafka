@@ -32,6 +32,19 @@ impl EndTxnMarker {
     }
 }
 
+#[cfg(test)]
+impl EndTxnMarker {
+    /// Values of `EndTxnMarker` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<EndTxnMarker> {
+        use crate::test_strategies::boundary_i32;
+        use proptest::prelude::*;
+        ((boundary_i32().boxed(),),)
+            .prop_map(|((value_0,),)| EndTxnMarker { coordinator_epoch: value_0 })
+            .boxed()
+    }
+}
+
 impl EndTxnMarker {
     fn write_fields(&self, writer: &mut crate::Writer, _version: i16) {
         writer.write_i32(self.coordinator_epoch);
@@ -67,4 +80,10 @@ impl crate::Message for EndTxnMarker {
         self.write_fields(writer, version);
         Ok(())
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(EndTxnMarker::arbitrary, EndTxnMarker::VERSIONS);
 }

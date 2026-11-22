@@ -65,6 +65,31 @@ impl DescribeTopicPartitionsResponse {
     }
 }
 
+#[cfg(test)]
+impl DescribeTopicPartitionsResponse {
+    /// Values of `DescribeTopicPartitionsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeTopicPartitionsResponse> {
+        use crate::test_strategies::{array, boundary_i32, nullable, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            array(DescribeTopicPartitionsResponseTopic::arbitrary(version)).boxed(),
+            nullable(true, Cursor::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| DescribeTopicPartitionsResponse {
+                throttle_time_ms: value_0,
+                topics: value_1,
+                next_cursor: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeTopicPartitionsResponse {
     fn write_fields(
         &self,
@@ -196,6 +221,41 @@ impl DescribeTopicPartitionsResponseTopic {
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl DescribeTopicPartitionsResponseTopic {
+    /// Values of `DescribeTopicPartitionsResponseTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeTopicPartitionsResponseTopic> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, nullable, string, unknown_tagged_fields, uuid,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            uuid().boxed(),
+            any::<bool>().boxed(),
+            array(DescribeTopicPartitionsResponsePartition::arbitrary(version)).boxed(),
+            boundary_i32().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5, value_6),)| {
+                DescribeTopicPartitionsResponseTopic {
+                    error_code: value_0,
+                    name: value_1,
+                    topic_id: value_2,
+                    is_internal: value_3,
+                    partitions: value_4,
+                    topic_authorized_operations: value_5,
+                    unknown_tagged_fields: value_6,
+                }
+            })
+            .boxed()
     }
 }
 
@@ -336,6 +396,58 @@ impl DescribeTopicPartitionsResponsePartition {
     }
 }
 
+#[cfg(test)]
+impl DescribeTopicPartitionsResponsePartition {
+    /// Values of `DescribeTopicPartitionsResponsePartition` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeTopicPartitionsResponsePartition> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, nullable, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            boundary_i32().boxed(),
+            boundary_i32().boxed(),
+            boundary_i32().boxed(),
+            array(boundary_i32()).boxed(),
+            array(boundary_i32()).boxed(),
+            nullable(true, array(boundary_i32())).boxed(),
+            nullable(true, array(boundary_i32())).boxed(),
+            array(boundary_i32()).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(
+                |((
+                    value_0,
+                    value_1,
+                    value_2,
+                    value_3,
+                    value_4,
+                    value_5,
+                    value_6,
+                    value_7,
+                    value_8,
+                    value_9,
+                ),)| DescribeTopicPartitionsResponsePartition {
+                    error_code: value_0,
+                    partition_index: value_1,
+                    leader_id: value_2,
+                    leader_epoch: value_3,
+                    replica_nodes: value_4,
+                    isr_nodes: value_5,
+                    eligible_leader_replicas: value_6,
+                    last_known_elr: value_7,
+                    offline_replicas: value_8,
+                    unknown_tagged_fields: value_9,
+                },
+            )
+            .boxed()
+    }
+}
+
 impl DescribeTopicPartitionsResponsePartition {
     fn write_fields(
         &self,
@@ -421,6 +533,23 @@ impl Cursor {
     }
 }
 
+#[cfg(test)]
+impl Cursor {
+    /// Values of `Cursor` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<Cursor> {
+        use crate::test_strategies::{boundary_i32, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((string().boxed(), boundary_i32().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| Cursor {
+                topic_name: value_0,
+                partition_index: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl Cursor {
     fn write_fields(
         &self,
@@ -466,4 +595,13 @@ impl crate::Message for DescribeTopicPartitionsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeTopicPartitionsResponse::arbitrary,
+        DescribeTopicPartitionsResponse::VERSIONS,
+    );
 }

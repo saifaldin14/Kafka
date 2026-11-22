@@ -53,6 +53,25 @@ impl ShareGroupDescribeRequest {
     }
 }
 
+#[cfg(test)]
+impl ShareGroupDescribeRequest {
+    /// Values of `ShareGroupDescribeRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ShareGroupDescribeRequest> {
+        use crate::test_strategies::{array, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((array(string()).boxed(), any::<bool>().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| ShareGroupDescribeRequest {
+                group_ids: value_0,
+                include_authorized_operations: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl ShareGroupDescribeRequest {
     fn write_fields(
         &self,
@@ -104,4 +123,13 @@ impl crate::Message for ShareGroupDescribeRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ShareGroupDescribeRequest::arbitrary,
+        ShareGroupDescribeRequest::VERSIONS,
+    );
 }

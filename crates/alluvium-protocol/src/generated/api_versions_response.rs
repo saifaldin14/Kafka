@@ -135,6 +135,47 @@ impl ApiVersionsResponse {
     }
 }
 
+#[cfg(test)]
+impl ApiVersionsResponse {
+    /// Values of `ApiVersionsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ApiVersionsResponse> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, boundary_i64, present, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            array(ApiVersion::arbitrary(version)).boxed(),
+            present(version >= 1, boundary_i32(), 0).boxed(),
+            present(version >= 3, array(SupportedFeatureKey::arbitrary(version)), Vec::new())
+                .boxed(),
+            present(version >= 3, boundary_i64(), -1).boxed(),
+            present(version >= 3, array(FinalizedFeatureKey::arbitrary(version)), Vec::new())
+                .boxed(),
+            present(version >= 3, any::<bool>(), false).boxed(),
+            present(version >= 3, unknown_tagged_fields(4), Vec::new()).boxed(),
+        ),)
+            .prop_map(
+                |((value_0, value_1, value_2, value_3, value_4, value_5, value_6, value_7),)| {
+                    ApiVersionsResponse {
+                        error_code: value_0,
+                        api_keys: value_1,
+                        throttle_time_ms: value_2,
+                        supported_features: value_3,
+                        finalized_features_epoch: value_4,
+                        finalized_features: value_5,
+                        zk_migration_ready: value_6,
+                        unknown_tagged_fields: value_7,
+                    }
+                },
+            )
+            .boxed()
+    }
+}
+
 impl ApiVersionsResponse {
     fn write_tagged_fields(
         &self,
@@ -263,6 +304,29 @@ impl ApiVersion {
     }
 }
 
+#[cfg(test)]
+impl ApiVersion {
+    /// Values of `ApiVersion` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<ApiVersion> {
+        use crate::test_strategies::{boundary_i16, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            boundary_i16().boxed(),
+            boundary_i16().boxed(),
+            present(version >= 3, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| ApiVersion {
+                api_key: value_0,
+                min_version: value_1,
+                max_version: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl ApiVersion {
     fn write_fields(
         &self,
@@ -348,6 +412,31 @@ impl SupportedFeatureKey {
     }
 }
 
+#[cfg(test)]
+impl SupportedFeatureKey {
+    /// Values of `SupportedFeatureKey` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<SupportedFeatureKey> {
+        use crate::test_strategies::{boundary_i16, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            boundary_i16().boxed(),
+            boundary_i16().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| SupportedFeatureKey {
+                name: value_0,
+                min_version: value_1,
+                max_version: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl SupportedFeatureKey {
     fn write_fields(
         &self,
@@ -428,6 +517,31 @@ impl FinalizedFeatureKey {
     }
 }
 
+#[cfg(test)]
+impl FinalizedFeatureKey {
+    /// Values of `FinalizedFeatureKey` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<FinalizedFeatureKey> {
+        use crate::test_strategies::{boundary_i16, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            boundary_i16().boxed(),
+            boundary_i16().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| FinalizedFeatureKey {
+                name: value_0,
+                max_version_level: value_1,
+                min_version_level: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl FinalizedFeatureKey {
     fn write_fields(
         &self,
@@ -474,4 +588,13 @@ impl crate::Message for ApiVersionsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ApiVersionsResponse::arbitrary,
+        ApiVersionsResponse::VERSIONS,
+    );
 }

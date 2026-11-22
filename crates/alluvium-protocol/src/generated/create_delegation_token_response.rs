@@ -158,6 +158,69 @@ impl CreateDelegationTokenResponse {
     }
 }
 
+#[cfg(test)]
+impl CreateDelegationTokenResponse {
+    /// Values of `CreateDelegationTokenResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<CreateDelegationTokenResponse> {
+        use crate::test_strategies::{
+            boundary_i16, boundary_i32, boundary_i64, bytes, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        (
+            (
+                boundary_i16().boxed(),
+                string().boxed(),
+                string().boxed(),
+                present(version == 3, string(), String::new()).boxed(),
+                present(version == 3, string(), String::new()).boxed(),
+                boundary_i64().boxed(),
+                boundary_i64().boxed(),
+                boundary_i64().boxed(),
+                string().boxed(),
+                bytes().boxed(),
+            ),
+            (
+                boundary_i32().boxed(),
+                present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+            ),
+        )
+            .prop_map(
+                |(
+                    (
+                        value_0,
+                        value_1,
+                        value_2,
+                        value_3,
+                        value_4,
+                        value_5,
+                        value_6,
+                        value_7,
+                        value_8,
+                        value_9,
+                    ),
+                    (value_10, value_11),
+                )| CreateDelegationTokenResponse {
+                    error_code: value_0,
+                    principal_type: value_1,
+                    principal_name: value_2,
+                    token_requester_principal_type: value_3,
+                    token_requester_principal_name: value_4,
+                    issue_timestamp_ms: value_5,
+                    expiry_timestamp_ms: value_6,
+                    max_timestamp_ms: value_7,
+                    token_id: value_8,
+                    hmac: value_9,
+                    throttle_time_ms: value_10,
+                    unknown_tagged_fields: value_11,
+                },
+            )
+            .boxed()
+    }
+}
+
 impl CreateDelegationTokenResponse {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -247,4 +310,13 @@ impl crate::Message for CreateDelegationTokenResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        CreateDelegationTokenResponse::arbitrary,
+        CreateDelegationTokenResponse::VERSIONS,
+    );
 }

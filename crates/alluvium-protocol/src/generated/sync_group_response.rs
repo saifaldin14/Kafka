@@ -89,6 +89,37 @@ impl SyncGroupResponse {
     }
 }
 
+#[cfg(test)]
+impl SyncGroupResponse {
+    /// Values of `SyncGroupResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<SyncGroupResponse> {
+        use crate::test_strategies::{
+            boundary_i16, boundary_i32, bytes, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            present(version >= 1, boundary_i32(), 0).boxed(),
+            boundary_i16().boxed(),
+            present(version == 5, nullable(true, string()), None).boxed(),
+            present(version == 5, nullable(true, string()), None).boxed(),
+            bytes().boxed(),
+            present(version >= 4, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5),)| {
+                SyncGroupResponse {
+                    throttle_time_ms: value_0,
+                    error_code: value_1,
+                    protocol_type: value_2,
+                    protocol_name: value_3,
+                    assignment: value_4,
+                    unknown_tagged_fields: value_5,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl SyncGroupResponse {
     fn write_fields(
         &self,
@@ -149,4 +180,13 @@ impl crate::Message for SyncGroupResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        SyncGroupResponse::arbitrary,
+        SyncGroupResponse::VERSIONS,
+    );
 }

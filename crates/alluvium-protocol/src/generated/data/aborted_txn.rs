@@ -47,6 +47,29 @@ impl AbortedTxn {
     }
 }
 
+#[cfg(test)]
+impl AbortedTxn {
+    /// Values of `AbortedTxn` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<AbortedTxn> {
+        use crate::test_strategies::boundary_i64;
+        use proptest::prelude::*;
+        ((
+            boundary_i64().boxed(),
+            boundary_i64().boxed(),
+            boundary_i64().boxed(),
+            boundary_i64().boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| AbortedTxn {
+                producer_id: value_0,
+                first_offset: value_1,
+                last_offset: value_2,
+                last_stable_offset: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl AbortedTxn {
     fn write_fields(&self, writer: &mut crate::Writer, _version: i16) {
         writer.write_i64(self.producer_id);
@@ -79,4 +102,10 @@ impl crate::Message for AbortedTxn {
         self.write_fields(writer, version);
         Ok(())
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(AbortedTxn::arbitrary, AbortedTxn::VERSIONS);
 }

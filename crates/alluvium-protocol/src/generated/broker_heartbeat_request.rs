@@ -106,6 +106,45 @@ impl BrokerHeartbeatRequest {
     }
 }
 
+#[cfg(test)]
+impl BrokerHeartbeatRequest {
+    /// Values of `BrokerHeartbeatRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<BrokerHeartbeatRequest> {
+        use crate::test_strategies::{
+            array, boundary_i32, boundary_i64, nullable, present, unknown_tagged_fields, uuid,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i64().boxed(),
+            boundary_i64().boxed(),
+            any::<bool>().boxed(),
+            any::<bool>().boxed(),
+            present(version >= 1, array(uuid()), Vec::new()).boxed(),
+            present(version == 2, nullable(true, array(uuid())), None).boxed(),
+            unknown_tagged_fields(2).boxed(),
+        ),)
+            .prop_map(
+                |((value_0, value_1, value_2, value_3, value_4, value_5, value_6, value_7),)| {
+                    BrokerHeartbeatRequest {
+                        broker_id: value_0,
+                        broker_epoch: value_1,
+                        current_metadata_offset: value_2,
+                        want_fence: value_3,
+                        want_shut_down: value_4,
+                        offline_log_dirs: value_5,
+                        cordoned_log_dirs: value_6,
+                        unknown_tagged_fields: value_7,
+                    }
+                },
+            )
+            .boxed()
+    }
+}
+
 impl BrokerHeartbeatRequest {
     fn write_tagged_fields(
         &self,
@@ -211,4 +250,13 @@ impl crate::Message for BrokerHeartbeatRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        BrokerHeartbeatRequest::arbitrary,
+        BrokerHeartbeatRequest::VERSIONS,
+    );
 }

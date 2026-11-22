@@ -64,6 +64,29 @@ impl DescribeGroupsRequest {
     }
 }
 
+#[cfg(test)]
+impl DescribeGroupsRequest {
+    /// Values of `DescribeGroupsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeGroupsRequest> {
+        use crate::test_strategies::{array, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(string()).boxed(),
+            present(version >= 3, any::<bool>(), false).boxed(),
+            present(version >= 5, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| DescribeGroupsRequest {
+                groups: value_0,
+                include_authorized_operations: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeGroupsRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -143,4 +166,13 @@ impl crate::Message for DescribeGroupsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeGroupsRequest::arbitrary,
+        DescribeGroupsRequest::VERSIONS,
+    );
 }

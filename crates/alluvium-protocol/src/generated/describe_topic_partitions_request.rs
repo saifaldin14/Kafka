@@ -73,6 +73,31 @@ impl DescribeTopicPartitionsRequest {
     }
 }
 
+#[cfg(test)]
+impl DescribeTopicPartitionsRequest {
+    /// Values of `DescribeTopicPartitionsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeTopicPartitionsRequest> {
+        use crate::test_strategies::{array, boundary_i32, nullable, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(TopicRequest::arbitrary(version)).boxed(),
+            boundary_i32().boxed(),
+            nullable(true, Cursor::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| DescribeTopicPartitionsRequest {
+                topics: value_0,
+                response_partition_limit: value_1,
+                cursor: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeTopicPartitionsRequest {
     fn write_fields(
         &self,
@@ -131,6 +156,22 @@ impl TopicRequest {
     }
 }
 
+#[cfg(test)]
+impl TopicRequest {
+    /// Values of `TopicRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<TopicRequest> {
+        use crate::test_strategies::{string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((string().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1),)| TopicRequest {
+                name: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl TopicRequest {
     fn write_fields(
         &self,
@@ -183,6 +224,23 @@ impl Cursor {
     }
 }
 
+#[cfg(test)]
+impl Cursor {
+    /// Values of `Cursor` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<Cursor> {
+        use crate::test_strategies::{boundary_i32, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((string().boxed(), boundary_i32().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| Cursor {
+                topic_name: value_0,
+                partition_index: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl Cursor {
     fn write_fields(
         &self,
@@ -231,4 +289,13 @@ impl crate::Message for DescribeTopicPartitionsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeTopicPartitionsRequest::arbitrary,
+        DescribeTopicPartitionsRequest::VERSIONS,
+    );
 }

@@ -48,6 +48,27 @@ impl DescribeShareGroupOffsetsRequest {
     }
 }
 
+#[cfg(test)]
+impl DescribeShareGroupOffsetsRequest {
+    /// Values of `DescribeShareGroupOffsetsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeShareGroupOffsetsRequest> {
+        use crate::test_strategies::{array, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(DescribeShareGroupOffsetsRequestGroup::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1),)| DescribeShareGroupOffsetsRequest {
+                groups: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeShareGroupOffsetsRequest {
     fn write_fields(
         &self,
@@ -120,6 +141,30 @@ impl DescribeShareGroupOffsetsRequestGroup {
     }
 }
 
+#[cfg(test)]
+impl DescribeShareGroupOffsetsRequestGroup {
+    /// Values of `DescribeShareGroupOffsetsRequestGroup` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeShareGroupOffsetsRequestGroup> {
+        use crate::test_strategies::{array, nullable, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            nullable(true, array(DescribeShareGroupOffsetsRequestTopic::arbitrary(version)))
+                .boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| DescribeShareGroupOffsetsRequestGroup {
+                group_id: value_0,
+                topics: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeShareGroupOffsetsRequestGroup {
     fn write_fields(
         &self,
@@ -186,6 +231,25 @@ impl DescribeShareGroupOffsetsRequestTopic {
     }
 }
 
+#[cfg(test)]
+impl DescribeShareGroupOffsetsRequestTopic {
+    /// Values of `DescribeShareGroupOffsetsRequestTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeShareGroupOffsetsRequestTopic> {
+        use crate::test_strategies::{array, boundary_i32, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((string().boxed(), array(boundary_i32()).boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| DescribeShareGroupOffsetsRequestTopic {
+                topic_name: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeShareGroupOffsetsRequestTopic {
     fn write_fields(
         &self,
@@ -237,4 +301,13 @@ impl crate::Message for DescribeShareGroupOffsetsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeShareGroupOffsetsRequest::arbitrary,
+        DescribeShareGroupOffsetsRequest::VERSIONS,
+    );
 }

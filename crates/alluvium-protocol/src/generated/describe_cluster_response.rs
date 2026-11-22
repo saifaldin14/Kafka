@@ -116,6 +116,56 @@ impl DescribeClusterResponse {
     }
 }
 
+#[cfg(test)]
+impl DescribeClusterResponse {
+    /// Values of `DescribeClusterResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeClusterResponse> {
+        use crate::test_strategies::{
+            array, boundary_i8, boundary_i16, boundary_i32, nullable, present, string,
+            unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            present(version >= 1, boundary_i8(), 1).boxed(),
+            string().boxed(),
+            boundary_i32().boxed(),
+            array(DescribeClusterBroker::arbitrary(version)).boxed(),
+            boundary_i32().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(
+                |((
+                    value_0,
+                    value_1,
+                    value_2,
+                    value_3,
+                    value_4,
+                    value_5,
+                    value_6,
+                    value_7,
+                    value_8,
+                ),)| DescribeClusterResponse {
+                    throttle_time_ms: value_0,
+                    error_code: value_1,
+                    error_message: value_2,
+                    endpoint_type: value_3,
+                    cluster_id: value_4,
+                    controller_id: value_5,
+                    brokers: value_6,
+                    cluster_authorized_operations: value_7,
+                    unknown_tagged_fields: value_8,
+                },
+            )
+            .boxed()
+    }
+}
+
 impl DescribeClusterResponse {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -234,6 +284,39 @@ impl DescribeClusterBroker {
     }
 }
 
+#[cfg(test)]
+impl DescribeClusterBroker {
+    /// Values of `DescribeClusterBroker` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeClusterBroker> {
+        use crate::test_strategies::{
+            boundary_i32, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            string().boxed(),
+            boundary_i32().boxed(),
+            nullable(true, string()).boxed(),
+            present(version == 2, any::<bool>(), false).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5),)| {
+                DescribeClusterBroker {
+                    broker_id: value_0,
+                    host: value_1,
+                    port: value_2,
+                    rack: value_3,
+                    is_fenced: value_4,
+                    unknown_tagged_fields: value_5,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl DescribeClusterBroker {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -299,4 +382,13 @@ impl crate::Message for DescribeClusterResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeClusterResponse::arbitrary,
+        DescribeClusterResponse::VERSIONS,
+    );
 }

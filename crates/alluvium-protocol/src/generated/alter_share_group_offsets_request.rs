@@ -53,6 +53,29 @@ impl AlterShareGroupOffsetsRequest {
     }
 }
 
+#[cfg(test)]
+impl AlterShareGroupOffsetsRequest {
+    /// Values of `AlterShareGroupOffsetsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterShareGroupOffsetsRequest> {
+        use crate::test_strategies::{array, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(AlterShareGroupOffsetsRequestTopic::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| AlterShareGroupOffsetsRequest {
+                group_id: value_0,
+                topics: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl AlterShareGroupOffsetsRequest {
     fn write_fields(
         &self,
@@ -136,6 +159,29 @@ impl AlterShareGroupOffsetsRequestTopic {
     }
 }
 
+#[cfg(test)]
+impl AlterShareGroupOffsetsRequestTopic {
+    /// Values of `AlterShareGroupOffsetsRequestTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterShareGroupOffsetsRequestTopic> {
+        use crate::test_strategies::{array, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(AlterShareGroupOffsetsRequestPartition::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| AlterShareGroupOffsetsRequestTopic {
+                topic_name: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl AlterShareGroupOffsetsRequestTopic {
     fn write_fields(
         &self,
@@ -195,6 +241,25 @@ impl AlterShareGroupOffsetsRequestPartition {
     }
 }
 
+#[cfg(test)]
+impl AlterShareGroupOffsetsRequestPartition {
+    /// Values of `AlterShareGroupOffsetsRequestPartition` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterShareGroupOffsetsRequestPartition> {
+        use crate::test_strategies::{boundary_i32, boundary_i64, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((boundary_i32().boxed(), boundary_i64().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| AlterShareGroupOffsetsRequestPartition {
+                partition_index: value_0,
+                start_offset: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl AlterShareGroupOffsetsRequestPartition {
     fn write_fields(
         &self,
@@ -243,4 +308,13 @@ impl crate::Message for AlterShareGroupOffsetsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        AlterShareGroupOffsetsRequest::arbitrary,
+        AlterShareGroupOffsetsRequest::VERSIONS,
+    );
 }

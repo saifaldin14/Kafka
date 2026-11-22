@@ -72,6 +72,29 @@ impl ProduceResponse {
     }
 }
 
+#[cfg(test)]
+impl ProduceResponse {
+    /// Values of `ProduceResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<ProduceResponse> {
+        use crate::test_strategies::{array, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(TopicProduceResponse::arbitrary(version)).boxed(),
+            boundary_i32().boxed(),
+            present(version >= 10, array(NodeEndpoint::arbitrary(version)), Vec::new()).boxed(),
+            present(version >= 9, unknown_tagged_fields(1), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| ProduceResponse {
+                responses: value_0,
+                throttle_time_ms: value_1,
+                node_endpoints: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl ProduceResponse {
     fn write_tagged_fields(
         &self,
@@ -225,6 +248,31 @@ impl TopicProduceResponse {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl TopicProduceResponse {
+    /// Values of `TopicProduceResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<TopicProduceResponse> {
+        use crate::test_strategies::{array, present, string, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((
+            present(version <= 12, string(), String::new()).boxed(),
+            present(version == 13, uuid(), alluvium_types::Uuid::ZERO).boxed(),
+            array(PartitionProduceResponse::arbitrary(version)).boxed(),
+            present(version >= 9, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| TopicProduceResponse {
+                name: value_0,
+                topic_id: value_1,
+                partition_responses: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
     }
 }
 
@@ -390,6 +438,62 @@ impl PartitionProduceResponse {
     }
 }
 
+#[cfg(test)]
+impl PartitionProduceResponse {
+    /// Values of `PartitionProduceResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<PartitionProduceResponse> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, boundary_i64, nullable, present, string,
+            unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            boundary_i64().boxed(),
+            boundary_i64().boxed(),
+            present(version >= 5, boundary_i64(), -1).boxed(),
+            present(version >= 8, array(BatchIndexAndErrorMessage::arbitrary(version)), Vec::new())
+                .boxed(),
+            present(version >= 8, nullable(true, string()), None).boxed(),
+            present(
+                version >= 10,
+                LeaderIdAndEpoch::arbitrary(version),
+                LeaderIdAndEpoch::default(),
+            )
+            .boxed(),
+            present(version >= 9, unknown_tagged_fields(1), Vec::new()).boxed(),
+        ),)
+            .prop_map(
+                |((
+                    value_0,
+                    value_1,
+                    value_2,
+                    value_3,
+                    value_4,
+                    value_5,
+                    value_6,
+                    value_7,
+                    value_8,
+                ),)| PartitionProduceResponse {
+                    index: value_0,
+                    error_code: value_1,
+                    base_offset: value_2,
+                    log_append_time_ms: value_3,
+                    log_start_offset: value_4,
+                    record_errors: value_5,
+                    error_message: value_6,
+                    current_leader: value_7,
+                    unknown_tagged_fields: value_8,
+                },
+            )
+            .boxed()
+    }
+}
+
 impl PartitionProduceResponse {
     fn write_tagged_fields(
         &self,
@@ -508,6 +612,31 @@ impl BatchIndexAndErrorMessage {
     }
 }
 
+#[cfg(test)]
+impl BatchIndexAndErrorMessage {
+    /// Values of `BatchIndexAndErrorMessage` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<BatchIndexAndErrorMessage> {
+        use crate::test_strategies::{
+            boundary_i32, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            nullable(true, string()).boxed(),
+            present(version >= 9, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| BatchIndexAndErrorMessage {
+                batch_index: value_0,
+                batch_index_error_message: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl BatchIndexAndErrorMessage {
     fn write_fields(
         &self,
@@ -575,6 +704,23 @@ impl LeaderIdAndEpoch {
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl LeaderIdAndEpoch {
+    /// Values of `LeaderIdAndEpoch` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<LeaderIdAndEpoch> {
+        use crate::test_strategies::{boundary_i32, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((boundary_i32().boxed(), boundary_i32().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| LeaderIdAndEpoch {
+                leader_id: value_0,
+                leader_epoch: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
     }
 }
 
@@ -657,6 +803,31 @@ impl NodeEndpoint {
     }
 }
 
+#[cfg(test)]
+impl NodeEndpoint {
+    /// Values of `NodeEndpoint` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<NodeEndpoint> {
+        use crate::test_strategies::{boundary_i32, nullable, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            string().boxed(),
+            boundary_i32().boxed(),
+            nullable(true, string()).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| NodeEndpoint {
+                node_id: value_0,
+                host: value_1,
+                port: value_2,
+                rack: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl NodeEndpoint {
     fn write_fields(
         &self,
@@ -704,4 +875,13 @@ impl crate::Message for ProduceResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ProduceResponse::arbitrary,
+        ProduceResponse::VERSIONS,
+    );
 }

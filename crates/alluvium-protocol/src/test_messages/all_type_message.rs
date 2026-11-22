@@ -245,6 +245,109 @@ impl AllTypeMessage {
     }
 }
 
+#[cfg(test)]
+impl AllTypeMessage {
+    /// Values of `AllTypeMessage` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<AllTypeMessage> {
+        use crate::test_strategies::{
+            array, boundary_i8, boundary_i16, boundary_i32, boundary_i64, boundary_u16,
+            boundary_u32, bytes, float64, nullable, present, records, string,
+            unknown_tagged_fields, uuid,
+        };
+        use proptest::prelude::*;
+        (
+            (
+                any::<bool>().boxed(),
+                boundary_i8().boxed(),
+                boundary_i16().boxed(),
+                boundary_u16().boxed(),
+                boundary_i32().boxed(),
+                boundary_u32().boxed(),
+                boundary_i64().boxed(),
+                uuid().boxed(),
+                float64().boxed(),
+                present(version == 0, string(), String::from("string")).boxed(),
+            ),
+            (
+                present(version == 0, nullable(true, string()), None).boxed(),
+                present(version == 1, string(), String::from("compact string")).boxed(),
+                present(version == 1, nullable(true, string()), None).boxed(),
+                present(version == 0, bytes(), bytes::Bytes::new()).boxed(),
+                present(version == 0, nullable(true, bytes()), None).boxed(),
+                present(version == 1, bytes(), bytes::Bytes::new()).boxed(),
+                present(version == 1, nullable(true, bytes()), None).boxed(),
+                present(version == 0, nullable(false, records()), None).boxed(),
+                present(version == 0, nullable(true, records()), None).boxed(),
+                present(version == 1, nullable(false, records()), None).boxed(),
+            ),
+            (
+                present(version == 1, nullable(true, records()), None).boxed(),
+                array(boundary_i32()).boxed(),
+                nullable(true, array(boundary_i32())).boxed(),
+                nullable(version == 1, TestCommonStruct::arbitrary(version)).boxed(),
+                present(version == 1, unknown_tagged_fields(0), Vec::new()).boxed(),
+            ),
+        )
+            .prop_map(
+                |(
+                    (
+                        value_0,
+                        value_1,
+                        value_2,
+                        value_3,
+                        value_4,
+                        value_5,
+                        value_6,
+                        value_7,
+                        value_8,
+                        value_9,
+                    ),
+                    (
+                        value_10,
+                        value_11,
+                        value_12,
+                        value_13,
+                        value_14,
+                        value_15,
+                        value_16,
+                        value_17,
+                        value_18,
+                        value_19,
+                    ),
+                    (value_20, value_21, value_22, value_23, value_24),
+                )| AllTypeMessage {
+                    my_boolean: value_0,
+                    my_int8: value_1,
+                    my_int16: value_2,
+                    my_uint16: value_3,
+                    my_int32: value_4,
+                    my_uint32: value_5,
+                    my_uint64: value_6,
+                    my_uuid: value_7,
+                    my_float64: value_8,
+                    my_string: value_9,
+                    my_nullable_string: value_10,
+                    my_compact_string: value_11,
+                    my_compact_nullable_string: value_12,
+                    my_bytes: value_13,
+                    my_nullable_bytes: value_14,
+                    my_compact_bytes: value_15,
+                    my_compact_nullable_bytes: value_16,
+                    my_records: value_17,
+                    my_nullable_records: value_18,
+                    my_compact_records: value_19,
+                    my_compact_nullable_records: value_20,
+                    my_int_array: value_21,
+                    my_nullable_int_array: value_22,
+                    my_common_struct: value_23,
+                    unknown_tagged_fields: value_24,
+                },
+            )
+            .boxed()
+    }
+}
+
 impl AllTypeMessage {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -429,6 +532,27 @@ impl TestCommonStruct {
     }
 }
 
+#[cfg(test)]
+impl TestCommonStruct {
+    /// Values of `TestCommonStruct` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<TestCommonStruct> {
+        use crate::test_strategies::{boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i32().boxed(),
+            present(version >= 1, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| TestCommonStruct {
+                foo: value_0,
+                bar: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl TestCommonStruct {
     fn write_fields(
         &self,
@@ -477,4 +601,10 @@ impl crate::Message for AllTypeMessage {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(AllTypeMessage::arbitrary, AllTypeMessage::VERSIONS);
 }

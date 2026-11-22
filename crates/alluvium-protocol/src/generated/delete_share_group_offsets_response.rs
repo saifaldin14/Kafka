@@ -77,6 +77,37 @@ impl DeleteShareGroupOffsetsResponse {
     }
 }
 
+#[cfg(test)]
+impl DeleteShareGroupOffsetsResponse {
+    /// Values of `DeleteShareGroupOffsetsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DeleteShareGroupOffsetsResponse> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, nullable, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            array(DeleteShareGroupOffsetsResponseTopic::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| {
+                DeleteShareGroupOffsetsResponse {
+                    throttle_time_ms: value_0,
+                    error_code: value_1,
+                    error_message: value_2,
+                    responses: value_3,
+                    unknown_tagged_fields: value_4,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl DeleteShareGroupOffsetsResponse {
     fn write_fields(
         &self,
@@ -173,6 +204,35 @@ impl DeleteShareGroupOffsetsResponseTopic {
     }
 }
 
+#[cfg(test)]
+impl DeleteShareGroupOffsetsResponseTopic {
+    /// Values of `DeleteShareGroupOffsetsResponseTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DeleteShareGroupOffsetsResponseTopic> {
+        use crate::test_strategies::{boundary_i16, nullable, string, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            uuid().boxed(),
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| {
+                DeleteShareGroupOffsetsResponseTopic {
+                    topic_name: value_0,
+                    topic_id: value_1,
+                    error_code: value_2,
+                    error_message: value_3,
+                    unknown_tagged_fields: value_4,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl DeleteShareGroupOffsetsResponseTopic {
     fn write_fields(
         &self,
@@ -220,4 +280,13 @@ impl crate::Message for DeleteShareGroupOffsetsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DeleteShareGroupOffsetsResponse::arbitrary,
+        DeleteShareGroupOffsetsResponse::VERSIONS,
+    );
 }

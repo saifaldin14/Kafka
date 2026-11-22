@@ -54,6 +54,29 @@ impl DeleteRecordsRequest {
     }
 }
 
+#[cfg(test)]
+impl DeleteRecordsRequest {
+    /// Values of `DeleteRecordsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DeleteRecordsRequest> {
+        use crate::test_strategies::{array, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(DeleteRecordsTopic::arbitrary(version)).boxed(),
+            boundary_i32().boxed(),
+            present(version == 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| DeleteRecordsRequest {
+                topics: value_0,
+                timeout_ms: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl DeleteRecordsRequest {
     fn write_fields(
         &self,
@@ -134,6 +157,27 @@ impl DeleteRecordsTopic {
     }
 }
 
+#[cfg(test)]
+impl DeleteRecordsTopic {
+    /// Values of `DeleteRecordsTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<DeleteRecordsTopic> {
+        use crate::test_strategies::{array, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(DeleteRecordsPartition::arbitrary(version)).boxed(),
+            present(version == 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| DeleteRecordsTopic {
+                name: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl DeleteRecordsTopic {
     fn write_fields(
         &self,
@@ -207,6 +251,29 @@ impl DeleteRecordsPartition {
     }
 }
 
+#[cfg(test)]
+impl DeleteRecordsPartition {
+    /// Values of `DeleteRecordsPartition` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DeleteRecordsPartition> {
+        use crate::test_strategies::{boundary_i32, boundary_i64, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i64().boxed(),
+            present(version == 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| DeleteRecordsPartition {
+                partition_index: value_0,
+                offset: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl DeleteRecordsPartition {
     fn write_fields(
         &self,
@@ -260,4 +327,13 @@ impl crate::Message for DeleteRecordsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DeleteRecordsRequest::arbitrary,
+        DeleteRecordsRequest::VERSIONS,
+    );
 }

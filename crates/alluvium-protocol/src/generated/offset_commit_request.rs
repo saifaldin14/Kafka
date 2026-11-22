@@ -112,6 +112,41 @@ impl OffsetCommitRequest {
     }
 }
 
+#[cfg(test)]
+impl OffsetCommitRequest {
+    /// Values of `OffsetCommitRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<OffsetCommitRequest> {
+        use crate::test_strategies::{
+            array, boundary_i32, boundary_i64, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            boundary_i32().boxed(),
+            string().boxed(),
+            present(version >= 7, nullable(true, string()), None).boxed(),
+            present(version <= 4, boundary_i64(), -1).boxed(),
+            array(OffsetCommitRequestTopic::arbitrary(version)).boxed(),
+            present(version >= 8, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5, value_6),)| {
+                OffsetCommitRequest {
+                    group_id: value_0,
+                    generation_id_or_member_epoch: value_1,
+                    member_id: value_2,
+                    group_instance_id: value_3,
+                    retention_time_ms: value_4,
+                    topics: value_5,
+                    unknown_tagged_fields: value_6,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl OffsetCommitRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -244,6 +279,31 @@ impl OffsetCommitRequestTopic {
     }
 }
 
+#[cfg(test)]
+impl OffsetCommitRequestTopic {
+    /// Values of `OffsetCommitRequestTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<OffsetCommitRequestTopic> {
+        use crate::test_strategies::{array, present, string, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((
+            present(version <= 9, string(), String::new()).boxed(),
+            present(version == 10, uuid(), alluvium_types::Uuid::ZERO).boxed(),
+            array(OffsetCommitRequestPartition::arbitrary(version)).boxed(),
+            present(version >= 8, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| OffsetCommitRequestTopic {
+                name: value_0,
+                topic_id: value_1,
+                partitions: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl OffsetCommitRequestTopic {
     fn write_fields(
         &self,
@@ -351,6 +411,37 @@ impl OffsetCommitRequestPartition {
     }
 }
 
+#[cfg(test)]
+impl OffsetCommitRequestPartition {
+    /// Values of `OffsetCommitRequestPartition` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<OffsetCommitRequestPartition> {
+        use crate::test_strategies::{
+            boundary_i32, boundary_i64, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i64().boxed(),
+            present(version >= 6, boundary_i32(), -1).boxed(),
+            nullable(true, string()).boxed(),
+            present(version >= 8, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| {
+                OffsetCommitRequestPartition {
+                    partition_index: value_0,
+                    committed_offset: value_1,
+                    committed_leader_epoch: value_2,
+                    committed_metadata: value_3,
+                    unknown_tagged_fields: value_4,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl OffsetCommitRequestPartition {
     fn write_fields(
         &self,
@@ -411,4 +502,13 @@ impl crate::Message for OffsetCommitRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        OffsetCommitRequest::arbitrary,
+        OffsetCommitRequest::VERSIONS,
+    );
 }

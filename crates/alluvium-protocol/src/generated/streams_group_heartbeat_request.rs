@@ -196,6 +196,90 @@ impl StreamsGroupHeartbeatRequest {
     }
 }
 
+#[cfg(test)]
+impl StreamsGroupHeartbeatRequest {
+    /// Values of `StreamsGroupHeartbeatRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<StreamsGroupHeartbeatRequest> {
+        use crate::test_strategies::{
+            array, boundary_i32, nullable, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        (
+            (
+                string().boxed(),
+                string().boxed(),
+                boundary_i32().boxed(),
+                boundary_i32().boxed(),
+                nullable(true, string()).boxed(),
+                nullable(true, string()).boxed(),
+                boundary_i32().boxed(),
+                nullable(true, Topology::arbitrary(version)).boxed(),
+                nullable(true, array(TaskIds::arbitrary(version))).boxed(),
+                nullable(true, array(TaskIds::arbitrary(version))).boxed(),
+            ),
+            (
+                nullable(true, array(TaskIds::arbitrary(version))).boxed(),
+                nullable(true, string()).boxed(),
+                nullable(true, Endpoint::arbitrary(version)).boxed(),
+                nullable(true, array(KeyValue::arbitrary(version))).boxed(),
+                nullable(true, array(TaskOffset::arbitrary(version))).boxed(),
+                nullable(true, array(TaskOffset::arbitrary(version))).boxed(),
+                any::<bool>().boxed(),
+                unknown_tagged_fields(0).boxed(),
+            ),
+        )
+            .prop_map(
+                |(
+                    (
+                        value_0,
+                        value_1,
+                        value_2,
+                        value_3,
+                        value_4,
+                        value_5,
+                        value_6,
+                        value_7,
+                        value_8,
+                        value_9,
+                    ),
+                    (
+                        value_10,
+                        value_11,
+                        value_12,
+                        value_13,
+                        value_14,
+                        value_15,
+                        value_16,
+                        value_17,
+                    ),
+                )| StreamsGroupHeartbeatRequest {
+                    group_id: value_0,
+                    member_id: value_1,
+                    member_epoch: value_2,
+                    endpoint_information_epoch: value_3,
+                    instance_id: value_4,
+                    rack_id: value_5,
+                    rebalance_timeout_ms: value_6,
+                    topology: value_7,
+                    active_tasks: value_8,
+                    standby_tasks: value_9,
+                    warmup_tasks: value_10,
+                    process_id: value_11,
+                    user_endpoint: value_12,
+                    client_tags: value_13,
+                    task_offsets: value_14,
+                    task_end_offsets: value_15,
+                    shutdown_application: value_16,
+                    unknown_tagged_fields: value_17,
+                },
+            )
+            .boxed()
+    }
+}
+
 impl StreamsGroupHeartbeatRequest {
     fn write_fields(
         &self,
@@ -327,6 +411,27 @@ impl Topology {
     }
 }
 
+#[cfg(test)]
+impl Topology {
+    /// Values of `Topology` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<Topology> {
+        use crate::test_strategies::{array, boundary_i32, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            array(Subtopology::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| Topology {
+                epoch: value_0,
+                subtopologies: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl Topology {
     fn write_fields(
         &self,
@@ -430,6 +535,41 @@ impl Subtopology {
     }
 }
 
+#[cfg(test)]
+impl Subtopology {
+    /// Values of `Subtopology` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<Subtopology> {
+        use crate::test_strategies::{array, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(string()).boxed(),
+            array(string()).boxed(),
+            array(TopicInfo::arbitrary(version)).boxed(),
+            array(string()).boxed(),
+            array(TopicInfo::arbitrary(version)).boxed(),
+            array(CopartitionGroup::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(
+                |((value_0, value_1, value_2, value_3, value_4, value_5, value_6, value_7),)| {
+                    Subtopology {
+                        subtopology_id: value_0,
+                        source_topics: value_1,
+                        source_topic_regex: value_2,
+                        state_changelog_topics: value_3,
+                        repartition_sink_topics: value_4,
+                        repartition_source_topics: value_5,
+                        copartition_groups: value_6,
+                        unknown_tagged_fields: value_7,
+                    }
+                },
+            )
+            .boxed()
+    }
+}
+
 impl Subtopology {
     fn write_fields(
         &self,
@@ -520,6 +660,33 @@ impl TopicInfo {
     }
 }
 
+#[cfg(test)]
+impl TopicInfo {
+    /// Values of `TopicInfo` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<TopicInfo> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            array(KeyValue::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| TopicInfo {
+                name: value_0,
+                partitions: value_1,
+                replication_factor: value_2,
+                topic_configs: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl TopicInfo {
     fn write_fields(
         &self,
@@ -575,6 +742,23 @@ impl KeyValue {
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl KeyValue {
+    /// Values of `KeyValue` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<KeyValue> {
+        use crate::test_strategies::{string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((string().boxed(), string().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| KeyValue {
+                key: value_0,
+                value: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
     }
 }
 
@@ -647,6 +831,29 @@ impl CopartitionGroup {
     }
 }
 
+#[cfg(test)]
+impl CopartitionGroup {
+    /// Values of `CopartitionGroup` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<CopartitionGroup> {
+        use crate::test_strategies::{array, boundary_i16, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(boundary_i16()).boxed(),
+            array(boundary_i16()).boxed(),
+            array(boundary_i16()).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| CopartitionGroup {
+                source_topics: value_0,
+                source_topic_regex: value_1,
+                repartition_source_topics: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl CopartitionGroup {
     fn write_fields(
         &self,
@@ -713,6 +920,23 @@ impl TaskIds {
     }
 }
 
+#[cfg(test)]
+impl TaskIds {
+    /// Values of `TaskIds` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<TaskIds> {
+        use crate::test_strategies::{array, boundary_i32, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((string().boxed(), array(boundary_i32()).boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| TaskIds {
+                subtopology_id: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl TaskIds {
     fn write_fields(
         &self,
@@ -766,6 +990,23 @@ impl Endpoint {
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl Endpoint {
+    /// Values of `Endpoint` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<Endpoint> {
+        use crate::test_strategies::{boundary_u16, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((string().boxed(), boundary_u16().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| Endpoint {
+                host: value_0,
+                port: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
     }
 }
 
@@ -828,6 +1069,29 @@ impl TaskOffset {
     }
 }
 
+#[cfg(test)]
+impl TaskOffset {
+    /// Values of `TaskOffset` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<TaskOffset> {
+        use crate::test_strategies::{boundary_i32, boundary_i64, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            boundary_i32().boxed(),
+            boundary_i64().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| TaskOffset {
+                subtopology_id: value_0,
+                partition: value_1,
+                offset: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl TaskOffset {
     fn write_fields(
         &self,
@@ -877,4 +1141,13 @@ impl crate::Message for StreamsGroupHeartbeatRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        StreamsGroupHeartbeatRequest::arbitrary,
+        StreamsGroupHeartbeatRequest::VERSIONS,
+    );
 }

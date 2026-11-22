@@ -26,7 +26,7 @@ use alluvium_types::Uuid;
 
 use super::names::{self, UNKNOWN_TAGGED_FIELDS};
 use super::overlays::{self, Overlays};
-use super::{decode, docs, encode};
+use super::{decode, docs, encode, strategy};
 use crate::message_spec::{
     FieldDefault, FieldSpec, FieldType, MessageKind, MessageSpec, StructRegistry, Versions,
 };
@@ -126,6 +126,7 @@ pub(crate) fn module(
             message,
             runtime,
         )?;
+        strategy::render_arbitrary(&mut source, item.name, item.fields, item.versions, message);
         encode::render_write(
             &mut source,
             &encode::Struct {
@@ -145,6 +146,7 @@ pub(crate) fn module(
         runtime,
         &encode::render_encode(message, runtime, fallible.contains(&message.name)),
     );
+    strategy::render_round_trip_test(&mut source, message);
     if source.contains(".within(") {
         source.insert_str(0, &format!("use {runtime}::WithinField as _;\n\n"));
     }

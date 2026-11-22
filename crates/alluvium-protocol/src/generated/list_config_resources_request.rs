@@ -49,6 +49,27 @@ impl ListConfigResourcesRequest {
     }
 }
 
+#[cfg(test)]
+impl ListConfigResourcesRequest {
+    /// Values of `ListConfigResourcesRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ListConfigResourcesRequest> {
+        use crate::test_strategies::{array, boundary_i8, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            present(version == 1, array(boundary_i8()), Vec::new()).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1),)| ListConfigResourcesRequest {
+                resource_types: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl ListConfigResourcesRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -116,4 +137,13 @@ impl crate::Message for ListConfigResourcesRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ListConfigResourcesRequest::arbitrary,
+        ListConfigResourcesRequest::VERSIONS,
+    );
 }

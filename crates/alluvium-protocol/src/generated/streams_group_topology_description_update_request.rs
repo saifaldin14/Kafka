@@ -63,6 +63,35 @@ impl StreamsGroupTopologyDescriptionUpdateRequest {
     }
 }
 
+#[cfg(test)]
+impl StreamsGroupTopologyDescriptionUpdateRequest {
+    /// Values of `StreamsGroupTopologyDescriptionUpdateRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<StreamsGroupTopologyDescriptionUpdateRequest> {
+        use crate::test_strategies::{boundary_i32, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            string().boxed(),
+            boundary_i32().boxed(),
+            TopologyDescription::arbitrary(version).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| {
+                StreamsGroupTopologyDescriptionUpdateRequest {
+                    group_id: value_0,
+                    member_id: value_1,
+                    topology_epoch: value_2,
+                    topology_description: value_3,
+                    unknown_tagged_fields: value_4,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl StreamsGroupTopologyDescriptionUpdateRequest {
     fn write_fields(
         &self,
@@ -126,6 +155,29 @@ impl TopologyDescription {
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl TopologyDescription {
+    /// Values of `TopologyDescription` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<TopologyDescription> {
+        use crate::test_strategies::{array, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(TopologyDescriptionSubtopology::arbitrary(version)).boxed(),
+            array(TopologyDescriptionGlobalStore::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| TopologyDescription {
+                subtopologies: value_0,
+                global_stores: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
     }
 }
 
@@ -193,6 +245,29 @@ impl TopologyDescriptionSubtopology {
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl TopologyDescriptionSubtopology {
+    /// Values of `TopologyDescriptionSubtopology` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<TopologyDescriptionSubtopology> {
+        use crate::test_strategies::{array, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(TopologyDescriptionNode::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| TopologyDescriptionSubtopology {
+                subtopology_id: value_0,
+                nodes: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
     }
 }
 
@@ -291,6 +366,39 @@ impl TopologyDescriptionNode {
     }
 }
 
+#[cfg(test)]
+impl TopologyDescriptionNode {
+    /// Values of `TopologyDescriptionNode` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<TopologyDescriptionNode> {
+        use crate::test_strategies::{array, boundary_i8, nullable, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            boundary_i8().boxed(),
+            array(string()).boxed(),
+            nullable(true, string()).boxed(),
+            array(string()).boxed(),
+            array(string()).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5, value_6),)| {
+                TopologyDescriptionNode {
+                    name: value_0,
+                    node_type: value_1,
+                    source_topics: value_2,
+                    sink_topic: value_3,
+                    stores: value_4,
+                    successors: value_5,
+                    unknown_tagged_fields: value_6,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl TopologyDescriptionNode {
     fn write_fields(
         &self,
@@ -360,6 +468,29 @@ impl TopologyDescriptionGlobalStore {
     }
 }
 
+#[cfg(test)]
+impl TopologyDescriptionGlobalStore {
+    /// Values of `TopologyDescriptionGlobalStore` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<TopologyDescriptionGlobalStore> {
+        use crate::test_strategies::unknown_tagged_fields;
+        use proptest::prelude::*;
+        ((
+            TopologyDescriptionNode::arbitrary(version).boxed(),
+            TopologyDescriptionNode::arbitrary(version).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| TopologyDescriptionGlobalStore {
+                source: value_0,
+                processor: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl TopologyDescriptionGlobalStore {
     fn write_fields(
         &self,
@@ -410,4 +541,13 @@ impl crate::Message for StreamsGroupTopologyDescriptionUpdateRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        StreamsGroupTopologyDescriptionUpdateRequest::arbitrary,
+        StreamsGroupTopologyDescriptionUpdateRequest::VERSIONS,
+    );
 }

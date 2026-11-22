@@ -75,6 +75,33 @@ impl DescribeLogDirsResponse {
     }
 }
 
+#[cfg(test)]
+impl DescribeLogDirsResponse {
+    /// Values of `DescribeLogDirsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeLogDirsResponse> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, present, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            present(version >= 3, boundary_i16(), 0).boxed(),
+            array(DescribeLogDirsResult::arbitrary(version)).boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| DescribeLogDirsResponse {
+                throttle_time_ms: value_0,
+                error_code: value_1,
+                results: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeLogDirsResponse {
     fn write_fields(
         &self,
@@ -210,6 +237,41 @@ impl DescribeLogDirsResult {
     }
 }
 
+#[cfg(test)]
+impl DescribeLogDirsResult {
+    /// Values of `DescribeLogDirsResult` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeLogDirsResult> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i64, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            string().boxed(),
+            array(DescribeLogDirsTopic::arbitrary(version)).boxed(),
+            present(version >= 4, boundary_i64(), -1).boxed(),
+            present(version >= 4, boundary_i64(), -1).boxed(),
+            present(version == 5, any::<bool>(), false).boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5, value_6),)| {
+                DescribeLogDirsResult {
+                    error_code: value_0,
+                    log_dir: value_1,
+                    topics: value_2,
+                    total_bytes: value_3,
+                    usable_bytes: value_4,
+                    is_cordoned: value_5,
+                    unknown_tagged_fields: value_6,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl DescribeLogDirsResult {
     fn write_fields(
         &self,
@@ -301,6 +363,29 @@ impl DescribeLogDirsTopic {
     }
 }
 
+#[cfg(test)]
+impl DescribeLogDirsTopic {
+    /// Values of `DescribeLogDirsTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeLogDirsTopic> {
+        use crate::test_strategies::{array, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(DescribeLogDirsPartition::arbitrary(version)).boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| DescribeLogDirsTopic {
+                name: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeLogDirsTopic {
     fn write_fields(
         &self,
@@ -385,6 +470,33 @@ impl DescribeLogDirsPartition {
     }
 }
 
+#[cfg(test)]
+impl DescribeLogDirsPartition {
+    /// Values of `DescribeLogDirsPartition` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeLogDirsPartition> {
+        use crate::test_strategies::{boundary_i32, boundary_i64, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i64().boxed(),
+            boundary_i64().boxed(),
+            any::<bool>().boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| DescribeLogDirsPartition {
+                partition_index: value_0,
+                partition_size: value_1,
+                offset_lag: value_2,
+                is_future_key: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeLogDirsPartition {
     fn write_fields(
         &self,
@@ -437,4 +549,13 @@ impl crate::Message for DescribeLogDirsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeLogDirsResponse::arbitrary,
+        DescribeLogDirsResponse::VERSIONS,
+    );
 }

@@ -79,6 +79,35 @@ impl FetchSnapshotRequest {
     }
 }
 
+#[cfg(test)]
+impl FetchSnapshotRequest {
+    /// Values of `FetchSnapshotRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<FetchSnapshotRequest> {
+        use crate::test_strategies::{
+            array, boundary_i32, nullable, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            nullable(true, string()).boxed(),
+            boundary_i32().boxed(),
+            boundary_i32().boxed(),
+            array(TopicSnapshot::arbitrary(version)).boxed(),
+            unknown_tagged_fields(1).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| FetchSnapshotRequest {
+                cluster_id: value_0,
+                replica_id: value_1,
+                max_bytes: value_2,
+                topics: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl FetchSnapshotRequest {
     fn write_tagged_fields(
         &self,
@@ -151,6 +180,27 @@ impl TopicSnapshot {
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl TopicSnapshot {
+    /// Values of `TopicSnapshot` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<TopicSnapshot> {
+        use crate::test_strategies::{array, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(PartitionSnapshot::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| TopicSnapshot {
+                name: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
     }
 }
 
@@ -248,6 +298,37 @@ impl PartitionSnapshot {
     }
 }
 
+#[cfg(test)]
+impl PartitionSnapshot {
+    /// Values of `PartitionSnapshot` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<PartitionSnapshot> {
+        use crate::test_strategies::{
+            boundary_i32, boundary_i64, present, unknown_tagged_fields, uuid,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i32().boxed(),
+            SnapshotId::arbitrary(version).boxed(),
+            boundary_i64().boxed(),
+            present(version == 1, uuid(), alluvium_types::Uuid::ZERO).boxed(),
+            unknown_tagged_fields(1).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5),)| {
+                PartitionSnapshot {
+                    partition: value_0,
+                    current_leader_epoch: value_1,
+                    snapshot_id: value_2,
+                    position: value_3,
+                    replica_directory_id: value_4,
+                    unknown_tagged_fields: value_5,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl PartitionSnapshot {
     fn write_tagged_fields(
         &self,
@@ -319,6 +400,23 @@ impl SnapshotId {
     }
 }
 
+#[cfg(test)]
+impl SnapshotId {
+    /// Values of `SnapshotId` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<SnapshotId> {
+        use crate::test_strategies::{boundary_i32, boundary_i64, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((boundary_i64().boxed(), boundary_i32().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| SnapshotId {
+                end_offset: value_0,
+                epoch: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl SnapshotId {
     fn write_fields(
         &self,
@@ -367,4 +465,13 @@ impl crate::Message for FetchSnapshotRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        FetchSnapshotRequest::arbitrary,
+        FetchSnapshotRequest::VERSIONS,
+    );
 }

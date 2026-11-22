@@ -98,6 +98,42 @@ impl InitProducerIdRequest {
     }
 }
 
+#[cfg(test)]
+impl InitProducerIdRequest {
+    /// Values of `InitProducerIdRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<InitProducerIdRequest> {
+        use crate::test_strategies::{
+            boundary_i16, boundary_i32, boundary_i64, nullable, present, string,
+            unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            nullable(true, string()).boxed(),
+            boundary_i32().boxed(),
+            present(version >= 3, boundary_i64(), -1).boxed(),
+            present(version >= 3, boundary_i16(), -1).boxed(),
+            present(version == 6, any::<bool>(), false).boxed(),
+            present(version == 6, any::<bool>(), false).boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5, value_6),)| {
+                InitProducerIdRequest {
+                    transactional_id: value_0,
+                    transaction_timeout_ms: value_1,
+                    producer_id: value_2,
+                    producer_epoch: value_3,
+                    enable2_pc: value_4,
+                    keep_prepared_txn: value_5,
+                    unknown_tagged_fields: value_6,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl InitProducerIdRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -182,4 +218,13 @@ impl crate::Message for InitProducerIdRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        InitProducerIdRequest::arbitrary,
+        InitProducerIdRequest::VERSIONS,
+    );
 }

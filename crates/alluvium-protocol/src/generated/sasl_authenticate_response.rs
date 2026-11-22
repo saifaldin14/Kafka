@@ -111,6 +111,35 @@ impl SaslAuthenticateResponse {
     }
 }
 
+#[cfg(test)]
+impl SaslAuthenticateResponse {
+    /// Values of `SaslAuthenticateResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<SaslAuthenticateResponse> {
+        use crate::test_strategies::{
+            boundary_i16, boundary_i64, bytes, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            bytes().boxed(),
+            present(version >= 1, boundary_i64(), 0).boxed(),
+            present(version == 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| SaslAuthenticateResponse {
+                error_code: value_0,
+                error_message: value_1,
+                auth_bytes: value_2,
+                session_lifetime_ms: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl SaslAuthenticateResponse {
     fn write_fields(
         &self,
@@ -171,4 +200,13 @@ impl crate::Message for SaslAuthenticateResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        SaslAuthenticateResponse::arbitrary,
+        SaslAuthenticateResponse::VERSIONS,
+    );
 }

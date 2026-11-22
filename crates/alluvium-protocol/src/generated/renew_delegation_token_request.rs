@@ -67,6 +67,29 @@ impl RenewDelegationTokenRequest {
     }
 }
 
+#[cfg(test)]
+impl RenewDelegationTokenRequest {
+    /// Values of `RenewDelegationTokenRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<RenewDelegationTokenRequest> {
+        use crate::test_strategies::{boundary_i64, bytes, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            bytes().boxed(),
+            boundary_i64().boxed(),
+            present(version == 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| RenewDelegationTokenRequest {
+                hmac: value_0,
+                renew_period_ms: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl RenewDelegationTokenRequest {
     fn write_fields(
         &self,
@@ -123,4 +146,13 @@ impl crate::Message for RenewDelegationTokenRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        RenewDelegationTokenRequest::arbitrary,
+        RenewDelegationTokenRequest::VERSIONS,
+    );
 }

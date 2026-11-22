@@ -57,6 +57,29 @@ impl ListOffsetsResponse {
     }
 }
 
+#[cfg(test)]
+impl ListOffsetsResponse {
+    /// Values of `ListOffsetsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ListOffsetsResponse> {
+        use crate::test_strategies::{array, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            present(version >= 2, boundary_i32(), 0).boxed(),
+            array(ListOffsetsTopicResponse::arbitrary(version)).boxed(),
+            present(version >= 6, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| ListOffsetsResponse {
+                throttle_time_ms: value_0,
+                topics: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl ListOffsetsResponse {
     fn write_fields(
         &self,
@@ -136,6 +159,29 @@ impl ListOffsetsTopicResponse {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl ListOffsetsTopicResponse {
+    /// Values of `ListOffsetsTopicResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ListOffsetsTopicResponse> {
+        use crate::test_strategies::{array, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(ListOffsetsPartitionResponse::arbitrary(version)).boxed(),
+            present(version >= 6, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| ListOffsetsTopicResponse {
+                name: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
     }
 }
 
@@ -253,6 +299,39 @@ impl ListOffsetsPartitionResponse {
     }
 }
 
+#[cfg(test)]
+impl ListOffsetsPartitionResponse {
+    /// Values of `ListOffsetsPartitionResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ListOffsetsPartitionResponse> {
+        use crate::test_strategies::{
+            boundary_i16, boundary_i32, boundary_i64, present, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            boundary_i64().boxed(),
+            boundary_i64().boxed(),
+            present(version >= 4, boundary_i32(), -1).boxed(),
+            present(version >= 6, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5),)| {
+                ListOffsetsPartitionResponse {
+                    partition_index: value_0,
+                    error_code: value_1,
+                    timestamp: value_2,
+                    offset: value_3,
+                    leader_epoch: value_4,
+                    unknown_tagged_fields: value_5,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl ListOffsetsPartitionResponse {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -323,4 +402,13 @@ impl crate::Message for ListOffsetsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ListOffsetsResponse::arbitrary,
+        ListOffsetsResponse::VERSIONS,
+    );
 }

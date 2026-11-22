@@ -65,6 +65,31 @@ impl RemoveRaftVoterRequest {
     }
 }
 
+#[cfg(test)]
+impl RemoveRaftVoterRequest {
+    /// Values of `RemoveRaftVoterRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<RemoveRaftVoterRequest> {
+        use crate::test_strategies::{boundary_i32, nullable, string, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((
+            nullable(true, string()).boxed(),
+            boundary_i32().boxed(),
+            uuid().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| RemoveRaftVoterRequest {
+                cluster_id: value_0,
+                voter_id: value_1,
+                voter_directory_id: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl RemoveRaftVoterRequest {
     fn write_fields(
         &self,
@@ -114,4 +139,13 @@ impl crate::Message for RemoveRaftVoterRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        RemoveRaftVoterRequest::arbitrary,
+        RemoveRaftVoterRequest::VERSIONS,
+    );
 }

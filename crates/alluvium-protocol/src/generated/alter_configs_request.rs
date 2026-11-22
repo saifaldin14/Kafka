@@ -54,6 +54,29 @@ impl AlterConfigsRequest {
     }
 }
 
+#[cfg(test)]
+impl AlterConfigsRequest {
+    /// Values of `AlterConfigsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterConfigsRequest> {
+        use crate::test_strategies::{array, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(AlterConfigsResource::arbitrary(version)).boxed(),
+            any::<bool>().boxed(),
+            present(version == 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| AlterConfigsRequest {
+                resources: value_0,
+                validate_only: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl AlterConfigsRequest {
     fn write_fields(
         &self,
@@ -162,6 +185,31 @@ impl AlterConfigsResource {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl AlterConfigsResource {
+    /// Values of `AlterConfigsResource` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterConfigsResource> {
+        use crate::test_strategies::{array, boundary_i8, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i8().boxed(),
+            string().boxed(),
+            array(AlterableConfig::arbitrary(version)).boxed(),
+            present(version == 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| AlterConfigsResource {
+                resource_type: value_0,
+                resource_name: value_1,
+                configs: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
     }
 }
 
@@ -275,6 +323,27 @@ impl AlterableConfig {
     }
 }
 
+#[cfg(test)]
+impl AlterableConfig {
+    /// Values of `AlterableConfig` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<AlterableConfig> {
+        use crate::test_strategies::{nullable, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            nullable(true, string()).boxed(),
+            present(version == 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| AlterableConfig {
+                name: value_0,
+                value: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl AlterableConfig {
     fn write_fields(
         &self,
@@ -334,4 +403,13 @@ impl crate::Message for AlterConfigsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        AlterConfigsRequest::arbitrary,
+        AlterConfigsRequest::VERSIONS,
+    );
 }

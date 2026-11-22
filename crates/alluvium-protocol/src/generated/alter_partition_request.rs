@@ -66,6 +66,31 @@ impl AlterPartitionRequest {
     }
 }
 
+#[cfg(test)]
+impl AlterPartitionRequest {
+    /// Values of `AlterPartitionRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterPartitionRequest> {
+        use crate::test_strategies::{array, boundary_i32, boundary_i64, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i64().boxed(),
+            array(TopicData::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| AlterPartitionRequest {
+                broker_id: value_0,
+                broker_epoch: value_1,
+                topics: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl AlterPartitionRequest {
     fn write_fields(
         &self,
@@ -132,6 +157,27 @@ impl TopicData {
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl TopicData {
+    /// Values of `TopicData` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<TopicData> {
+        use crate::test_strategies::{array, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((
+            uuid().boxed(),
+            array(PartitionData::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| TopicData {
+                topic_id: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
     }
 }
 
@@ -216,6 +262,39 @@ impl PartitionData {
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl PartitionData {
+    /// Values of `PartitionData` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<PartitionData> {
+        use crate::test_strategies::{
+            array, boundary_i8, boundary_i32, present, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i32().boxed(),
+            present(version == 2, array(boundary_i32()), Vec::new()).boxed(),
+            present(version == 3, array(BrokerState::arbitrary(version)), Vec::new()).boxed(),
+            boundary_i8().boxed(),
+            boundary_i32().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5, value_6),)| {
+                PartitionData {
+                    partition_index: value_0,
+                    leader_epoch: value_1,
+                    new_isr: value_2,
+                    new_isr_with_epochs: value_3,
+                    leader_recovery_state: value_4,
+                    partition_epoch: value_5,
+                    unknown_tagged_fields: value_6,
+                }
+            })
+            .boxed()
     }
 }
 
@@ -310,6 +389,23 @@ impl BrokerState {
     }
 }
 
+#[cfg(test)]
+impl BrokerState {
+    /// Values of `BrokerState` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<BrokerState> {
+        use crate::test_strategies::{boundary_i32, boundary_i64, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((boundary_i32().boxed(), boundary_i64().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| BrokerState {
+                broker_id: value_0,
+                broker_epoch: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl BrokerState {
     fn write_fields(
         &self,
@@ -358,4 +454,13 @@ impl crate::Message for AlterPartitionRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        AlterPartitionRequest::arbitrary,
+        AlterPartitionRequest::VERSIONS,
+    );
 }

@@ -217,6 +217,103 @@ impl SimpleExampleMessage {
     }
 }
 
+#[cfg(test)]
+impl SimpleExampleMessage {
+    /// Values of `SimpleExampleMessage` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<SimpleExampleMessage> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, boundary_i64, boundary_u16, boundary_u32, bytes,
+            float64, nullable, present, string, unknown_tagged_fields, uuid,
+        };
+        use proptest::prelude::*;
+        (
+            (
+                present(version >= 1, uuid(), alluvium_types::Uuid::ZERO).boxed(),
+                present(version >= 1, array(boundary_i32()), Vec::new()).boxed(),
+                present(version >= 1, nullable(true, string()), None).boxed(),
+                present(version >= 1, boundary_i16(), 123).boxed(),
+                present(version >= 1, float64(), 12.34).boxed(),
+                present(version >= 1, string(), String::new()).boxed(),
+                present(version >= 1, nullable(true, bytes()), Some(bytes::Bytes::new())).boxed(),
+                present(
+                    version >= 1,
+                    uuid(),
+                    alluvium_types::Uuid::from_bits(
+                        2_266_025_550_731_756_790,
+                        -9_053_694_137_127_414_036,
+                    ),
+                )
+                .boxed(),
+                present(version >= 1, boundary_i64(), 914_172_222_550_880_202).boxed(),
+                present(version == 1, bytes(), bytes::Bytes::new()).boxed(),
+            ),
+            (
+                present(version == 1, nullable(true, bytes()), Some(bytes::Bytes::new())).boxed(),
+                present(version == 2, MyStruct::arbitrary(version), MyStruct::default()).boxed(),
+                present(version == 2, TaggedStruct::arbitrary(version), TaggedStruct::default())
+                    .boxed(),
+                present(version == 2, boundary_i64(), 0).boxed(),
+                TestCommonStruct::arbitrary(version).boxed(),
+                TestCommonStruct::arbitrary(version).boxed(),
+                present(version >= 1, boundary_u16(), 33_000).boxed(),
+                present(version >= 1, boundary_u32(), 1_234_567).boxed(),
+                present(version >= 1, unknown_tagged_fields(10), Vec::new()).boxed(),
+            ),
+        )
+            .prop_map(
+                |(
+                    (
+                        value_0,
+                        value_1,
+                        value_2,
+                        value_3,
+                        value_4,
+                        value_5,
+                        value_6,
+                        value_7,
+                        value_8,
+                        value_9,
+                    ),
+                    (
+                        value_10,
+                        value_11,
+                        value_12,
+                        value_13,
+                        value_14,
+                        value_15,
+                        value_16,
+                        value_17,
+                        value_18,
+                    ),
+                )| SimpleExampleMessage {
+                    process_id: value_0,
+                    my_tagged_int_array: value_1,
+                    my_nullable_string: value_2,
+                    my_int16: value_3,
+                    my_float64: value_4,
+                    my_string: value_5,
+                    my_bytes: value_6,
+                    tagged_uuid: value_7,
+                    tagged_long: value_8,
+                    zero_copy_byte_buffer: value_9,
+                    nullable_zero_copy_byte_buffer: value_10,
+                    my_struct: value_11,
+                    my_tagged_struct: value_12,
+                    tagged_long_flexible_version_subset: value_13,
+                    my_common_struct: value_14,
+                    my_other_common_struct: value_15,
+                    my_uint16: value_16,
+                    my_uint32: value_17,
+                    unknown_tagged_fields: value_18,
+                },
+            )
+            .boxed()
+    }
+}
+
 impl SimpleExampleMessage {
     fn write_tagged_fields(
         &self,
@@ -418,6 +515,27 @@ impl MyStruct {
     }
 }
 
+#[cfg(test)]
+impl MyStruct {
+    /// Values of `MyStruct` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<MyStruct> {
+        use crate::test_strategies::{array, boundary_i32, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            array(StructArray::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| MyStruct {
+                struct_id: value_0,
+                array_in_struct: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl MyStruct {
     fn write_fields(
         &self,
@@ -469,6 +587,22 @@ impl StructArray {
     }
 }
 
+#[cfg(test)]
+impl StructArray {
+    /// Values of `StructArray` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<StructArray> {
+        use crate::test_strategies::{boundary_i32, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((boundary_i32().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1),)| StructArray {
+                array_field_id: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl StructArray {
     fn write_fields(
         &self,
@@ -513,6 +647,22 @@ impl TaggedStruct {
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl TaggedStruct {
+    /// Values of `TaggedStruct` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<TaggedStruct> {
+        use crate::test_strategies::{string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((string().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1),)| TaggedStruct {
+                struct_id: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
     }
 }
 
@@ -579,6 +729,27 @@ impl TestCommonStruct {
     }
 }
 
+#[cfg(test)]
+impl TestCommonStruct {
+    /// Values of `TestCommonStruct` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<TestCommonStruct> {
+        use crate::test_strategies::{boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i32().boxed(),
+            present(version >= 1, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| TestCommonStruct {
+                foo: value_0,
+                bar: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl TestCommonStruct {
     fn write_fields(
         &self,
@@ -627,4 +798,13 @@ impl crate::Message for SimpleExampleMessage {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        SimpleExampleMessage::arbitrary,
+        SimpleExampleMessage::VERSIONS,
+    );
 }

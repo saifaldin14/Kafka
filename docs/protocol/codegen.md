@@ -159,7 +159,7 @@ Every message implements `Message::encode(writer, version)`, which mirrors Kafka
 
 **Data types.** `encode_version_prefixed` and `decode_version_prefixed` write and read an `int16` version before the body, as Kafka's `MessageUtil.toVersionPrefixedBytes` does for control record keys and consumer protocol payloads.
 
-**Tests.** A generated table encodes every message's default at every version, checks its size, and decodes it back.
+**Tests.** A generated table encodes every message's default at every version, checks its size, and decodes it back. Each message module also has a property test, `round_trips_at_every_version`, which encodes arbitrary values at each version (from a generated `arbitrary(version)` strategy, unknown tagged fields included), checks `encoded_size`, and decodes them back unchanged.
 
 ## Keyed arrays
 

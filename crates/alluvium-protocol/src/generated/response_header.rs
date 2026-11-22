@@ -44,6 +44,25 @@ impl ResponseHeader {
     }
 }
 
+#[cfg(test)]
+impl ResponseHeader {
+    /// Values of `ResponseHeader` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<ResponseHeader> {
+        use crate::test_strategies::{boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            present(version == 1, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1),)| ResponseHeader {
+                correlation_id: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl ResponseHeader {
     fn write_fields(
         &self,
@@ -91,4 +110,10 @@ impl crate::Message for ResponseHeader {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(ResponseHeader::arbitrary, ResponseHeader::VERSIONS);
 }

@@ -46,6 +46,24 @@ impl DeleteShareGroupStateResponse {
     }
 }
 
+#[cfg(test)]
+impl DeleteShareGroupStateResponse {
+    /// Values of `DeleteShareGroupStateResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DeleteShareGroupStateResponse> {
+        use crate::test_strategies::{array, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((array(DeleteStateResult::arbitrary(version)).boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1),)| DeleteShareGroupStateResponse {
+                results: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl DeleteShareGroupStateResponse {
     fn write_fields(
         &self,
@@ -113,6 +131,27 @@ impl DeleteStateResult {
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl DeleteStateResult {
+    /// Values of `DeleteStateResult` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<DeleteStateResult> {
+        use crate::test_strategies::{array, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((
+            uuid().boxed(),
+            array(PartitionResult::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| DeleteStateResult {
+                topic_id: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
     }
 }
 
@@ -193,6 +232,31 @@ impl PartitionResult {
     }
 }
 
+#[cfg(test)]
+impl PartitionResult {
+    /// Values of `PartitionResult` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<PartitionResult> {
+        use crate::test_strategies::{
+            boundary_i16, boundary_i32, nullable, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| PartitionResult {
+                partition: value_0,
+                error_code: value_1,
+                error_message: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl PartitionResult {
     fn write_fields(
         &self,
@@ -239,4 +303,13 @@ impl crate::Message for DeleteShareGroupStateResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DeleteShareGroupStateResponse::arbitrary,
+        DeleteShareGroupStateResponse::VERSIONS,
+    );
 }

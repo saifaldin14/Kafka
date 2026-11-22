@@ -58,6 +58,29 @@ impl DescribeGroupsResponse {
     }
 }
 
+#[cfg(test)]
+impl DescribeGroupsResponse {
+    /// Values of `DescribeGroupsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeGroupsResponse> {
+        use crate::test_strategies::{array, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            present(version >= 1, boundary_i32(), 0).boxed(),
+            array(DescribedGroup::arbitrary(version)).boxed(),
+            present(version >= 5, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| DescribeGroupsResponse {
+                throttle_time_ms: value_0,
+                groups: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeGroupsResponse {
     fn write_fields(
         &self,
@@ -218,6 +241,53 @@ impl DescribedGroup {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl DescribedGroup {
+    /// Values of `DescribedGroup` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<DescribedGroup> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            present(version == 6, nullable(true, string()), None).boxed(),
+            string().boxed(),
+            string().boxed(),
+            string().boxed(),
+            string().boxed(),
+            array(DescribedGroupMember::arbitrary(version)).boxed(),
+            present(version >= 3, boundary_i32(), -2_147_483_648).boxed(),
+            present(version >= 5, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(
+                |((
+                    value_0,
+                    value_1,
+                    value_2,
+                    value_3,
+                    value_4,
+                    value_5,
+                    value_6,
+                    value_7,
+                    value_8,
+                ),)| DescribedGroup {
+                    error_code: value_0,
+                    error_message: value_1,
+                    group_id: value_2,
+                    group_state: value_3,
+                    protocol_type: value_4,
+                    protocol_data: value_5,
+                    members: value_6,
+                    authorized_operations: value_7,
+                    unknown_tagged_fields: value_8,
+                },
+            )
+            .boxed()
     }
 }
 
@@ -388,6 +458,39 @@ impl DescribedGroupMember {
     }
 }
 
+#[cfg(test)]
+impl DescribedGroupMember {
+    /// Values of `DescribedGroupMember` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribedGroupMember> {
+        use crate::test_strategies::{bytes, nullable, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            present(version >= 4, nullable(true, string()), None).boxed(),
+            string().boxed(),
+            string().boxed(),
+            bytes().boxed(),
+            bytes().boxed(),
+            present(version >= 5, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5, value_6),)| {
+                DescribedGroupMember {
+                    member_id: value_0,
+                    group_instance_id: value_1,
+                    client_id: value_2,
+                    client_host: value_3,
+                    member_metadata: value_4,
+                    member_assignment: value_5,
+                    unknown_tagged_fields: value_6,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl DescribedGroupMember {
     fn write_fields(
         &self,
@@ -462,4 +565,13 @@ impl crate::Message for DescribeGroupsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeGroupsResponse::arbitrary,
+        DescribeGroupsResponse::VERSIONS,
+    );
 }

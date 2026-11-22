@@ -94,6 +94,45 @@ impl ConsumerGroupHeartbeatResponse {
     }
 }
 
+#[cfg(test)]
+impl ConsumerGroupHeartbeatResponse {
+    /// Values of `ConsumerGroupHeartbeatResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ConsumerGroupHeartbeatResponse> {
+        use crate::test_strategies::{
+            boundary_i16, boundary_i32, nullable, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            nullable(true, string()).boxed(),
+            boundary_i32().boxed(),
+            boundary_i32().boxed(),
+            nullable(true, Assignment::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(
+                |((value_0, value_1, value_2, value_3, value_4, value_5, value_6, value_7),)| {
+                    ConsumerGroupHeartbeatResponse {
+                        throttle_time_ms: value_0,
+                        error_code: value_1,
+                        error_message: value_2,
+                        member_id: value_3,
+                        member_epoch: value_4,
+                        heartbeat_interval_ms: value_5,
+                        assignment: value_6,
+                        unknown_tagged_fields: value_7,
+                    }
+                },
+            )
+            .boxed()
+    }
+}
+
 impl ConsumerGroupHeartbeatResponse {
     fn write_fields(
         &self,
@@ -152,6 +191,22 @@ impl Assignment {
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl Assignment {
+    /// Values of `Assignment` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<Assignment> {
+        use crate::test_strategies::{array, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((array(TopicPartitions::arbitrary(version)).boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1),)| Assignment {
+                topic_partitions: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
     }
 }
 
@@ -225,6 +280,23 @@ impl TopicPartitions {
     }
 }
 
+#[cfg(test)]
+impl TopicPartitions {
+    /// Values of `TopicPartitions` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<TopicPartitions> {
+        use crate::test_strategies::{array, boundary_i32, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((uuid().boxed(), array(boundary_i32()).boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| TopicPartitions {
+                topic_id: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl TopicPartitions {
     fn write_fields(
         &self,
@@ -273,4 +345,13 @@ impl crate::Message for ConsumerGroupHeartbeatResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ConsumerGroupHeartbeatResponse::arbitrary,
+        ConsumerGroupHeartbeatResponse::VERSIONS,
+    );
 }

@@ -91,6 +91,35 @@ impl DescribeQuorumResponse {
     }
 }
 
+#[cfg(test)]
+impl DescribeQuorumResponse {
+    /// Values of `DescribeQuorumResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeQuorumResponse> {
+        use crate::test_strategies::{
+            array, boundary_i16, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            present(version == 2, nullable(true, string()), Some(String::new())).boxed(),
+            array(TopicData::arbitrary(version)).boxed(),
+            present(version == 2, array(Node::arbitrary(version)), Vec::new()).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| DescribeQuorumResponse {
+                error_code: value_0,
+                error_message: value_1,
+                topics: value_2,
+                nodes: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeQuorumResponse {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -170,6 +199,27 @@ impl TopicData {
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl TopicData {
+    /// Values of `TopicData` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<TopicData> {
+        use crate::test_strategies::{array, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(PartitionData::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| TopicData {
+                topic_name: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
     }
 }
 
@@ -294,6 +344,54 @@ impl PartitionData {
     }
 }
 
+#[cfg(test)]
+impl PartitionData {
+    /// Values of `PartitionData` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<PartitionData> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, boundary_i64, nullable, present, string,
+            unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            present(version == 2, nullable(true, string()), Some(String::new())).boxed(),
+            boundary_i32().boxed(),
+            boundary_i32().boxed(),
+            boundary_i64().boxed(),
+            array(ReplicaState::arbitrary(version)).boxed(),
+            array(ReplicaState::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(
+                |((
+                    value_0,
+                    value_1,
+                    value_2,
+                    value_3,
+                    value_4,
+                    value_5,
+                    value_6,
+                    value_7,
+                    value_8,
+                ),)| PartitionData {
+                    partition_index: value_0,
+                    error_code: value_1,
+                    error_message: value_2,
+                    leader_id: value_3,
+                    leader_epoch: value_4,
+                    high_watermark: value_5,
+                    current_voters: value_6,
+                    observers: value_7,
+                    unknown_tagged_fields: value_8,
+                },
+            )
+            .boxed()
+    }
+}
+
 impl PartitionData {
     fn write_fields(
         &self,
@@ -396,6 +494,35 @@ impl ReplicaState {
     }
 }
 
+#[cfg(test)]
+impl ReplicaState {
+    /// Values of `ReplicaState` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<ReplicaState> {
+        use crate::test_strategies::{
+            boundary_i32, boundary_i64, present, unknown_tagged_fields, uuid,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            present(version >= 2, uuid(), alluvium_types::Uuid::ZERO).boxed(),
+            boundary_i64().boxed(),
+            present(version >= 1, boundary_i64(), -1).boxed(),
+            present(version >= 1, boundary_i64(), -1).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5),)| ReplicaState {
+                replica_id: value_0,
+                replica_directory_id: value_1,
+                log_end_offset: value_2,
+                last_fetch_timestamp: value_3,
+                last_caught_up_timestamp: value_4,
+                unknown_tagged_fields: value_5,
+            })
+            .boxed()
+    }
+}
+
 impl ReplicaState {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -486,6 +613,27 @@ impl Node {
     }
 }
 
+#[cfg(test)]
+impl Node {
+    /// Values of `Node` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<Node> {
+        use crate::test_strategies::{array, boundary_i32, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            array(Listener::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| Node {
+                node_id: value_0,
+                listeners: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl Node {
     fn write_fields(
         &self,
@@ -562,6 +710,29 @@ impl Listener {
     }
 }
 
+#[cfg(test)]
+impl Listener {
+    /// Values of `Listener` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<Listener> {
+        use crate::test_strategies::{boundary_u16, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            string().boxed(),
+            boundary_u16().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| Listener {
+                name: value_0,
+                host: value_1,
+                port: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl Listener {
     fn write_fields(
         &self,
@@ -608,4 +779,13 @@ impl crate::Message for DescribeQuorumResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeQuorumResponse::arbitrary,
+        DescribeQuorumResponse::VERSIONS,
+    );
 }

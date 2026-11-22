@@ -46,6 +46,24 @@ impl ReadShareGroupStateResponse {
     }
 }
 
+#[cfg(test)]
+impl ReadShareGroupStateResponse {
+    /// Values of `ReadShareGroupStateResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ReadShareGroupStateResponse> {
+        use crate::test_strategies::{array, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((array(ReadStateResult::arbitrary(version)).boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1),)| ReadShareGroupStateResponse {
+                results: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl ReadShareGroupStateResponse {
     fn write_fields(
         &self,
@@ -113,6 +131,27 @@ impl ReadStateResult {
             reader.read_unknown_tagged_field(tag, size, &mut self.unknown_tagged_fields)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl ReadStateResult {
+    /// Values of `ReadStateResult` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<ReadStateResult> {
+        use crate::test_strategies::{array, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((
+            uuid().boxed(),
+            array(PartitionResult::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| ReadStateResult {
+                topic_id: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
     }
 }
 
@@ -210,6 +249,40 @@ impl PartitionResult {
     }
 }
 
+#[cfg(test)]
+impl PartitionResult {
+    /// Values of `PartitionResult` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<PartitionResult> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, boundary_i64, nullable, string,
+            unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            boundary_i32().boxed(),
+            boundary_i64().boxed(),
+            array(StateBatch::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5, value_6),)| {
+                PartitionResult {
+                    partition: value_0,
+                    error_code: value_1,
+                    error_message: value_2,
+                    state_epoch: value_3,
+                    start_offset: value_4,
+                    state_batches: value_5,
+                    unknown_tagged_fields: value_6,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl PartitionResult {
     fn write_fields(
         &self,
@@ -280,6 +353,33 @@ impl StateBatch {
     }
 }
 
+#[cfg(test)]
+impl StateBatch {
+    /// Values of `StateBatch` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<StateBatch> {
+        use crate::test_strategies::{
+            boundary_i8, boundary_i16, boundary_i64, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i64().boxed(),
+            boundary_i64().boxed(),
+            boundary_i8().boxed(),
+            boundary_i16().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| StateBatch {
+                first_offset: value_0,
+                last_offset: value_1,
+                delivery_state: value_2,
+                delivery_count: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl StateBatch {
     fn write_fields(
         &self,
@@ -327,4 +427,13 @@ impl crate::Message for ReadShareGroupStateResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ReadShareGroupStateResponse::arbitrary,
+        ReadShareGroupStateResponse::VERSIONS,
+    );
 }

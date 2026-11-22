@@ -84,6 +84,33 @@ impl ProduceRequest {
     }
 }
 
+#[cfg(test)]
+impl ProduceRequest {
+    /// Values of `ProduceRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<ProduceRequest> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            nullable(true, string()).boxed(),
+            boundary_i16().boxed(),
+            boundary_i32().boxed(),
+            array(TopicProduceData::arbitrary(version)).boxed(),
+            present(version >= 9, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| ProduceRequest {
+                transactional_id: value_0,
+                acks: value_1,
+                timeout_ms: value_2,
+                topic_data: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl ProduceRequest {
     fn write_fields(
         &self,
@@ -211,6 +238,29 @@ impl TopicProduceData {
     }
 }
 
+#[cfg(test)]
+impl TopicProduceData {
+    /// Values of `TopicProduceData` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<TopicProduceData> {
+        use crate::test_strategies::{array, present, string, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((
+            present(version <= 12, string(), String::new()).boxed(),
+            present(version == 13, uuid(), alluvium_types::Uuid::ZERO).boxed(),
+            array(PartitionProduceData::arbitrary(version)).boxed(),
+            present(version >= 9, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| TopicProduceData {
+                name: value_0,
+                topic_id: value_1,
+                partition_data: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl TopicProduceData {
     fn write_fields(
         &self,
@@ -294,6 +344,31 @@ impl PartitionProduceData {
     }
 }
 
+#[cfg(test)]
+impl PartitionProduceData {
+    /// Values of `PartitionProduceData` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<PartitionProduceData> {
+        use crate::test_strategies::{
+            boundary_i32, nullable, present, records, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            nullable(true, records()).boxed(),
+            present(version >= 9, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| PartitionProduceData {
+                index: value_0,
+                records: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl PartitionProduceData {
     fn write_fields(
         &self,
@@ -350,4 +425,10 @@ impl crate::Message for ProduceRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(ProduceRequest::arbitrary, ProduceRequest::VERSIONS);
 }

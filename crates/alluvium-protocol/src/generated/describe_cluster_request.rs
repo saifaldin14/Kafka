@@ -69,6 +69,31 @@ impl DescribeClusterRequest {
     }
 }
 
+#[cfg(test)]
+impl DescribeClusterRequest {
+    /// Values of `DescribeClusterRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeClusterRequest> {
+        use crate::test_strategies::{boundary_i8, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            any::<bool>().boxed(),
+            present(version >= 1, boundary_i8(), 1).boxed(),
+            present(version == 2, any::<bool>(), false).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| DescribeClusterRequest {
+                include_cluster_authorized_operations: value_0,
+                endpoint_type: value_1,
+                include_fenced_brokers: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeClusterRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -140,4 +165,13 @@ impl crate::Message for DescribeClusterRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeClusterRequest::arbitrary,
+        DescribeClusterRequest::VERSIONS,
+    );
 }

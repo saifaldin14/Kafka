@@ -62,6 +62,29 @@ impl OffsetDeleteResponse {
     }
 }
 
+#[cfg(test)]
+impl OffsetDeleteResponse {
+    /// Values of `OffsetDeleteResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<OffsetDeleteResponse> {
+        use crate::test_strategies::{array, boundary_i16, boundary_i32};
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            boundary_i32().boxed(),
+            array(OffsetDeleteResponseTopic::arbitrary(version)).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| OffsetDeleteResponse {
+                error_code: value_0,
+                throttle_time_ms: value_1,
+                topics: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl OffsetDeleteResponse {
     fn write_fields(
         &self,
@@ -131,6 +154,24 @@ impl OffsetDeleteResponseTopic {
             })
             .within("Partitions")?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl OffsetDeleteResponseTopic {
+    /// Values of `OffsetDeleteResponseTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<OffsetDeleteResponseTopic> {
+        use crate::test_strategies::{array, string};
+        use proptest::prelude::*;
+        ((string().boxed(), array(OffsetDeleteResponsePartition::arbitrary(version)).boxed()),)
+            .prop_map(|((value_0, value_1),)| OffsetDeleteResponseTopic {
+                name: value_0,
+                partitions: value_1,
+            })
+            .boxed()
     }
 }
 
@@ -215,6 +256,24 @@ impl OffsetDeleteResponsePartition {
     }
 }
 
+#[cfg(test)]
+impl OffsetDeleteResponsePartition {
+    /// Values of `OffsetDeleteResponsePartition` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<OffsetDeleteResponsePartition> {
+        use crate::test_strategies::{boundary_i16, boundary_i32};
+        use proptest::prelude::*;
+        ((boundary_i32().boxed(), boundary_i16().boxed()),)
+            .prop_map(|((value_0, value_1),)| OffsetDeleteResponsePartition {
+                partition_index: value_0,
+                error_code: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl OffsetDeleteResponsePartition {
     fn write_fields(&self, writer: &mut crate::Writer, _version: i16) {
         writer.write_i32(self.partition_index);
@@ -252,4 +311,13 @@ impl crate::Message for OffsetDeleteResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        OffsetDeleteResponse::arbitrary,
+        OffsetDeleteResponse::VERSIONS,
+    );
 }

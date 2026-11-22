@@ -129,6 +129,43 @@ impl MetadataResponse {
     }
 }
 
+#[cfg(test)]
+impl MetadataResponse {
+    /// Values of `MetadataResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<MetadataResponse> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            present(version >= 3, boundary_i32(), 0).boxed(),
+            array(MetadataResponseBroker::arbitrary(version)).boxed(),
+            present(version >= 2, nullable(true, string()), None).boxed(),
+            present(version >= 1, boundary_i32(), -1).boxed(),
+            array(MetadataResponseTopic::arbitrary(version)).boxed(),
+            present((8..=10).contains(&version), boundary_i32(), -2_147_483_648).boxed(),
+            present(version == 13, boundary_i16(), 0).boxed(),
+            present(version >= 9, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(
+                |((value_0, value_1, value_2, value_3, value_4, value_5, value_6, value_7),)| {
+                    MetadataResponse {
+                        throttle_time_ms: value_0,
+                        brokers: value_1,
+                        cluster_id: value_2,
+                        controller_id: value_3,
+                        topics: value_4,
+                        cluster_authorized_operations: value_5,
+                        error_code: value_6,
+                        unknown_tagged_fields: value_7,
+                    }
+                },
+            )
+            .boxed()
+    }
+}
+
 impl MetadataResponse {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -280,6 +317,35 @@ impl MetadataResponseBroker {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl MetadataResponseBroker {
+    /// Values of `MetadataResponseBroker` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<MetadataResponseBroker> {
+        use crate::test_strategies::{
+            boundary_i32, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            string().boxed(),
+            boundary_i32().boxed(),
+            present(version >= 1, nullable(true, string()), None).boxed(),
+            present(version >= 9, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| MetadataResponseBroker {
+                node_id: value_0,
+                host: value_1,
+                port: value_2,
+                rack: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
     }
 }
 
@@ -446,6 +512,42 @@ impl MetadataResponseTopic {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl MetadataResponseTopic {
+    /// Values of `MetadataResponseTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<MetadataResponseTopic> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, nullable, present, string, unknown_tagged_fields,
+            uuid,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            nullable(version >= 12, string()).boxed(),
+            present(version >= 10, uuid(), alluvium_types::Uuid::ZERO).boxed(),
+            present(version >= 1, any::<bool>(), false).boxed(),
+            array(MetadataResponsePartition::arbitrary(version)).boxed(),
+            present(version >= 8, boundary_i32(), -2_147_483_648).boxed(),
+            present(version >= 9, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5, value_6),)| {
+                MetadataResponseTopic {
+                    error_code: value_0,
+                    name: value_1,
+                    topic_id: value_2,
+                    is_internal: value_3,
+                    partitions: value_4,
+                    topic_authorized_operations: value_5,
+                    unknown_tagged_fields: value_6,
+                }
+            })
+            .boxed()
     }
 }
 
@@ -628,6 +730,45 @@ impl MetadataResponsePartition {
     }
 }
 
+#[cfg(test)]
+impl MetadataResponsePartition {
+    /// Values of `MetadataResponsePartition` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<MetadataResponsePartition> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, present, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            boundary_i32().boxed(),
+            boundary_i32().boxed(),
+            present(version >= 7, boundary_i32(), -1).boxed(),
+            array(boundary_i32()).boxed(),
+            array(boundary_i32()).boxed(),
+            present(version >= 5, array(boundary_i32()), Vec::new()).boxed(),
+            present(version >= 9, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(
+                |((value_0, value_1, value_2, value_3, value_4, value_5, value_6, value_7),)| {
+                    MetadataResponsePartition {
+                        error_code: value_0,
+                        partition_index: value_1,
+                        leader_id: value_2,
+                        leader_epoch: value_3,
+                        replica_nodes: value_4,
+                        isr_nodes: value_5,
+                        offline_replicas: value_6,
+                        unknown_tagged_fields: value_7,
+                    }
+                },
+            )
+            .boxed()
+    }
+}
+
 impl MetadataResponsePartition {
     fn write_fields(
         &self,
@@ -705,4 +846,13 @@ impl crate::Message for MetadataResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        MetadataResponse::arbitrary,
+        MetadataResponse::VERSIONS,
+    );
 }

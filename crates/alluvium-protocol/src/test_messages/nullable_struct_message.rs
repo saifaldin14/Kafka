@@ -109,6 +109,38 @@ impl NullableStructMessage {
     }
 }
 
+#[cfg(test)]
+impl NullableStructMessage {
+    /// Values of `NullableStructMessage` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<NullableStructMessage> {
+        use crate::test_strategies::{nullable, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            nullable(true, MyStruct::arbitrary(version)).boxed(),
+            nullable(version >= 1, MyStruct2::arbitrary(version)).boxed(),
+            present(version >= 1, nullable(true, MyStruct3::arbitrary(version)), None).boxed(),
+            present(
+                version >= 1,
+                nullable(true, MyStruct4::arbitrary(version)),
+                Some(MyStruct4::default()),
+            )
+            .boxed(),
+            present(version >= 1, unknown_tagged_fields(2), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| NullableStructMessage {
+                nullable_struct: value_0,
+                nullable_struct2: value_1,
+                nullable_struct3: value_2,
+                nullable_struct4: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl NullableStructMessage {
     fn write_tagged_fields(
         &self,
@@ -248,6 +280,27 @@ impl MyStruct {
     }
 }
 
+#[cfg(test)]
+impl MyStruct {
+    /// Values of `MyStruct` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<MyStruct> {
+        use crate::test_strategies::{boundary_i32, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            boundary_i32().boxed(),
+            present(version >= 1, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| MyStruct {
+                my_string: value_0,
+                my_int: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl MyStruct {
     fn write_fields(
         &self,
@@ -317,6 +370,27 @@ impl MyStruct2 {
     }
 }
 
+#[cfg(test)]
+impl MyStruct2 {
+    /// Values of `MyStruct2` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<MyStruct2> {
+        use crate::test_strategies::{boundary_i32, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            boundary_i32().boxed(),
+            present(version >= 1, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| MyStruct2 {
+                my_string: value_0,
+                my_int: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl MyStruct2 {
     fn write_fields(
         &self,
@@ -378,6 +452,23 @@ impl MyStruct3 {
     }
 }
 
+#[cfg(test)]
+impl MyStruct3 {
+    /// Values of `MyStruct3` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<MyStruct3> {
+        use crate::test_strategies::{boundary_i32, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((string().boxed(), boundary_i32().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| MyStruct3 {
+                my_string: value_0,
+                my_int: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl MyStruct3 {
     fn write_fields(
         &self,
@@ -431,6 +522,23 @@ impl MyStruct4 {
     }
 }
 
+#[cfg(test)]
+impl MyStruct4 {
+    /// Values of `MyStruct4` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<MyStruct4> {
+        use crate::test_strategies::{boundary_i32, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((string().boxed(), boundary_i32().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| MyStruct4 {
+                my_string: value_0,
+                my_int: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl MyStruct4 {
     fn write_fields(
         &self,
@@ -474,4 +582,13 @@ impl crate::Message for NullableStructMessage {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        NullableStructMessage::arbitrary,
+        NullableStructMessage::VERSIONS,
+    );
 }

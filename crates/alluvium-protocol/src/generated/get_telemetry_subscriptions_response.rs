@@ -123,6 +123,58 @@ impl GetTelemetrySubscriptionsResponse {
     }
 }
 
+#[cfg(test)]
+impl GetTelemetrySubscriptionsResponse {
+    /// Values of `GetTelemetrySubscriptionsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<GetTelemetrySubscriptionsResponse> {
+        use crate::test_strategies::{
+            array, boundary_i8, boundary_i16, boundary_i32, string, unknown_tagged_fields, uuid,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            uuid().boxed(),
+            boundary_i32().boxed(),
+            array(boundary_i8()).boxed(),
+            boundary_i32().boxed(),
+            boundary_i32().boxed(),
+            any::<bool>().boxed(),
+            array(string()).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(
+                |((
+                    value_0,
+                    value_1,
+                    value_2,
+                    value_3,
+                    value_4,
+                    value_5,
+                    value_6,
+                    value_7,
+                    value_8,
+                    value_9,
+                ),)| GetTelemetrySubscriptionsResponse {
+                    throttle_time_ms: value_0,
+                    error_code: value_1,
+                    client_instance_id: value_2,
+                    subscription_id: value_3,
+                    accepted_compression_types: value_4,
+                    push_interval_ms: value_5,
+                    telemetry_max_bytes: value_6,
+                    delta_temporality: value_7,
+                    requested_metrics: value_8,
+                    unknown_tagged_fields: value_9,
+                },
+            )
+            .boxed()
+    }
+}
+
 impl GetTelemetrySubscriptionsResponse {
     fn write_fields(
         &self,
@@ -182,4 +234,13 @@ impl crate::Message for GetTelemetrySubscriptionsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        GetTelemetrySubscriptionsResponse::arbitrary,
+        GetTelemetrySubscriptionsResponse::VERSIONS,
+    );
 }

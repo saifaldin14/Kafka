@@ -62,6 +62,33 @@ impl EndTxnRequest {
     }
 }
 
+#[cfg(test)]
+impl EndTxnRequest {
+    /// Values of `EndTxnRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<EndTxnRequest> {
+        use crate::test_strategies::{
+            boundary_i16, boundary_i64, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            boundary_i64().boxed(),
+            boundary_i16().boxed(),
+            any::<bool>().boxed(),
+            present(version >= 3, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| EndTxnRequest {
+                transactional_id: value_0,
+                producer_id: value_1,
+                producer_epoch: value_2,
+                committed: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl EndTxnRequest {
     fn write_fields(
         &self,
@@ -120,4 +147,10 @@ impl crate::Message for EndTxnRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(EndTxnRequest::arbitrary, EndTxnRequest::VERSIONS);
 }

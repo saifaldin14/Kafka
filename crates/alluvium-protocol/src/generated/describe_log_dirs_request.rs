@@ -56,6 +56,27 @@ impl DescribeLogDirsRequest {
     }
 }
 
+#[cfg(test)]
+impl DescribeLogDirsRequest {
+    /// Values of `DescribeLogDirsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribeLogDirsRequest> {
+        use crate::test_strategies::{array, nullable, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            nullable(true, array(DescribableLogDirTopic::arbitrary(version))).boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1),)| DescribeLogDirsRequest {
+                topics: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl DescribeLogDirsRequest {
     fn write_fields(
         &self,
@@ -155,6 +176,29 @@ impl DescribableLogDirTopic {
     }
 }
 
+#[cfg(test)]
+impl DescribableLogDirTopic {
+    /// Values of `DescribableLogDirTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<DescribableLogDirTopic> {
+        use crate::test_strategies::{array, boundary_i32, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(boundary_i32()).boxed(),
+            present(version >= 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| DescribableLogDirTopic {
+                topic: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl DescribableLogDirTopic {
     fn write_fields(
         &self,
@@ -217,4 +261,13 @@ impl crate::Message for DescribeLogDirsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        DescribeLogDirsRequest::arbitrary,
+        DescribeLogDirsRequest::VERSIONS,
+    );
 }

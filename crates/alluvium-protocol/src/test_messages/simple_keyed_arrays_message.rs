@@ -50,6 +50,27 @@ impl SimpleKeyedArraysMessage {
     }
 }
 
+#[cfg(test)]
+impl SimpleKeyedArraysMessage {
+    /// Values of `SimpleKeyedArraysMessage` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<SimpleKeyedArraysMessage> {
+        use crate::test_strategies::{array, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            array(KeyedStruct::arbitrary(version)).boxed(),
+            present(version >= 1, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1),)| SimpleKeyedArraysMessage {
+                keyed_structs: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl SimpleKeyedArraysMessage {
     fn write_fields(
         &self,
@@ -127,6 +148,27 @@ impl KeyedStruct {
     }
 }
 
+#[cfg(test)]
+impl KeyedStruct {
+    /// Values of `KeyedStruct` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<KeyedStruct> {
+        use crate::test_strategies::{boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i32().boxed(),
+            present(version >= 1, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| KeyedStruct {
+                key: value_0,
+                value: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl KeyedStruct {
     fn write_fields(
         &self,
@@ -175,4 +217,13 @@ impl crate::Message for SimpleKeyedArraysMessage {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        SimpleKeyedArraysMessage::arbitrary,
+        SimpleKeyedArraysMessage::VERSIONS,
+    );
 }

@@ -57,6 +57,29 @@ impl OffsetCommitResponse {
     }
 }
 
+#[cfg(test)]
+impl OffsetCommitResponse {
+    /// Values of `OffsetCommitResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<OffsetCommitResponse> {
+        use crate::test_strategies::{array, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            present(version >= 3, boundary_i32(), 0).boxed(),
+            array(OffsetCommitResponseTopic::arbitrary(version)).boxed(),
+            present(version >= 8, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| OffsetCommitResponse {
+                throttle_time_ms: value_0,
+                topics: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl OffsetCommitResponse {
     fn write_fields(
         &self,
@@ -159,6 +182,31 @@ impl OffsetCommitResponseTopic {
     }
 }
 
+#[cfg(test)]
+impl OffsetCommitResponseTopic {
+    /// Values of `OffsetCommitResponseTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<OffsetCommitResponseTopic> {
+        use crate::test_strategies::{array, present, string, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((
+            present(version <= 9, string(), String::new()).boxed(),
+            present(version == 10, uuid(), alluvium_types::Uuid::ZERO).boxed(),
+            array(OffsetCommitResponsePartition::arbitrary(version)).boxed(),
+            present(version >= 8, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| OffsetCommitResponseTopic {
+                name: value_0,
+                topic_id: value_1,
+                partitions: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl OffsetCommitResponseTopic {
     fn write_fields(
         &self,
@@ -248,6 +296,29 @@ impl OffsetCommitResponsePartition {
     }
 }
 
+#[cfg(test)]
+impl OffsetCommitResponsePartition {
+    /// Values of `OffsetCommitResponsePartition` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<OffsetCommitResponsePartition> {
+        use crate::test_strategies::{boundary_i16, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            present(version >= 8, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| OffsetCommitResponsePartition {
+                partition_index: value_0,
+                error_code: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl OffsetCommitResponsePartition {
     fn write_fields(
         &self,
@@ -298,4 +369,13 @@ impl crate::Message for OffsetCommitResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        OffsetCommitResponse::arbitrary,
+        OffsetCommitResponse::VERSIONS,
+    );
 }

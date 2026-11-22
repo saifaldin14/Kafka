@@ -63,6 +63,29 @@ impl ListPartitionReassignmentsRequest {
     }
 }
 
+#[cfg(test)]
+impl ListPartitionReassignmentsRequest {
+    /// Values of `ListPartitionReassignmentsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ListPartitionReassignmentsRequest> {
+        use crate::test_strategies::{array, boundary_i32, nullable, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            nullable(true, array(ListPartitionReassignmentsTopics::arbitrary(version))).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| ListPartitionReassignmentsRequest {
+                timeout_ms: value_0,
+                topics: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl ListPartitionReassignmentsRequest {
     fn write_fields(
         &self,
@@ -129,6 +152,25 @@ impl ListPartitionReassignmentsTopics {
     }
 }
 
+#[cfg(test)]
+impl ListPartitionReassignmentsTopics {
+    /// Values of `ListPartitionReassignmentsTopics` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ListPartitionReassignmentsTopics> {
+        use crate::test_strategies::{array, boundary_i32, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((string().boxed(), array(boundary_i32()).boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| ListPartitionReassignmentsTopics {
+                name: value_0,
+                partition_indexes: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl ListPartitionReassignmentsTopics {
     fn write_fields(
         &self,
@@ -180,4 +222,13 @@ impl crate::Message for ListPartitionReassignmentsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        ListPartitionReassignmentsRequest::arbitrary,
+        ListPartitionReassignmentsRequest::VERSIONS,
+    );
 }

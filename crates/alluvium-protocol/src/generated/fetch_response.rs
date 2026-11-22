@@ -93,6 +93,35 @@ impl FetchResponse {
     }
 }
 
+#[cfg(test)]
+impl FetchResponse {
+    /// Values of `FetchResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<FetchResponse> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, present, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            present(version >= 7, boundary_i16(), 0).boxed(),
+            present(version >= 7, boundary_i32(), 0).boxed(),
+            array(FetchableTopicResponse::arbitrary(version)).boxed(),
+            present(version >= 16, array(NodeEndpoint::arbitrary(version)), Vec::new()).boxed(),
+            present(version >= 12, unknown_tagged_fields(1), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4, value_5),)| FetchResponse {
+                throttle_time_ms: value_0,
+                error_code: value_1,
+                session_id: value_2,
+                responses: value_3,
+                node_endpoints: value_4,
+                unknown_tagged_fields: value_5,
+            })
+            .boxed()
+    }
+}
+
 impl FetchResponse {
     fn write_tagged_fields(
         &self,
@@ -231,6 +260,31 @@ impl FetchableTopicResponse {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl FetchableTopicResponse {
+    /// Values of `FetchableTopicResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<FetchableTopicResponse> {
+        use crate::test_strategies::{array, present, string, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((
+            present(version <= 12, string(), String::new()).boxed(),
+            present(version >= 13, uuid(), alluvium_types::Uuid::ZERO).boxed(),
+            array(PartitionData::arbitrary(version)).boxed(),
+            present(version >= 12, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| FetchableTopicResponse {
+                topic: value_0,
+                topic_id: value_1,
+                partitions: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
     }
 }
 
@@ -419,6 +473,79 @@ impl PartitionData {
     }
 }
 
+#[cfg(test)]
+impl PartitionData {
+    /// Values of `PartitionData` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<PartitionData> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, boundary_i64, nullable, present, records,
+            unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        (
+            (
+                boundary_i32().boxed(),
+                boundary_i16().boxed(),
+                boundary_i64().boxed(),
+                boundary_i64().boxed(),
+                present(version >= 5, boundary_i64(), -1).boxed(),
+                present(
+                    version >= 12,
+                    EpochEndOffset::arbitrary(version),
+                    EpochEndOffset::default(),
+                )
+                .boxed(),
+                present(
+                    version >= 12,
+                    LeaderIdAndEpoch::arbitrary(version),
+                    LeaderIdAndEpoch::default(),
+                )
+                .boxed(),
+                present(version >= 12, SnapshotId::arbitrary(version), SnapshotId::default())
+                    .boxed(),
+                nullable(true, array(AbortedTransaction::arbitrary(version))).boxed(),
+                present(version >= 11, boundary_i32(), -1).boxed(),
+            ),
+            (
+                nullable(true, records()).boxed(),
+                present(version >= 12, unknown_tagged_fields(3), Vec::new()).boxed(),
+            ),
+        )
+            .prop_map(
+                |(
+                    (
+                        value_0,
+                        value_1,
+                        value_2,
+                        value_3,
+                        value_4,
+                        value_5,
+                        value_6,
+                        value_7,
+                        value_8,
+                        value_9,
+                    ),
+                    (value_10, value_11),
+                )| PartitionData {
+                    partition_index: value_0,
+                    error_code: value_1,
+                    high_watermark: value_2,
+                    last_stable_offset: value_3,
+                    log_start_offset: value_4,
+                    diverging_epoch: value_5,
+                    current_leader: value_6,
+                    snapshot_id: value_7,
+                    aborted_transactions: value_8,
+                    preferred_read_replica: value_9,
+                    records: value_10,
+                    unknown_tagged_fields: value_11,
+                },
+            )
+            .boxed()
+    }
+}
+
 impl PartitionData {
     fn write_tagged_fields(
         &self,
@@ -557,6 +684,23 @@ impl EpochEndOffset {
     }
 }
 
+#[cfg(test)]
+impl EpochEndOffset {
+    /// Values of `EpochEndOffset` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<EpochEndOffset> {
+        use crate::test_strategies::{boundary_i32, boundary_i64, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((boundary_i32().boxed(), boundary_i64().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| EpochEndOffset {
+                epoch: value_0,
+                end_offset: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl EpochEndOffset {
     fn write_fields(
         &self,
@@ -619,6 +763,23 @@ impl LeaderIdAndEpoch {
     }
 }
 
+#[cfg(test)]
+impl LeaderIdAndEpoch {
+    /// Values of `LeaderIdAndEpoch` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<LeaderIdAndEpoch> {
+        use crate::test_strategies::{boundary_i32, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((boundary_i32().boxed(), boundary_i32().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| LeaderIdAndEpoch {
+                leader_id: value_0,
+                leader_epoch: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl LeaderIdAndEpoch {
     fn write_fields(
         &self,
@@ -678,6 +839,23 @@ impl SnapshotId {
     }
 }
 
+#[cfg(test)]
+impl SnapshotId {
+    /// Values of `SnapshotId` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<SnapshotId> {
+        use crate::test_strategies::{boundary_i32, boundary_i64, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((boundary_i64().boxed(), boundary_i32().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| SnapshotId {
+                end_offset: value_0,
+                epoch: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl SnapshotId {
     fn write_fields(
         &self,
@@ -733,6 +911,27 @@ impl AbortedTransaction {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl AbortedTransaction {
+    /// Values of `AbortedTransaction` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<AbortedTransaction> {
+        use crate::test_strategies::{boundary_i64, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i64().boxed(),
+            boundary_i64().boxed(),
+            present(version >= 12, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| AbortedTransaction {
+                producer_id: value_0,
+                first_offset: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
     }
 }
 
@@ -820,6 +1019,31 @@ impl NodeEndpoint {
     }
 }
 
+#[cfg(test)]
+impl NodeEndpoint {
+    /// Values of `NodeEndpoint` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<NodeEndpoint> {
+        use crate::test_strategies::{boundary_i32, nullable, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            string().boxed(),
+            boundary_i32().boxed(),
+            nullable(true, string()).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| NodeEndpoint {
+                node_id: value_0,
+                host: value_1,
+                port: value_2,
+                rack: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl NodeEndpoint {
     fn write_fields(
         &self,
@@ -867,4 +1091,10 @@ impl crate::Message for FetchResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(FetchResponse::arbitrary, FetchResponse::VERSIONS);
 }

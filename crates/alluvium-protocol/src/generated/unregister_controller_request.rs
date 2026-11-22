@@ -43,6 +43,24 @@ impl UnregisterControllerRequest {
     }
 }
 
+#[cfg(test)]
+impl UnregisterControllerRequest {
+    /// Values of `UnregisterControllerRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<UnregisterControllerRequest> {
+        use crate::test_strategies::{boundary_i32, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((boundary_i32().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1),)| UnregisterControllerRequest {
+                controller_id: value_0,
+                unknown_tagged_fields: value_1,
+            })
+            .boxed()
+    }
+}
+
 impl UnregisterControllerRequest {
     fn write_fields(
         &self,
@@ -90,4 +108,13 @@ impl crate::Message for UnregisterControllerRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        UnregisterControllerRequest::arbitrary,
+        UnregisterControllerRequest::VERSIONS,
+    );
 }

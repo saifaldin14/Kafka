@@ -30,6 +30,7 @@ mod encode;
 mod errors;
 mod names;
 mod overlays;
+mod strategy;
 mod structs;
 
 use std::collections::BTreeMap;

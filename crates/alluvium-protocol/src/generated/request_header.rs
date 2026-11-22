@@ -68,6 +68,33 @@ impl RequestHeader {
     }
 }
 
+#[cfg(test)]
+impl RequestHeader {
+    /// Values of `RequestHeader` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<RequestHeader> {
+        use crate::test_strategies::{
+            boundary_i16, boundary_i32, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i16().boxed(),
+            boundary_i16().boxed(),
+            boundary_i32().boxed(),
+            nullable(true, string()).boxed(),
+            present(version == 2, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| RequestHeader {
+                request_api_key: value_0,
+                request_api_version: value_1,
+                correlation_id: value_2,
+                client_id: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl RequestHeader {
     fn write_fields(
         &self,
@@ -118,4 +145,10 @@ impl crate::Message for RequestHeader {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(RequestHeader::arbitrary, RequestHeader::VERSIONS);
 }

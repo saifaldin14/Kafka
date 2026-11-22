@@ -62,6 +62,29 @@ impl SimpleRecordsMessage {
     }
 }
 
+#[cfg(test)]
+impl SimpleRecordsMessage {
+    /// Values of `SimpleRecordsMessage` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<SimpleRecordsMessage> {
+        use crate::test_strategies::{nullable, present, records, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            nullable(true, records()).boxed(),
+            present(version == 1, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| SimpleRecordsMessage {
+                topic: value_0,
+                record_set: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl SimpleRecordsMessage {
     fn write_fields(
         &self,
@@ -116,4 +139,13 @@ impl crate::Message for SimpleRecordsMessage {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        SimpleRecordsMessage::arbitrary,
+        SimpleRecordsMessage::VERSIONS,
+    );
 }

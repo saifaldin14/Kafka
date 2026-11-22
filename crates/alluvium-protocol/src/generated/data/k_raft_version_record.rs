@@ -47,6 +47,25 @@ impl KRaftVersionRecord {
     }
 }
 
+#[cfg(test)]
+impl KRaftVersionRecord {
+    /// Values of `KRaftVersionRecord` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<KRaftVersionRecord> {
+        use crate::test_strategies::{boundary_i16, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((boundary_i16().boxed(), boundary_i16().boxed(), unknown_tagged_fields(0).boxed()),)
+            .prop_map(|((value_0, value_1, value_2),)| KRaftVersionRecord {
+                version: value_0,
+                k_raft_version: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl KRaftVersionRecord {
     fn write_fields(
         &self,
@@ -90,4 +109,13 @@ impl crate::Message for KRaftVersionRecord {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        KRaftVersionRecord::arbitrary,
+        KRaftVersionRecord::VERSIONS,
+    );
 }

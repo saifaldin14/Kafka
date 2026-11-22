@@ -106,6 +106,37 @@ impl OffsetFetchRequest {
     }
 }
 
+#[cfg(test)]
+impl OffsetFetchRequest {
+    /// Values of `OffsetFetchRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<OffsetFetchRequest> {
+        use crate::test_strategies::{array, nullable, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            present(version <= 7, string(), String::new()).boxed(),
+            present(
+                version <= 7,
+                nullable(version >= 2, array(OffsetFetchRequestTopic::arbitrary(version))),
+                Some(Vec::new()),
+            )
+            .boxed(),
+            present(version >= 8, array(OffsetFetchRequestGroup::arbitrary(version)), Vec::new())
+                .boxed(),
+            present(version >= 7, any::<bool>(), false).boxed(),
+            present(version >= 6, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| OffsetFetchRequest {
+                group_id: value_0,
+                topics: value_1,
+                groups: value_2,
+                require_stable: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl OffsetFetchRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -238,6 +269,29 @@ impl OffsetFetchRequestTopic {
     }
 }
 
+#[cfg(test)]
+impl OffsetFetchRequestTopic {
+    /// Values of `OffsetFetchRequestTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<OffsetFetchRequestTopic> {
+        use crate::test_strategies::{array, boundary_i32, present, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(boundary_i32()).boxed(),
+            present(version >= 6, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| OffsetFetchRequestTopic {
+                name: value_0,
+                partition_indexes: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl OffsetFetchRequestTopic {
     fn write_fields(
         &self,
@@ -338,6 +392,35 @@ impl OffsetFetchRequestGroup {
     }
 }
 
+#[cfg(test)]
+impl OffsetFetchRequestGroup {
+    /// Values of `OffsetFetchRequestGroup` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<OffsetFetchRequestGroup> {
+        use crate::test_strategies::{
+            array, boundary_i32, nullable, present, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            present(version >= 9, nullable(true, string()), None).boxed(),
+            present(version >= 9, boundary_i32(), -1).boxed(),
+            nullable(true, array(OffsetFetchRequestTopics::arbitrary(version))).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| OffsetFetchRequestGroup {
+                group_id: value_0,
+                member_id: value_1,
+                member_epoch: value_2,
+                topics: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl OffsetFetchRequestGroup {
     fn write_fields(
         &self,
@@ -428,6 +511,33 @@ impl OffsetFetchRequestTopics {
     }
 }
 
+#[cfg(test)]
+impl OffsetFetchRequestTopics {
+    /// Values of `OffsetFetchRequestTopics` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<OffsetFetchRequestTopics> {
+        use crate::test_strategies::{
+            array, boundary_i32, present, string, unknown_tagged_fields, uuid,
+        };
+        use proptest::prelude::*;
+        ((
+            present(version <= 9, string(), String::new()).boxed(),
+            present(version == 10, uuid(), alluvium_types::Uuid::ZERO).boxed(),
+            array(boundary_i32()).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| OffsetFetchRequestTopics {
+                name: value_0,
+                topic_id: value_1,
+                partition_indexes: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl OffsetFetchRequestTopics {
     fn write_fields(
         &self,
@@ -484,4 +594,13 @@ impl crate::Message for OffsetFetchRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        OffsetFetchRequest::arbitrary,
+        OffsetFetchRequest::VERSIONS,
+    );
 }

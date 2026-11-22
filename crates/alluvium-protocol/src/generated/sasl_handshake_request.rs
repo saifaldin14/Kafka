@@ -35,6 +35,21 @@ impl SaslHandshakeRequest {
     }
 }
 
+#[cfg(test)]
+impl SaslHandshakeRequest {
+    /// Values of `SaslHandshakeRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<SaslHandshakeRequest> {
+        use crate::test_strategies::string;
+        use proptest::prelude::*;
+        ((string().boxed(),),)
+            .prop_map(|((value_0,),)| SaslHandshakeRequest { mechanism: value_0 })
+            .boxed()
+    }
+}
+
 impl SaslHandshakeRequest {
     fn write_fields(
         &self,
@@ -79,4 +94,13 @@ impl crate::Message for SaslHandshakeRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        SaslHandshakeRequest::arbitrary,
+        SaslHandshakeRequest::VERSIONS,
+    );
 }

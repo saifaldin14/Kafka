@@ -71,6 +71,33 @@ impl AlterPartitionReassignmentsRequest {
     }
 }
 
+#[cfg(test)]
+impl AlterPartitionReassignmentsRequest {
+    /// Values of `AlterPartitionReassignmentsRequest` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterPartitionReassignmentsRequest> {
+        use crate::test_strategies::{array, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            present(version == 1, any::<bool>(), true).boxed(),
+            array(ReassignableTopic::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| {
+                AlterPartitionReassignmentsRequest {
+                    timeout_ms: value_0,
+                    allow_replication_factor_change: value_1,
+                    topics: value_2,
+                    unknown_tagged_fields: value_3,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl AlterPartitionReassignmentsRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it.
@@ -152,6 +179,27 @@ impl ReassignableTopic {
     }
 }
 
+#[cfg(test)]
+impl ReassignableTopic {
+    /// Values of `ReassignableTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(version: i16) -> proptest::strategy::BoxedStrategy<ReassignableTopic> {
+        use crate::test_strategies::{array, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            array(ReassignablePartition::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| ReassignableTopic {
+                name: value_0,
+                partitions: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl ReassignableTopic {
     fn write_fields(
         &self,
@@ -214,6 +262,29 @@ impl ReassignablePartition {
     }
 }
 
+#[cfg(test)]
+impl ReassignablePartition {
+    /// Values of `ReassignablePartition` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<ReassignablePartition> {
+        use crate::test_strategies::{array, boundary_i32, nullable, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            nullable(true, array(boundary_i32())).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| ReassignablePartition {
+                partition_index: value_0,
+                replicas: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl ReassignablePartition {
     fn write_fields(
         &self,
@@ -270,4 +341,13 @@ impl crate::Message for AlterPartitionReassignmentsRequest {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        AlterPartitionReassignmentsRequest::arbitrary,
+        AlterPartitionReassignmentsRequest::VERSIONS,
+    );
 }

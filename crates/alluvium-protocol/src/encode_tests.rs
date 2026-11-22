@@ -272,3 +272,40 @@ fn version_prefixed_data_round_trips_and_a_negative_version_fails() {
         "{error}"
     );
 }
+
+/// Runs `round_trip` on values from `arbitrary` at each of `versions`: a generated
+/// message encodes, its `encoded_size` is the length written, and it decodes back.
+pub(crate) fn round_trip_arbitrary<M: Message + PartialEq + Debug>(
+    arbitrary: fn(i16) -> proptest::strategy::BoxedStrategy<M>,
+    versions: crate::Versions,
+) {
+    use proptest::test_runner::{Config, TestRunner};
+
+    let (Some(lowest), Some(highest)) = (versions.lowest(), versions.highest()) else {
+        return;
+    };
+    for version in lowest..=highest {
+        let mut runner = TestRunner::new(Config {
+            cases: 32,
+            failure_persistence: None,
+            ..Config::default()
+        });
+        let result = runner.run(&arbitrary(version), |message| {
+            let bytes = encode(&message, version).map_err(|error| {
+                proptest::test_runner::TestCaseError::fail(format!("version {version}: {error}"))
+            })?;
+            let size = message
+                .encoded_size(version)
+                .map_err(|error| proptest::test_runner::TestCaseError::fail(error.to_string()))?;
+            proptest::prop_assert_eq!(size.total, bytes.len());
+            let decoded = M::decode(&mut Reader::new(bytes), version).map_err(|error| {
+                proptest::test_runner::TestCaseError::fail(format!("version {version}: {error}"))
+            })?;
+            proptest::prop_assert_eq!(&decoded, &message, "version {}", version);
+            Ok(())
+        });
+        if let Err(failure) = result {
+            panic!("version {version}: {failure}");
+        }
+    }
+}

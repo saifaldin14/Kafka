@@ -77,6 +77,37 @@ impl AlterShareGroupOffsetsResponse {
     }
 }
 
+#[cfg(test)]
+impl AlterShareGroupOffsetsResponse {
+    /// Values of `AlterShareGroupOffsetsResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterShareGroupOffsetsResponse> {
+        use crate::test_strategies::{
+            array, boundary_i16, boundary_i32, nullable, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            array(AlterShareGroupOffsetsResponseTopic::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| {
+                AlterShareGroupOffsetsResponse {
+                    throttle_time_ms: value_0,
+                    error_code: value_1,
+                    error_message: value_2,
+                    responses: value_3,
+                    unknown_tagged_fields: value_4,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl AlterShareGroupOffsetsResponse {
     fn write_fields(
         &self,
@@ -178,6 +209,33 @@ impl AlterShareGroupOffsetsResponseTopic {
     }
 }
 
+#[cfg(test)]
+impl AlterShareGroupOffsetsResponseTopic {
+    /// Values of `AlterShareGroupOffsetsResponseTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterShareGroupOffsetsResponseTopic> {
+        use crate::test_strategies::{array, string, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((
+            string().boxed(),
+            uuid().boxed(),
+            array(AlterShareGroupOffsetsResponsePartition::arbitrary(version)).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| {
+                AlterShareGroupOffsetsResponseTopic {
+                    topic_name: value_0,
+                    topic_id: value_1,
+                    partitions: value_2,
+                    unknown_tagged_fields: value_3,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl AlterShareGroupOffsetsResponseTopic {
     fn write_fields(
         &self,
@@ -256,6 +314,35 @@ impl AlterShareGroupOffsetsResponsePartition {
     }
 }
 
+#[cfg(test)]
+impl AlterShareGroupOffsetsResponsePartition {
+    /// Values of `AlterShareGroupOffsetsResponsePartition` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        _version: i16,
+    ) -> proptest::strategy::BoxedStrategy<AlterShareGroupOffsetsResponsePartition> {
+        use crate::test_strategies::{
+            boundary_i16, boundary_i32, nullable, string, unknown_tagged_fields,
+        };
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            nullable(true, string()).boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| {
+                AlterShareGroupOffsetsResponsePartition {
+                    partition_index: value_0,
+                    error_code: value_1,
+                    error_message: value_2,
+                    unknown_tagged_fields: value_3,
+                }
+            })
+            .boxed()
+    }
+}
+
 impl AlterShareGroupOffsetsResponsePartition {
     fn write_fields(
         &self,
@@ -302,4 +389,13 @@ impl crate::Message for AlterShareGroupOffsetsResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        AlterShareGroupOffsetsResponse::arbitrary,
+        AlterShareGroupOffsetsResponse::VERSIONS,
+    );
 }

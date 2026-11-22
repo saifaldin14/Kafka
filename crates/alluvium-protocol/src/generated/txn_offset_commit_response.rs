@@ -56,6 +56,29 @@ impl TxnOffsetCommitResponse {
     }
 }
 
+#[cfg(test)]
+impl TxnOffsetCommitResponse {
+    /// Values of `TxnOffsetCommitResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<TxnOffsetCommitResponse> {
+        use crate::test_strategies::{array, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            array(TxnOffsetCommitResponseTopic::arbitrary(version)).boxed(),
+            present(version >= 3, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| TxnOffsetCommitResponse {
+                throttle_time_ms: value_0,
+                topics: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl TxnOffsetCommitResponse {
     fn write_fields(
         &self,
@@ -156,6 +179,31 @@ impl TxnOffsetCommitResponseTopic {
     }
 }
 
+#[cfg(test)]
+impl TxnOffsetCommitResponseTopic {
+    /// Values of `TxnOffsetCommitResponseTopic` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<TxnOffsetCommitResponseTopic> {
+        use crate::test_strategies::{array, present, string, unknown_tagged_fields, uuid};
+        use proptest::prelude::*;
+        ((
+            present(version <= 5, string(), String::new()).boxed(),
+            present(version == 6, uuid(), alluvium_types::Uuid::ZERO).boxed(),
+            array(TxnOffsetCommitResponsePartition::arbitrary(version)).boxed(),
+            present(version >= 3, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| TxnOffsetCommitResponseTopic {
+                name: value_0,
+                topic_id: value_1,
+                partitions: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl TxnOffsetCommitResponseTopic {
     fn write_fields(
         &self,
@@ -245,6 +293,29 @@ impl TxnOffsetCommitResponsePartition {
     }
 }
 
+#[cfg(test)]
+impl TxnOffsetCommitResponsePartition {
+    /// Values of `TxnOffsetCommitResponsePartition` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<TxnOffsetCommitResponsePartition> {
+        use crate::test_strategies::{boundary_i16, boundary_i32, present, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            present(version >= 3, unknown_tagged_fields(0), Vec::new()).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2),)| TxnOffsetCommitResponsePartition {
+                partition_index: value_0,
+                error_code: value_1,
+                unknown_tagged_fields: value_2,
+            })
+            .boxed()
+    }
+}
+
 impl TxnOffsetCommitResponsePartition {
     fn write_fields(
         &self,
@@ -295,4 +366,13 @@ impl crate::Message for TxnOffsetCommitResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        TxnOffsetCommitResponse::arbitrary,
+        TxnOffsetCommitResponse::VERSIONS,
+    );
 }

@@ -71,6 +71,31 @@ impl UpdateRaftVoterResponse {
     }
 }
 
+#[cfg(test)]
+impl UpdateRaftVoterResponse {
+    /// Values of `UpdateRaftVoterResponse` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(
+        version: i16,
+    ) -> proptest::strategy::BoxedStrategy<UpdateRaftVoterResponse> {
+        use crate::test_strategies::{boundary_i16, boundary_i32, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i16().boxed(),
+            CurrentLeader::arbitrary(version).boxed(),
+            unknown_tagged_fields(1).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3),)| UpdateRaftVoterResponse {
+                throttle_time_ms: value_0,
+                error_code: value_1,
+                current_leader: value_2,
+                unknown_tagged_fields: value_3,
+            })
+            .boxed()
+    }
+}
+
 impl UpdateRaftVoterResponse {
     fn write_tagged_fields(
         &self,
@@ -162,6 +187,31 @@ impl CurrentLeader {
     }
 }
 
+#[cfg(test)]
+impl CurrentLeader {
+    /// Values of `CurrentLeader` at `version`, for property tests: fields the version doesn't
+    /// have hold their defaults.
+    pub(crate) fn arbitrary(_version: i16) -> proptest::strategy::BoxedStrategy<CurrentLeader> {
+        use crate::test_strategies::{boundary_i32, string, unknown_tagged_fields};
+        use proptest::prelude::*;
+        ((
+            boundary_i32().boxed(),
+            boundary_i32().boxed(),
+            string().boxed(),
+            boundary_i32().boxed(),
+            unknown_tagged_fields(0).boxed(),
+        ),)
+            .prop_map(|((value_0, value_1, value_2, value_3, value_4),)| CurrentLeader {
+                leader_id: value_0,
+                leader_epoch: value_1,
+                host: value_2,
+                port: value_3,
+                unknown_tagged_fields: value_4,
+            })
+            .boxed()
+    }
+}
+
 impl CurrentLeader {
     fn write_fields(
         &self,
@@ -209,4 +259,13 @@ impl crate::Message for UpdateRaftVoterResponse {
         }
         self.write_fields(writer, version)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_trips_at_every_version() {
+    crate::encode_tests::round_trip_arbitrary(
+        UpdateRaftVoterResponse::arbitrary,
+        UpdateRaftVoterResponse::VERSIONS,
+    );
 }
