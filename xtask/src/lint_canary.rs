@@ -12,6 +12,11 @@
 //! 2. Every `disallowed-methods` and `disallowed-types` diagnostic carries the reason
 //!    clippy.toml configures for its path, and every entry fires at least once, so a
 //!    new entry needs a fixture.
+//! 3. Every lint `[workspace.lints]` configures one by one, at a level other than
+//!    `allow`, is annotated somewhere, so by rule 1 it fires. A lint added to the
+//!    table without a fixture would otherwise go unproven. Groups such as
+//!    `clippy::pedantic`, written as tables with a `priority`, are left out: no one
+//!    fixture can prove a group.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
@@ -112,24 +117,28 @@ pub(crate) fn run(out: &mut impl Write) -> Exit {
         let clippy_toml = std::fs::read_to_string(root.join("clippy.toml"))
             .map_err(|error| format!("could not read clippy.toml: {error}"))?;
         let disallowed = parse_disallowed(&clippy_toml)?;
+        let cargo_toml = std::fs::read_to_string(root.join("Cargo.toml"))
+            .map_err(|error| format!("could not read Cargo.toml: {error}"))?;
+        let configured = configured_lints(&cargo_toml)?;
         let diagnostics = run_clippy(&root, out)?;
         let mismatches = compare(&expected, &by_location(&diagnostics));
-        let reason_problems = check_reasons(&disallowed, &diagnostics);
-        Ok((expected, mismatches, reason_problems))
+        let mut rule_problems = check_reasons(&disallowed, &diagnostics);
+        rule_problems.extend(check_fixture_coverage(&configured, &expected));
+        Ok((expected, mismatches, rule_problems))
     });
-    let (expected, mismatches, reason_problems) = match checked {
+    let (expected, mismatches, rule_problems) = match checked {
         Ok(checked) => checked,
         Err(error) => {
             output::line(out, &format!("error: {error}"));
             return Exit::CheckFailed;
         }
     };
-    if mismatches.is_empty() && reason_problems.is_empty() {
+    if mismatches.is_empty() && rule_problems.is_empty() {
         let count: usize = expected.values().map(BTreeSet::len).sum();
         output::line(
             out,
             &format!(
-                "lint-canary: ok ({count} annotated lints fired with their configured reasons, nothing else)"
+                "lint-canary: ok ({count} annotated lints fired with their configured reasons, nothing else; every [workspace.lints] lint has a fixture)"
             ),
         );
         return Exit::Success;
@@ -137,7 +146,7 @@ pub(crate) fn run(out: &mut impl Write) -> Exit {
     for mismatch in &mismatches {
         output::line(out, &mismatch.to_string());
     }
-    for problem in &reason_problems {
+    for problem in &rule_problems {
         output::line(out, problem);
     }
     output::line(
@@ -145,7 +154,7 @@ pub(crate) fn run(out: &mut impl Write) -> Exit {
         &format!(
             "lint-canary: {} problem(s). A lint that no longer fires was removed or weakened in \
              [workspace.lints] or clippy.toml (docs/standards/rust.md#workspace-configuration)",
-            mismatches.len() + reason_problems.len()
+            mismatches.len() + rule_problems.len()
         ),
     );
     Exit::CheckFailed
@@ -365,6 +374,46 @@ pub(crate) fn parse_disallowed(clippy_toml: &str) -> Result<Disallowed, String> 
     Ok(disallowed)
 }
 
+/// The lints `[workspace.lints]` in `cargo_toml` configures one by one, at a level other
+/// than `allow`, named as clippy's JSON names them, with their levels.
+pub(crate) fn configured_lints(cargo_toml: &str) -> Result<BTreeMap<String, String>, String> {
+    let manifest: Value = toml::from_str(cargo_toml)
+        .map_err(|error| format!("could not parse Cargo.toml: {error}"))?;
+    let mut lints = BTreeMap::new();
+    for (tool, prefix) in [("rust", ""), ("clippy", "clippy::")] {
+        let Some(table) = manifest["workspace"]["lints"][tool].as_object() else {
+            continue;
+        };
+        for (name, setting) in table {
+            // A table entry is a group with a `priority`; single lints are strings.
+            if let Some(level) = setting.as_str()
+                && level != "allow"
+            {
+                lints.insert(format!("{prefix}{name}"), level.to_owned());
+            }
+        }
+    }
+    Ok(lints)
+}
+
+/// Checks that every configured lint is annotated on at least one fixture line.
+pub(crate) fn check_fixture_coverage(
+    configured: &BTreeMap<String, String>,
+    expected: &Lints,
+) -> Vec<String> {
+    let annotated: BTreeSet<&String> = expected.values().flatten().collect();
+    configured
+        .iter()
+        .filter(|(lint, _)| !annotated.contains(lint))
+        .map(|(lint, level)| {
+            format!(
+                "Cargo.toml: `{lint}` ({level}) in [workspace.lints] has no fixture. Add one to \
+                 xtask/lint-canary, so removing or weakening it is noticed"
+            )
+        })
+        .collect()
+}
+
 /// Checks that each `disallowed_*` diagnostic carries the reason configured for its
 /// path, and that every clippy.toml entry fired at least once.
 pub(crate) fn check_reasons(disallowed: &Disallowed, diagnostics: &[Diagnostic]) -> Vec<String> {
@@ -412,8 +461,8 @@ mod tests {
     use std::collections::BTreeSet;
 
     use super::{
-        Diagnostic, Lints, by_location, check_reasons, compare, parse_annotations,
-        parse_diagnostics, parse_disallowed,
+        Diagnostic, Lints, by_location, check_fixture_coverage, check_reasons, compare,
+        configured_lints, parse_annotations, parse_diagnostics, parse_disallowed,
     };
 
     fn at(file: &str, line: u64, names: &[&str]) -> Lints {
@@ -576,6 +625,34 @@ mod tests {
                 "a.rs:2: clippy::disallowed_methods fired for `x::y`, which clippy.toml does not list",
                 "clippy.toml: `a::d` (clippy::disallowed_methods) never fired. Add a fixture for it to \
                  xtask/lint-canary, or remove it if another entry names the same function",
+            ]
+        );
+    }
+
+    #[test]
+    fn configured_lints_are_single_lints_not_allowed_or_grouped() {
+        let cargo_toml = "[workspace.lints.rust]\nunsafe_code = \"forbid\"\nrust_2018_idioms = { level = \"warn\", priority = -1 }\n\n[workspace.lints.clippy]\npedantic = { level = \"warn\", priority = -1 }\nmust_use_candidate = \"allow\"\npanic = \"warn\"\n";
+        let lints = configured_lints(cargo_toml).unwrap();
+        assert_eq!(
+            lints.into_iter().collect::<Vec<_>>(),
+            [
+                ("clippy::panic".to_owned(), "warn".to_owned()),
+                ("unsafe_code".to_owned(), "forbid".to_owned()),
+            ]
+        );
+    }
+
+    #[test]
+    fn a_configured_lint_without_a_fixture_is_reported() {
+        let cargo_toml =
+            "[workspace.lints.clippy]\npanic = \"warn\"\nrc_buffer = \"warn\"\ntodo = \"deny\"\n";
+        let mut expected = at("f.rs", 3, &["clippy::todo"]);
+        expected.extend(at("f.rs", 9, &["clippy::panic", "unsafe_code"]));
+        assert_eq!(
+            check_fixture_coverage(&configured_lints(cargo_toml).unwrap(), &expected),
+            [
+                "Cargo.toml: `clippy::rc_buffer` (warn) in [workspace.lints] has no fixture. Add \
+                 one to xtask/lint-canary, so removing or weakening it is noticed"
             ]
         );
     }
