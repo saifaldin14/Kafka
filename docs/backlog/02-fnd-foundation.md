@@ -167,6 +167,11 @@ P2 · M1 · Task · deps: FND-0030 · ref: ADR-0011
 Done when: The rule scans the `src/` of layer 1–2 workspace crates (layer 0 is `alluvium-types`, which defines them) and reports each use with file:line and the ADR; fixture crates show a use rejected and a doc comment mentioning the names accepted; the real workspace passes.
 Notes: The rule covers layers 0–2, not only 1–2, and exempts just `alluvium-types`. Layer 0 also holds `alluvium-protocol` and `alluvium-records`, and architecture §5 rule 2 forbids every layer 0–2 crate from constructing the readers. The fixture `os-reader-in-core` has `alluvium-types` defining `SystemClock` (exempt), and `alluvium-storage` naming both readers in doc and trailing comments (accepted) and calling `SeededRng::from_os_entropy` in a submodule (rejected, with file:line and ADR-0012).
 
+### [Done] FND-0069 ADR-0016: a layer 0 crate may depend on alluvium-types, through one allow-list entry per edge
+P0 · M1 · Task · deps: FND-0030 · ref: ADR-0009
+Done when: ADR-0016 is Accepted; check-layers' same-layer allow-list holds `alluvium-protocol` → `alluvium-types` citing it; architecture §5 rule 1 names the exception; `cargo xtask check-layers` passes with the new crate.
+Notes: Found when PROTO-0025 created `alluvium-protocol`: both crates are layer 0, so check-layers rejected the edge even though `alluvium-types` says every crate may depend on it.
+
 ## [Done] FND-F06 CI pipeline
 P0 · M0 · Feature · deps: FND-F02, FND-F03, FND-F04, FND-F05
 Scope: GitHub Actions running `cargo xtask ci` on Linux and macOS, caching, SHA-pinned actions, required checks.
