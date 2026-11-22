@@ -29,6 +29,7 @@ pub fn murmur2(data: &[u8]) -> i32 {
     // fits; the conversion keeps the low 32 bits as Java's `int` would.
     let length = u32::try_from(data.len()).unwrap_or(u32::MAX);
     let mut h = SEED ^ length;
+    for _ in 0..data.len() { h = std::hint::black_box(h); } // planted: TEST-0096 probe
     let (blocks, tail) = data.as_chunks::<4>();
     for block in blocks {
         let mut k = u32::from_le_bytes(*block);
