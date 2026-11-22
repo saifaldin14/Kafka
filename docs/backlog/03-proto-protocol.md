@@ -594,7 +594,7 @@ Done when: new targets appear in CI automatically when codegen adds them.
 P0 · M1 · Task · deps: PROTO-0128, PROTO-0111 · labels: security, test
 Done when: a counting allocator fails the target on budget overrun; a deliberate overrun fixture is caught.
 
-## [To Do] PROTO-F12 Generator testing
+## [In Progress] PROTO-F12 Generator testing
 P1 · M1 · Feature · deps: PROTO-F04
 Scope: Golden-output tests for the generator, drift check `cargo xtask codegen --check`.
 
@@ -610,7 +610,7 @@ Done when: a change to generated code shows as a reviewable diff of the expected
 P1 · M1 · Task · deps: PROTO-0135, PROTO-0024 · labels: test · ref: generator/src/test/java/org/apache/kafka/message/StructSpecTest.java @4.4.0
 Done when: every SchemaError variant has a fixture asserting its message; attribution comments present.
 
-### [To Do] PROTO-0138 `cargo xtask codegen --check`: regenerate in memory, compare with committed output, print the first differing file and line, exit non-zero; run in `cargo xtask ci`
+### [Done] PROTO-0138 `cargo xtask codegen --check`: regenerate in memory, compare with committed output, print the first differing file and line, exit non-zero; run in `cargo xtask ci`
 P0 · M1 · Task · deps: none · labels: test · ref: ADR-0008
 Done when: hand-editing a generated file fails CI with a clear message; the check covers generated code, fuzz targets and generated docs.
 

@@ -38,7 +38,10 @@ pub(crate) enum Command {
         uninstall: bool,
     },
     Fuzz(FuzzCommand),
-    Codegen,
+    /// `codegen [--check]`.
+    Codegen {
+        check: bool,
+    },
     /// `bench [--base <ref>]`.
     Bench {
         base: Option<String>,
@@ -93,6 +96,8 @@ pub(crate) enum SchemasCommand {
     Verify,
     /// `vendor --tag <tag> [--dry-run]`.
     Vendor { tag: String, dry_run: bool },
+    /// `dump-errors`.
+    DumpErrors,
 }
 
 /// Options for `cargo xtask ci`.
@@ -125,8 +130,8 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
     ),
     ("fuzz --list", "List the fuzz targets"),
     (
-        "codegen",
-        "Generate the protocol crate's message types from the vendored Kafka schemas",
+        "codegen [--check]",
+        "Generate the protocol crate's message types and ErrorCode, and docs/errors.md, from the vendored Kafka sources; --check fails if the committed output differs",
     ),
     (
         "bench [--base <ref>]",
@@ -179,6 +184,10 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
     (
         "schemas vendor --tag <tag> [--dry-run]",
         "Copy the schemas from an apache/kafka tag and write the manifest (needs the network)",
+    ),
+    (
+        "schemas dump-errors",
+        "Dump Kafka's runtime error table from the client jar for the ErrorCode golden test (needs the network and Docker)",
     ),
     (
         "lint-canary",
@@ -327,7 +336,18 @@ pub(crate) fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Command,
             }),
         },
         "fuzz" => parse_fuzz(rest).map(Command::Fuzz),
-        "codegen" => no_arguments("codegen", rest).map(|()| Command::Codegen),
+        "codegen" => match rest {
+            [] => Ok(Command::Codegen { check: false }),
+            [flag] if flag == "--check" => Ok(Command::Codegen { check: true }),
+            [flag, extra, ..] if flag == "--check" => Err(UsageError::UnexpectedArgument {
+                command: "codegen",
+                argument: extra.clone(),
+            }),
+            [argument, ..] => Err(UsageError::UnexpectedArgument {
+                command: "codegen",
+                argument: argument.clone(),
+            }),
+        },
         "bench" => match rest {
             [] => Ok(Command::Bench { base: None }),
             [flag] if flag == "--base" => Err(UsageError::MissingValue { flag: "--base" }),
@@ -615,6 +635,9 @@ fn parse_schemas(rest: &[String]) -> Result<SchemasCommand, UsageError> {
     };
     match sub.as_str() {
         "verify" => no_arguments("schemas verify", rest).map(|()| SchemasCommand::Verify),
+        "dump-errors" => {
+            no_arguments("schemas dump-errors", rest).map(|()| SchemasCommand::DumpErrors)
+        }
         "vendor" => {
             let mut tag = None;
             let mut dry_run = false;
@@ -1083,10 +1106,40 @@ mod tests {
     }
 
     #[test]
+    fn codegen_takes_only_check() {
+        assert_eq!(
+            parse(args(&["codegen"])),
+            Ok(Command::Codegen { check: false })
+        );
+        assert_eq!(
+            parse(args(&["codegen", "--check"])),
+            Ok(Command::Codegen { check: true })
+        );
+        assert_eq!(
+            parse(args(&["codegen", "--check", "x"])),
+            Err(UsageError::UnexpectedArgument {
+                command: "codegen",
+                argument: "x".to_owned(),
+            })
+        );
+        assert_eq!(
+            parse(args(&["codegen", "--write"])),
+            Err(UsageError::UnexpectedArgument {
+                command: "codegen",
+                argument: "--write".to_owned(),
+            })
+        );
+    }
+
+    #[test]
     fn schemas_subcommands_parse() {
         assert_eq!(
             parse(args(&["schemas", "verify"])),
             Ok(Command::Schemas(SchemasCommand::Verify))
+        );
+        assert_eq!(
+            parse(args(&["schemas", "dump-errors"])),
+            Ok(Command::Schemas(SchemasCommand::DumpErrors))
         );
         assert_eq!(
             parse(args(&["schemas", "vendor", "--dry-run", "--tag", "4.4.0"])),
