@@ -62,6 +62,7 @@ where relevant. Refs #123.
 - Reviewers check the definition of done and the anti-slop rules in the skill.
 - "Add a test that shows it" beats a long argument.
 - Approve only if you could debug this code yourself without the author's help.
+- `main` accepts changes only through a PR whose `ci-success` check passed on a branch that is up to date with `main`, merged by rebase or squash. The [repository settings](docs/guides/repository-settings.md) page lists every rule and how to check it.
 
 ## 5. Good first tasks
 
