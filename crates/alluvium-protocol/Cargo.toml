@@ -12,8 +12,18 @@ bytes = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
+criterion = { workspace = true }
+gungraun = { workspace = true }
 peak_alloc = { workspace = true }
 proptest = { workspace = true }
+
+[[bench]]
+name = "protocol"
+harness = false
+
+[[bench]]
+name = "protocol_instructions"
+harness = false
 
 [lints]
 workspace = true

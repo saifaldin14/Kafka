@@ -64,6 +64,7 @@ Benchmarks come in two kinds ([ADR-0019](../adr/0019-benchmark-regression-gating
 
 Conventions for both:
 
+- A gated benchmark function contains no loop: it calls one `#[inline(never)]` function that does the work. callgrind counts from each entry to the benchmark function, and takes a loop that jumps back to a function's first instruction for a recursive call. So a loop compiled into the benchmark function itself turns counting off and on, and most of the work goes uncounted.
 - Benchmark ids are `<area>/<operation>/<case>`, such as `types/murmur2/size_4096`. In criterion: one group per operation, with the input size as the parameter. In gungraun: the group is the area, the function the operation, and the `#[bench::…]` id the case. A group name is unique across the workspace.
 - Inputs are deterministic, drawn from `SeededRng::from_seed` with a fixed seed, so two runs measure the same work.
 - Every criterion group declares its throughput (`Throughput::Bytes` or `Throughput::Elements`), so results compare across sizes and machines.
