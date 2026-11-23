@@ -545,7 +545,7 @@ fn render_find(out: &mut String, item: &Struct<'_>) -> Result<(), String> {
 }
 
 /// A `Versions` constant expression.
-fn versions(value: Versions, runtime: &str) -> String {
+pub(super) fn versions(value: Versions, runtime: &str) -> String {
     if value.is_empty() {
         format!("{runtime}::Versions::NONE")
     } else {

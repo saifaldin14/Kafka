@@ -15,6 +15,7 @@ The generator is [`xtask/src/codegen.rs`](../../xtask/src/codegen.rs). It reads 
   - Files are formatted with the pinned `rustfmt` and written in sorted order.
   - A run writes only the files whose contents changed, and removes files it no longer generates.
 - **Error codes too.** `generated::error_code` holds `ErrorCode`, one variant per constant of Kafka's `Errors.java`, and [docs/errors.md](../errors.md) lists every code. `xtask/src/codegen/errors.rs` reads the Java source, and a golden test compares the result with the table Kafka's client jar reports at runtime (`cargo xtask golden errors`).
+- **API keys too.** `generated::api_key` holds `ApiKey`, one variant per API ([API keys](#api-keys)).
 - **Golden output for Kafka's test schemas.** The six schemas Kafka's own generator tests use (`schemas/kafka-4.4.0/clients-test/`) generate into `crates/alluvium-protocol/src/test_messages/`, compiled only for tests. Together they use every schema feature: each field type, nullable and tagged fields with defaults, nullable structs, keyed arrays and records. A generator change shows as a reviewable diff of these files, and the tests of the generated code use them.
 - **Compact formatting.** Generated modules are formatted by rustfmt with every width heuristic at the full line width, so a field's read fits on one line. `cargo fmt` skips them (`#[rustfmt::skip]` where they are declared), and `codegen --check` keeps them exact.
 - **Checked in CI.** `cargo xtask codegen --check` fails, naming the file and line, when committed output differs from what the generator writes.
@@ -104,6 +105,26 @@ Each message struct has:
 | `LATEST_VERSION_UNSTABLE: bool` | Requests only: whether the highest version is served only when unstable versions are enabled |
 
 `Versions` is an inclusive range of versions, which may be empty (`Versions::NONE`).
+
+## API keys
+
+`ApiKey` has one variant per API, in API key order, named as Kafka names it (`Produce`, `ApiVersions`). It mirrors Kafka's generated `ApiMessageType` and its `ApiKeys` enum.
+
+- **What each API knows.** From the request schema, as in Kafka:
+  - its versions, flexible versions and deprecated versions;
+  - its listeners;
+  - whether its latest version is unstable.
+- **Removed APIs are included.** The four whose schemas have no valid versions keep their variants, with no versions, so their keys stay reserved.
+- **Generation checks.** Generation fails when:
+  - two requests, or two responses, have one key;
+  - an API lacks a request or a response;
+  - its request and response disagree on valid or flexible versions. One flexible range per API then serves both headers.
+- **Flags from Kafka's jar.** `is_cluster_action` and `is_forwardable` aren't schema properties: Kafka passes them to `ApiKeys`' constructors. Generation reads them from the registry `cargo xtask golden api-keys` recorded from Kafka's jar, in `tests/golden/protocol/registry/api_keys.json`. It fails unless that file lists exactly the schemas' API keys under the same names.
+- **Hand-written rules on top.** [`api_key.rs`](../../crates/alluvium-protocol/src/api_key.rs) adds the rules Kafka's `ApiKeys` applies beyond the table:
+  - `from_id`;
+  - `latest_version(enable_unstable)` and `is_version_enabled`, where every `ApiVersions` version is enabled (KIP-511);
+  - `is_version_deprecated`;
+  - `served_on(listener)`.
 
 ## Decoding
 

@@ -406,11 +406,11 @@ Done when: computed size equals bytes produced for every golden response; zero-c
 P0 · M1 · Task · deps: PROTO-0087, PROTO-0090, PROTO-0091 · labels: test · ref: clients/src/test/java/org/apache/kafka/common/requests/RequestHeaderTest.java @4.4.0
 Done when: tests cover all 4.4.0 API keys at min, max and max+1 versions.
 
-## [To Do] PROTO-F07 API key registry
+## [In Progress] PROTO-F07 API key registry
 P0 · M1 · Feature · deps: PROTO-F04
 Scope: Generated `ApiKey` table with version ranges, listener scoping (broker/controller), unstable-version gating.
 
-### [To Do] PROTO-0093 Generate the `ApiKey` enum from request schemas: id, name, valid version range and flexible versions
+### [Done] PROTO-0093 Generate the `ApiKey` enum from request schemas: id, name, valid version range and flexible versions
 P0 · M1 · Task · deps: none · ref: generator/src/main/java/org/apache/kafka/message/ApiMessageTypeGenerator.java registerMessageType @4.4.0
 Done when: `ApiKey::from_id` returns None for unknown ids; two requests or two responses with one API key are codegen errors (as in ApiMessageTypeGenerator); request and response valid versions must match (codegen check).
 
@@ -418,13 +418,13 @@ Done when: `ApiKey::from_id` returns None for unknown ids; two requests or two r
 P0 · M1 · Task · deps: PROTO-0093 · ref: clients/src/main/java/org/apache/kafka/common/protocol/ApiKeys.java apisForListener; generator/src/main/java/org/apache/kafka/message/RequestListenerType.java @4.4.0
 Done when: sets match Kafka's `ApiKeys.apisForListener` for BROKER and CONTROLLER (checked against the PROTO-F10 export).
 
-### [To Do] PROTO-0095 Unstable-version gating: `latest_version(enable_unstable)` and `is_version_enabled`
+### [Done] PROTO-0095 Unstable-version gating: `latest_version(enable_unstable)` and `is_version_enabled`
 P0 · M1 · Task · deps: PROTO-0093 · ref: clients/src/main/java/org/apache/kafka/common/protocol/ApiKeys.java latestVersion(boolean)/isVersionEnabled @4.4.0
 Done when: with unstable disabled InitProducerId's latest version is excluded; the flag is a plain bool fed from `unstable.api.versions.enable` (key defined by CFG); unit tests both ways.
 
-### [To Do] PROTO-0096 API flags overlay `xtask/codegen/api_flags.toml` with clusterAction and forwardable per API key
-P0 · M1 · Task · deps: PROTO-0093 · ref: clients/src/main/java/org/apache/kafka/common/protocol/ApiKeys.java clusterAction/forwardable @4.4.0
-Done when: the overlay must list every API key exactly once (codegen error otherwise); values equal Kafka's ApiKeys enum (checked against the PROTO-F10 export).
+### [Done] PROTO-0096 API flags clusterAction and forwardable per API key, read by codegen from Kafka's recorded ApiKeys (PROTO-0125) rather than a hand-kept overlay, so each value has one source
+P0 · M1 · Task · deps: PROTO-0093, PROTO-0125 · ref: clients/src/main/java/org/apache/kafka/common/protocol/ApiKeys.java clusterAction/forwardable @4.4.0
+Done when: codegen fails unless the recording lists exactly the schemas' API keys under the same names; the generated values are Kafka's ApiKeys enum's.
 
 ### [To Do] PROTO-0097 Deprecated version lookup `is_version_deprecated` for the deprecated-request metric
 P0 · M1 · Task · deps: PROTO-0093, PROTO-0022 · ref: clients/src/main/java/org/apache/kafka/common/protocol/ApiKeys.java isVersionDeprecated @4.4.0

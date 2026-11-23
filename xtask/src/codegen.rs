@@ -24,6 +24,7 @@
 //! changed without `schemas vendor` fails here as well as in `schemas verify`. How each
 //! schema feature maps to Rust is in docs/protocol/codegen.md.
 
+mod api_keys;
 mod decode;
 mod docs;
 mod encode;
@@ -54,6 +55,9 @@ pub(crate) struct Filter {
     pub(crate) runtime: String,
     /// Whether to generate `ErrorCode` too, and from where.
     pub(crate) error_codes: Option<ErrorCodes>,
+    /// Whether to generate `ApiKey` too: the registry recorded from Kafka's `ApiKeys`,
+    /// which holds the flags the schemas don't state.
+    pub(crate) api_keys: Option<PathBuf>,
     /// The directory of the overlay files (`overlays`) applied to the messages, if any.
     pub(crate) overlays: Option<PathBuf>,
     /// The doc comment of the output directory's `mod.rs`: what the directory holds.
@@ -91,9 +95,11 @@ fn protocol() -> (Vec<PathBuf>, PathBuf, Filter) {
                 source: root.join(VENDORED).join("errors"),
                 page: root.join("docs/errors.md"),
             }),
+            api_keys: Some(root.join(crate::golden::API_KEYS_GOLDEN).join("api_keys.json")),
             overlays: Some(root.join("xtask/codegen")),
-            doc: "Types generated from Kafka's sources: one module per message schema, and \
-                  `error_code` from `Errors.java` \
+            doc: "Types generated from Kafka's sources: one module per message schema, \
+                  `api_key` from the request and response schemas, and `error_code` from \
+                  `Errors.java` \
                   ([ADR-0008](../../../../docs/adr/0008-protocol-code-generated-from-kafka-schemas.md))."
                 .to_owned(),
         },
@@ -111,6 +117,7 @@ fn test_messages() -> (Vec<PathBuf>, PathBuf, Filter) {
             kinds: vec![MessageKind::Header],
             runtime: "crate".to_owned(),
             error_codes: None,
+            api_keys: None,
             overlays: None,
             doc: "Message types generated from the schemas Kafka's own generator tests use \
                   (`schemas/kafka-4.4.0/clients-test/`). They exercise every schema feature in \
@@ -129,6 +136,8 @@ pub(crate) struct Report {
     pub(crate) deepest: Option<(String, usize)>,
     /// The error codes in the generated `ErrorCode`.
     pub(crate) error_codes: usize,
+    /// The APIs in the generated `ApiKey`.
+    pub(crate) api_keys: usize,
 }
 
 /// The most problems `--check` prints before summarizing the rest.
@@ -193,6 +202,11 @@ fn summary(report: &Report, out_dir: &Path, check_only: bool) -> String {
     } else {
         format!(" and {} error codes", report.error_codes)
     };
+    let api_keys = if report.api_keys == 0 {
+        String::new()
+    } else {
+        format!(", {} API keys", report.api_keys)
+    };
     let deepest = report
         .deepest
         .as_ref()
@@ -203,7 +217,7 @@ fn summary(report: &Report, out_dir: &Path, check_only: bool) -> String {
             )
         });
     format!(
-        "codegen: {verb}: {} message modules{error_codes} in {}{deepest}",
+        "codegen: {verb}: {} message modules{api_keys}{error_codes} in {}{deepest}",
         report.modules,
         shown_path(out_dir)
     )
@@ -321,13 +335,19 @@ fn render(inputs: &[PathBuf], filter: &Filter) -> Result<Rendered, String> {
         modules: 0,
         deepest: None,
         error_codes: 0,
+        api_keys: 0,
     };
     let mut messages = Vec::new();
+    // Every request and response, versions or not: the registry keeps removed APIs.
+    let mut apis = Vec::new();
     for path in schema_files(inputs)? {
         let shown = shown_path(&path);
         let text = std::fs::read_to_string(&path)
             .map_err(|error| format!("could not read {shown}: {error}"))?;
         let message = message_spec::load(&shown, &text).map_err(|error| error.to_string())?;
+        if matches!(message.kind, MessageKind::Request | MessageKind::Response) {
+            apis.push(message.clone());
+        }
         // Parity: generator/src/main/java/org/apache/kafka/message/MessageGenerator.java@4.4.0 MessageGenerator.generateAndWriteMessageClasses
         // Kafka generates nothing for a message without valid versions.
         if filter.kinds.contains(&message.kind) && !message.valid_versions.is_empty() {
@@ -335,16 +355,7 @@ fn render(inputs: &[PathBuf], filter: &Filter) -> Result<Rendered, String> {
         }
     }
     let overlays = match &filter.overlays {
-        Some(dir) => {
-            let overlays = overlays::Overlays::load(dir)
-                .map_err(|problem| format!("{}/{problem}", shown_path(dir)))?;
-            let specs: Vec<_> = messages
-                .iter()
-                .map(|(_, _, message)| message.clone())
-                .collect();
-            overlays.check(&specs)?;
-            overlays
-        }
+        Some(dir) => load_overlays(dir, &messages)?,
         None => overlays::Overlays::default(),
     };
     // Each message's path from the output directory's root module, for the test that
@@ -388,23 +399,25 @@ fn render(inputs: &[PathBuf], filter: &Filter) -> Result<Rendered, String> {
         report.modules += 1;
     }
     if let Some(error_codes) = &filter.error_codes {
-        let entries = errors::extract(&error_codes.source)
-            .map_err(|problem| format!("{}: {problem}", shown_path(&error_codes.source)))?;
-        let source = shown_path(&error_codes.source.join("Errors.java"));
-        let file = PathBuf::from("error_code.rs");
-        let module = format!(
-            "{}\n{}",
-            header(&format!(
-                "from {source}{}",
-                kafka_version(&error_codes.source)
-            )),
-            errors::module(&entries)
-        );
-        if modules.insert(file, module).is_some() {
+        let (module, page, count) = error_code_module(error_codes)?;
+        if modules
+            .insert(PathBuf::from("error_code.rs"), module)
+            .is_some()
+        {
             return Err("a schema generates error_code.rs".to_owned());
         }
-        pages.insert(error_codes.page.clone(), errors::page(&entries, &source));
-        report.error_codes = entries.len();
+        pages.insert(error_codes.page.clone(), page);
+        report.error_codes = count;
+    }
+    if let Some(recorded) = &filter.api_keys {
+        let (module, count) = api_key_module(inputs, recorded, &apis, &filter.runtime)?;
+        if modules
+            .insert(PathBuf::from("api_key.rs"), module)
+            .is_some()
+        {
+            return Err("a schema generates api_key.rs".to_owned());
+        }
+        report.api_keys = count;
     }
     let mut files = mod_files(&modules, &filter.doc, &decodable);
     files.extend(modules);
@@ -417,6 +430,61 @@ fn render(inputs: &[PathBuf], filter: &Filter) -> Result<Rendered, String> {
         pages,
         report,
     })
+}
+
+/// The overlays in `dir`, checked against the `messages` generated.
+fn load_overlays(
+    dir: &Path,
+    messages: &[(PathBuf, String, message_spec::MessageSpec)],
+) -> Result<overlays::Overlays, String> {
+    let overlays = overlays::Overlays::load(dir)
+        .map_err(|problem| format!("{}/{problem}", shown_path(dir)))?;
+    let specs: Vec<_> = messages
+        .iter()
+        .map(|(_, _, message)| message.clone())
+        .collect();
+    overlays.check(&specs)?;
+    Ok(overlays)
+}
+
+/// The `error_code` module and the page listing every code, from `Errors.java`, and the
+/// number of codes.
+fn error_code_module(error_codes: &ErrorCodes) -> Result<(String, String, usize), String> {
+    let entries = errors::extract(&error_codes.source)
+        .map_err(|problem| format!("{}: {problem}", shown_path(&error_codes.source)))?;
+    let source = shown_path(&error_codes.source.join("Errors.java"));
+    let module = format!(
+        "{}\n{}",
+        header(&format!(
+            "from {source}{}",
+            kafka_version(&error_codes.source)
+        )),
+        errors::module(&entries)
+    );
+    Ok((module, errors::page(&entries, &source), entries.len()))
+}
+
+/// The `api_key` module from the requests and responses in `messages` and the registry
+/// `recorded` from Kafka, and the number of APIs in it.
+fn api_key_module(
+    inputs: &[PathBuf],
+    recorded: &Path,
+    messages: &[message_spec::MessageSpec],
+    runtime: &str,
+) -> Result<(String, usize), String> {
+    let flags = api_keys::flags(recorded)?;
+    let apis = api_keys::collect(messages, &flags)?;
+    let sources: Vec<String> = inputs.iter().map(|input| shown_path(input)).collect();
+    let module = format!(
+        "{}\n{}",
+        header(&format!(
+            "from the request and response schemas in {} and {}",
+            sources.join(", "),
+            shown_path(recorded)
+        )),
+        api_keys::module(&apis, runtime)
+    );
+    Ok((module, apis.len()))
 }
 
 /// The `.json` schema files in `inputs`, sorted, so the output doesn't depend on the
@@ -713,6 +781,7 @@ mod tests {
             kinds: vec![MessageKind::Metadata],
             runtime: "alluvium_protocol".to_owned(),
             error_codes: None,
+            api_keys: None,
             overlays: None,
             doc: "Test records.".to_owned(),
         };
@@ -782,6 +851,7 @@ mod tests {
             kinds: vec![MessageKind::Request, MessageKind::Response],
             runtime: "crate".to_owned(),
             error_codes: None,
+            api_keys: None,
             overlays: None,
             doc: "Test messages.".to_owned(),
         };

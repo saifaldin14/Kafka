@@ -154,7 +154,7 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
     ("fuzz --list", "List the fuzz targets"),
     (
         "codegen [--check]",
-        "Generate the protocol crate's message types and ErrorCode, and docs/errors.md, from the vendored Kafka sources; --check fails if the committed output differs",
+        "Generate the protocol crate's message types, ApiKey and ErrorCode, and docs/errors.md, from the vendored Kafka sources; --check fails if the committed output differs",
     ),
     (
         "bench [--base <ref>]",
