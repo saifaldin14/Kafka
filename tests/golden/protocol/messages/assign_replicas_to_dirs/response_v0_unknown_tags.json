@@ -1,0 +1,47 @@
+{
+  "throttleTimeMs" : -2013846338,
+  "errorCode" : -9882,
+  "directories" : [ {
+    "id" : "-UCTRmuQG58Y1fyoxd8gdA",
+    "topics" : [ {
+      "topicId" : "smnHxs0e24xImiXOi29KXQ",
+      "partitions" : [ {
+        "partitionIndex" : 268362319,
+        "errorCode" : 8744
+      }, {
+        "partitionIndex" : 1160180544,
+        "errorCode" : -11795
+      } ]
+    }, {
+      "topicId" : "rpUdt1QpXMnQvmiEAkjhng",
+      "partitions" : [ {
+        "partitionIndex" : 1093516228,
+        "errorCode" : 25273
+      }, {
+        "partitionIndex" : 891377587,
+        "errorCode" : 3172
+      } ]
+    } ]
+  }, {
+    "id" : "DzJnkLMMFQzeuyngPYf-3Q",
+    "topics" : [ {
+      "topicId" : "TcsCR9TTPV0DMl4OovF9Gg",
+      "partitions" : [ {
+        "partitionIndex" : 1840544912,
+        "errorCode" : -16483
+      }, {
+        "partitionIndex" : 1478333279,
+        "errorCode" : -8360
+      } ]
+    }, {
+      "topicId" : "usxVDSN6eBDjrLhTSRo-qQ",
+      "partitions" : [ {
+        "partitionIndex" : 835748235,
+        "errorCode" : -25924
+      }, {
+        "partitionIndex" : 673300700,
+        "errorCode" : 17713
+      } ]
+    } ]
+  } ]
+}

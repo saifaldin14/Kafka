@@ -1,0 +1,79 @@
+{
+  "throttleTimeMs" : 1035099611,
+  "errorCode" : -10627,
+  "errorMessage" : "StreamsGroupHeartbeatResponse.ErrorMessage",
+  "memberId" : "StreamsGroupHeartbeatResponse.MemberId",
+  "memberEpoch" : -1528286163,
+  "heartbeatIntervalMs" : 1903097623,
+  "taskOffsetIntervalMs" : -441005699,
+  "acceptableRecoveryLag" : 5345131861742631235,
+  "status" : [ {
+    "statusCode" : -21,
+    "statusDetail" : "StreamsGroupHeartbeatResponse.Status[0].StatusDetail"
+  }, {
+    "statusCode" : 28,
+    "statusDetail" : "StreamsGroupHeartbeatResponse.Status[1].StatusDetail"
+  } ],
+  "activeTasks" : [ {
+    "subtopologyId" : "StreamsGroupHeartbeatResponse.ActiveTasks[0].SubtopologyId",
+    "partitions" : [ 832864001, 832979276 ]
+  }, {
+    "subtopologyId" : "StreamsGroupHeartbeatResponse.ActiveTasks[1].SubtopologyId",
+    "partitions" : [ -1484891848, -1485062803 ]
+  } ],
+  "standbyTasks" : [ {
+    "subtopologyId" : "StreamsGroupHeartbeatResponse.StandbyTasks[0].SubtopologyId",
+    "partitions" : [ -322685106, -322943061 ]
+  }, {
+    "subtopologyId" : "StreamsGroupHeartbeatResponse.StandbyTasks[1].SubtopologyId",
+    "partitions" : [ -331122153, -330864198 ]
+  } ],
+  "warmupTasks" : [ {
+    "subtopologyId" : "StreamsGroupHeartbeatResponse.WarmupTasks[0].SubtopologyId",
+    "partitions" : [ -132062073, -131887638 ]
+  }, {
+    "subtopologyId" : "StreamsGroupHeartbeatResponse.WarmupTasks[1].SubtopologyId",
+    "partitions" : [ 1646620670, 1646501915 ]
+  } ],
+  "topologyDescriptionRequired" : false,
+  "endpointInformationEpoch" : -291306964,
+  "partitionsByUserEndpoint" : [ {
+    "userEndpoint" : {
+      "host" : "StreamsGroupHeartbeatResponse.PartitionsByUserEndpoint[0].UserEndpoint.Host",
+      "port" : 8085
+    },
+    "activePartitions" : [ {
+      "topic" : "StreamsGroupHeartbeatResponse.PartitionsByUserEndpoint[0].ActivePartitions[0].Topic",
+      "partitions" : [ -1860339694, -1860514129 ]
+    }, {
+      "topic" : "StreamsGroupHeartbeatResponse.PartitionsByUserEndpoint[0].ActivePartitions[1].Topic",
+      "partitions" : [ 1476226395, 1476456510 ]
+    } ],
+    "standbyPartitions" : [ {
+      "topic" : "StreamsGroupHeartbeatResponse.PartitionsByUserEndpoint[0].StandbyPartitions[0].Topic",
+      "partitions" : [ 102611171, 102785606 ]
+    }, {
+      "topic" : "StreamsGroupHeartbeatResponse.PartitionsByUserEndpoint[0].StandbyPartitions[1].Topic",
+      "partitions" : [ -1603050246, -1603196841 ]
+    } ]
+  }, {
+    "userEndpoint" : {
+      "host" : "StreamsGroupHeartbeatResponse.PartitionsByUserEndpoint[1].UserEndpoint.Host",
+      "port" : 52364
+    },
+    "activePartitions" : [ {
+      "topic" : "StreamsGroupHeartbeatResponse.PartitionsByUserEndpoint[1].ActivePartitions[0].Topic",
+      "partitions" : [ -148681913, -148507478 ]
+    }, {
+      "topic" : "StreamsGroupHeartbeatResponse.PartitionsByUserEndpoint[1].ActivePartitions[1].Topic",
+      "partitions" : [ -649488706, -649718821 ]
+    } ],
+    "standbyPartitions" : [ {
+      "topic" : "StreamsGroupHeartbeatResponse.PartitionsByUserEndpoint[1].StandbyPartitions[0].Topic",
+      "partitions" : [ -1443206280, -1443377235 ]
+    }, {
+      "topic" : "StreamsGroupHeartbeatResponse.PartitionsByUserEndpoint[1].StandbyPartitions[1].Topic",
+      "partitions" : [ -1007618495, -1007391860 ]
+    } ]
+  } ]
+}

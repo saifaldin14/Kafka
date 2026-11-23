@@ -1,0 +1,10 @@
+{
+  "groupId" : "",
+  "sessionTimeoutMs" : 0,
+  "rebalanceTimeoutMs" : -1,
+  "memberId" : "",
+  "groupInstanceId" : null,
+  "protocolType" : "",
+  "protocols" : [ ],
+  "reason" : null
+}

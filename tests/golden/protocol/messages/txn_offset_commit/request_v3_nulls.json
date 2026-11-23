@@ -1,0 +1,36 @@
+{
+  "transactionalId" : "TxnOffsetCommitRequest.TransactionalId",
+  "groupId" : "TxnOffsetCommitRequest.GroupId",
+  "producerId" : -7794383243883903903,
+  "producerEpoch" : -6983,
+  "generationIdOrMemberEpoch" : 1651425379,
+  "memberId" : "TxnOffsetCommitRequest.MemberId",
+  "groupInstanceId" : null,
+  "topics" : [ {
+    "name" : "TxnOffsetCommitRequest.Topics[0].Name",
+    "partitions" : [ {
+      "partitionIndex" : -95437593,
+      "committedOffset" : 963340345069064990,
+      "committedLeaderEpoch" : 1410832741,
+      "committedMetadata" : null
+    }, {
+      "partitionIndex" : 1242556728,
+      "committedOffset" : -5031232011610704201,
+      "committedLeaderEpoch" : -1981540290,
+      "committedMetadata" : null
+    } ]
+  }, {
+    "name" : "TxnOffsetCommitRequest.Topics[1].Name",
+    "partitions" : [ {
+      "partitionIndex" : -874698820,
+      "committedOffset" : -5469314144229596389,
+      "committedLeaderEpoch" : -1134112750,
+      "committedMetadata" : null
+    }, {
+      "partitionIndex" : -25113621,
+      "committedOffset" : 6148660707229641474,
+      "committedLeaderEpoch" : 1327210793,
+      "committedMetadata" : null
+    } ]
+  } ]
+}

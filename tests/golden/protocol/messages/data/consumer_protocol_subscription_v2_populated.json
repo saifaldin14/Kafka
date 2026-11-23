@@ -1,0 +1,12 @@
+{
+  "topics" : [ "ConsumerProtocolSubscription.Topics[0]", "ConsumerProtocolSubscription.Topics[1]" ],
+  "userData" : "Q29uc3VtZXJQcm90b2NvbFN1YnNjcmlwdGlvbi5Vc2VyRGF0YQ==",
+  "ownedPartitions" : [ {
+    "topic" : "ConsumerProtocolSubscription.OwnedPartitions[0].Topic",
+    "partitions" : [ 469310531, 469540646 ]
+  }, {
+    "topic" : "ConsumerProtocolSubscription.OwnedPartitions[1].Topic",
+    "partitions" : [ -1983295398, -1983441993 ]
+  } ],
+  "generationId" : 370120393
+}

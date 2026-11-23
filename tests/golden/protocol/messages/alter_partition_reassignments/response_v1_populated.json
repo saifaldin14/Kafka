@@ -1,0 +1,29 @@
+{
+  "throttleTimeMs" : -1638471542,
+  "allowReplicationFactorChange" : true,
+  "errorCode" : 24066,
+  "errorMessage" : "AlterPartitionReassignmentsResponse.ErrorMessage",
+  "responses" : [ {
+    "name" : "AlterPartitionReassignmentsResponse.Responses[0].Name",
+    "partitions" : [ {
+      "partitionIndex" : 1156148880,
+      "errorCode" : -23139,
+      "errorMessage" : "AlterPartitionReassignmentsResponse.Responses[0].Partitions[0].ErrorMessage"
+    }, {
+      "partitionIndex" : 793937247,
+      "errorCode" : -15016,
+      "errorMessage" : "AlterPartitionReassignmentsResponse.Responses[0].Partitions[1].ErrorMessage"
+    } ]
+  }, {
+    "name" : "AlterPartitionReassignmentsResponse.Responses[1].Name",
+    "partitions" : [ {
+      "partitionIndex" : 151352203,
+      "errorCode" : -32580,
+      "errorMessage" : "AlterPartitionReassignmentsResponse.Responses[1].Partitions[0].ErrorMessage"
+    }, {
+      "partitionIndex" : -11095332,
+      "errorCode" : 11057,
+      "errorMessage" : "AlterPartitionReassignmentsResponse.Responses[1].Partitions[1].ErrorMessage"
+    } ]
+  } ]
+}

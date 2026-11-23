@@ -1,0 +1,24 @@
+{
+  "throttleTimeMs" : 1046425473,
+  "entries" : [ {
+    "errorCode" : 7863,
+    "errorMessage" : "AlterClientQuotasResponse.Entries[0].ErrorMessage",
+    "entity" : [ {
+      "entityType" : "AlterClientQuotasResponse.Entries[0].Entity[0].EntityType",
+      "entityName" : "AlterClientQuotasResponse.Entries[0].Entity[0].EntityName"
+    }, {
+      "entityType" : "AlterClientQuotasResponse.Entries[0].Entity[1].EntityType",
+      "entityName" : "AlterClientQuotasResponse.Entries[0].Entity[1].EntityName"
+    } ]
+  }, {
+    "errorCode" : 14122,
+    "errorMessage" : "AlterClientQuotasResponse.Entries[1].ErrorMessage",
+    "entity" : [ {
+      "entityType" : "AlterClientQuotasResponse.Entries[1].Entity[0].EntityType",
+      "entityName" : "AlterClientQuotasResponse.Entries[1].Entity[0].EntityName"
+    }, {
+      "entityType" : "AlterClientQuotasResponse.Entries[1].Entity[1].EntityType",
+      "entityName" : "AlterClientQuotasResponse.Entries[1].Entity[1].EntityName"
+    } ]
+  } ]
+}

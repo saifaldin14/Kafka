@@ -1,0 +1,10 @@
+{
+  "brokerId" : 0,
+  "clusterId" : "",
+  "incarnationId" : "AAAAAAAAAAAAAAAAAAAAAA",
+  "listeners" : [ ],
+  "features" : [ ],
+  "rack" : "",
+  "isMigratingZkBroker" : false,
+  "logDirs" : [ ]
+}

@@ -1,0 +1,131 @@
+{
+  "throttleTimeMs" : -1248041993,
+  "errorCode" : -16743,
+  "sessionId" : 845834531,
+  "responses" : [ {
+    "topicId" : "trN2mta94uQw1VAa5KhYJQ",
+    "partitions" : [ {
+      "partitionIndex" : -1240619417,
+      "errorCode" : 17920,
+      "highWatermark" : 8751234655543770129,
+      "lastStableOffset" : -5145190486196979843,
+      "logStartOffset" : -7172875047322719848,
+      "divergingEpoch" : {
+        "epoch" : 1797328594,
+        "endOffset" : -658532288709113591
+      },
+      "currentLeader" : {
+        "leaderId" : 1062127083,
+        "leaderEpoch" : 2132882687
+      },
+      "snapshotId" : {
+        "endOffset" : -4864374964354754084,
+        "epoch" : -1959276117
+      },
+      "abortedTransactions" : [ {
+        "producerId" : -6673164397400184394,
+        "firstOffset" : 1375313991955674146
+      }, {
+        "producerId" : -8643838009746418935,
+        "firstOffset" : 715327258800896987
+      } ],
+      "preferredReadReplica" : 885994822,
+      "records" : ""
+    }, {
+      "partitionIndex" : 97374904,
+      "errorCode" : -11867,
+      "highWatermark" : 7982101444118884260,
+      "lastStableOffset" : -5823535902373927822,
+      "logStartOffset" : -6385050874926790013,
+      "divergingEpoch" : {
+        "epoch" : -2007224583,
+        "endOffset" : 5664071980797437918
+      },
+      "currentLeader" : {
+        "leaderId" : -68866776,
+        "leaderEpoch" : 369741326
+      },
+      "snapshotId" : {
+        "endOffset" : 1660798559327883483,
+        "epoch" : 171901432
+      },
+      "abortedTransactions" : [ {
+        "producerId" : -3006898378182301401,
+        "firstOffset" : -8951913077986110807
+      }, {
+        "producerId" : 4981301716416298636,
+        "firstOffset" : -4350997744128604024
+      } ],
+      "preferredReadReplica" : 520776041,
+      "records" : ""
+    } ]
+  }, {
+    "topicId" : "nYqT-36raCFd4XZYPUG7Zg",
+    "partitions" : [ {
+      "partitionIndex" : -2019880644,
+      "errorCode" : -18287,
+      "highWatermark" : 6051713773555471664,
+      "lastStableOffset" : 6782364349823856366,
+      "logStartOffset" : 946559593197740175,
+      "divergingEpoch" : {
+        "epoch" : -93798131,
+        "endOffset" : -285236340914848142
+      },
+      "currentLeader" : {
+        "leaderId" : -579876428,
+        "leaderEpoch" : -370750262
+      },
+      "snapshotId" : {
+        "endOffset" : 8438991395838857167,
+        "epoch" : -43364804
+      },
+      "abortedTransactions" : [ {
+        "producerId" : -8110636577243606933,
+        "firstOffset" : -367997885791373275
+      }, {
+        "producerId" : 6797373851602492304,
+        "firstOffset" : 1216107419742119812
+      } ],
+      "preferredReadReplica" : 1931634125,
+      "records" : ""
+    }, {
+      "partitionIndex" : -1170295445,
+      "errorCode" : -18148,
+      "highWatermark" : -2969841583369869347,
+      "lastStableOffset" : 3801487926543804649,
+      "logStartOffset" : -8042263956758441564,
+      "divergingEpoch" : {
+        "epoch" : 1442850358,
+        "endOffset" : 2024163320489870221
+      },
+      "currentLeader" : {
+        "leaderId" : 2030634903,
+        "leaderEpoch" : 487705387
+      },
+      "snapshotId" : {
+        "endOffset" : -2500269147351932176,
+        "epoch" : -193531793
+      },
+      "abortedTransactions" : [ {
+        "producerId" : 6330467621312111546,
+        "firstOffset" : -4071243862671959858
+      }, {
+        "producerId" : -6359522306604624707,
+        "firstOffset" : 9048492959256844071
+      } ],
+      "preferredReadReplica" : 2059486874,
+      "records" : ""
+    } ]
+  } ],
+  "nodeEndpoints" : [ {
+    "nodeId" : 1020014973,
+    "host" : "FetchResponse.NodeEndpoints[0].Host",
+    "port" : -1047716817,
+    "rack" : "FetchResponse.NodeEndpoints[0].Rack"
+  }, {
+    "nodeId" : 1149789822,
+    "host" : "FetchResponse.NodeEndpoints[1].Host",
+    "port" : -1895789796,
+    "rack" : "FetchResponse.NodeEndpoints[1].Rack"
+  } ]
+}

@@ -1,0 +1,22 @@
+{
+  "deletions" : [ {
+    "name" : "AlterUserScramCredentialsRequest.Deletions[0].Name",
+    "mechanism" : -123
+  }, {
+    "name" : "AlterUserScramCredentialsRequest.Deletions[1].Name",
+    "mechanism" : 24
+  } ],
+  "upsertions" : [ {
+    "name" : "AlterUserScramCredentialsRequest.Upsertions[0].Name",
+    "mechanism" : -114,
+    "iterations" : -1181171067,
+    "salt" : "QWx0ZXJVc2VyU2NyYW1DcmVkZW50aWFsc1JlcXVlc3QuVXBzZXJ0aW9uc1swXS5TYWx0",
+    "saltedPassword" : "QWx0ZXJVc2VyU2NyYW1DcmVkZW50aWFsc1JlcXVlc3QuVXBzZXJ0aW9uc1swXS5TYWx0ZWRQYXNzd29yZA=="
+  }, {
+    "name" : "AlterUserScramCredentialsRequest.Upsertions[1].Name",
+    "mechanism" : 91,
+    "iterations" : -1748326766,
+    "salt" : "QWx0ZXJVc2VyU2NyYW1DcmVkZW50aWFsc1JlcXVlc3QuVXBzZXJ0aW9uc1sxXS5TYWx0",
+    "saltedPassword" : "QWx0ZXJVc2VyU2NyYW1DcmVkZW50aWFsc1JlcXVlc3QuVXBzZXJ0aW9uc1sxXS5TYWx0ZWRQYXNzd29yZA=="
+  } ]
+}

@@ -1,0 +1,7 @@
+{
+  "topics" : [ {
+    "name" : "MetadataRequest.Topics[0].Name"
+  }, {
+    "name" : "MetadataRequest.Topics[1].Name"
+  } ]
+}

@@ -1,0 +1,22 @@
+{
+  "timeoutMs" : 989159260,
+  "topics" : [ {
+    "name" : "AlterPartitionReassignmentsRequest.Topics[0].Name",
+    "partitions" : [ {
+      "partitionIndex" : 1958793020,
+      "replicas" : [ 135224751, 135399186 ]
+    }, {
+      "partitionIndex" : -1486589077,
+      "replicas" : [ -1230071206, -1230217801 ]
+    } ]
+  }, {
+    "name" : "AlterPartitionReassignmentsRequest.Topics[1].Name",
+    "partitions" : [ {
+      "partitionIndex" : -1556913049,
+      "replicas" : [ -104628098, -104746853 ]
+    }, {
+      "partitionIndex" : -218918728,
+      "replicas" : [ -604251661, -604105066 ]
+    } ]
+  } ]
+}

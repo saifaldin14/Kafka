@@ -1,0 +1,14 @@
+{
+  "version" : -20983,
+  "leaderId" : 783211103,
+  "voters" : [ {
+    "voterId" : 516381655
+  }, {
+    "voterId" : 1078532266
+  } ],
+  "grantingVoters" : [ {
+    "voterId" : 1424398017
+  }, {
+    "voterId" : 639954932
+  } ]
+}

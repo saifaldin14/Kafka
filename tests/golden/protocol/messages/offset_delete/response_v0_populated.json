@@ -1,0 +1,23 @@
+{
+  "errorCode" : -1829,
+  "throttleTimeMs" : 1494597105,
+  "topics" : [ {
+    "name" : "OffsetDeleteResponse.Topics[0].Name",
+    "partitions" : [ {
+      "partitionIndex" : 1396628129,
+      "errorCode" : 17566
+    }, {
+      "partitionIndex" : -1175975254,
+      "errorCode" : 28411
+    } ]
+  }, {
+    "name" : "OffsetDeleteResponse.Topics[1].Name",
+    "partitions" : [ {
+      "partitionIndex" : 1476536454,
+      "errorCode" : -15329
+    }, {
+      "partitionIndex" : 75157517,
+      "errorCode" : -2062
+    } ]
+  } ]
+}

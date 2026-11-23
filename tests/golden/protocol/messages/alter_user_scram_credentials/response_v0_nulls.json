@@ -1,0 +1,12 @@
+{
+  "throttleTimeMs" : 410038066,
+  "results" : [ {
+    "user" : "AlterUserScramCredentialsResponse.Results[0].User",
+    "errorCode" : -20686,
+    "errorMessage" : null
+  }, {
+    "user" : "AlterUserScramCredentialsResponse.Results[1].User",
+    "errorCode" : 10847,
+    "errorMessage" : null
+  } ]
+}

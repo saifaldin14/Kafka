@@ -1,0 +1,26 @@
+{
+  "throttleTimeMs" : 1762601588,
+  "replicaElectionResults" : [ {
+    "topic" : "ElectLeadersResponse.ReplicaElectionResults[0].Topic",
+    "partitionResult" : [ {
+      "partitionId" : -968460692,
+      "errorCode" : 10968,
+      "errorMessage" : null
+    }, {
+      "partitionId" : 523999033,
+      "errorCode" : 2845,
+      "errorMessage" : null
+    } ]
+  }, {
+    "topic" : "ElectLeadersResponse.ReplicaElectionResults[1].Topic",
+    "partitionResult" : [ {
+      "partitionId" : 1530384583,
+      "errorCode" : -19529,
+      "errorMessage" : null
+    }, {
+      "partitionId" : -1267937486,
+      "errorCode" : -13270,
+      "errorMessage" : null
+    } ]
+  } ]
+}

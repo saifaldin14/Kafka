@@ -1,0 +1,12 @@
+{
+  "resources" : [ {
+    "resourceType" : -9,
+    "resourceName" : "DescribeConfigsRequest.Resources[0].ResourceName",
+    "configurationKeys" : null
+  }, {
+    "resourceType" : 48,
+    "resourceName" : "DescribeConfigsRequest.Resources[1].ResourceName",
+    "configurationKeys" : null
+  } ],
+  "includeSynonyms" : false
+}

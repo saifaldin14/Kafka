@@ -1,0 +1,6 @@
+{
+  "transactionalId" : "AddOffsetsToTxnRequest.TransactionalId",
+  "producerId" : -5420017870818791725,
+  "producerEpoch" : 1319,
+  "groupId" : "AddOffsetsToTxnRequest.GroupId"
+}

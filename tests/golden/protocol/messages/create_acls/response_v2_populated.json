@@ -1,0 +1,10 @@
+{
+  "throttleTimeMs" : 363916210,
+  "results" : [ {
+    "errorCode" : 10162,
+    "errorMessage" : "CreateAclsResponse.Results[0].ErrorMessage"
+  }, {
+    "errorCode" : -23841,
+    "errorMessage" : "CreateAclsResponse.Results[1].ErrorMessage"
+  } ]
+}

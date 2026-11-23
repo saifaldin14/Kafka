@@ -1,0 +1,36 @@
+{
+  "version" : 9957,
+  "voters" : [ {
+    "voterId" : -801912709,
+    "voterDirectoryId" : "-SiGh5KA3bjgujNd8PiOYQ",
+    "endpoints" : [ {
+      "name" : "VotersRecord.Voters[0].Endpoints[0].Name",
+      "host" : "VotersRecord.Voters[0].Endpoints[0].Host",
+      "port" : 33617
+    }, {
+      "name" : "VotersRecord.Voters[0].Endpoints[1].Name",
+      "host" : "VotersRecord.Voters[0].Endpoints[1].Host",
+      "port" : 39086
+    } ],
+    "kRaftVersionFeature" : {
+      "minSupportedVersion" : -24068,
+      "maxSupportedVersion" : 2714
+    }
+  }, {
+    "voterId" : 1033172174,
+    "voterDirectoryId" : "NaeQL25u7Q-apyyYpn0BxA",
+    "endpoints" : [ {
+      "name" : "VotersRecord.Voters[1].Endpoints[0].Name",
+      "host" : "VotersRecord.Voters[1].Endpoints[0].Host",
+      "port" : 37056
+    }, {
+      "name" : "VotersRecord.Voters[1].Endpoints[1].Name",
+      "host" : "VotersRecord.Voters[1].Endpoints[1].Host",
+      "port" : 48979
+    } ],
+    "kRaftVersionFeature" : {
+      "minSupportedVersion" : -11147,
+      "maxSupportedVersion" : 19671
+    }
+  } ]
+}

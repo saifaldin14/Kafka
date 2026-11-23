@@ -1,0 +1,43 @@
+{
+  "errorCode" : -28581,
+  "topics" : [ {
+    "topicName" : "VoteResponse.Topics[0].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : -1795628767,
+      "errorCode" : -21474,
+      "leaderId" : 2147116439,
+      "leaderEpoch" : 227513643,
+      "voteGranted" : false
+    }, {
+      "partitionIndex" : -73264854,
+      "errorCode" : -10629,
+      "leaderId" : -1431736588,
+      "leaderEpoch" : -112458998,
+      "voteGranted" : true
+    } ]
+  }, {
+    "topicName" : "VoteResponse.Topics[1].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : -1715720442,
+      "errorCode" : 11167,
+      "leaderId" : 1067681936,
+      "leaderEpoch" : -408013642,
+      "voteGranted" : true
+    }, {
+      "partitionIndex" : 1177867917,
+      "errorCode" : 24434,
+      "leaderId" : 495603507,
+      "leaderEpoch" : -1797640953,
+      "voteGranted" : false
+    } ]
+  } ],
+  "nodeEndpoints" : [ {
+    "nodeId" : -1024009809,
+    "host" : "VoteResponse.NodeEndpoints[0].Host",
+    "port" : 56513
+  }, {
+    "nodeId" : -568946096,
+    "host" : "VoteResponse.NodeEndpoints[1].Host",
+    "port" : 4830
+  } ]
+}

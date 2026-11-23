@@ -1,0 +1,8 @@
+{
+  "transactionalId" : "",
+  "transactionTimeoutMs" : 0,
+  "producerId" : -1,
+  "producerEpoch" : -1,
+  "enable2Pc" : false,
+  "keepPreparedTxn" : false
+}

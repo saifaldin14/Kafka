@@ -1,0 +1,17 @@
+{
+  "topics" : [ {
+    "topicName" : "DescribeQuorumRequest.Topics[0].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : 1924035977
+    }, {
+      "partitionIndex" : -2062122862
+    } ]
+  }, {
+    "topicName" : "DescribeQuorumRequest.Topics[1].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : 1796224174
+    }, {
+      "partitionIndex" : 1366144789
+    } ]
+  } ]
+}

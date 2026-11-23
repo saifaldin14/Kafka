@@ -1,0 +1,12 @@
+{
+  "groupId" : "LeaveGroupRequest.GroupId",
+  "members" : [ {
+    "memberId" : "LeaveGroupRequest.Members[0].MemberId",
+    "groupInstanceId" : null,
+    "reason" : null
+  }, {
+    "memberId" : "LeaveGroupRequest.Members[1].MemberId",
+    "groupInstanceId" : null,
+    "reason" : null
+  } ]
+}

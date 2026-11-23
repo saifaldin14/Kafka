@@ -1,0 +1,63 @@
+{
+  "throttleTimeMs" : -1844993926,
+  "brokers" : [ {
+    "nodeId" : 168848042,
+    "host" : "MetadataResponse.Brokers[0].Host",
+    "port" : 2144755232,
+    "rack" : "MetadataResponse.Brokers[0].Rack"
+  }, {
+    "nodeId" : -1501846535,
+    "host" : "MetadataResponse.Brokers[1].Host",
+    "port" : -50216525,
+    "rack" : "MetadataResponse.Brokers[1].Rack"
+  } ],
+  "clusterId" : "MetadataResponse.ClusterId",
+  "controllerId" : -1784090238,
+  "topics" : [ {
+    "errorCode" : -7402,
+    "name" : "MetadataResponse.Topics[0].Name",
+    "topicId" : "vCQVb6cEH9e1cGC4zAJLnA",
+    "isInternal" : false,
+    "partitions" : [ {
+      "errorCode" : -15017,
+      "partitionIndex" : -1552654722,
+      "leaderId" : 1569123160,
+      "leaderEpoch" : -1252385858,
+      "replicaNodes" : [ -74905311, -74734356 ],
+      "isrNodes" : [ 2133012115, 2133270070 ],
+      "offlineReplicas" : [ -38663624, -38834579 ]
+    }, {
+      "errorCode" : -22710,
+      "partitionIndex" : -1773519067,
+      "leaderId" : 1506626267,
+      "leaderEpoch" : 1835253231,
+      "replicaNodes" : [ -326226752, -326453387 ],
+      "isrNodes" : [ -1257088426, -1257346381 ],
+      "offlineReplicas" : [ -1395381057, -1395234462 ]
+    } ],
+    "topicAuthorizedOperations" : 328160441
+  }, {
+    "errorCode" : 12787,
+    "name" : "MetadataResponse.Topics[1].Name",
+    "topicId" : "lt3Ex4vRzsospEgSlYKV6w",
+    "isInternal" : true,
+    "partitions" : [ {
+      "errorCode" : -6794,
+      "partitionIndex" : -2005975783,
+      "leaderId" : 1281877311,
+      "leaderEpoch" : -765886285,
+      "replicaNodes" : [ -294527444, -294698399 ],
+      "isrNodes" : [ -1348466910, -1348724865 ],
+      "offlineReplicas" : [ 151530643, 151788598 ]
+    }, {
+      "errorCode" : -27821,
+      "partitionIndex" : -1150318110,
+      "leaderId" : 975389788,
+      "leaderEpoch" : 1318156978,
+      "replicaNodes" : [ -1865560595, -1865389640 ],
+      "isrNodes" : [ 1801083983, 1801202738 ],
+      "offlineReplicas" : [ -283903668, -284018943 ]
+    } ],
+    "topicAuthorizedOperations" : 1791456116
+  } ]
+}

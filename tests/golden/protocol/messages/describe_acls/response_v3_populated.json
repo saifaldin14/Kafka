@@ -1,0 +1,36 @@
+{
+  "throttleTimeMs" : -131210215,
+  "errorCode" : -6061,
+  "errorMessage" : "DescribeAclsResponse.ErrorMessage",
+  "resources" : [ {
+    "resourceType" : 101,
+    "resourceName" : "DescribeAclsResponse.Resources[0].ResourceName",
+    "patternType" : -71,
+    "acls" : [ {
+      "principal" : "DescribeAclsResponse.Resources[0].Acls[0].Principal",
+      "host" : "DescribeAclsResponse.Resources[0].Acls[0].Host",
+      "operation" : 45,
+      "permissionType" : -13
+    }, {
+      "principal" : "DescribeAclsResponse.Resources[0].Acls[1].Principal",
+      "host" : "DescribeAclsResponse.Resources[0].Acls[1].Host",
+      "operation" : 112,
+      "permissionType" : 60
+    } ]
+  }, {
+    "resourceType" : 46,
+    "resourceName" : "DescribeAclsResponse.Resources[1].ResourceName",
+    "patternType" : -52,
+    "acls" : [ {
+      "principal" : "DescribeAclsResponse.Resources[1].Acls[0].Principal",
+      "host" : "DescribeAclsResponse.Resources[1].Acls[0].Host",
+      "operation" : 8,
+      "permissionType" : -60
+    }, {
+      "principal" : "DescribeAclsResponse.Resources[1].Acls[1].Principal",
+      "host" : "DescribeAclsResponse.Resources[1].Acls[1].Host",
+      "operation" : 37,
+      "permissionType" : 59
+    } ]
+  } ]
+}

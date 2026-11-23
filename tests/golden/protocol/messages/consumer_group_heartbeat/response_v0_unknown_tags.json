@@ -1,0 +1,17 @@
+{
+  "throttleTimeMs" : -473298230,
+  "errorCode" : -17598,
+  "errorMessage" : "ConsumerGroupHeartbeatResponse.ErrorMessage",
+  "memberId" : "ConsumerGroupHeartbeatResponse.MemberId",
+  "memberEpoch" : 1306618874,
+  "heartbeatIntervalMs" : 184450064,
+  "assignment" : {
+    "topicPartitions" : [ {
+      "topicId" : "5AqPp8NMS6rKPaMQ2qRZyw",
+      "partitions" : [ 1270760531, 1270907126 ]
+    }, {
+      "topicId" : "IUX2NyXVrrdfj_O1ShelfA",
+      "partitions" : [ -550283158, -550457593 ]
+    } ]
+  }
+}

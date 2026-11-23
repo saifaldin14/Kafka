@@ -1,0 +1,16 @@
+{
+  "throttleTimeMs" : 1035099611,
+  "errorCode" : -10627,
+  "errorMessage" : null,
+  "memberId" : "StreamsGroupHeartbeatResponse.MemberId",
+  "memberEpoch" : -1528286163,
+  "heartbeatIntervalMs" : 1903097623,
+  "acceptableRecoveryLagLegacy" : 467379460,
+  "taskOffsetIntervalMs" : -441005699,
+  "status" : null,
+  "activeTasks" : null,
+  "standbyTasks" : null,
+  "warmupTasks" : null,
+  "endpointInformationEpoch" : -291306964,
+  "partitionsByUserEndpoint" : null
+}

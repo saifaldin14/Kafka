@@ -1,0 +1,56 @@
+{
+  "groupId" : "ShareAcknowledgeRequest.GroupId",
+  "memberId" : "ShareAcknowledgeRequest.MemberId",
+  "shareSessionEpoch" : 732339461,
+  "topics" : [ {
+    "topicId" : "5O8VC8vGjsXIz6kLQmTQ0g",
+    "partitions" : [ {
+      "partitionIndex" : 1828348760,
+      "acknowledgementBatches" : [ {
+        "firstOffset" : 3902938088326229271,
+        "lastOffset" : -351821095610993723,
+        "acknowledgeTypes" : [ 83, -10 ]
+      }, {
+        "firstOffset" : 8665070420425567294,
+        "lastOffset" : -153926912678819290,
+        "acknowledgeTypes" : [ -46, 111 ]
+      } ]
+    }, {
+      "partitionIndex" : 1701498759,
+      "acknowledgementBatches" : [ {
+        "firstOffset" : -5096014510613334106,
+        "lastOffset" : -637875172736228514,
+        "acknowledgeTypes" : [ 106, 7 ]
+      }, {
+        "firstOffset" : 6967408263280005727,
+        "lastOffset" : -8277920168469206659,
+        "acknowledgeTypes" : [ 11, -82 ]
+      } ]
+    } ]
+  }, {
+    "topicId" : "Aivx5rnZu1iKZ4YNzPmSAQ",
+    "partitions" : [ {
+      "partitionIndex" : -1051991085,
+      "acknowledgementBatches" : [ {
+        "firstOffset" : -4955289183539817894,
+        "lastOffset" : 3771834541463355578,
+        "acknowledgeTypes" : [ 78, -85 ]
+      }, {
+        "firstOffset" : 1305580442747151475,
+        "lastOffset" : 5097955209352711161,
+        "acknowledgeTypes" : [ 111, -46 ]
+      } ]
+    }, {
+      "partitionIndex" : 255792868,
+      "acknowledgementBatches" : [ {
+        "firstOffset" : 766348546627523787,
+        "lastOffset" : 6131617964069044001,
+        "acknowledgeTypes" : [ 87, -6 ]
+      }, {
+        "firstOffset" : 7593786441521436626,
+        "lastOffset" : 227530802190930754,
+        "acknowledgeTypes" : [ -42, 51 ]
+      } ]
+    } ]
+  } ]
+}

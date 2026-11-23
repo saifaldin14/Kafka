@@ -1,0 +1,47 @@
+{
+  "throttleTimeMs" : -803979394,
+  "errorCode" : -30426,
+  "resultsByTransaction" : [ {
+    "transactionalId" : "AddPartitionsToTxnResponse.ResultsByTransaction[0].TransactionalId",
+    "topicResults" : [ {
+      "name" : "AddPartitionsToTxnResponse.ResultsByTransaction[0].TopicResults[0].Name",
+      "resultsByPartition" : [ {
+        "partitionIndex" : -2082082232,
+        "partitionErrorCode" : -7977
+      }, {
+        "partitionIndex" : -1967649161,
+        "partitionErrorCode" : -28108
+      } ]
+    }, {
+      "name" : "AddPartitionsToTxnResponse.ResultsByTransaction[0].TopicResults[1].Name",
+      "resultsByPartition" : [ {
+        "partitionIndex" : -1570988121,
+        "partitionErrorCode" : -30684
+      }, {
+        "partitionIndex" : -1982323464,
+        "partitionErrorCode" : -8121
+      } ]
+    } ]
+  }, {
+    "transactionalId" : "AddPartitionsToTxnResponse.ResultsByTransaction[1].TransactionalId",
+    "topicResults" : [ {
+      "name" : "AddPartitionsToTxnResponse.ResultsByTransaction[1].TopicResults[0].Name",
+      "resultsByPartition" : [ {
+        "partitionIndex" : -455435269,
+        "partitionErrorCode" : 1608
+      }, {
+        "partitionIndex" : -959482484,
+        "partitionErrorCode" : 17419
+      } ]
+    }, {
+      "name" : "AddPartitionsToTxnResponse.ResultsByTransaction[1].TopicResults[1].Name",
+      "resultsByPartition" : [ {
+        "partitionIndex" : -1511289444,
+        "partitionErrorCode" : 5083
+      }, {
+        "partitionIndex" : 1572497739,
+        "partitionErrorCode" : 25048
+      } ]
+    } ]
+  } ]
+}

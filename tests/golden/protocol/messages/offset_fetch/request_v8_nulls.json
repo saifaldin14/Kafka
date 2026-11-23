@@ -1,0 +1,10 @@
+{
+  "groups" : [ {
+    "groupId" : "OffsetFetchRequest.Groups[0].GroupId",
+    "topics" : null
+  }, {
+    "groupId" : "OffsetFetchRequest.Groups[1].GroupId",
+    "topics" : null
+  } ],
+  "requireStable" : true
+}

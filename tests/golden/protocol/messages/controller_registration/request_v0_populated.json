@@ -1,0 +1,25 @@
+{
+  "controllerId" : -619539736,
+  "incarnationId" : "-qSnjRVgr6JGeDW7U0o4Mw",
+  "zkMigrationReady" : true,
+  "listeners" : [ {
+    "name" : "ControllerRegistrationRequest.Listeners[0].Name",
+    "host" : "ControllerRegistrationRequest.Listeners[0].Host",
+    "port" : 28785,
+    "securityProtocol" : 8204
+  }, {
+    "name" : "ControllerRegistrationRequest.Listeners[1].Name",
+    "host" : "ControllerRegistrationRequest.Listeners[1].Host",
+    "port" : 6478,
+    "securityProtocol" : 30391
+  } ],
+  "features" : [ {
+    "name" : "ControllerRegistrationRequest.Features[0].Name",
+    "minSupportedVersion" : 20992,
+    "maxSupportedVersion" : 342
+  }, {
+    "name" : "ControllerRegistrationRequest.Features[1].Name",
+    "minSupportedVersion" : -32063,
+    "maxSupportedVersion" : -453
+  } ]
+}

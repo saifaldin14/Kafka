@@ -1,0 +1,152 @@
+{
+  "throttleTimeMs" : 1893564549,
+  "groups" : [ {
+    "errorCode" : -21741,
+    "errorMessage" : "ConsumerGroupDescribeResponse.Groups[0].ErrorMessage",
+    "groupId" : "ConsumerGroupDescribeResponse.Groups[0].GroupId",
+    "groupState" : "ConsumerGroupDescribeResponse.Groups[0].GroupState",
+    "groupEpoch" : 1815109768,
+    "assignmentEpoch" : -934621558,
+    "assignorName" : "ConsumerGroupDescribeResponse.Groups[0].AssignorName",
+    "members" : [ {
+      "memberId" : "ConsumerGroupDescribeResponse.Groups[0].Members[0].MemberId",
+      "instanceId" : "ConsumerGroupDescribeResponse.Groups[0].Members[0].InstanceId",
+      "rackId" : "ConsumerGroupDescribeResponse.Groups[0].Members[0].RackId",
+      "memberEpoch" : -1386014654,
+      "clientId" : "ConsumerGroupDescribeResponse.Groups[0].Members[0].ClientId",
+      "clientHost" : "ConsumerGroupDescribeResponse.Groups[0].Members[0].ClientHost",
+      "subscribedTopicNames" : [ "ConsumerGroupDescribeResponse.Groups[0].Members[0].SubscribedTopicNames[0]", "ConsumerGroupDescribeResponse.Groups[0].Members[0].SubscribedTopicNames[1]" ],
+      "subscribedTopicRegex" : "ConsumerGroupDescribeResponse.Groups[0].Members[0].SubscribedTopicRegex",
+      "assignment" : {
+        "topicPartitions" : [ {
+          "topicId" : "cDf7viNcWYILemUWFexMkw",
+          "topicName" : "ConsumerGroupDescribeResponse.Groups[0].Members[0].Assignment.TopicPartitions[0].TopicName",
+          "partitions" : [ -801060197, -800941442 ]
+        }, {
+          "topicId" : "WoFUvkeoO29x_ktTwtzCJA",
+          "topicName" : "ConsumerGroupDescribeResponse.Groups[0].Members[0].Assignment.TopicPartitions[1].TopicName",
+          "partitions" : [ -492695726, -492870161 ]
+        } ]
+      },
+      "targetAssignment" : {
+        "topicPartitions" : [ {
+          "topicId" : "xdW1DUmlSk3PbROUI9146g",
+          "topicName" : "ConsumerGroupDescribeResponse.Groups[0].Members[0].TargetAssignment.TopicPartitions[0].TopicName",
+          "partitions" : [ 1013181124, 1013038009 ]
+        }, {
+          "topicId" : "IHQEwU7B3wDnAzd4024oeQ",
+          "topicName" : "ConsumerGroupDescribeResponse.Groups[0].Members[0].TargetAssignment.TopicPartitions[1].TopicName",
+          "partitions" : [ -1090317507, -1090174392 ]
+        } ]
+      },
+      "memberType" : 65
+    }, {
+      "memberId" : "ConsumerGroupDescribeResponse.Groups[0].Members[1].MemberId",
+      "instanceId" : "ConsumerGroupDescribeResponse.Groups[0].Members[1].InstanceId",
+      "rackId" : "ConsumerGroupDescribeResponse.Groups[0].Members[1].RackId",
+      "memberEpoch" : 1707105527,
+      "clientId" : "ConsumerGroupDescribeResponse.Groups[0].Members[1].ClientId",
+      "clientHost" : "ConsumerGroupDescribeResponse.Groups[0].Members[1].ClientHost",
+      "subscribedTopicNames" : [ "ConsumerGroupDescribeResponse.Groups[0].Members[1].SubscribedTopicNames[0]", "ConsumerGroupDescribeResponse.Groups[0].Members[1].SubscribedTopicNames[1]" ],
+      "subscribedTopicRegex" : "ConsumerGroupDescribeResponse.Groups[0].Members[1].SubscribedTopicRegex",
+      "assignment" : {
+        "topicPartitions" : [ {
+          "topicId" : "DolI_sxq9fcePNz1Wb-3PA",
+          "topicName" : "ConsumerGroupDescribeResponse.Groups[0].Members[1].Assignment.TopicPartitions[0].TopicName",
+          "partitions" : [ -2088933590, -2089108025 ]
+        }, {
+          "topicId" : "vWm3sz71-urQne6T-_kjiw",
+          "topicName" : "ConsumerGroupDescribeResponse.Groups[0].Members[1].Assignment.TopicPartitions[1].TopicName",
+          "partitions" : [ 1596562195, 1596820150 ]
+        } ]
+      },
+      "targetAssignment" : {
+        "topicPartitions" : [ {
+          "topicId" : "Oji0T3r1sWDkC6YN73w02Q",
+          "topicName" : "ConsumerGroupDescribeResponse.Groups[0].Members[1].TargetAssignment.TopicPartitions[0].TopicName",
+          "partitions" : [ -1582941731, -1582687256 ]
+        }, {
+          "topicId" : "fC4LgYWPMC2RbZsV8k6nyg",
+          "topicName" : "ConsumerGroupDescribeResponse.Groups[0].Members[1].TargetAssignment.TopicPartitions[1].TopicName",
+          "partitions" : [ 1921471076, 1921327961 ]
+        } ]
+      },
+      "memberType" : 30
+    } ],
+    "authorizedOperations" : 888019263
+  }, {
+    "errorCode" : 12342,
+    "errorMessage" : "ConsumerGroupDescribeResponse.Groups[1].ErrorMessage",
+    "groupId" : "ConsumerGroupDescribeResponse.Groups[1].GroupId",
+    "groupState" : "ConsumerGroupDescribeResponse.Groups[1].GroupState",
+    "groupEpoch" : -1811612729,
+    "assignmentEpoch" : -45096873,
+    "assignorName" : "ConsumerGroupDescribeResponse.Groups[1].AssignorName",
+    "members" : [ {
+      "memberId" : "ConsumerGroupDescribeResponse.Groups[1].Members[0].MemberId",
+      "instanceId" : "ConsumerGroupDescribeResponse.Groups[1].Members[0].InstanceId",
+      "rackId" : "ConsumerGroupDescribeResponse.Groups[1].Members[0].RackId",
+      "memberEpoch" : -732170371,
+      "clientId" : "ConsumerGroupDescribeResponse.Groups[1].Members[0].ClientId",
+      "clientHost" : "ConsumerGroupDescribeResponse.Groups[1].Members[0].ClientHost",
+      "subscribedTopicNames" : [ "ConsumerGroupDescribeResponse.Groups[1].Members[0].SubscribedTopicNames[0]", "ConsumerGroupDescribeResponse.Groups[1].Members[0].SubscribedTopicNames[1]" ],
+      "subscribedTopicRegex" : "ConsumerGroupDescribeResponse.Groups[1].Members[0].SubscribedTopicRegex",
+      "assignment" : {
+        "topicPartitions" : [ {
+          "topicId" : "Or_V57KBpD1VnJa0Ukne-g",
+          "topicName" : "ConsumerGroupDescribeResponse.Groups[1].Members[0].Assignment.TopicPartitions[0].TopicName",
+          "partitions" : [ 33234228, 32979753 ]
+        }, {
+          "topicId" : "opDX3gn8dHA4kyFK9_mpCQ",
+          "topicName" : "ConsumerGroupDescribeResponse.Groups[1].Members[0].Assignment.TopicPartitions[1].TopicName",
+          "partitions" : [ 444456941, 444627896 ]
+        } ]
+      },
+      "targetAssignment" : {
+        "topicPartitions" : [ {
+          "topicId" : "sFdz9YqzEr5XrKc6rkigxw",
+          "topicName" : "ConsumerGroupDescribeResponse.Groups[1].Members[0].TargetAssignment.TopicPartitions[0].TopicName",
+          "partitions" : [ -37281529, -37107094 ]
+        }, {
+          "topicId" : "3jNmeTD3UPuIp_fuND5fCA",
+          "topicName" : "ConsumerGroupDescribeResponse.Groups[1].Members[0].TargetAssignment.TopicPartitions[1].TopicName",
+          "partitions" : [ 1741401214, 1741282459 ]
+        } ]
+      },
+      "memberType" : -64
+    }, {
+      "memberId" : "ConsumerGroupDescribeResponse.Groups[1].Members[1].MemberId",
+      "instanceId" : "ConsumerGroupDescribeResponse.Groups[1].Members[1].InstanceId",
+      "rackId" : "ConsumerGroupDescribeResponse.Groups[1].Members[1].RackId",
+      "memberEpoch" : 1132017312,
+      "clientId" : "ConsumerGroupDescribeResponse.Groups[1].Members[1].ClientId",
+      "clientHost" : "ConsumerGroupDescribeResponse.Groups[1].Members[1].ClientHost",
+      "subscribedTopicNames" : [ "ConsumerGroupDescribeResponse.Groups[1].Members[1].SubscribedTopicNames[0]", "ConsumerGroupDescribeResponse.Groups[1].Members[1].SubscribedTopicNames[1]" ],
+      "subscribedTopicRegex" : "ConsumerGroupDescribeResponse.Groups[1].Members[1].SubscribedTopicRegex",
+      "assignment" : {
+        "topicPartitions" : [ {
+          "topicId" : "jv9L7d8JuOAFhsgx_YTzWQ",
+          "topicName" : "ConsumerGroupDescribeResponse.Groups[1].Members[1].Assignment.TopicPartitions[0].TopicName",
+          "partitions" : [ -144120483, -143866008 ]
+        }, {
+          "topicId" : "0PSjH-mjN62y6L06AFdmSg",
+          "topicName" : "ConsumerGroupDescribeResponse.Groups[1].Members[1].Assignment.TopicPartitions[1].TopicName",
+          "partitions" : [ -934674972, -934818087 ]
+        } ]
+      },
+      "targetAssignment" : {
+        "topicPartitions" : [ {
+          "topicId" : "e5KdO7jepAvYxVR7IlDv-A",
+          "topicName" : "ConsumerGroupDescribeResponse.Groups[1].Members[1].TargetAssignment.TopicPartitions[0].TopicName",
+          "partitions" : [ -70627186, -70773781 ]
+        }, {
+          "topicId" : "LzSfovHOSM4EtC7g4YXqtw",
+          "topicName" : "ConsumerGroupDescribeResponse.Groups[1].Members[1].TargetAssignment.TopicPartitions[1].TopicName",
+          "partitions" : [ -593672105, -593525510 ]
+        } ]
+      },
+      "memberType" : 107
+    } ],
+    "authorizedOperations" : 1638628180
+  } ]
+}

@@ -144,6 +144,11 @@ impl Manifest {
 impl Manifest {
     /// The manifest's text, as `parse` reads it, with paths in sorted order.
     pub(crate) fn render(&self) -> String {
+        self.render_by("`cargo xtask schemas vendor`; checked by `cargo xtask schemas verify`")
+    }
+
+    /// The manifest's text, naming `tools`: what wrote it and what checks it.
+    pub(crate) fn render_by(&self, tools: &str) -> String {
         let lines: Vec<String> = self
             .hashes
             .iter()
@@ -151,8 +156,7 @@ impl Manifest {
             .collect();
         let lines = lines.concat();
         format!(
-            "# Apache Kafka {}, commit {}.\n# Written by `cargo xtask schemas vendor`; \
-             checked by `cargo xtask schemas verify`.\n{lines}",
+            "# Apache Kafka {}, commit {}.\n# Written by {tools}.\n{lines}",
             self.tag, self.commit
         )
     }

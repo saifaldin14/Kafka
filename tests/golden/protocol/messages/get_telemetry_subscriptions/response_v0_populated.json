@@ -1,0 +1,11 @@
+{
+  "throttleTimeMs" : -667840034,
+  "errorCode" : -24634,
+  "clientInstanceId" : "L7evVhaXJO6sQ7xIYtOIVw",
+  "subscriptionId" : -1354823497,
+  "acceptedCompressionTypes" : [ -63, 12 ],
+  "pushIntervalMs" : 1013510274,
+  "telemetryMaxBytes" : 43034367,
+  "deltaTemporality" : true,
+  "requestedMetrics" : [ "GetTelemetrySubscriptionsResponse.RequestedMetrics[0]", "GetTelemetrySubscriptionsResponse.RequestedMetrics[1]" ]
+}

@@ -1,0 +1,104 @@
+{
+  "throttleTimeMs" : -68267718,
+  "errorCode" : 306,
+  "errorMessage" : null,
+  "acquisitionLockTimeoutMs" : -1953233912,
+  "responses" : [ {
+    "topicId" : "kyer_WeZRw2lsG2XCXPzKg",
+    "partitions" : [ {
+      "partitionIndex" : 2004695808,
+      "errorCode" : 15533,
+      "errorMessage" : null,
+      "acknowledgeErrorCode" : 5725,
+      "acknowledgeErrorMessage" : null,
+      "currentLeader" : {
+        "leaderId" : 1904051984,
+        "leaderEpoch" : 609104950
+      },
+      "records" : "",
+      "acquiredRecords" : [ {
+        "firstOffset" : 6139339758712428101,
+        "lastOffset" : -4315836275096681529,
+        "deliveryCount" : -27773
+      }, {
+        "firstOffset" : 7244203259719227428,
+        "lastOffset" : 5932199126550201944,
+        "deliveryCount" : 4354
+      } ]
+    }, {
+      "partitionIndex" : 831026959,
+      "errorCode" : 15848,
+      "errorMessage" : null,
+      "acknowledgeErrorCode" : -2510,
+      "acknowledgeErrorMessage" : null,
+      "currentLeader" : {
+        "leaderId" : -605049997,
+        "leaderEpoch" : -827940281
+      },
+      "records" : "",
+      "acquiredRecords" : [ {
+        "firstOffset" : 5701245263679838038,
+        "lastOffset" : -74744535667960818,
+        "deliveryCount" : 332
+      }, {
+        "firstOffset" : -7940527197091102449,
+        "lastOffset" : -3349276232726573715,
+        "deliveryCount" : 19493
+      } ]
+    } ]
+  }, {
+    "topicId" : "mKPpM0TIIcAmpyUd4BGUuQ",
+    "partitions" : [ {
+      "partitionIndex" : 89628347,
+      "errorCode" : -15348,
+      "errorMessage" : null,
+      "acknowledgeErrorCode" : 5502,
+      "acknowledgeErrorMessage" : null,
+      "currentLeader" : {
+        "leaderId" : -1236627833,
+        "leaderEpoch" : -922546213
+      },
+      "records" : "",
+      "acquiredRecords" : [ {
+        "firstOffset" : 6115777561207244354,
+        "lastOffset" : 7178405903344252850,
+        "deliveryCount" : -8856
+      }, {
+        "firstOffset" : 1262242873086091643,
+        "lastOffset" : 8841713986337914449,
+        "deliveryCount" : -12319
+      } ]
+    }, {
+      "partitionIndex" : -477050292,
+      "errorCode" : 30145,
+      "errorMessage" : null,
+      "acknowledgeErrorCode" : 30249,
+      "acknowledgeErrorMessage" : null,
+      "currentLeader" : {
+        "leaderId" : -1750047260,
+        "leaderEpoch" : -930959750
+      },
+      "records" : "",
+      "acquiredRecords" : [ {
+        "firstOffset" : 9010739353857242737,
+        "lastOffset" : 7968879191553008955,
+        "deliveryCount" : 12335
+      }, {
+        "firstOffset" : -2442290584284520752,
+        "lastOffset" : 5888982498064062828,
+        "deliveryCount" : -1842
+      } ]
+    } ]
+  } ],
+  "nodeEndpoints" : [ {
+    "nodeId" : 912419954,
+    "host" : "ShareFetchResponse.NodeEndpoints[0].Host",
+    "port" : 1098362184,
+    "rack" : null
+  }, {
+    "nodeId" : 1433247425,
+    "host" : "ShareFetchResponse.NodeEndpoints[1].Host",
+    "port" : -1623420421,
+    "rack" : null
+  } ]
+}

@@ -1,0 +1,21 @@
+{
+  "groups" : [ {
+    "groupId" : "DescribeShareGroupOffsetsRequest.Groups[0].GroupId",
+    "topics" : [ {
+      "topicName" : "DescribeShareGroupOffsetsRequest.Groups[0].Topics[0].TopicName",
+      "partitions" : [ -346388102, -346534697 ]
+    }, {
+      "topicName" : "DescribeShareGroupOffsetsRequest.Groups[0].Topics[1].TopicName",
+      "partitions" : [ 1359273315, 1359447750 ]
+    } ]
+  }, {
+    "groupId" : "DescribeShareGroupOffsetsRequest.Groups[1].GroupId",
+    "topics" : [ {
+      "topicName" : "DescribeShareGroupOffsetsRequest.Groups[1].Topics[0].TopicName",
+      "partitions" : [ -840139009, -839881054 ]
+    }, {
+      "topicName" : "DescribeShareGroupOffsetsRequest.Groups[1].Topics[1].TopicName",
+      "partitions" : [ 1181708374, 1181450419 ]
+    } ]
+  } ]
+}

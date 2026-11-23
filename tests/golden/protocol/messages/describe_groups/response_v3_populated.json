@@ -1,0 +1,44 @@
+{
+  "throttleTimeMs" : 595666498,
+  "groups" : [ {
+    "errorCode" : -5598,
+    "groupId" : "DescribeGroupsResponse.Groups[0].GroupId",
+    "groupState" : "DescribeGroupsResponse.Groups[0].GroupState",
+    "protocolType" : "DescribeGroupsResponse.Groups[0].ProtocolType",
+    "protocolData" : "DescribeGroupsResponse.Groups[0].ProtocolData",
+    "members" : [ {
+      "memberId" : "DescribeGroupsResponse.Groups[0].Members[0].MemberId",
+      "clientId" : "DescribeGroupsResponse.Groups[0].Members[0].ClientId",
+      "clientHost" : "DescribeGroupsResponse.Groups[0].Members[0].ClientHost",
+      "memberMetadata" : "RGVzY3JpYmVHcm91cHNSZXNwb25zZS5Hcm91cHNbMF0uTWVtYmVyc1swXS5NZW1iZXJNZXRhZGF0YQ==",
+      "memberAssignment" : "RGVzY3JpYmVHcm91cHNSZXNwb25zZS5Hcm91cHNbMF0uTWVtYmVyc1swXS5NZW1iZXJBc3NpZ25tZW50"
+    }, {
+      "memberId" : "DescribeGroupsResponse.Groups[0].Members[1].MemberId",
+      "clientId" : "DescribeGroupsResponse.Groups[0].Members[1].ClientId",
+      "clientHost" : "DescribeGroupsResponse.Groups[0].Members[1].ClientHost",
+      "memberMetadata" : "RGVzY3JpYmVHcm91cHNSZXNwb25zZS5Hcm91cHNbMF0uTWVtYmVyc1sxXS5NZW1iZXJNZXRhZGF0YQ==",
+      "memberAssignment" : "RGVzY3JpYmVHcm91cHNSZXNwb25zZS5Hcm91cHNbMF0uTWVtYmVyc1sxXS5NZW1iZXJBc3NpZ25tZW50"
+    } ],
+    "authorizedOperations" : 865985904
+  }, {
+    "errorCode" : -16049,
+    "groupId" : "DescribeGroupsResponse.Groups[1].GroupId",
+    "groupState" : "DescribeGroupsResponse.Groups[1].GroupState",
+    "protocolType" : "DescribeGroupsResponse.Groups[1].ProtocolType",
+    "protocolData" : "DescribeGroupsResponse.Groups[1].ProtocolData",
+    "members" : [ {
+      "memberId" : "DescribeGroupsResponse.Groups[1].Members[0].MemberId",
+      "clientId" : "DescribeGroupsResponse.Groups[1].Members[0].ClientId",
+      "clientHost" : "DescribeGroupsResponse.Groups[1].Members[0].ClientHost",
+      "memberMetadata" : "RGVzY3JpYmVHcm91cHNSZXNwb25zZS5Hcm91cHNbMV0uTWVtYmVyc1swXS5NZW1iZXJNZXRhZGF0YQ==",
+      "memberAssignment" : "RGVzY3JpYmVHcm91cHNSZXNwb25zZS5Hcm91cHNbMV0uTWVtYmVyc1swXS5NZW1iZXJBc3NpZ25tZW50"
+    }, {
+      "memberId" : "DescribeGroupsResponse.Groups[1].Members[1].MemberId",
+      "clientId" : "DescribeGroupsResponse.Groups[1].Members[1].ClientId",
+      "clientHost" : "DescribeGroupsResponse.Groups[1].Members[1].ClientHost",
+      "memberMetadata" : "RGVzY3JpYmVHcm91cHNSZXNwb25zZS5Hcm91cHNbMV0uTWVtYmVyc1sxXS5NZW1iZXJNZXRhZGF0YQ==",
+      "memberAssignment" : "RGVzY3JpYmVHcm91cHNSZXNwb25zZS5Hcm91cHNbMV0uTWVtYmVyc1sxXS5NZW1iZXJBc3NpZ25tZW50"
+    } ],
+    "authorizedOperations" : -270749605
+  } ]
+}

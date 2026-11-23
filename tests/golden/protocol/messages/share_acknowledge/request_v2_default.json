@@ -1,0 +1,7 @@
+{
+  "groupId" : null,
+  "memberId" : "",
+  "shareSessionEpoch" : 0,
+  "isRenewAck" : false,
+  "topics" : [ ]
+}

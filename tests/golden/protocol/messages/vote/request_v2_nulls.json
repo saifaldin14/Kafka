@@ -1,0 +1,47 @@
+{
+  "clusterId" : null,
+  "voterId" : -1539836141,
+  "topics" : [ {
+    "topicName" : "VoteRequest.Topics[0].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : 457108093,
+      "replicaEpoch" : 479500450,
+      "replicaId" : -1562436660,
+      "replicaDirectoryId" : "m4cS534COGlIvWlbHcWlvg",
+      "voterDirectoryId" : "GgY2l7jOktcHIbfPBwO0nA",
+      "lastOffsetEpoch" : 1263744837,
+      "lastOffset" : -4232867115481070528,
+      "preVote" : false
+    }, {
+      "partitionIndex" : 1979745526,
+      "replicaEpoch" : -1702170243,
+      "replicaId" : -377854123,
+      "replicaDirectoryId" : "TxrW1zR2VIbg77SuJRHUXw",
+      "voterDirectoryId" : "b4FcELWPgcAIUVNkgtm0uQ",
+      "lastOffsetEpoch" : -1463834252,
+      "lastOffset" : 120402211280015599,
+      "preVote" : true
+    } ]
+  }, {
+    "topicName" : "VoteRequest.Topics[1].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : -1091968142,
+      "replicaEpoch" : 1061386145,
+      "replicaId" : -1576054263,
+      "replicaDirectoryId" : "VV6GOSQBXiIQ_BQYLlK7sw",
+      "voterDirectoryId" : "XaQjppb6FiwX_qMSivN7fQ",
+      "lastOffsetEpoch" : 1677802408,
+      "lastOffset" : -6259858737793453301,
+      "preVote" : true
+    }, {
+      "partitionIndex" : -1035883287,
+      "replicaEpoch" : 474295862,
+      "replicaId" : -1122339568,
+      "replicaDirectoryId" : "yYWdoh-M2KX642B7nFPrsg",
+      "voterDirectoryId" : "-JtSYT_zkXNjfks_qt_q8A",
+      "lastOffsetEpoch" : 329803113,
+      "lastOffset" : -7248841398535962500,
+      "preVote" : false
+    } ]
+  } ]
+}

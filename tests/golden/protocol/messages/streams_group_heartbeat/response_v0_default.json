@@ -1,0 +1,16 @@
+{
+  "throttleTimeMs" : 0,
+  "errorCode" : 0,
+  "errorMessage" : null,
+  "memberId" : "",
+  "memberEpoch" : 0,
+  "heartbeatIntervalMs" : 0,
+  "acceptableRecoveryLagLegacy" : 0,
+  "taskOffsetIntervalMs" : 0,
+  "status" : [ ],
+  "activeTasks" : null,
+  "standbyTasks" : null,
+  "warmupTasks" : null,
+  "endpointInformationEpoch" : 0,
+  "partitionsByUserEndpoint" : null
+}

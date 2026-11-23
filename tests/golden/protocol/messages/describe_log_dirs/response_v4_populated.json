@@ -1,0 +1,69 @@
+{
+  "throttleTimeMs" : -36812064,
+  "errorCode" : 23144,
+  "results" : [ {
+    "errorCode" : -10776,
+    "logDir" : "DescribeLogDirsResponse.Results[0].LogDir",
+    "topics" : [ {
+      "name" : "DescribeLogDirsResponse.Results[0].Topics[0].Name",
+      "partitions" : [ {
+        "partitionIndex" : -557036620,
+        "partitionSize" : 999536463775133353,
+        "offsetLag" : -6054209146912967917,
+        "isFutureKey" : false
+      }, {
+        "partitionIndex" : 126499363,
+        "partitionSize" : 4268675281006241364,
+        "offsetLag" : -8843412311484742602,
+        "isFutureKey" : true
+      } ]
+    }, {
+      "name" : "DescribeLogDirsResponse.Results[0].Topics[1].Name",
+      "partitions" : [ {
+        "partitionIndex" : -1445572865,
+        "partitionSize" : 125752161420779064,
+        "offsetLag" : 710315216377110730,
+        "isFutureKey" : true
+      }, {
+        "partitionIndex" : 2081893936,
+        "partitionSize" : -5172246158564891635,
+        "offsetLag" : -6667636831663360905,
+        "isFutureKey" : false
+      } ]
+    } ],
+    "totalBytes" : -7667804157300800884,
+    "usableBytes" : -3911367893670103920
+  }, {
+    "errorCode" : -11091,
+    "logDir" : "DescribeLogDirsResponse.Results[1].LogDir",
+    "topics" : [ {
+      "name" : "DescribeLogDirsResponse.Results[1].Topics[0].Name",
+      "partitions" : [ {
+        "partitionIndex" : -592615165,
+        "partitionSize" : 5271576897747783092,
+        "offsetLag" : -9195472101645020010,
+        "isFutureKey" : true
+      }, {
+        "partitionIndex" : 1967146388,
+        "partitionSize" : -869090415561229303,
+        "offsetLag" : 5160572757846069363,
+        "isFutureKey" : false
+      } ]
+    }, {
+      "name" : "DescribeLogDirsResponse.Results[1].Topics[1].Name",
+      "partitions" : [ {
+        "partitionIndex" : 1993752648,
+        "partitionSize" : 6804983692115537253,
+        "offsetLag" : 3846581370381885135,
+        "isFutureKey" : false
+      }, {
+        "partitionIndex" : 2108185719,
+        "partitionSize" : -4608448041934690032,
+        "offsetLag" : 1545489374613195394,
+        "isFutureKey" : true
+      } ]
+    } ],
+    "totalBytes" : -9100857128114192549,
+    "usableBytes" : 5245629990846634153
+  } ]
+}

@@ -1,0 +1,22 @@
+{
+  "throttleTimeMs" : 26113859,
+  "topics" : [ {
+    "topicId" : "MehqhOOob3B2XFLO1zUqCQ",
+    "partitions" : [ {
+      "partitionIndex" : -1557642325,
+      "errorCode" : 10588
+    }, {
+      "partitionIndex" : -702219652,
+      "errorCode" : -28207
+    } ]
+  }, {
+    "topicId" : "yhdojowtnz2TZcg4MYVf-g",
+    "partitions" : [ {
+      "partitionIndex" : -765398864,
+      "errorCode" : -15939
+    }, {
+      "partitionIndex" : 2101631,
+      "errorCode" : 11128
+    } ]
+  } ]
+}

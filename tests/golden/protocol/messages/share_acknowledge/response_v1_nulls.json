@@ -1,0 +1,55 @@
+{
+  "throttleTimeMs" : 776894662,
+  "errorCode" : 12350,
+  "errorMessage" : null,
+  "responses" : [ {
+    "topicId" : "BukjrRduR_Esb3Ee0GQJ1g",
+    "partitions" : [ {
+      "partitionIndex" : -661206452,
+      "errorCode" : 30145,
+      "errorMessage" : null,
+      "currentLeader" : {
+        "leaderId" : -378116636,
+        "leaderEpoch" : -607867270
+      }
+    }, {
+      "partitionIndex" : -94527813,
+      "errorCode" : -15348,
+      "errorMessage" : null,
+      "currentLeader" : {
+        "leaderId" : 135302791,
+        "leaderEpoch" : -599453733
+      }
+    } ]
+  }, {
+    "topicId" : "RyMSumzSvzSzV-nG6hq0FQ",
+    "partitions" : [ {
+      "partitionIndex" : -1530184201,
+      "errorCode" : -30224,
+      "errorMessage" : null,
+      "currentLeader" : {
+        "leaderId" : -518028005,
+        "leaderEpoch" : 1768492591
+      }
+    }, {
+      "partitionIndex" : -1644617272,
+      "errorCode" : -1835,
+      "errorMessage" : null,
+      "currentLeader" : {
+        "leaderId" : 792040152,
+        "leaderEpoch" : 867499582
+      }
+    } ]
+  } ],
+  "nodeEndpoints" : [ {
+    "nodeId" : -514523346,
+    "host" : "ShareAcknowledgeResponse.NodeEndpoints[0].Host",
+    "port" : -511601044,
+    "rack" : null
+  }, {
+    "nodeId" : 556695341,
+    "host" : "ShareAcknowledgeResponse.NodeEndpoints[1].Host",
+    "port" : -1000652097,
+    "rack" : null
+  } ]
+}

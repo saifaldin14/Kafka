@@ -1,0 +1,15 @@
+{
+  "clusterId" : "AddRaftVoterRequest.ClusterId",
+  "timeoutMs" : -1654421691,
+  "voterId" : 550023557,
+  "voterDirectoryId" : "SSGE-hJFkxaJiCntDDkjDw",
+  "listeners" : [ {
+    "name" : "AddRaftVoterRequest.Listeners[0].Name",
+    "host" : "AddRaftVoterRequest.Listeners[0].Host",
+    "port" : 41524
+  }, {
+    "name" : "AddRaftVoterRequest.Listeners[1].Name",
+    "host" : "AddRaftVoterRequest.Listeners[1].Host",
+    "port" : 41927
+  } ]
+}

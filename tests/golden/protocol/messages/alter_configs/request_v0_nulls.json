@@ -1,0 +1,24 @@
+{
+  "resources" : [ {
+    "resourceType" : -56,
+    "resourceName" : "AlterConfigsRequest.Resources[0].ResourceName",
+    "configs" : [ {
+      "name" : "AlterConfigsRequest.Resources[0].Configs[0].Name",
+      "value" : null
+    }, {
+      "name" : "AlterConfigsRequest.Resources[0].Configs[1].Name",
+      "value" : null
+    } ]
+  }, {
+    "resourceType" : -49,
+    "resourceName" : "AlterConfigsRequest.Resources[1].ResourceName",
+    "configs" : [ {
+      "name" : "AlterConfigsRequest.Resources[1].Configs[0].Name",
+      "value" : null
+    }, {
+      "name" : "AlterConfigsRequest.Resources[1].Configs[1].Name",
+      "value" : null
+    } ]
+  } ],
+  "validateOnly" : true
+}

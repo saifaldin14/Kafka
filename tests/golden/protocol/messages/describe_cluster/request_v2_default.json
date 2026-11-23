@@ -1,0 +1,5 @@
+{
+  "includeClusterAuthorizedOperations" : false,
+  "endpointType" : 1,
+  "includeFencedBrokers" : false
+}

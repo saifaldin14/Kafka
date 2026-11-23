@@ -1,0 +1,14 @@
+{
+  "throttleTimeMs" : -2054975896,
+  "responses" : [ {
+    "errorCode" : -12738,
+    "errorMessage" : null,
+    "resourceType" : 67,
+    "resourceName" : "AlterConfigsResponse.Responses[0].ResourceName"
+  }, {
+    "errorCode" : -28261,
+    "errorMessage" : null,
+    "resourceType" : -4,
+    "resourceName" : "AlterConfigsResponse.Responses[1].ResourceName"
+  } ]
+}

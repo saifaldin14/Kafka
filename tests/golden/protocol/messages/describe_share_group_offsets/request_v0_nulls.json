@@ -1,0 +1,9 @@
+{
+  "groups" : [ {
+    "groupId" : "DescribeShareGroupOffsetsRequest.Groups[0].GroupId",
+    "topics" : null
+  }, {
+    "groupId" : "DescribeShareGroupOffsetsRequest.Groups[1].GroupId",
+    "topics" : null
+  } ]
+}

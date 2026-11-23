@@ -1,0 +1,11 @@
+{
+  "groupId" : "",
+  "memberId" : "",
+  "memberEpoch" : 0,
+  "instanceId" : null,
+  "rackId" : null,
+  "rebalanceTimeoutMs" : -1,
+  "subscribedTopicNames" : null,
+  "serverAssignor" : null,
+  "topicPartitions" : null
+}

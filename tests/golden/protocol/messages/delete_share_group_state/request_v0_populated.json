@@ -1,0 +1,18 @@
+{
+  "groupId" : "DeleteShareGroupStateRequest.GroupId",
+  "topics" : [ {
+    "topicId" : "QfXuMX6mId67BbsaNEvA5w",
+    "partitions" : [ {
+      "partition" : -2012736065
+    }, {
+      "partition" : 541681098
+    } ]
+  }, {
+    "topicId" : "V6389nwO5BsLiQ7UzU3LKA",
+    "partitions" : [ {
+      "partition" : 359529206
+    }, {
+      "partition" : -2101630853
+    } ]
+  } ]
+}

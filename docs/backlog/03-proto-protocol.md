@@ -514,11 +514,11 @@ Scope: A pinned JVM harness that serializes messages with Kafka 4.4.0's own clas
 P1 · M1 · Task · deps: none · ref: ADR-0008
 Done when: no host JVM is needed; dependency checksums are verified; the harness source carries Apache-2.0 attribution where it adapts Kafka code.
 
-### [To Do] PROTO-0116 Harness: deterministic messages for every API, version and direction (defaults-only, fully populated with path-derived values, and nulls where nullable)
+### [Done] PROTO-0116 Harness: deterministic messages for every API, version and direction (defaults-only, fully populated with path-derived values, and nulls where nullable)
 P1 · M1 · Task · deps: PROTO-0115 · ref: clients/src/main/java/org/apache/kafka/common/protocol/MessageUtil.java toByteBufferAccessor @4.4.0
 Done when: values are derived from the field path so reruns are identical; output per case is Kafka's bytes plus its JsonConverter JSON.
 
-### [To Do] PROTO-0117 Golden file layout `tests/golden/protocol/<api>/<request|response>_v<N>_<variant>.bin` with a manifest of SHA-256 and Kafka version
+### [Done] PROTO-0117 Golden file layout `tests/golden/protocol/messages/<api>/<request|response>_v<N>_<variant>.bin`, indexed by `cases.json`, with a manifest of SHA-256 and Kafka version
 P1 · M1 · Task · deps: PROTO-0116
 Done when: files and manifest are committed; the manifest is verified by tests.
 

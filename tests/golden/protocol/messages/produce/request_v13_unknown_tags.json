@@ -1,0 +1,24 @@
+{
+  "transactionalId" : "ProduceRequest.TransactionalId",
+  "acks" : 12556,
+  "timeoutMs" : 1500137353,
+  "topicData" : [ {
+    "topicId" : "ECFWiXYE0PFtdt2Tii7U1g",
+    "partitionData" : [ {
+      "index" : 737132983,
+      "records" : ""
+    }, {
+      "index" : 402639454,
+      "records" : ""
+    } ]
+  }, {
+    "topicId" : "UFtFlstpSDT0X1Y7o-V_FQ",
+    "partitionData" : [ {
+      "index" : -1766892436,
+      "records" : ""
+    }, {
+      "index" : -895516299,
+      "records" : ""
+    } ]
+  } ]
+}

@@ -1,0 +1,13 @@
+{
+  "groupId" : "JoinGroupRequest.GroupId",
+  "sessionTimeoutMs" : 1133425978,
+  "memberId" : "JoinGroupRequest.MemberId",
+  "protocolType" : "JoinGroupRequest.ProtocolType",
+  "protocols" : [ {
+    "name" : "JoinGroupRequest.Protocols[0].Name",
+    "metadata" : "Sm9pbkdyb3VwUmVxdWVzdC5Qcm90b2NvbHNbMF0uTWV0YWRhdGE="
+  }, {
+    "name" : "JoinGroupRequest.Protocols[1].Name",
+    "metadata" : "Sm9pbkdyb3VwUmVxdWVzdC5Qcm90b2NvbHNbMV0uTWV0YWRhdGE="
+  } ]
+}

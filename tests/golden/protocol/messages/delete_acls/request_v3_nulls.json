@@ -1,0 +1,19 @@
+{
+  "filters" : [ {
+    "resourceTypeFilter" : 71,
+    "resourceNameFilter" : null,
+    "patternTypeFilter" : 59,
+    "principalFilter" : null,
+    "hostFilter" : null,
+    "operation" : -114,
+    "permissionType" : -86
+  }, {
+    "resourceTypeFilter" : -8,
+    "resourceNameFilter" : null,
+    "patternTypeFilter" : 126,
+    "principalFilter" : null,
+    "hostFilter" : null,
+    "operation" : 107,
+    "permissionType" : -31
+  } ]
+}

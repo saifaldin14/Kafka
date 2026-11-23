@@ -1,0 +1,7 @@
+{
+  "throttleTimeMs" : 0,
+  "allowReplicationFactorChange" : true,
+  "errorCode" : 0,
+  "errorMessage" : "",
+  "responses" : [ ]
+}

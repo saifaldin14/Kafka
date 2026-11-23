@@ -58,17 +58,24 @@ pub(crate) enum GoldenDump {
     Errors,
     /// `api-keys`: Kafka's API key registry and the API versions its listeners advertise.
     ApiKeys,
+    /// `messages`: Kafka's bytes for every message, version and case.
+    Messages,
 }
 
 impl GoldenDump {
     /// Every dump, in the order `help` lists them.
-    pub(crate) const ALL: [GoldenDump; 2] = [GoldenDump::Errors, GoldenDump::ApiKeys];
+    pub(crate) const ALL: [GoldenDump; 3] = [
+        GoldenDump::Errors,
+        GoldenDump::ApiKeys,
+        GoldenDump::Messages,
+    ];
 
     /// The dump's name on the command line and in the harness.
     pub(crate) fn name(self) -> &'static str {
         match self {
             GoldenDump::Errors => "errors",
             GoldenDump::ApiKeys => "api-keys",
+            GoldenDump::Messages => "messages",
         }
     }
 }
@@ -211,6 +218,10 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
     (
         "golden api-keys",
         "Record Kafka's API key registry and the API versions its listeners advertise, with the Kafka harness (needs the network and Docker)",
+    ),
+    (
+        "golden messages",
+        "Record Kafka's bytes for every message, version and case, with the Kafka harness (needs the network and Docker)",
     ),
     (
         "golden errors",

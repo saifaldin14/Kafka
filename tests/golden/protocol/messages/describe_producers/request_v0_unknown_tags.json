@@ -1,0 +1,9 @@
+{
+  "topics" : [ {
+    "name" : "DescribeProducersRequest.Topics[0].Name",
+    "partitionIndexes" : [ 784553282, 784406687 ]
+  }, {
+    "name" : "DescribeProducersRequest.Topics[1].Name",
+    "partitionIndexes" : [ -238709353, -238451398 ]
+  } ]
+}

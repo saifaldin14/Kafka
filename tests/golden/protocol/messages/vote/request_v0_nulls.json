@@ -1,0 +1,34 @@
+{
+  "clusterId" : null,
+  "topics" : [ {
+    "topicName" : "VoteRequest.Topics[0].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : 457108093,
+      "replicaEpoch" : 479500450,
+      "replicaId" : -1562436660,
+      "lastOffsetEpoch" : 1263744837,
+      "lastOffset" : -4232867115481070528
+    }, {
+      "partitionIndex" : 1979745526,
+      "replicaEpoch" : -1702170243,
+      "replicaId" : -377854123,
+      "lastOffsetEpoch" : -1463834252,
+      "lastOffset" : 120402211280015599
+    } ]
+  }, {
+    "topicName" : "VoteRequest.Topics[1].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : -1091968142,
+      "replicaEpoch" : 1061386145,
+      "replicaId" : -1576054263,
+      "lastOffsetEpoch" : 1677802408,
+      "lastOffset" : -6259858737793453301
+    }, {
+      "partitionIndex" : -1035883287,
+      "replicaEpoch" : 474295862,
+      "replicaId" : -1122339568,
+      "lastOffsetEpoch" : 329803113,
+      "lastOffset" : -7248841398535962500
+    } ]
+  } ]
+}

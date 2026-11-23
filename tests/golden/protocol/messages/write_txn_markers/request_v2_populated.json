@@ -1,0 +1,29 @@
+{
+  "markers" : [ {
+    "producerId" : -8280909425417634768,
+    "producerEpoch" : -24618,
+    "transactionResult" : false,
+    "topics" : [ {
+      "name" : "WriteTxnMarkersRequest.Markers[0].Topics[0].Name",
+      "partitionIndexes" : [ 910720369, 910863484 ]
+    }, {
+      "name" : "WriteTxnMarkersRequest.Markers[0].Topics[1].Name",
+      "partitionIndexes" : [ -740671556, -740926031 ]
+    } ],
+    "coordinatorEpoch" : 895881788,
+    "transactionVersion" : -1
+  }, {
+    "producerId" : -13443899254062325,
+    "producerEpoch" : -9569,
+    "transactionResult" : true,
+    "topics" : [ {
+      "name" : "WriteTxnMarkersRequest.Markers[1].Topics[0].Name",
+      "partitionIndexes" : [ -916792152, -916935267 ]
+    }, {
+      "name" : "WriteTxnMarkersRequest.Markers[1].Topics[1].Name",
+      "partitionIndexes" : [ 223222589, 223365704 ]
+    } ],
+    "coordinatorEpoch" : -728897997,
+    "transactionVersion" : 88
+  } ]
+}

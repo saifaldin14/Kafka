@@ -1,0 +1,12 @@
+{
+  "throttleTimeMs" : -1279876400,
+  "results" : [ {
+    "name" : "CreatePartitionsResponse.Results[0].Name",
+    "errorCode" : 4472,
+    "errorMessage" : "CreatePartitionsResponse.Results[0].ErrorMessage"
+  }, {
+    "name" : "CreatePartitionsResponse.Results[1].Name",
+    "errorCode" : -22595,
+    "errorMessage" : "CreatePartitionsResponse.Results[1].ErrorMessage"
+  } ]
+}

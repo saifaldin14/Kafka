@@ -1,0 +1,6 @@
+{
+  "stateFilters" : [ ],
+  "producerIdFilters" : [ ],
+  "durationFilter" : -1,
+  "transactionalIdPattern" : null
+}

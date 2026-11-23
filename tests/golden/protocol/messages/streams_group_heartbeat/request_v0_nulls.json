@@ -1,0 +1,19 @@
+{
+  "groupId" : "StreamsGroupHeartbeatRequest.GroupId",
+  "memberId" : "StreamsGroupHeartbeatRequest.MemberId",
+  "memberEpoch" : -268158455,
+  "endpointInformationEpoch" : -494373544,
+  "instanceId" : null,
+  "rackId" : null,
+  "rebalanceTimeoutMs" : -601600212,
+  "topology" : null,
+  "activeTasks" : null,
+  "standbyTasks" : null,
+  "warmupTasks" : null,
+  "processId" : null,
+  "userEndpoint" : null,
+  "clientTags" : null,
+  "taskOffsets" : null,
+  "taskEndOffsets" : null,
+  "shutdownApplication" : false
+}

@@ -1,0 +1,43 @@
+{
+  "replicaId" : -1022224909,
+  "maxBytes" : -841953965,
+  "topics" : [ {
+    "name" : "FetchSnapshotRequest.Topics[0].Name",
+    "partitions" : [ {
+      "partition" : -337615899,
+      "currentLeaderEpoch" : -1069492120,
+      "snapshotId" : {
+        "endOffset" : 2936567576680330160,
+        "epoch" : -1584295633
+      },
+      "position" : -7754827062612514738
+    }, {
+      "partition" : 1689931392,
+      "currentLeaderEpoch" : -1666629977,
+      "snapshotId" : {
+        "endOffset" : 4932720803653533327,
+        "epoch" : 1049583612
+      },
+      "position" : -6949531689402847907
+    } ]
+  }, {
+    "name" : "FetchSnapshotRequest.Topics[1].Name",
+    "partitions" : [ {
+      "partition" : 1961895540,
+      "currentLeaderEpoch" : -67285453,
+      "snapshotId" : {
+        "endOffset" : -3325826234504169965,
+        "epoch" : -1100427952
+      },
+      "position" : -4670283337807812055
+    }, {
+      "partition" : 1617044009,
+      "currentLeaderEpoch" : -356557772,
+      "snapshotId" : {
+        "endOffset" : 5108790665460258836,
+        "epoch" : 743433859
+      },
+      "position" : 5645365841548408298
+    } ]
+  } ]
+}

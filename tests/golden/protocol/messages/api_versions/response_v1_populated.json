@@ -1,0 +1,13 @@
+{
+  "errorCode" : 4400,
+  "apiKeys" : [ {
+    "apiKey" : -14852,
+    "minVersion" : -14557,
+    "maxVersion" : -25927
+  }, {
+    "apiKey" : 26511,
+    "minVersion" : -1584,
+    "maxVersion" : -2830
+  } ],
+  "throttleTimeMs" : -525401768
+}

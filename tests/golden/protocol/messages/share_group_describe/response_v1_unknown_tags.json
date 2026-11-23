@@ -1,0 +1,96 @@
+{
+  "throttleTimeMs" : 956448528,
+  "groups" : [ {
+    "errorCode" : -2288,
+    "errorMessage" : "ShareGroupDescribeResponse.Groups[0].ErrorMessage",
+    "groupId" : "ShareGroupDescribeResponse.Groups[0].GroupId",
+    "groupState" : "ShareGroupDescribeResponse.Groups[0].GroupState",
+    "groupEpoch" : 1134321617,
+    "assignmentEpoch" : -762873491,
+    "assignorName" : "ShareGroupDescribeResponse.Groups[0].AssignorName",
+    "members" : [ {
+      "memberId" : "ShareGroupDescribeResponse.Groups[0].Members[0].MemberId",
+      "rackId" : "ShareGroupDescribeResponse.Groups[0].Members[0].RackId",
+      "memberEpoch" : 508745903,
+      "clientId" : "ShareGroupDescribeResponse.Groups[0].Members[0].ClientId",
+      "clientHost" : "ShareGroupDescribeResponse.Groups[0].Members[0].ClientHost",
+      "subscribedTopicNames" : [ "ShareGroupDescribeResponse.Groups[0].Members[0].SubscribedTopicNames[0]", "ShareGroupDescribeResponse.Groups[0].Members[0].SubscribedTopicNames[1]" ],
+      "assignment" : {
+        "topicPartitions" : [ {
+          "topicId" : "YFqtaopC7r_9A0gI77tzFA",
+          "topicName" : "ShareGroupDescribeResponse.Groups[0].Members[0].Assignment.TopicPartitions[0].TopicName",
+          "partitions" : [ -360217438, -360475393 ]
+        }, {
+          "topicId" : "RX5loacHk1IdWiKu0d-JAw",
+          "topicName" : "ShareGroupDescribeResponse.Groups[0].Members[0].Assignment.TopicPartitions[1].TopicName",
+          "partitions" : [ -1087514133, -1087367538 ]
+        } ]
+      }
+    }, {
+      "memberId" : "ShareGroupDescribeResponse.Groups[0].Members[1].MemberId",
+      "rackId" : "ShareGroupDescribeResponse.Groups[0].Members[1].RackId",
+      "memberEpoch" : 1978485114,
+      "clientId" : "ShareGroupDescribeResponse.Groups[0].Members[1].ClientId",
+      "clientHost" : "ShareGroupDescribeResponse.Groups[0].Members[1].ClientHost",
+      "subscribedTopicNames" : [ "ShareGroupDescribeResponse.Groups[0].Members[1].SubscribedTopicNames[0]", "ShareGroupDescribeResponse.Groups[0].Members[1].SubscribedTopicNames[1]" ],
+      "assignment" : {
+        "topicPartitions" : [ {
+          "topicId" : "iqV9X1DH1SpfCRH2Q47-Sw",
+          "topicName" : "ShareGroupDescribeResponse.Groups[0].Members[1].Assignment.TopicPartitions[0].TopicName",
+          "partitions" : [ 1243144659, 1243291254 ]
+        }, {
+          "topicId" : "x-Dj7rNRODf0W2KaswJJ_A",
+          "topicName" : "ShareGroupDescribeResponse.Groups[0].Members[1].Assignment.TopicPartitions[1].TopicName",
+          "partitions" : [ -577899030, -578073465 ]
+        } ]
+      }
+    } ],
+    "authorizedOperations" : -1043254422
+  }, {
+    "errorCode" : 28021,
+    "errorMessage" : "ShareGroupDescribeResponse.Groups[1].ErrorMessage",
+    "groupId" : "ShareGroupDescribeResponse.Groups[1].GroupId",
+    "groupState" : "ShareGroupDescribeResponse.Groups[1].GroupState",
+    "groupEpoch" : -59754622,
+    "assignmentEpoch" : 523792464,
+    "assignorName" : "ShareGroupDescribeResponse.Groups[1].AssignorName",
+    "members" : [ {
+      "memberId" : "ShareGroupDescribeResponse.Groups[1].Members[0].MemberId",
+      "rackId" : "ShareGroupDescribeResponse.Groups[1].Members[0].RackId",
+      "memberEpoch" : -1724158628,
+      "clientId" : "ShareGroupDescribeResponse.Groups[1].Members[0].ClientId",
+      "clientHost" : "ShareGroupDescribeResponse.Groups[1].Members[0].ClientHost",
+      "subscribedTopicNames" : [ "ShareGroupDescribeResponse.Groups[1].Members[0].SubscribedTopicNames[0]", "ShareGroupDescribeResponse.Groups[1].Members[0].SubscribedTopicNames[1]" ],
+      "assignment" : {
+        "topicPartitions" : [ {
+          "topicId" : "R9CmYx_XOazexElvGrbN_Q",
+          "topicName" : "ShareGroupDescribeResponse.Groups[1].Members[0].Assignment.TopicPartitions[0].TopicName",
+          "partitions" : [ 592870169, 593124644 ]
+        }, {
+          "topicId" : "qP5iPneWEem-UrolNAA6Pg",
+          "topicName" : "ShareGroupDescribeResponse.Groups[1].Members[0].Assignment.TopicPartitions[1].TopicName",
+          "partitions" : [ -237642704, -237785819 ]
+        } ]
+      }
+    }, {
+      "memberId" : "ShareGroupDescribeResponse.Groups[1].Members[1].MemberId",
+      "rackId" : "ShareGroupDescribeResponse.Groups[1].Members[1].RackId",
+      "memberEpoch" : 1614071193,
+      "clientId" : "ShareGroupDescribeResponse.Groups[1].Members[1].ClientId",
+      "clientHost" : "ShareGroupDescribeResponse.Groups[1].Members[1].ClientHost",
+      "subscribedTopicNames" : [ "ShareGroupDescribeResponse.Groups[1].Members[1].SubscribedTopicNames[0]", "ShareGroupDescribeResponse.Groups[1].Members[1].SubscribedTopicNames[1]" ],
+      "assignment" : {
+        "topicPartitions" : [ {
+          "topicId" : "Ek1P5pMLxeklJI7L3QEWPg",
+          "topicName" : "ShareGroupDescribeResponse.Groups[1].Members[1].Assignment.TopicPartitions[0].TopicName",
+          "partitions" : [ -1941770192, -1941913307 ]
+        }, {
+          "topicId" : "sR-UCztM7axFlh4Vw7ep_Q",
+          "topicName" : "ShareGroupDescribeResponse.Groups[1].Members[1].Assignment.TopicPartitions[1].TopicName",
+          "partitions" : [ -1111257319, -1111002844 ]
+        } ]
+      }
+    } ],
+    "authorizedOperations" : 216047429
+  } ]
+}

@@ -1,0 +1,7 @@
+{
+  "users" : [ {
+    "name" : "DescribeUserScramCredentialsRequest.Users[0].Name"
+  }, {
+    "name" : "DescribeUserScramCredentialsRequest.Users[1].Name"
+  } ]
+}

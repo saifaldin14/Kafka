@@ -1,0 +1,30 @@
+{
+  "clusterId" : "EndQuorumEpochRequest.ClusterId",
+  "topics" : [ {
+    "topicName" : "EndQuorumEpochRequest.Topics[0].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : -123071396,
+      "leaderId" : -1059589206,
+      "leaderEpoch" : -1748324068,
+      "preferredSuccessors" : [ 1062121394, 1062002639 ]
+    }, {
+      "partitionIndex" : 39376139,
+      "leaderId" : 266952565,
+      "leaderEpoch" : -1962721251,
+      "preferredSuccessors" : [ 1298751721, 1298894836 ]
+    } ]
+  }, {
+    "topicName" : "EndQuorumEpochRequest.Topics[1].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : 1578349959,
+      "leaderId" : -1752598687,
+      "leaderEpoch" : -1144146503,
+      "preferredSuccessors" : [ -1291116651, -1290945696 ]
+    }, {
+      "partitionIndex" : 1705199960,
+      "leaderId" : -592132010,
+      "leaderEpoch" : -469185832,
+      "preferredSuccessors" : [ -175215138, -175389573 ]
+    } ]
+  } ]
+}

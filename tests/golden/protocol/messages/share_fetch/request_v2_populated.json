@@ -1,0 +1,70 @@
+{
+  "groupId" : "ShareFetchRequest.GroupId",
+  "memberId" : "ShareFetchRequest.MemberId",
+  "shareSessionEpoch" : 1845412969,
+  "maxWaitMs" : -1770653216,
+  "minBytes" : -926850438,
+  "maxBytes" : 560759000,
+  "maxRecords" : 96067657,
+  "batchSize" : 1892957522,
+  "shareAcquireMode" : 55,
+  "isRenewAck" : true,
+  "topics" : [ {
+    "topicId" : "WmZ9uj80ZjHQjbV5Zglwlg",
+    "partitions" : [ {
+      "partitionIndex" : -972503924,
+      "acknowledgementBatches" : [ {
+        "firstOffset" : 4856436615861265363,
+        "lastOffset" : 6821833497343118297,
+        "acknowledgeTypes" : [ 79, 50 ]
+      }, {
+        "firstOffset" : -4076520151131428934,
+        "lastOffset" : 4425756322267511834,
+        "acknowledgeTypes" : [ 46, -117 ]
+      } ]
+    }, {
+      "partitionIndex" : -468456709,
+      "acknowledgementBatches" : [ {
+        "firstOffset" : 8852951332954907234,
+        "lastOffset" : -974788641534837806,
+        "acknowledgeTypes" : [ -58, 99 ]
+      }, {
+        "firstOffset" : 7723894292408092955,
+        "lastOffset" : 1140149995266087537,
+        "acknowledgeTypes" : [ -121, -22 ]
+      } ]
+    } ]
+  }, {
+    "topicId" : "GSrMcr873nT_l7368rrN1Q",
+    "partitions" : [ {
+      "partitionIndex" : 2056885303,
+      "acknowledgementBatches" : [ {
+        "firstOffset" : 4502063967199822230,
+        "lastOffset" : 9146236091639714894,
+        "acknowledgeTypes" : [ 58, -105 ]
+      }, {
+        "firstOffset" : -4058676026628974257,
+        "lastOffset" : -6090017355248834899,
+        "acknowledgeTypes" : [ -101, 126 ]
+      } ]
+    }, {
+      "partitionIndex" : -1798017272,
+      "acknowledgementBatches" : [ {
+        "firstOffset" : -5418493698619524025,
+        "lastOffset" : -8869011939760811147,
+        "acknowledgeTypes" : [ -29, 70 ]
+      }, {
+        "firstOffset" : -19269801447021842,
+        "lastOffset" : 551036127203667606,
+        "acknowledgeTypes" : [ 98, -65 ]
+      } ]
+    } ]
+  } ],
+  "forgottenTopicsData" : [ {
+    "topicId" : "VfQMvAPSrkngYA16fv5eHg",
+    "partitions" : [ -2015711920, -2015966395 ]
+  }, {
+    "topicId" : "Wci2y3zILQxYO8rFCCTG3Q",
+    "partitions" : [ 694490937, 694634052 ]
+  } ]
+}

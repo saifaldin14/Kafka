@@ -1,0 +1,13 @@
+{
+  "topics" : [ {
+    "name" : "CreatePartitionsRequest.Topics[0].Name",
+    "count" : 650508114,
+    "assignments" : null
+  }, {
+    "name" : "CreatePartitionsRequest.Topics[1].Name",
+    "count" : -1587888405,
+    "assignments" : null
+  } ],
+  "timeoutMs" : 2145865146,
+  "validateOnly" : true
+}

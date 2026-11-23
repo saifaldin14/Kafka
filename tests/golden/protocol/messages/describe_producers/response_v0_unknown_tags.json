@@ -1,0 +1,86 @@
+{
+  "throttleTimeMs" : -2017192889,
+  "topics" : [ {
+    "name" : "DescribeProducersResponse.Topics[0].Name",
+    "partitions" : [ {
+      "partitionIndex" : -118824137,
+      "errorCode" : -16592,
+      "errorMessage" : "DescribeProducersResponse.Topics[0].Partitions[0].ErrorMessage",
+      "activeProducers" : [ {
+        "producerId" : -6645249140799289399,
+        "producerEpoch" : -1375158175,
+        "lastSequence" : -1693146121,
+        "lastTimestamp" : -682060346003084930,
+        "coordinatorEpoch" : -938401787,
+        "currentTxnStartOffset" : -4419073587205882746
+      }, {
+        "producerId" : 2406678407879337846,
+        "producerEpoch" : 1202336632,
+        "lastSequence" : 1054009616,
+        "lastTimestamp" : 6165225155165655259,
+        "coordinatorEpoch" : 999566046,
+        "currentTxnStartOffset" : -5180002861506850029
+      } ]
+    }, {
+      "partitionIndex" : 321240584,
+      "errorCode" : 7701,
+      "errorMessage" : "DescribeProducersResponse.Topics[0].Partitions[1].ErrorMessage",
+      "activeProducers" : [ {
+        "producerId" : -2599274830635313136,
+        "producerEpoch" : -1663578314,
+        "lastSequence" : 1194415706,
+        "lastTimestamp" : -6655074831322446535,
+        "coordinatorEpoch" : 2006943260,
+        "currentTxnStartOffset" : -7827562876792540355
+      }, {
+        "producerId" : 939458814228139243,
+        "producerEpoch" : -1151196673,
+        "lastSequence" : 555105153,
+        "lastTimestamp" : -9006624346905567524,
+        "coordinatorEpoch" : 2105987091,
+        "currentTxnStartOffset" : -2707148585262527912
+      } ]
+    } ]
+  }, {
+    "name" : "DescribeProducersResponse.Topics[1].Name",
+    "partitions" : [ {
+      "partitionIndex" : 1146753932,
+      "errorCode" : 6145,
+      "errorMessage" : "DescribeProducersResponse.Topics[1].Partitions[0].ErrorMessage",
+      "activeProducers" : [ {
+        "producerId" : 6190411625717397140,
+        "producerEpoch" : -848496342,
+        "lastSequence" : -1736926658,
+        "lastTimestamp" : -9080598670951932587,
+        "coordinatorEpoch" : 610257992,
+        "currentTxnStartOffset" : -4852473015868546919
+      }, {
+        "producerId" : 3350462298865789455,
+        "producerEpoch" : -649396733,
+        "lastSequence" : 1766476517,
+        "lastTimestamp" : -6057571718886322456,
+        "coordinatorEpoch" : -729098609,
+        "currentTxnStartOffset" : 2851256062323862596
+      } ]
+    }, {
+      "partitionIndex" : 1650801147,
+      "errorCode" : -26292,
+      "errorMessage" : "DescribeProducersResponse.Topics[1].Partitions[1].ErrorMessage",
+      "activeProducers" : [ {
+        "producerId" : 208326483055402637,
+        "producerEpoch" : -2001489675,
+        "lastSequence" : 154091723,
+        "lastTimestamp" : -7207288202227509126,
+        "coordinatorEpoch" : 11130001,
+        "currentTxnStartOffset" : -9055996981582899566
+      }, {
+        "producerId" : 7040925795409786634,
+        "producerEpoch" : 2081765372,
+        "lastSequence" : -1432588780,
+        "lastTimestamp" : 1348188654801655191,
+        "coordinatorEpoch" : -1679082246,
+        "currentTxnStartOffset" : 3587413376273901199
+      } ]
+    } ]
+  } ]
+}

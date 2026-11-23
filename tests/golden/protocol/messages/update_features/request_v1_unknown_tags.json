@@ -1,0 +1,13 @@
+{
+  "timeoutMs" : -1056288859,
+  "featureUpdates" : [ {
+    "feature" : "UpdateFeaturesRequest.FeatureUpdates[0].Feature",
+    "maxVersionLevel" : 9366,
+    "upgradeType" : 34
+  }, {
+    "feature" : "UpdateFeaturesRequest.FeatureUpdates[1].Feature",
+    "maxVersionLevel" : -889,
+    "upgradeType" : 67
+  } ],
+  "validateOnly" : false
+}

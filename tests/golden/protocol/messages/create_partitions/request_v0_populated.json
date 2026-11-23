@@ -1,0 +1,21 @@
+{
+  "topics" : [ {
+    "name" : "CreatePartitionsRequest.Topics[0].Name",
+    "count" : 650508114,
+    "assignments" : [ {
+      "brokerIds" : [ -109174254, -109348689 ]
+    }, {
+      "brokerIds" : [ -1262983019, -1262812064 ]
+    } ]
+  }, {
+    "name" : "CreatePartitionsRequest.Topics[1].Name",
+    "count" : -1587888405,
+    "assignments" : [ {
+      "brokerIds" : [ -1056115397, -1055940962 ]
+    }, {
+      "brokerIds" : [ 116730744, 116559789 ]
+    } ]
+  } ],
+  "timeoutMs" : 2145865146,
+  "validateOnly" : true
+}

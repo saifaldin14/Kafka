@@ -1,0 +1,41 @@
+{
+  "topics" : [ {
+    "name" : "CreateTopicsRequest.Topics[0].Name",
+    "numPartitions" : -1178210821,
+    "replicationFactor" : -14611,
+    "assignments" : [ {
+      "partitionIndex" : -1916043984,
+      "brokerIds" : [ -665833021, -665602906 ]
+    }, {
+      "partitionIndex" : -1148543489,
+      "brokerIds" : [ 321906560, 321791285 ]
+    } ],
+    "configs" : [ {
+      "name" : "CreateTopicsRequest.Topics[0].Configs[0].Name",
+      "value" : "CreateTopicsRequest.Topics[0].Configs[0].Value"
+    }, {
+      "name" : "CreateTopicsRequest.Topics[0].Configs[1].Name",
+      "value" : "CreateTopicsRequest.Topics[0].Configs[1].Value"
+    } ]
+  }, {
+    "name" : "CreateTopicsRequest.Topics[1].Name",
+    "numPartitions" : 639415538,
+    "replicationFactor" : -27436,
+    "assignments" : [ {
+      "partitionIndex" : -736341219,
+      "brokerIds" : [ 435625914, 435367959 ]
+    }, {
+      "partitionIndex" : 1312294166,
+      "brokerIds" : [ 508931325, 509185800 ]
+    } ],
+    "configs" : [ {
+      "name" : "CreateTopicsRequest.Topics[1].Configs[0].Name",
+      "value" : "CreateTopicsRequest.Topics[1].Configs[0].Value"
+    }, {
+      "name" : "CreateTopicsRequest.Topics[1].Configs[1].Name",
+      "value" : "CreateTopicsRequest.Topics[1].Configs[1].Value"
+    } ]
+  } ],
+  "timeoutMs" : -1235473833,
+  "validateOnly" : false
+}

@@ -1,0 +1,76 @@
+{
+  "throttleTimeMs" : -1175859197,
+  "results" : [ {
+    "errorCode" : 16283,
+    "errorMessage" : "DescribeConfigsResponse.Results[0].ErrorMessage",
+    "resourceType" : -4,
+    "resourceName" : "DescribeConfigsResponse.Results[0].ResourceName",
+    "configs" : [ {
+      "name" : "DescribeConfigsResponse.Results[0].Configs[0].Name",
+      "value" : "DescribeConfigsResponse.Results[0].Configs[0].Value",
+      "readOnly" : true,
+      "configSource" : 8,
+      "isSensitive" : true,
+      "synonyms" : [ {
+        "name" : "DescribeConfigsResponse.Results[0].Configs[0].Synonyms[0].Name",
+        "value" : "DescribeConfigsResponse.Results[0].Configs[0].Synonyms[0].Value",
+        "source" : 12
+      }, {
+        "name" : "DescribeConfigsResponse.Results[0].Configs[0].Synonyms[1].Name",
+        "value" : "DescribeConfigsResponse.Results[0].Configs[0].Synonyms[1].Value",
+        "source" : 7
+      } ]
+    }, {
+      "name" : "DescribeConfigsResponse.Results[0].Configs[1].Name",
+      "value" : "DescribeConfigsResponse.Results[0].Configs[1].Value",
+      "readOnly" : false,
+      "configSource" : 59,
+      "isSensitive" : false,
+      "synonyms" : [ {
+        "name" : "DescribeConfigsResponse.Results[0].Configs[1].Synonyms[0].Name",
+        "value" : "DescribeConfigsResponse.Results[0].Configs[1].Synonyms[0].Value",
+        "source" : -97
+      }, {
+        "name" : "DescribeConfigsResponse.Results[0].Configs[1].Synonyms[1].Name",
+        "value" : "DescribeConfigsResponse.Results[0].Configs[1].Synonyms[1].Value",
+        "source" : -92
+      } ]
+    } ]
+  }, {
+    "errorCode" : 31806,
+    "errorMessage" : "DescribeConfigsResponse.Results[1].ErrorMessage",
+    "resourceType" : 67,
+    "resourceName" : "DescribeConfigsResponse.Results[1].ResourceName",
+    "configs" : [ {
+      "name" : "DescribeConfigsResponse.Results[1].Configs[0].Name",
+      "value" : "DescribeConfigsResponse.Results[1].Configs[0].Value",
+      "readOnly" : false,
+      "configSource" : 37,
+      "isSensitive" : false,
+      "synonyms" : [ {
+        "name" : "DescribeConfigsResponse.Results[1].Configs[0].Synonyms[0].Name",
+        "value" : "DescribeConfigsResponse.Results[1].Configs[0].Synonyms[0].Value",
+        "source" : 89
+      }, {
+        "name" : "DescribeConfigsResponse.Results[1].Configs[0].Synonyms[1].Name",
+        "value" : "DescribeConfigsResponse.Results[1].Configs[0].Synonyms[1].Value",
+        "source" : -50
+      } ]
+    }, {
+      "name" : "DescribeConfigsResponse.Results[1].Configs[1].Name",
+      "value" : "DescribeConfigsResponse.Results[1].Configs[1].Value",
+      "readOnly" : true,
+      "configSource" : 10,
+      "isSensitive" : true,
+      "synonyms" : [ {
+        "name" : "DescribeConfigsResponse.Results[1].Configs[1].Synonyms[0].Name",
+        "value" : "DescribeConfigsResponse.Results[1].Configs[1].Synonyms[0].Value",
+        "source" : -42
+      }, {
+        "name" : "DescribeConfigsResponse.Results[1].Configs[1].Synonyms[1].Name",
+        "value" : "DescribeConfigsResponse.Results[1].Configs[1].Synonyms[1].Value",
+        "source" : -31
+      } ]
+    } ]
+  } ]
+}

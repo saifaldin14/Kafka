@@ -1,0 +1,12 @@
+{
+  "components" : [ {
+    "entityType" : "DescribeClientQuotasRequest.Components[0].EntityType",
+    "matchType" : 16,
+    "match" : "DescribeClientQuotasRequest.Components[0].Match"
+  }, {
+    "entityType" : "DescribeClientQuotasRequest.Components[1].EntityType",
+    "matchType" : 57,
+    "match" : "DescribeClientQuotasRequest.Components[1].Match"
+  } ],
+  "strict" : false
+}

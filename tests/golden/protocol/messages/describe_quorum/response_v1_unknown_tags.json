@@ -1,0 +1,122 @@
+{
+  "errorCode" : -16345,
+  "topics" : [ {
+    "topicName" : "DescribeQuorumResponse.Topics[0].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : 814634885,
+      "errorCode" : -15062,
+      "leaderId" : -1766257093,
+      "leaderEpoch" : 286351567,
+      "highWatermark" : -1792811146759984169,
+      "currentVoters" : [ {
+        "replicaId" : -1996210528,
+        "logEndOffset" : -5375905279003853681,
+        "lastFetchTimestamp" : -4337917560783662705,
+        "lastCaughtUpTimestamp" : -1952193658974318750
+      }, {
+        "replicaId" : -905288551,
+        "logEndOffset" : 1250267912758571100,
+        "lastFetchTimestamp" : 1352465850286099840,
+        "lastCaughtUpTimestamp" : 2904952838849670463
+      } ],
+      "observers" : [ {
+        "replicaId" : -2127378221,
+        "logEndOffset" : 2460215699790257230,
+        "lastFetchTimestamp" : 6016300979983059046,
+        "lastCaughtUpTimestamp" : -4081312344676085055
+      }, {
+        "replicaId" : -1487308846,
+        "logEndOffset" : 5369525428987169529,
+        "lastFetchTimestamp" : 2578087481534741405,
+        "lastCaughtUpTimestamp" : 2960105448611565500
+      } ]
+    }, {
+      "partitionIndex" : 1788928222,
+      "errorCode" : -21321,
+      "leaderId" : -814794952,
+      "leaderEpoch" : -1868087010,
+      "highWatermark" : 3671697987608420090,
+      "currentVoters" : [ {
+        "replicaId" : 323732319,
+        "logEndOffset" : 7957788136363111858,
+        "lastFetchTimestamp" : -4252892026428531758,
+        "lastCaughtUpTimestamp" : 2563450209981399933
+      }, {
+        "replicaId" : -854640274,
+        "logEndOffset" : -4700778326335954547,
+        "lastFetchTimestamp" : -8443289789133841175,
+        "lastCaughtUpTimestamp" : -1354041215514523384
+      } ],
+      "observers" : [ {
+        "replicaId" : 429873320,
+        "logEndOffset" : 4487177228654902679,
+        "lastFetchTimestamp" : -7486437157299908761,
+        "lastCaughtUpTimestamp" : 1560785855335635818
+      }, {
+        "replicaId" : -324774687,
+        "logEndOffset" : -6856290923460242652,
+        "lastFetchTimestamp" : 6436939697200175544,
+        "lastCaughtUpTimestamp" : -6036920902470361241
+      } ]
+    } ]
+  }, {
+    "topicName" : "DescribeQuorumResponse.Topics[1].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : -548656390,
+      "errorCode" : -2645,
+      "leaderId" : 617505796,
+      "leaderEpoch" : 739995162,
+      "highWatermark" : -8971472754587367058,
+      "currentVoters" : [ {
+        "replicaId" : -2819733,
+        "logEndOffset" : -3105736121833854266,
+        "lastFetchTimestamp" : -2083857104016728946,
+        "lastCaughtUpTimestamp" : 6497049608625273529
+      }, {
+        "replicaId" : -505399894,
+        "logEndOffset" : -6054159216777471599,
+        "lastFetchTimestamp" : -1480477979680937947,
+        "lastCaughtUpTimestamp" : 5329506877988827508
+      } ],
+      "observers" : [ {
+        "replicaId" : -657077804,
+        "logEndOffset" : 8525838718558792139,
+        "lastFetchTimestamp" : 2611811153279955859,
+        "lastCaughtUpTimestamp" : 7702372596186112342
+      }, {
+        "replicaId" : -482442019,
+        "logEndOffset" : 7778681536611460184,
+        "lastFetchTimestamp" : 4692203637798440836,
+        "lastCaughtUpTimestamp" : -3095880761819619965
+      } ]
+    }, {
+      "partitionIndex" : 1183111857,
+      "errorCode" : -5874,
+      "leaderId" : -320106457,
+      "leaderEpoch" : -1026358277,
+      "highWatermark" : 5922085578559521627,
+      "currentVoters" : [ {
+        "replicaId" : 735740220,
+        "logEndOffset" : 2980895987649079571,
+        "lastFetchTimestamp" : -576578098248905461,
+        "lastCaughtUpTimestamp" : 2661505672988103070
+      }, {
+        "replicaId" : -1681368699,
+        "logEndOffset" : 444661000321133344,
+        "lastFetchTimestamp" : -1319995147508999812,
+        "lastCaughtUpTimestamp" : -2923989769694431701
+      } ],
+      "observers" : [ {
+        "replicaId" : 1706409023,
+        "logEndOffset" : 127513092949020114,
+        "lastFetchTimestamp" : -265041272757737742,
+        "lastCaughtUpTimestamp" : -5266978001033946403
+      }, {
+        "replicaId" : -971455922,
+        "logEndOffset" : -7729613591422279635,
+        "lastFetchTimestamp" : -1379490559684126327,
+        "lastCaughtUpTimestamp" : -6172326213802911512
+      } ]
+    } ]
+  } ]
+}

@@ -1,0 +1,19 @@
+{
+  "clusterId" : "UpdateRaftVoterRequest.ClusterId",
+  "currentLeaderEpoch" : 2033681579,
+  "voterId" : -1568536571,
+  "voterDirectoryId" : "K6LN4NUl_pZLoooKL4_Njw",
+  "listeners" : [ {
+    "name" : "UpdateRaftVoterRequest.Listeners[0].Name",
+    "host" : "UpdateRaftVoterRequest.Listeners[0].Host",
+    "port" : 19636
+  }, {
+    "name" : "UpdateRaftVoterRequest.Listeners[1].Name",
+    "host" : "UpdateRaftVoterRequest.Listeners[1].Host",
+    "port" : 20039
+  } ],
+  "kRaftVersionFeature" : {
+    "minSupportedVersion" : 23194,
+    "maxSupportedVersion" : 796
+  }
+}

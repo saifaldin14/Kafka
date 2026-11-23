@@ -58,6 +58,9 @@ Data read from Apache Kafka's released client jar by `cargo xtask golden`:
 
 - xtask/tests/fixtures/kafka-4.4.0-errors.json: the error table of kafka-clients 4.4.0
   (names, codes and default messages), the golden file for the generated error codes.
+- tests/golden/protocol/: the API key registry and advertised API versions, and the
+  bytes and JSON kafka-clients 4.4.0 writes for every message, version and case, the
+  golden files for the generated protocol code.
 
 Apache Kafka files copied unmodified, with Kafka's own LICENSE and NOTICE beside them:
 

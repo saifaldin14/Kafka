@@ -1,0 +1,11 @@
+{
+  "throttleTimeMs" : 781170670,
+  "errorCode" : -3370,
+  "configResources" : [ {
+    "resourceName" : "ListConfigResourcesResponse.ConfigResources[0].ResourceName",
+    "resourceType" : -26
+  }, {
+    "resourceName" : "ListConfigResourcesResponse.ConfigResources[1].ResourceName",
+    "resourceType" : -67
+  } ]
+}

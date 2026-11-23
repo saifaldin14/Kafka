@@ -1,0 +1,39 @@
+{
+  "brokerId" : -668459115,
+  "brokerEpoch" : -1444327389764750403,
+  "directories" : [ {
+    "id" : "nGy2WXps5oE5oHwLBwvlRg",
+    "topics" : [ {
+      "topicId" : "bZoBAoGr4c7okaRCVxDltw",
+      "partitions" : [ {
+        "partitionIndex" : 93377365
+      }, {
+        "partitionIndex" : -437967122
+      } ]
+    }, {
+      "topicId" : "uff-m0i8PQu8osncl9vq-A",
+      "partitions" : [ {
+        "partitionIndex" : 641535370
+      }, {
+        "partitionIndex" : -1951885823
+      } ]
+    } ]
+  }, {
+    "id" : "6uU0HkEp6GZNX9RoujWtPw",
+    "topics" : [ {
+      "topicId" : "oKzGvGlaa49gAV4nBKT1RA",
+      "partitions" : [ {
+        "partitionIndex" : -1307950026
+      }, {
+        "partitionIndex" : 663350973
+      } ]
+    }, {
+      "topicId" : "8todAtERJKK5w8zJQCEHMw",
+      "partitions" : [ {
+        "partitionIndex" : -1702195759
+      }, {
+        "partitionIndex" : 1466311066
+      } ]
+    } ]
+  } ]
+}

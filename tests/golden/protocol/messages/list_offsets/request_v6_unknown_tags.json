@@ -1,0 +1,27 @@
+{
+  "replicaId" : 382518143,
+  "isolationLevel" : -68,
+  "topics" : [ {
+    "name" : "ListOffsetsRequest.Topics[0].Name",
+    "partitions" : [ {
+      "partitionIndex" : 1581904335,
+      "currentLeaderEpoch" : 750368932,
+      "timestamp" : -792537159877063949
+    }, {
+      "partitionIndex" : -1821244736,
+      "currentLeaderEpoch" : 937403555,
+      "timestamp" : 4146583228027174694
+    } ]
+  }, {
+    "name" : "ListOffsetsRequest.Topics[1].Name",
+    "partitions" : [ {
+      "partitionIndex" : -1887909052,
+      "currentLeaderEpoch" : 1646062527,
+      "timestamp" : -5073720497977066574
+    }, {
+      "partitionIndex" : -2090047693,
+      "currentLeaderEpoch" : -981712064,
+      "timestamp" : 7911325647773985967
+    } ]
+  } ]
+}

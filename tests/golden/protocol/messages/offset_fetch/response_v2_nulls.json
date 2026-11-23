@@ -1,0 +1,30 @@
+{
+  "topics" : [ {
+    "name" : "OffsetFetchResponse.Topics[0].Name",
+    "partitions" : [ {
+      "partitionIndex" : -2003539780,
+      "committedOffset" : -4808832777790138853,
+      "metadata" : null,
+      "errorCode" : -9455
+    }, {
+      "partitionIndex" : -1153954581,
+      "committedOffset" : 6809142073669099010,
+      "metadata" : null,
+      "errorCode" : -9316
+    } ]
+  }, {
+    "name" : "OffsetFetchResponse.Topics[1].Name",
+    "partitions" : [ {
+      "partitionIndex" : -1224278553,
+      "committedOffset" : 1623821711508522526,
+      "metadata" : null,
+      "errorCode" : 26752
+    }, {
+      "partitionIndex" : 113715768,
+      "committedOffset" : -4370750645171246665,
+      "metadata" : null,
+      "errorCode" : -3035
+    } ]
+  } ],
+  "errorCode" : -26960
+}

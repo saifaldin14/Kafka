@@ -1,0 +1,93 @@
+{
+  "responses" : [ {
+    "topicId" : "teHhZ0orheg6V82DB_RX8Q",
+    "partitionResponses" : [ {
+      "index" : 1836369428,
+      "errorCode" : -445,
+      "baseOffset" : 6400597407410661010,
+      "logAppendTimeMs" : -2457616387313400313,
+      "logStartOffset" : 5900979177362663349,
+      "recordErrors" : [ {
+        "batchIndex" : -1759552326,
+        "batchIndexErrorMessage" : "ProduceResponse.Responses[0].PartitionResponses[0].RecordErrors[0].BatchIndexErrorMessage"
+      }, {
+        "batchIndex" : -1799734963,
+        "batchIndexErrorMessage" : "ProduceResponse.Responses[0].PartitionResponses[0].RecordErrors[1].BatchIndexErrorMessage"
+      } ],
+      "errorMessage" : "ProduceResponse.Responses[0].PartitionResponses[0].ErrorMessage",
+      "currentLeader" : {
+        "leaderId" : -654384810,
+        "leaderEpoch" : 2102754776
+      }
+    }, {
+      "index" : -1468788003,
+      "errorCode" : 30118,
+      "baseOffset" : 3539927305238066957,
+      "logAppendTimeMs" : -3326260692645455298,
+      "logStartOffset" : 3388008097436829714,
+      "recordErrors" : [ {
+        "batchIndex" : -1849249923,
+        "batchIndexErrorMessage" : "ProduceResponse.Responses[0].PartitionResponses[1].RecordErrors[0].BatchIndexErrorMessage"
+      }, {
+        "batchIndex" : -343527830,
+        "batchIndexErrorMessage" : "ProduceResponse.Responses[0].PartitionResponses[1].RecordErrors[1].BatchIndexErrorMessage"
+      } ],
+      "errorMessage" : "ProduceResponse.Responses[0].PartitionResponses[1].ErrorMessage",
+      "currentLeader" : {
+        "leaderId" : -747619719,
+        "leaderEpoch" : -510663983
+      }
+    } ]
+  }, {
+    "topicId" : "84fgYeoywRUCo3xg9D5Owg",
+    "partitionResponses" : [ {
+      "index" : -1020874875,
+      "errorCode" : 28446,
+      "baseOffset" : -1288572079247509691,
+      "logAppendTimeMs" : -8071756079066293322,
+      "logStartOffset" : -6945943796839100886,
+      "recordErrors" : [ {
+        "batchIndex" : -1437806507,
+        "batchIndexErrorMessage" : "ProduceResponse.Responses[1].PartitionResponses[0].RecordErrors[0].BatchIndexErrorMessage"
+      }, {
+        "batchIndex" : -68673438,
+        "batchIndexErrorMessage" : "ProduceResponse.Responses[1].PartitionResponses[0].RecordErrors[1].BatchIndexErrorMessage"
+      } ],
+      "errorMessage" : "ProduceResponse.Responses[1].PartitionResponses[0].ErrorMessage",
+      "currentLeader" : {
+        "leaderId" : -409789583,
+        "leaderEpoch" : -663721079
+      }
+    }, {
+      "index" : -114033668,
+      "errorCode" : -26245,
+      "baseOffset" : 5638135655668533418,
+      "logAppendTimeMs" : -3038443467963559201,
+      "logStartOffset" : -2101851227045621331,
+      "recordErrors" : [ {
+        "batchIndex" : 19323922,
+        "batchIndexErrorMessage" : "ProduceResponse.Responses[1].PartitionResponses[1].RecordErrors[0].BatchIndexErrorMessage"
+      }, {
+        "batchIndex" : 1999726405,
+        "batchIndexErrorMessage" : "ProduceResponse.Responses[1].PartitionResponses[1].RecordErrors[1].BatchIndexErrorMessage"
+      } ],
+      "errorMessage" : "ProduceResponse.Responses[1].PartitionResponses[1].ErrorMessage",
+      "currentLeader" : {
+        "leaderId" : -1685401042,
+        "leaderEpoch" : -911847184
+      }
+    } ]
+  } ],
+  "throttleTimeMs" : -797624861,
+  "nodeEndpoints" : [ {
+    "nodeId" : 2022935929,
+    "host" : "ProduceResponse.NodeEndpoints[0].Host",
+    "port" : -1306718413,
+    "rack" : "ProduceResponse.NodeEndpoints[0].Rack"
+  }, {
+    "nodeId" : -601336790,
+    "host" : "ProduceResponse.NodeEndpoints[1].Host",
+    "port" : 888253344,
+    "rack" : "ProduceResponse.NodeEndpoints[1].Rack"
+  } ]
+}

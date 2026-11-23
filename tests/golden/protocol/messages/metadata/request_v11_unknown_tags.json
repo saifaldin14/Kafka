@@ -1,0 +1,11 @@
+{
+  "topics" : [ {
+    "topicId" : "DdnEC5g5knHCmnGzqdOhVg",
+    "name" : "MetadataRequest.Topics[0].Name"
+  }, {
+    "topicId" : "ThOzGO2eCbRJgupbw4pLlQ",
+    "name" : "MetadataRequest.Topics[1].Name"
+  } ],
+  "allowAutoTopicCreation" : true,
+  "includeTopicAuthorizedOperations" : true
+}

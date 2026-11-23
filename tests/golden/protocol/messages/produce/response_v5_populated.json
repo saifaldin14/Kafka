@@ -1,0 +1,34 @@
+{
+  "responses" : [ {
+    "name" : "ProduceResponse.Responses[0].Name",
+    "partitionResponses" : [ {
+      "index" : 1836369428,
+      "errorCode" : -445,
+      "baseOffset" : 6400597407410661010,
+      "logAppendTimeMs" : -2457616387313400313,
+      "logStartOffset" : 5900979177362663349
+    }, {
+      "index" : -1468788003,
+      "errorCode" : 30118,
+      "baseOffset" : 3539927305238066957,
+      "logAppendTimeMs" : -3326260692645455298,
+      "logStartOffset" : 3388008097436829714
+    } ]
+  }, {
+    "name" : "ProduceResponse.Responses[1].Name",
+    "partitionResponses" : [ {
+      "index" : -1020874875,
+      "errorCode" : 28446,
+      "baseOffset" : -1288572079247509691,
+      "logAppendTimeMs" : -8071756079066293322,
+      "logStartOffset" : -6945943796839100886
+    }, {
+      "index" : -114033668,
+      "errorCode" : -26245,
+      "baseOffset" : 5638135655668533418,
+      "logAppendTimeMs" : -3038443467963559201,
+      "logStartOffset" : -2101851227045621331
+    } ]
+  } ],
+  "throttleTimeMs" : -797624861
+}

@@ -1,0 +1,11 @@
+{
+  "topics" : [ "ConsumerProtocolSubscription.Topics[0]", "ConsumerProtocolSubscription.Topics[1]" ],
+  "userData" : null,
+  "ownedPartitions" : [ {
+    "topic" : "ConsumerProtocolSubscription.OwnedPartitions[0].Topic",
+    "partitions" : [ 469310531, 469540646 ]
+  }, {
+    "topic" : "ConsumerProtocolSubscription.OwnedPartitions[1].Topic",
+    "partitions" : [ -1983295398, -1983441993 ]
+  } ]
+}

@@ -1,0 +1,6 @@
+{
+  "v3AndBelowTransactionalId" : "",
+  "v3AndBelowProducerId" : 0,
+  "v3AndBelowProducerEpoch" : 0,
+  "v3AndBelowTopics" : [ ]
+}

@@ -1,0 +1,12 @@
+{
+  "groupId" : null,
+  "memberId" : "",
+  "shareSessionEpoch" : 0,
+  "maxWaitMs" : 0,
+  "minBytes" : 0,
+  "maxBytes" : 2147483647,
+  "maxRecords" : 0,
+  "batchSize" : 0,
+  "topics" : [ ],
+  "forgottenTopicsData" : [ ]
+}

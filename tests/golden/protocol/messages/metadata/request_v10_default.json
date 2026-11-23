@@ -1,0 +1,6 @@
+{
+  "topics" : [ ],
+  "allowAutoTopicCreation" : true,
+  "includeClusterAuthorizedOperations" : false,
+  "includeTopicAuthorizedOperations" : false
+}

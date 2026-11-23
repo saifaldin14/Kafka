@@ -1,0 +1,19 @@
+{
+  "creations" : [ {
+    "resourceType" : -67,
+    "resourceName" : "CreateAclsRequest.Creations[0].ResourceName",
+    "resourcePatternType" : -79,
+    "principal" : "CreateAclsRequest.Creations[0].Principal",
+    "host" : "CreateAclsRequest.Creations[0].Host",
+    "operation" : -122,
+    "permissionType" : -46
+  }, {
+    "resourceType" : -26,
+    "resourceName" : "CreateAclsRequest.Creations[1].ResourceName",
+    "resourcePatternType" : -116,
+    "principal" : "CreateAclsRequest.Creations[1].Principal",
+    "host" : "CreateAclsRequest.Creations[1].Host",
+    "operation" : -61,
+    "permissionType" : -23
+  } ]
+}

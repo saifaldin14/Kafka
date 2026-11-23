@@ -1,0 +1,8 @@
+{
+  "throttleTimeMs" : 0,
+  "errorCode" : 0,
+  "errorMessage" : null,
+  "acquisitionLockTimeoutMs" : 0,
+  "responses" : [ ],
+  "nodeEndpoints" : [ ]
+}

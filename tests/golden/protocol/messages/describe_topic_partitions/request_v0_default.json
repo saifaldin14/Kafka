@@ -1,0 +1,5 @@
+{
+  "topics" : [ ],
+  "responsePartitionLimit" : 2000,
+  "cursor" : null
+}

@@ -1,0 +1,32 @@
+{
+  "throttleTimeMs" : -380471168,
+  "errorCode" : 11848,
+  "errorMessage" : null,
+  "topics" : [ {
+    "name" : "ListPartitionReassignmentsResponse.Topics[0].Name",
+    "partitions" : [ {
+      "partitionIndex" : 358036244,
+      "replicas" : [ -1302914009, -1302683894 ],
+      "addingReplicas" : [ -1358539428, -1358682543 ],
+      "removingReplicas" : [ 832506394, 832248439 ]
+    }, {
+      "partitionIndex" : 2093241987,
+      "replicas" : [ -143024302, -143198737 ],
+      "addingReplicas" : [ -1850885807, -1850742692 ],
+      "removingReplicas" : [ -588272433, -588153678 ]
+    } ]
+  }, {
+    "name" : "ListPartitionReassignmentsResponse.Topics[1].Name",
+    "partitions" : [ {
+      "partitionIndex" : -54211489,
+      "replicas" : [ -744103786, -744250381 ],
+      "addingReplicas" : [ 1978022101, 1978193056 ],
+      "removingReplicas" : [ -301092509, -300918074 ]
+    }, {
+      "partitionIndex" : 308000144,
+      "replicas" : [ 548238763, 548496718 ],
+      "addingReplicas" : [ -769226576, -769369691 ],
+      "removingReplicas" : [ 1721082478, 1720824523 ]
+    } ]
+  } ]
+}

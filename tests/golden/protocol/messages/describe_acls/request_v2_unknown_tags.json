@@ -1,0 +1,9 @@
+{
+  "resourceTypeFilter" : -38,
+  "resourceNameFilter" : "DescribeAclsRequest.ResourceNameFilter",
+  "patternTypeFilter" : -88,
+  "principalFilter" : "DescribeAclsRequest.PrincipalFilter",
+  "hostFilter" : "DescribeAclsRequest.HostFilter",
+  "operation" : 5,
+  "permissionType" : -37
+}

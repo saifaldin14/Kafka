@@ -1,0 +1,45 @@
+{
+  "markers" : [ {
+    "producerId" : -7143275456340575452,
+    "topics" : [ {
+      "name" : "WriteTxnMarkersResponse.Markers[0].Topics[0].Name",
+      "partitions" : [ {
+        "partitionIndex" : -1996479094,
+        "errorCode" : 30811
+      }, {
+        "partitionIndex" : -294932991,
+        "errorCode" : -1794
+      } ]
+    }, {
+      "name" : "WriteTxnMarkersResponse.Markers[0].Topics[1].Name",
+      "partitions" : [ {
+        "partitionIndex" : 1750330197,
+        "errorCode" : 14618
+      }, {
+        "partitionIndex" : 1218985710,
+        "errorCode" : 7719
+      } ]
+    } ]
+  }, {
+    "producerId" : -256510760613332065,
+    "topics" : [ {
+      "name" : "WriteTxnMarkersResponse.Markers[1].Topics[0].Name",
+      "partitions" : [ {
+        "partitionIndex" : -1377244711,
+        "errorCode" : 4918
+      }, {
+        "partitionIndex" : -879445342,
+        "errorCode" : -29165
+      } ]
+    }, {
+      "name" : "WriteTxnMarkersResponse.Markers[1].Topics[1].Name",
+      "partitions" : [ {
+        "partitionIndex" : 874789438,
+        "errorCode" : -7913
+      }, {
+        "partitionIndex" : 990797541,
+        "errorCode" : 30986
+      } ]
+    } ]
+  } ]
+}

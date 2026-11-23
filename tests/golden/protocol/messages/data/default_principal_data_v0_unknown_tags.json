@@ -1,0 +1,5 @@
+{
+  "type" : "DefaultPrincipalData.Type",
+  "name" : "DefaultPrincipalData.Name",
+  "tokenAuthenticated" : false
+}
