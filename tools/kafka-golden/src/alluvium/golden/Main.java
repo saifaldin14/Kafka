@@ -20,12 +20,13 @@ public final class Main {
         java.nio.file.Path out = java.nio.file.Path.of(args[1]);
         switch (args[0]) {
             case "errors" -> ErrorsDump.write(out);
+            case "api-keys" -> ApiKeysDump.write(out);
             default -> usage();
         }
     }
 
     private static void usage() {
-        System.err.println("usage: Main <dump> <output-directory>; dumps: errors");
+        System.err.println("usage: Main <dump> <output-directory>; dumps: errors, api-keys");
         System.exit(2);
     }
 }

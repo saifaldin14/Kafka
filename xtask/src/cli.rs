@@ -56,16 +56,19 @@ pub(crate) enum Command {
 pub(crate) enum GoldenDump {
     /// `errors`: Kafka's error table, for the generated `ErrorCode`.
     Errors,
+    /// `api-keys`: Kafka's API key registry and the API versions its listeners advertise.
+    ApiKeys,
 }
 
 impl GoldenDump {
     /// Every dump, in the order `help` lists them.
-    pub(crate) const ALL: [GoldenDump; 1] = [GoldenDump::Errors];
+    pub(crate) const ALL: [GoldenDump; 2] = [GoldenDump::Errors, GoldenDump::ApiKeys];
 
     /// The dump's name on the command line and in the harness.
     pub(crate) fn name(self) -> &'static str {
         match self {
             GoldenDump::Errors => "errors",
+            GoldenDump::ApiKeys => "api-keys",
         }
     }
 }
@@ -204,6 +207,10 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
     (
         "schemas vendor --tag <tag> [--dry-run]",
         "Copy the schemas from an apache/kafka tag and write the manifest (needs the network)",
+    ),
+    (
+        "golden api-keys",
+        "Record Kafka's API key registry and the API versions its listeners advertise, with the Kafka harness (needs the network and Docker)",
     ),
     (
         "golden errors",
@@ -1172,6 +1179,10 @@ mod tests {
         assert_eq!(
             parse(args(&["golden", "errors"])),
             Ok(Command::Golden(GoldenDump::Errors))
+        );
+        assert_eq!(
+            parse(args(&["golden", "api-keys"])),
+            Ok(Command::Golden(GoldenDump::ApiKeys))
         );
         assert!(parse(args(&["golden"])).is_err());
         assert!(parse(args(&["golden", "nothing"])).is_err());
