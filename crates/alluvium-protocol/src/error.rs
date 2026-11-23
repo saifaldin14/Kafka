@@ -202,6 +202,13 @@ pub enum EncodeError {
         /// The tag.
         tag: u32,
     },
+    /// Deferred record batches written by a writer that copies: only a frame can hold
+    /// them, as a placeholder the network layer fills ([`Writer::sharing`](crate::Writer::sharing)).
+    #[error("deferred record batches of {len} bytes can only be written into a frame")]
+    DeferredRecordsNotInFrame {
+        /// The batches' size, in bytes.
+        len: usize,
+    },
 }
 
 /// Formats a field path as ` in A.B.C`, or nothing when empty.

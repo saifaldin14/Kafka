@@ -26,6 +26,30 @@ proptest! {
     }
 }
 
+// PROTO-0104: a byte array read from a tagged field, through the reader over just that
+// field, keeps the frame alive too; an empty one doesn't.
+#[test]
+fn a_tagged_byte_array_retains_the_frame() {
+    for (my_bytes, retained) in [
+        (Some(Bytes::from_static(b"x")), true),
+        (Some(Bytes::new()), false),
+        (None, false),
+    ] {
+        let message = SimpleExampleMessage {
+            my_bytes,
+            ..SimpleExampleMessage::default()
+        };
+        let frame = written(|writer| message.encode(writer, 1).unwrap());
+        let mut reader = Reader::new(frame.clone());
+        assert_eq!(
+            SimpleExampleMessage::decode(&mut reader, 1).unwrap(),
+            message
+        );
+        let expected = if retained { frame.len() } else { 0 };
+        assert_eq!(reader.retained_bytes(), expected, "{:?}", message.my_bytes);
+    }
+}
+
 fn written(write: impl FnOnce(&mut Writer)) -> Bytes {
     let mut writer = Writer::new();
     write(&mut writer);
@@ -40,7 +64,7 @@ mod versions_and_fields {
     use crate::Framing::Classic;
     use crate::generated::produce_request::ProduceRequest;
     use crate::generated::request_header::RequestHeader;
-    use crate::{DecodeErrorKind, RecordsField, Writer};
+    use crate::{DecodeErrorKind, Message, Reader, RecordsField, Writer};
 
     #[test]
     fn a_version_the_message_lacks_is_unsupported() {
@@ -110,12 +134,30 @@ mod versions_and_fields {
             Uuid::ZERO,
             "absent before v13, so its default"
         );
-        let records = topic.partition_data[0].records.as_ref().unwrap().as_bytes();
+        let records = topic.partition_data[0]
+            .records
+            .as_ref()
+            .unwrap()
+            .as_bytes()
+            .unwrap();
         assert_eq!(&records[..], b"batch");
         assert!(
             frame.as_ptr_range().contains(&records.as_ptr()),
             "copied, not sliced"
         );
+    }
+
+    // PROTO-0104: records keep the whole frame alive; strings are copied out of it.
+    #[test]
+    fn a_request_holding_records_retains_its_frame() {
+        let name = |writer: &mut Writer| writer.write_string(Classic, "orders").unwrap();
+        for (records, retained) in [(&b"batch"[..], true), (b"", false)] {
+            let frame = produce_v3(name, records);
+            let mut reader = Reader::new(frame.clone());
+            ProduceRequest::decode(&mut reader, 3).unwrap();
+            let expected = if retained { frame.len() } else { 0 };
+            assert_eq!(reader.retained_bytes(), expected, "records {records:?}");
+        }
     }
 
     #[test]

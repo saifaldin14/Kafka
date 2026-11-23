@@ -15,7 +15,7 @@ use alluvium_protocol::generated::response_header::ResponseHeader;
 use alluvium_protocol::generated::sasl_authenticate_request::SaslAuthenticateRequest;
 use alluvium_protocol::{
     DecodeError, DecodeErrorKind, DecodeLimits, Framing, HeaderError, Limit, Message,
-    RawTaggedField, Reader, RecordsField, Writer, decode_request_header,
+    RawTaggedField, Reader, RecordsField, Segment, Writer, decode_request_header,
 };
 use bytes::Bytes;
 use peak_alloc::PeakAlloc;
@@ -325,7 +325,9 @@ fn encoding_shares_records() -> Result<(), Box<dyn std::error::Error>> {
     let shared: Vec<_> = frame
         .segments()
         .iter()
-        .filter(|segment| segment.as_ptr() == batch.as_ptr())
+        .filter(
+            |segment| matches!(segment, Segment::Bytes(bytes) if bytes.as_ptr() == batch.as_ptr()),
+        )
         .collect();
     assert_eq!(shared.len(), 100, "every batch is its own shared segment");
     assert_eq!(

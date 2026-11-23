@@ -55,7 +55,7 @@ Each message is its own module, so inline struct names never clash across messag
 
 **Records fields are always an `Option`.** Kafka defaults every records field to null, even the non-nullable `UnalignedRecords` of `FetchSnapshotResponse`.
 
-**No payload copies.** `bytes` and `records` values are slices of the frame they arrived in, sharing its allocation, as [`RecordsField`](../../crates/alluvium-protocol/src/records.rs) documents.
+**No payload copies.** `bytes` and `records` values are slices of the frame they arrived in, sharing its allocation, as [`RecordsField`](../../crates/alluvium-protocol/src/records.rs) documents. Any such slice keeps the whole frame alive. After a decode, `Reader::retained_bytes` is the input's length if the decoded value holds a non-empty slice of it (a byte array, records or an unknown tagged field), and 0 otherwise. The network layer counts that against the connection until the request is done.
 
 **Derives.** Every struct derives `Clone` and `PartialEq`, and `Debug` unless it has a sensitive field (see [Redaction](#redaction)). It doesn't derive `Eq`, because `float64` fields follow IEEE 754 equality, as Kafka's `equals` does.
 
@@ -202,6 +202,10 @@ Every message implements `Message::encode(writer, version)`, which mirrors Kafka
 - Each becomes a segment of its own that holds the message's `Bytes`, as in Kafka's `SendBuilder`.
 - `Writer::into_frame` returns an `EncodedFrame`: those shared segments, with the owned bytes between them coalesced, ready for a vectored write.
 - `Writer::new()` copies them instead. That is cheaper when the caller wants one buffer (`into_bytes`): sharing costs a few hundred instructions per value, and copying a small batch costs less.
+- A response may hold `RecordsField::Deferred { len, token }`: batches the broker doesn't read into memory, such as a segment file region. The frame gets their length, then a `Segment::Deferred` placeholder of that length, which the network layer fills with the batches `token` names. This mirrors Kafka's `SendBuilder`, which adds a `FileRecords`' own `Send`. The protocol crate does no I/O.
+  - A counting writer counts deferred batches.
+  - A copying writer refuses them with `DeferredRecordsNotInFrame`, as Kafka's `Writable.writeRecords` refuses records that aren't in memory.
+  - `into_bytes` of a sharing writer holding them panics, since their bytes don't exist. Decoding never produces them, so only the caller's own message can hold them.
 
 **Infallible structs.** A struct whose encoding can't fail, because it has only fixed-size fields that are present in every version, gets a `write_fields` that returns nothing.
 

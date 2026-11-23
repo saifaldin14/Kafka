@@ -185,7 +185,7 @@ impl Reader {
     /// [`DecodeErrorKind::Truncated`] if the input ends inside it.
     pub fn read_bytes(&mut self, framing: Framing) -> Result<Bytes, DecodeError> {
         let length = self.read_present_length(framing, Width::Int)?;
-        self.take(length)
+        self.take_kept(length)
     }
 
     /// A nullable `bytes` field, as a slice of the input: any negative length is null.
@@ -195,7 +195,7 @@ impl Reader {
     /// [`DecodeErrorKind::Truncated`] if the input ends inside it.
     pub fn read_nullable_bytes(&mut self, framing: Framing) -> Result<Option<Bytes>, DecodeError> {
         match self.read_nullable_length(framing, Width::Int)? {
-            Some(length) => self.take(length).map(Some),
+            Some(length) => self.take_kept(length).map(Some),
             None => Ok(None),
         }
     }
@@ -303,17 +303,40 @@ impl Writer {
         }
     }
 
-    /// A `records` field, written as it is.
+    /// A `records` field: batches in memory shared like a zero-copy byte array, and
+    /// deferred ones as a placeholder of their length.
     ///
     /// # Errors
     ///
-    /// As [`Writer::write_bytes`].
+    /// As [`Writer::write_bytes`], and [`EncodeError::DeferredRecordsNotInFrame`] for
+    /// deferred batches unless this writer makes a frame.
+    // Parity: clients/src/main/java/org/apache/kafka/common/protocol/SendBuilder.java@4.4.0 SendBuilder.writeRecords
     pub fn write_records(
         &mut self,
         framing: Framing,
         value: Option<&RecordsField>,
     ) -> Result<(), EncodeError> {
-        self.write_nullable_zero_copy_bytes(framing, value.map(RecordsField::as_bytes))
+        match value {
+            None => self.write_length(framing, Width::Int, None),
+            Some(RecordsField::Memory(bytes)) => self.write_zero_copy_bytes(framing, bytes),
+            Some(&RecordsField::Deferred { len, token }) => {
+                self.write_deferred(framing, len, token)
+            }
+        }
+    }
+
+    /// Deferred batches' length, then their placeholder: apart from
+    /// [`Writer::write_records`], so that its usual path stays small enough to inline.
+    #[cold]
+    #[inline(never)]
+    fn write_deferred(
+        &mut self,
+        framing: Framing,
+        len: usize,
+        token: u64,
+    ) -> Result<(), EncodeError> {
+        self.write_length(framing, Width::Int, Some(len))?;
+        self.put_deferred(len, token)
     }
 
     /// A `bytes` field marked `zeroCopy`: written like [`Writer::write_bytes`], but shared
@@ -607,7 +630,7 @@ mod tests {
         let mut input_reader = Reader::new(input.clone());
         let classic = input_reader.read_bytes(Classic).unwrap();
         let compact = input_reader.read_records(Compact).unwrap().unwrap();
-        let compact = compact.as_bytes().clone();
+        let compact = compact.as_bytes().unwrap().clone();
         assert_eq!((&classic[..], &compact[..]), (&[7, 8][..], &[9, 9][..]));
         let input_range = input.as_ptr_range();
         for slice in [&classic, &compact] {
@@ -706,7 +729,7 @@ mod tests {
             let mut input = reader(&bytes);
             prop_assert_eq!(input.read_bytes(framing).map(|b| b.to_vec()), Ok(value));
             prop_assert_eq!(input.read_nullable_bytes(framing).map(|b| b.map(|b| b.to_vec())), Ok(nullable.clone()));
-            prop_assert_eq!(input.read_records(framing).map(|b| b.map(|b| b.as_bytes().to_vec())), Ok(nullable));
+            prop_assert_eq!(input.read_records(framing).map(|b| b.and_then(|b| b.as_bytes().map(|b| b.to_vec()))), Ok(nullable));
             prop_assert_eq!(input.remaining(), 0);
         }
     }

@@ -41,7 +41,7 @@ impl Reader {
             let (tag, size) = reader.read_tagged_field_header()?;
             Ok(RawTaggedField {
                 tag,
-                data: reader.take(size)?,
+                data: reader.take_kept(size)?,
             })
         })
     }
@@ -123,9 +123,11 @@ impl Reader {
             total: start.saturating_add(size),
             limits: self.limits,
             budget_left: self.budget_left,
+            kept: 0,
         };
         let value = read(&mut value_reader);
         self.budget_left = value_reader.budget_left;
+        self.kept |= value_reader.kept;
         let value = value?;
         if value_reader.remaining() > 0 {
             return Err(Reader::error_at(
@@ -155,7 +157,7 @@ impl Reader {
         fields: &mut Vec<RawTaggedField>,
     ) -> Result<(), DecodeError> {
         let start = self.offset();
-        let data = self.take(size)?;
+        let data = self.take_kept(size)?;
         if fields.len() == fields.capacity() {
             // Grow as `Vec` would, doubling, but charge the whole new block before it is
             // allocated: while the fields move into it, the old block is live too.
@@ -371,6 +373,21 @@ mod tests {
             Ok(vec![field(0, &[7]), field(5, &[1, 2])])
         );
         assert_eq!(reader(&[0]).read_tagged_fields(), Ok(vec![]));
+    }
+
+    // PROTO-0104: kept unknown fields are slices of the input, so they retain it; a
+    // field with no data holds nothing.
+    #[test]
+    fn unknown_fields_with_data_retain_the_input() {
+        for (section, retained) in [(&[1, 0, 0][..], 0), (&[1, 0, 1, 7][..], 4), (&[0][..], 0)] {
+            let mut input = reader(section);
+            input.read_tagged_fields().unwrap();
+            assert_eq!(input.retained_bytes(), retained, "{section:?}");
+        }
+        let mut input = reader(&[9, 9, 7]);
+        let mut fields = Vec::new();
+        input.read_unknown_tagged_field(4, 1, &mut fields).unwrap();
+        assert_eq!(input.retained_bytes(), 3);
     }
 
     #[test]

@@ -15,6 +15,9 @@ use crate::limits::{DecodeLimits, Limit};
 /// allocated for them, and every allocation is charged to its budget.
 ///
 /// It is not `Clone`: a clone would have its own copy of the allocation budget left.
+///
+/// After a decode, [`Reader::retained_bytes`] says how much of the input the decoded
+/// value keeps alive, for the network layer's memory accounting.
 // Parity: clients/src/main/java/org/apache/kafka/common/protocol/ByteBufferAccessor.java@4.4.0 ByteBufferAccessor
 #[derive(Debug)]
 pub struct Reader {
@@ -24,6 +27,10 @@ pub struct Reader {
     pub(crate) limits: DecodeLimits,
     /// The bytes of [`DecodeLimits::allocation_budget`] not yet charged.
     pub(crate) budget_left: usize,
+    /// The lengths of the slices of the input values read keep, OR-ed together: not
+    /// zero exactly when one of them is non-empty ([`Reader::retained_bytes`]). An OR is
+    /// one instruction per slice, where a flag would take a compare as well.
+    pub(crate) kept: usize,
 }
 
 impl Reader {
@@ -40,7 +47,21 @@ impl Reader {
             total,
             limits,
             budget_left: limits.allocation_budget,
+            kept: 0,
         }
+    }
+
+    /// How many bytes of the input the values read so far keep alive: all of it once any
+    /// of them holds a slice of it, and none otherwise.
+    ///
+    /// A byte array, a `records` field or an unknown tagged field read is a slice of the
+    /// input, and any slice keeps the whole input's allocation alive, however small it
+    /// is. Strings and every other value are copied out, and an empty slice holds
+    /// nothing. The network layer counts this against the connection until the request
+    /// is done; it is exact when each frame is read into an allocation of its own. After
+    /// a failed decode it means nothing: a slice that failed to read may be counted.
+    pub fn retained_bytes(&self) -> usize {
+        if self.kept == 0 { 0 } else { self.total }
     }
 
     /// The offset of the next byte to read, from the start of the input.
@@ -72,6 +93,15 @@ impl Reader {
             )
         })?;
         Ok(())
+    }
+
+    /// The next `len` bytes, sharing the input's allocation, for a value that keeps them:
+    /// what [`Reader::retained_bytes`] counts. They are counted before they are taken, so
+    /// that `take`'s result is returned as it is, which costs fewer instructions per read.
+    #[inline]
+    pub(crate) fn take_kept(&mut self, len: usize) -> Result<Bytes, DecodeError> {
+        self.kept |= len;
+        self.take(len)
     }
 
     /// The next `len` bytes, sharing the input's allocation.

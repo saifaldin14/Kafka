@@ -225,8 +225,8 @@ P0 · M2 · Spike · deps: none · labels: perf · ref: ADR-0007
 Done when: ADR chooses how plaintext fetch responses send segment bytes (sendfile through a vetted dependency, Linux and macOS behavior, fallback copy path) with a benchmark comparing options; accepted ADR in docs/adr/.
 
 ### [To Do] NET-0050 Plaintext fetch responses: send file regions without copying through user space
-P0 · M2 · Task · deps: NET-0049, NET-0048 · labels: perf
-Done when: File-region parts go from segment file to socket per the zero-copy ADR, resuming partial transfers; a segment shorter than the region (deleted or truncated) ends the response as Kafka's `FileRecords.writeTo` does and closes the connection with an event; test compares bytes received with the segment.
+P0 · M2 · Task · deps: NET-0049, NET-0048, PROTO-F08 · labels: perf
+Done when: File-region parts, the `Segment::Deferred` placeholders of an `EncodedFrame` (PROTO-0103), go from segment file to socket per the zero-copy ADR, resuming partial transfers; a segment shorter than the region (deleted or truncated) ends the response as Kafka's `FileRecords.writeTo` does and closes the connection with an event; test compares bytes received with the segment.
 
 ### [To Do] NET-0051 TLS response path: stream file regions through rustls with bounded buffers
 P0 · M2 · Task · deps: NET-0048, NET-F07
