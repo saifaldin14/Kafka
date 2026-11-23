@@ -32,6 +32,13 @@ doc = false
 bench = false
 
 [[bin]]
+name = "capture_pcap"
+path = "fuzz_targets/capture_pcap.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
 name = "protocol_frame_dump"
 path = "fuzz_targets/protocol_frame_dump.rs"
 test = false

@@ -638,11 +638,11 @@ Done when: errors report byte offset and field path; truncated frames are report
 P2 · M2 · Task · deps: PROTO-0142
 Done when: each format has fixture tests; malformed input yields an error with line and column.
 
-### [To Do] PROTO-0144 pcap/pcapng input: TCP payload extraction, in-order stream reassembly per connection, Kafka frame splitting
+### [Done] PROTO-0144 pcap/pcapng input: TCP payload extraction, in-order stream reassembly per connection, Kafka frame splitting
 P3 · M2 · Task · deps: PROTO-0142
 Done when: a captured Java-client session decodes end to end; out-of-order or missing segments are reported; any new dependency passes the checklist.
 
-### [To Do] PROTO-0145 Request/response pairing by correlation id within a connection so responses decode without `--api/--version`
+### [Done] PROTO-0145 Request/response pairing by correlation id within a connection so responses decode without `--api/--version`
 P2 · M2 · Task · deps: PROTO-0143
 Done when: a capture of an ApiVersions + Metadata + Produce exchange decodes every response automatically.
 

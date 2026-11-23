@@ -6,6 +6,8 @@ version = 4
 name = "alluvium-capture"
 version = "0.0.0"
 dependencies = [
+ "alluvium-protocol",
+ "bytes",
  "thiserror",
 ]
 

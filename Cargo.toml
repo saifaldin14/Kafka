@@ -12,6 +12,7 @@ license-file = "LICENSE"
 
 [workspace.dependencies]
 alluvium-types = { path = "crates/alluvium-types" }
+alluvium-protocol = { path = "crates/alluvium-protocol" }
 bytes = { version = "1.12.2", default-features = false, features = ["std"] }
 chacha20 = { version = "0.10.2", default-features = false, features = ["rng"] }
 crc32c = { version = "0.6.9", default-features = false }
