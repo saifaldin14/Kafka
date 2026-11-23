@@ -51,6 +51,18 @@
   "input" : "eda0bdedb880",
   "kafka" : "efbfbdefbfbd"
 }, {
+  "name" : "surrogate_truncated",
+  "input" : "61eda0",
+  "kafka" : "61efbfbd"
+}, {
+  "name" : "surrogate_then_ascii",
+  "input" : "eda061",
+  "kafka" : "efbfbd61"
+}, {
+  "name" : "surrogate_lead_alone",
+  "input" : "ed61",
+  "kafka" : "efbfbd61"
+}, {
   "name" : "above_unicode",
   "input" : "f4908080",
   "kafka" : "efbfbdefbfbdefbfbdefbfbd"

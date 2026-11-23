@@ -235,3 +235,37 @@ fn every_case_kafka_wrote_decodes_and_encodes_as_kafka_writes_it() {
         failures.join("\n")
     );
 }
+
+/// Each sequence of `utf8.json` in a classic string, as Kafka 4.4.0 decodes it and
+/// writes it back (PROTO-0124).
+#[test]
+fn strings_with_invalid_utf8_decode_as_kafka_decodes_them() {
+    let cases: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(golden().join("utf8.json")).unwrap()).unwrap();
+    let mut failures = Vec::new();
+    for case in cases.as_array().unwrap() {
+        let name = case["name"].as_str().unwrap();
+        let hex = |key: &str| -> Vec<u8> {
+            case[key]
+                .as_str()
+                .unwrap()
+                .as_bytes()
+                .chunks(2)
+                .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                .collect()
+        };
+        let (input, kafka) = (hex("input"), hex("kafka"));
+        let mut framed = i16::try_from(input.len()).unwrap().to_be_bytes().to_vec();
+        framed.extend_from_slice(&input);
+        let text = Reader::new(Bytes::from(framed))
+            .read_string(crate::Framing::Classic)
+            .unwrap();
+        if text.as_bytes() != kafka {
+            failures.push(format!(
+                "{name}: Kafka {kafka:02x?}, Rust {:02x?}",
+                text.as_bytes()
+            ));
+        }
+    }
+    assert!(failures.is_empty(), "{}", failures.join("\n"));
+}
