@@ -20,7 +20,7 @@ Alluvium stores other people's data and listens on the network. Security is a de
 **All bytes from the network and from disk are untrusted.** Decoders follow these rules:
 
 1. **Never panic.** Return a `DecodeError` that identifies what failed and at which offset in the input.
-2. **Bound before allocating.** A length read from input is checked against both the remaining bytes and a configured limit *before* any `Vec::with_capacity` or `reserve`. A 4-byte array length of 2³¹ must not allocate anything.
+2. **Bound before allocating.** A length read from input is checked against both the remaining bytes and a configured limit *before* any `Vec::with_capacity` or `reserve`. A 4-byte array length of 2³¹ must not allocate anything. The protocol decoder's limits, their defaults and Kafka counterparts are in [codegen.md](../protocol/codegen.md#decode-limits).
 3. **Checked arithmetic** on every value derived from input (offsets, lengths, deltas). The decoder crates deny `clippy::arithmetic_side_effects` and `clippy::indexing_slicing`.
 4. **No unbounded recursion.** Nested structures have a depth limit.
 5. **Decompression is bounded.** The decompressed size is capped by `message.max.bytes` and by the batch's declared size. A decompression bomb returns an error, not an out-of-memory kill.

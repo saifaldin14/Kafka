@@ -155,6 +155,27 @@ The versions a field is present, nullable, flexible or tagged in become conditio
 
 **No panics.** A property test decodes arbitrary input as every message at every version (`DECODE_EVERY_VERSION`, generated for tests) and requires each decode to return.
 
+## Decode limits
+
+Every generated decoder reads through a `Reader`, which carries the caller's `DecodeLimits`. A test of the generator checks that generated code makes no allocation of its own. The request header is read through the same reader. Each declared size is checked before anything is allocated for it:
+
+| Limit | Default | Kafka 4.4.0 | Error |
+|---|---|---|---|
+| Array elements declared (`max_array_length`) | 1,000,000 | `MessageUtil.MAX_ARRAY_LENGTH` | `LimitExceeded` (array length) |
+| Array elements against the bytes left | always | the generated "Tried to allocate a collection" check | `ArrayLongerThanInput` |
+| Elements allocated before any decode | 1000, fixed | `MessageUtil.MAX_PREALLOCATED_ARRAY_CAPACITY` | none: the rest are allocated as they decode |
+| String length | 32767 bytes, fixed | the generated `0x7fff` check | `LimitExceeded` (string length) |
+| Tagged fields declared (`max_tagged_field_count`) | 10,000 | `MessageUtil.MAX_TAGGED_FIELD_COUNT` | `LimitExceeded` (tagged-field count) |
+| Tagged fields against the bytes left | always | the generated "Tried to read N tagged fields" check | `TaggedFieldCountExceedsInput` |
+| Bytes allocated by one decode (`allocation_budget`) | 100 MiB, Kafka's default `socket.request.max.bytes` | none ([ADR-0017](../adr/0017-per-decode-allocation-budget.md)) | `LimitExceeded` (allocation in bytes) |
+| Struct nesting | 8 levels | none | a generator error; no type is recursive, so decoding never recurses deeper |
+
+`tests/allocation.rs` decodes hostile sizes in tiny inputs, and each must fail with under 64 KiB allocated:
+- an `int32` array length of 2³¹−1;
+- a compact length of `0xFFFFFFFF`;
+- 10,001 tagged fields in a request header;
+- nested arrays each declaring every byte left.
+
 ## Encoding
 
 Every message implements `Message::encode(writer, version)`, which mirrors Kafka's generated `write`, and `Message::encoded_size(version)`.

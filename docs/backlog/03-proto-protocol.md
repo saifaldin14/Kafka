@@ -462,7 +462,7 @@ Done when: the encoder accepts `RecordsField::Deferred { len, token }` and accou
 P2 · M1 · Task · deps: PROTO-0101 · labels: nfr
 Done when: the value equals the frame length when any records slice is held and zero otherwise; documented for NET memory accounting.
 
-## [In Progress] PROTO-F09 Decode limits
+## [Done] PROTO-F09 Decode limits
 P0 · M1 · Feature · deps: none
 Scope: `DecodeLimits` bounding array lengths, string lengths, nesting depth and total allocation before allocating.
 
@@ -494,15 +494,15 @@ Done when: the deepest vendored message is reported in codegen output; a fixture
 P0 · M1 · Task · deps: PROTO-0105 · labels: security
 Done when: a 1 MiB frame of maximal empty-struct arrays fails once the budget is exhausted; peak allocation stays under the budget (counting-allocator test); the default budget is justified in docs.
 
-### [To Do] PROTO-0112 Thread `DecodeLimits` through all generated decoders and header decoding
+### [Done] PROTO-0112 Thread `DecodeLimits` through all generated decoders and header decoding
 P0 · M1 · Task · deps: PROTO-0106, PROTO-0107, PROTO-0108, PROTO-0109, PROTO-0111, PROTO-0073, PROTO-0072, PROTO-0087 · labels: security
 Done when: every generated decode takes the limits; no allocation path in generated code bypasses the budget (generator test greps output for unchecked `with_capacity`).
 
-### [To Do] PROTO-0113 Adversarial-input tests: maximal declared lengths in tiny inputs fail without large allocation
+### [Done] PROTO-0113 Adversarial-input tests: maximal declared lengths in tiny inputs fail without large allocation
 P0 · M1 · Task · deps: PROTO-0112 · labels: security, test
 Done when: cases: int32 array length 2^31−1, compact length 0xFFFFFFFF, 10,001 tagged fields, deeply repeated nested arrays; each fails with the expected error and peak allocation under 64 KiB.
 
-### [To Do] PROTO-0114 Document decode limits and their Kafka counterparts in docs/standards/security.md and docs/protocol/codegen.md
+### [Done] PROTO-0114 Document decode limits and their Kafka counterparts in docs/standards/security.md and docs/protocol/codegen.md
 P1 · M1 · Task · deps: PROTO-0112 · labels: docs, security
 Done when: each limit, its default, its Kafka constant and the error returned are listed.
 
