@@ -5,9 +5,11 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.kafka.clients.NodeApiVersions;
 import org.apache.kafka.common.message.ApiMessageType;
 import org.apache.kafka.common.message.ApiMessageType.ListenerType;
 import org.apache.kafka.common.message.ApiVersionsResponseData;
@@ -32,7 +34,8 @@ import org.apache.kafka.common.requests.ApiVersionsResponse;
  * builds the broker lists, as a broker without a controller connection does;
  * {@code collectApis} builds the controller lists, as Kafka's controller does. Supported
  * and finalized features are left out: they come from the server module, not the
- * client jar.
+ * client jar. Beside each is a {@code .txt} file holding what a Kafka client prints for
+ * that list: {@code NodeApiVersions.toString()}, each API's range and usable version.
  */
 final class ApiKeysDump {
     private ApiKeysDump() {
@@ -95,7 +98,9 @@ final class ApiKeysDump {
         short version = ApiKeys.API_VERSIONS.latestVersion(false);
         ByteBuffer bytes = MessageUtil.toByteBufferAccessor(data, version).buffer();
         String name = "api_versions_" + listener + (unstable ? "_unstable" : "")
-            + (telemetry ? "_telemetry" : "") + "_v" + version + ".bin";
-        Files.write(out.resolve(name), MessageUtil.byteBufferToArray(bytes));
+            + (telemetry ? "_telemetry" : "") + "_v" + version;
+        Files.write(out.resolve(name + ".bin"), MessageUtil.byteBufferToArray(bytes));
+        Files.writeString(out.resolve(name + ".txt"),
+            new NodeApiVersions(versions, Collections.emptyList()).toString() + "\n");
     }
 }

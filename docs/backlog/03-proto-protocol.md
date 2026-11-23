@@ -654,27 +654,27 @@ Done when: command tests over golden frames for every output mode; payloads are 
 P2 · M2 · Task · deps: PROTO-0146 · labels: docs
 Done when: the page includes a worked example and the redaction guarantees.
 
-## [To Do] PROTO-F14 Version negotiation
+## [Done] PROTO-F14 Version negotiation
 P1 · M2 · Feature · deps: PROTO-F07
 Scope: Pick the highest mutually supported version per peer from ApiVersions, for inter-node clients.
 
-### [To Do] PROTO-0148 `NodeApiVersions` from an ApiVersionsResponse: per-API peer range, unknown peer API keys kept for diagnostics
+### [Done] PROTO-0148 `NodeApiVersions` from an ApiVersionsResponse: per-API peer range, unknown peer API keys kept for diagnostics
 P1 · M2 · Task · deps: PROTO-0125 · ref: clients/src/main/java/org/apache/kafka/clients/NodeApiVersions.java @4.4.0
 Done when: built from the Kafka 4.4.0 broker and controller responses exported by the harness; unit tests.
 
-### [To Do] PROTO-0149 Version selection `latest_usable_version(api, allowed)`: highest version in local ∩ peer ∩ allowed, else `UnsupportedVersion { api, local, peer }`
+### [Done] PROTO-0149 Version selection `latest_usable_version(api, allowed)`: highest version in local ∩ peer ∩ allowed, else `UnsupportedVersion { api, local, peer }`
 P1 · M2 · Task · deps: PROTO-0148 · ref: clients/src/main/java/org/apache/kafka/clients/NodeApiVersions.java latestUsableVersion @4.4.0
 Done when: property: the result is within every range; an empty intersection is the typed error; NodeApiVersionsTest cases ported.
 
-### [To Do] PROTO-0150 ApiVersions handshake state machine: send the highest local version; on UNSUPPORTED_VERSION with the peer's ApiVersions range retry at the highest common version (KIP-511)
+### [Done] PROTO-0150 ApiVersions handshake state machine: send the highest local version; on UNSUPPORTED_VERSION with the peer's ApiVersions range retry at the highest common version (KIP-511)
 P1 · M2 · Task · deps: PROTO-0149 · ref: clients/src/main/java/org/apache/kafka/clients/NetworkClient.java handleApiVersionsResponse @4.4.0
 Done when: sans-I/O machine with inputs (response) and outputs (send version N, negotiated, failed); tests for a v0-3 peer and a peer returning no range.
 
-### [To Do] PROTO-0151 Negotiation outcome with stable `Display` (peer node, chosen version per API) for the driver's negotiation event
+### [Done] PROTO-0151 Negotiation outcome with stable `Display` (peer node, chosen version per API) for the driver's negotiation event
 P1 · M2 · Task · deps: PROTO-0150 · labels: observability
 Done when: NET-F10 can log it as one structured event; snapshot test of the Display output.
 
-### [To Do] PROTO-0152 `docs/protocol/version-negotiation.md`: rules, fallback and error cases
+### [Done] PROTO-0152 `docs/protocol/version-negotiation.md`: rules, fallback and error cases
 P2 · M2 · Task · deps: PROTO-0150 · labels: docs
 Done when: the page links the KIP-511 fallback and the implemented-table rule.
 

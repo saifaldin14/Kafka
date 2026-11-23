@@ -9,7 +9,7 @@ Alluvium's protocol code is checked against Kafka 4.4.0 itself, not against our 
 | Command | Writes | Checked by |
 |---|---|---|
 | `golden errors` | `xtask/tests/fixtures/kafka-4.4.0-errors.json`: `Errors.values()` | the `ErrorCode` golden test in `xtask/src/codegen/errors.rs` |
-| `golden api-keys` | `tests/golden/protocol/registry/`: the `ApiKeys` table and the API version lists Kafka's listeners advertise | `crates/alluvium-protocol/tests/registry_golden.rs`; codegen reads `clusterAction` and `forwardable` from it |
+| `golden api-keys` | `tests/golden/protocol/registry/`: the `ApiKeys` table, the API version lists Kafka's listeners advertise, and what Kafka's `NodeApiVersions` prints for each list | `crates/alluvium-protocol/tests/registry_golden.rs`; codegen reads `clusterAction` and `forwardable` from it |
 | `golden messages` | `tests/golden/protocol/messages/`: Kafka's bytes and JSON for every message, version and case, indexed by `cases.json`; `utf8.json`; and `headers.json`, the request and response headers of every API at its oldest, latest and next version with a null, empty and non-ASCII client id | `golden_tests` in the protocol crate |
 | `golden verify` | nothing; Kafka reads and rewrites 1000 arbitrary Alluvium-encoded messages per message and version | its own report |
 
