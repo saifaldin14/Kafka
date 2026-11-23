@@ -313,11 +313,11 @@ impl Writer {
         framing: Framing,
         value: Option<&RecordsField>,
     ) -> Result<(), EncodeError> {
-        self.write_nullable_zero_copy_bytes(framing, value.map(|records| &records.as_bytes()[..]))
+        self.write_nullable_zero_copy_bytes(framing, value.map(RecordsField::as_bytes))
     }
 
-    /// A `bytes` field marked `zeroCopy`: written like [`Writer::write_bytes`], and
-    /// counted among the bytes a frame can share.
+    /// A `bytes` field marked `zeroCopy`: written like [`Writer::write_bytes`], but shared
+    /// with the frame rather than copied ([`Writer::into_frame`]).
     ///
     /// # Errors
     ///
@@ -325,7 +325,7 @@ impl Writer {
     pub fn write_zero_copy_bytes(
         &mut self,
         framing: Framing,
-        value: &[u8],
+        value: &Bytes,
     ) -> Result<(), EncodeError> {
         self.write_length(framing, Width::Int, Some(value.len()))?;
         self.put_shared(value);
@@ -340,7 +340,7 @@ impl Writer {
     pub fn write_nullable_zero_copy_bytes(
         &mut self,
         framing: Framing,
-        value: Option<&[u8]>,
+        value: Option<&Bytes>,
     ) -> Result<(), EncodeError> {
         match value {
             Some(value) => self.write_zero_copy_bytes(framing, value),

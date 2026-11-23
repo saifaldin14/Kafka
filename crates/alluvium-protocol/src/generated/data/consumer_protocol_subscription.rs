@@ -119,8 +119,7 @@ impl ConsumerProtocolSubscription {
         for value in &self.topics {
             writer.write_string(crate::Framing::Classic, value)?;
         }
-        writer
-            .write_nullable_zero_copy_bytes(crate::Framing::Classic, self.user_data.as_deref())?;
+        writer.write_nullable_zero_copy_bytes(crate::Framing::Classic, self.user_data.as_ref())?;
         if version >= 1 {
             writer.write_array_length(crate::Framing::Classic, self.owned_partitions.len())?;
             for value in &self.owned_partitions {

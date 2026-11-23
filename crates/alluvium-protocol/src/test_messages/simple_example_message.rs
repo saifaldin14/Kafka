@@ -461,7 +461,7 @@ impl SimpleExampleMessage {
             writer.write_zero_copy_bytes(crate::Framing::Compact, &self.zero_copy_byte_buffer)?;
             writer.write_nullable_zero_copy_bytes(
                 crate::Framing::Compact,
-                self.nullable_zero_copy_byte_buffer.as_deref(),
+                self.nullable_zero_copy_byte_buffer.as_ref(),
             )?;
         }
         if version == 2 {

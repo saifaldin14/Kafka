@@ -139,9 +139,9 @@ impl Context<'_> {
             FieldType::String => {
                 format!("writer.write_nullable_string({framing}, self.{name}.as_deref())?;")
             }
-            FieldType::Bytes if zero_copy => format!(
-                "writer.write_nullable_zero_copy_bytes({framing}, self.{name}.as_deref())?;"
-            ),
+            FieldType::Bytes if zero_copy => {
+                format!("writer.write_nullable_zero_copy_bytes({framing}, self.{name}.as_ref())?;")
+            }
             FieldType::Bytes => {
                 format!("writer.write_nullable_bytes({framing}, self.{name}.as_deref())?;")
             }

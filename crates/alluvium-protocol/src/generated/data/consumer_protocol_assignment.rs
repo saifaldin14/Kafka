@@ -71,8 +71,7 @@ impl ConsumerProtocolAssignment {
         for value in &self.assigned_partitions {
             value.write_fields(writer, version)?;
         }
-        writer
-            .write_nullable_zero_copy_bytes(crate::Framing::Classic, self.user_data.as_deref())?;
+        writer.write_nullable_zero_copy_bytes(crate::Framing::Classic, self.user_data.as_ref())?;
         Ok(())
     }
 }

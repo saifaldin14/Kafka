@@ -1,14 +1,20 @@
-//! Peak heap use while decoding hostile input, measured by a counting global allocator.
+//! Peak heap use while decoding hostile input, and while encoding records into a frame,
+//! measured by a counting global allocator.
 //!
 //! Everything runs in one test so that no other test allocates at the same time, under
 //! nextest or `cargo test` alike.
 
 use std::mem::size_of;
 
+use alluvium_protocol::generated::fetch_response::{
+    FetchResponse, FetchableTopicResponse, PartitionData,
+};
 use alluvium_protocol::generated::response_header::ResponseHeader;
 use alluvium_protocol::{
-    DecodeErrorKind, DecodeLimits, Framing, Limit, Message, RawTaggedField, Reader, Writer,
+    DecodeErrorKind, DecodeLimits, Framing, Limit, Message, RawTaggedField, Reader, RecordsField,
+    Writer,
 };
+use bytes::Bytes;
 use peak_alloc::PeakAlloc;
 
 #[global_allocator]
@@ -34,7 +40,7 @@ struct Holder {
 }
 
 #[test]
-fn declared_sizes_do_not_drive_allocation() {
+fn heap_use_is_bounded() {
     // PROTO-0107: a million declared string elements preallocate a thousand. Each is a
     // null, which fails to decode, so only the preallocation is ever made.
     let mut writer = Writer::new();
@@ -126,4 +132,52 @@ fn declared_sizes_do_not_drive_allocation() {
         peak < 2 * slot,
         "peak {peak} bytes for one kept tagged field"
     );
+    encoding_shares_records().unwrap();
+}
+
+/// PROTO-0102: a `FetchResponse` of 100 partitions, each with 64 KiB of records, encodes
+/// into a frame that shares every batch: the encode allocates the response's own few
+/// kilobytes, never the 6.4 MiB of records.
+fn encoding_shares_records() -> Result<(), Box<dyn std::error::Error>> {
+    let batch = Bytes::from(vec![7_u8; 64 << 10]);
+    let response = FetchResponse {
+        responses: vec![FetchableTopicResponse {
+            partitions: (0..100)
+                .map(|partition_index| PartitionData {
+                    partition_index,
+                    records: Some(RecordsField::new(batch.clone())),
+                    ..PartitionData::default()
+                })
+                .collect(),
+            ..FetchableTopicResponse::default()
+        }],
+        ..FetchResponse::default()
+    };
+    let mut encoded = None;
+    let peak = peak_during(|| {
+        let mut writer = Writer::sharing();
+        encoded = Some(
+            response
+                .encode(&mut writer, 18)
+                .map(|()| writer.into_frame()),
+        );
+    });
+    let frame = encoded.ok_or("the encode didn't run")??;
+    assert!(
+        peak < 64 << 10,
+        "peak {peak} bytes to encode 6.4 MiB of records"
+    );
+    assert_eq!(frame.len(), response.encoded_size(18)?.total);
+    let shared: Vec<_> = frame
+        .segments()
+        .iter()
+        .filter(|segment| segment.as_ptr() == batch.as_ptr())
+        .collect();
+    assert_eq!(shared.len(), 100, "every batch is its own shared segment");
+    assert_eq!(
+        frame.segments().len(),
+        201,
+        "owned bytes between batches are one segment"
+    );
+    Ok(())
 }

@@ -87,10 +87,8 @@ impl EnvelopeResponse {
         writer: &mut crate::Writer,
         _version: i16,
     ) -> Result<(), crate::EncodeError> {
-        writer.write_nullable_zero_copy_bytes(
-            crate::Framing::Compact,
-            self.response_data.as_deref(),
-        )?;
+        writer
+            .write_nullable_zero_copy_bytes(crate::Framing::Compact, self.response_data.as_ref())?;
         writer.write_i16(self.error_code);
         let mut raw = crate::RawTaggedFieldWriter::new(&self.unknown_tagged_fields)?;
         writer.write_tagged_field_count(raw.len())?;
