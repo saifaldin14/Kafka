@@ -1229,4 +1229,34 @@ mod tests {
             }
         }
     }
+
+    /// Generated decoders allocate only through the `Reader`, which checks every declared
+    /// size against its `DecodeLimits` and charges the allocation budget first
+    /// (PROTO-0112): no generated code allocates on its own.
+    #[test]
+    fn generated_code_allocates_only_through_the_reader() {
+        let files = [protocol(), test_messages()]
+            .into_iter()
+            .flat_map(|(_, out_dir, _)| existing_files(&out_dir).unwrap());
+        for file in files {
+            let source = std::fs::read_to_string(&file).unwrap();
+            for allocation in [
+                "with_capacity",
+                "reserve(",
+                "vec![",
+                ".to_vec()",
+                "from_utf8",
+                "Box::new",
+                ".collect",
+                ".extend(",
+                ".push(",
+            ] {
+                assert!(
+                    !source.contains(allocation),
+                    "{}: {allocation}",
+                    file.display()
+                );
+            }
+        }
+    }
 }

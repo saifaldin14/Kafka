@@ -6,13 +6,16 @@
 
 use std::mem::size_of;
 
+use alluvium_protocol::generated::create_topics_request::CreateTopicsRequest;
 use alluvium_protocol::generated::fetch_response::{
     FetchResponse, FetchableTopicResponse, PartitionData,
 };
+use alluvium_protocol::generated::metadata_request::MetadataRequest;
 use alluvium_protocol::generated::response_header::ResponseHeader;
+use alluvium_protocol::generated::sasl_authenticate_request::SaslAuthenticateRequest;
 use alluvium_protocol::{
-    DecodeErrorKind, DecodeLimits, Framing, Limit, Message, RawTaggedField, Reader, RecordsField,
-    Writer,
+    DecodeError, DecodeErrorKind, DecodeLimits, Framing, HeaderError, Limit, Message,
+    RawTaggedField, Reader, RecordsField, Writer, decode_request_header,
 };
 use bytes::Bytes;
 use peak_alloc::PeakAlloc;
@@ -133,6 +136,92 @@ fn heap_use_is_bounded() {
         "peak {peak} bytes for one kept tagged field"
     );
     encoding_shares_records().unwrap();
+    hostile_messages_fail_small().unwrap();
+}
+
+/// A decode that fails, and the error it must fail with.
+type Decode = Box<dyn Fn() -> Option<DecodeError>>;
+type Expected = fn(&DecodeErrorKind) -> bool;
+
+/// PROTO-0113: hostile sizes in tiny inputs, through generated decoders and the request
+/// header, each failing as Kafka's checks require with under 64 KiB allocated.
+fn hostile_messages_fail_small() -> Result<(), String> {
+    let cases: [(&str, Decode, Expected); 4] = [
+        (
+            "an int32 array length of 2^31 - 1",
+            Box::new(|| {
+                let input = Bytes::from_static(&[0x7f, 0xff, 0xff, 0xff, 1]);
+                MetadataRequest::decode(&mut Reader::new(input), 4).err()
+            }),
+            |kind| {
+                matches!(
+                    kind,
+                    DecodeErrorKind::ArrayLongerThanInput {
+                        length: 0x7fff_ffff,
+                        ..
+                    }
+                )
+            },
+        ),
+        (
+            "a compact length of 0xFFFFFFFF, which Java reads as null",
+            Box::new(|| {
+                let input = Bytes::from_static(&[0xff, 0xff, 0xff, 0xff, 0x0f, 0, 0]);
+                SaslAuthenticateRequest::decode(&mut Reader::new(input), 2).err()
+            }),
+            |kind| matches!(kind, DecodeErrorKind::UnexpectedNull),
+        ),
+        (
+            "10,001 tagged fields in a request header",
+            Box::new(|| {
+                let mut writer = Writer::new();
+                writer.write_i16(10);
+                writer.write_i16(4);
+                writer.write_i32(1);
+                writer.write_i16(0);
+                writer.write_unsigned_varint(10_001);
+                let mut input = writer.into_bytes().to_vec();
+                input.resize(input.len() + 10_001 * 2, 0);
+                match decode_request_header(&mut Reader::new(Bytes::from(input))) {
+                    Err(HeaderError::Malformed { error, .. }) => Some(error),
+                    _ => None,
+                }
+            }),
+            |kind| {
+                matches!(
+                    kind,
+                    DecodeErrorKind::LimitExceeded {
+                        limit: Limit::TaggedFieldCount,
+                        requested: 10_001,
+                        ..
+                    }
+                )
+            },
+        ),
+        (
+            "nested arrays each declaring every byte left",
+            Box::new(|| {
+                // CreateTopicsRequest v5: 63 topics, the first with 55 assignments, the
+                // first of those with 50 broker ids, in 64 bytes.
+                let mut input = vec![0x40, 0x01, 0, 0, 0, 1, 0, 1, 0x38, 0, 0, 0, 0, 0x33];
+                input.resize(64, 0xab);
+                CreateTopicsRequest::decode(&mut Reader::new(Bytes::from(input)), 5).err()
+            }),
+            |kind| matches!(kind, DecodeErrorKind::Truncated { .. }),
+        ),
+    ];
+    for (name, decode, expected) in cases {
+        let mut error = None;
+        let peak = peak_during(|| error = decode());
+        let error = error.ok_or_else(|| format!("{name}: decoded"))?;
+        if !expected(&error.kind) {
+            return Err(format!("{name}: {error}"));
+        }
+        if peak >= 64 << 10 {
+            return Err(format!("{name}: peak {peak} bytes"));
+        }
+    }
+    Ok(())
 }
 
 /// PROTO-0102: a `FetchResponse` of 100 partitions, each with 64 KiB of records, encodes
