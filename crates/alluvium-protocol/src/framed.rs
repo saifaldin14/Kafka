@@ -9,8 +9,6 @@
 //! arithmetic: any negative length is null, and a compact prefix of `0x80000000` wraps to
 //! `i32::MAX`, which then fails as too long for a string or as truncated otherwise.
 
-use std::str::Utf8Chunk;
-
 use bytes::Bytes;
 
 use crate::error::{DecodeError, DecodeErrorKind, EncodeError};
@@ -37,12 +35,53 @@ pub(crate) enum Width {
     Int,
 }
 
-/// The UTF-8 length of U+FFFD, which replaces each invalid sequence in a string.
-const REPLACEMENT_LENGTH: usize = char::REPLACEMENT_CHARACTER.len_utf8();
+/// U+FFFD, which replaces each invalid sequence in a string.
+const REPLACEMENT: &str = "\u{FFFD}";
 
 /// The longest string Kafka encodes or decodes, in UTF-8 bytes. A classic `int16`
 /// prefix can't exceed it; a compact one can, and is rejected before it is read.
 const MAX_STRING_LENGTH: usize = 0x7fff;
+
+/// The text of `bytes` as Java's `new String(bytes, UTF_8)` decodes it, passed to
+/// `piece` in order: runs of valid text, and U+FFFD for each invalid sequence.
+///
+/// Invalid sequences are the maximal subparts Unicode recommends, as in
+/// `String::from_utf8_lossy`, except for encoded UTF-16 surrogates. Java's decoder
+/// accepts `ED` followed by any continuation byte as the start of a three-byte sequence
+/// and rejects the surrogate only once the sequence is complete, so `ED A0 80` is one
+/// invalid sequence there, and three here. The golden vectors in
+/// tests/golden/protocol/messages/utf8.json, recorded from Kafka, check each case.
+// Parity: clients/src/main/java/org/apache/kafka/common/protocol/Readable.java@4.4.0 Readable.readString
+fn java_utf8(bytes: &[u8], mut piece: impl FnMut(&str)) {
+    let mut rest = bytes;
+    loop {
+        let error = match std::str::from_utf8(rest) {
+            Ok(text) => {
+                piece(text);
+                return;
+            }
+            Err(error) => error,
+        };
+        let Some((valid, invalid)) = rest.split_at_checked(error.valid_up_to()) else {
+            unreachable!("invariant: the valid prefix is within the input");
+        };
+        let Ok(valid) = std::str::from_utf8(valid) else {
+            unreachable!("invariant: from_utf8 reported this prefix valid");
+        };
+        piece(valid);
+        piece(REPLACEMENT);
+        let skipped = match invalid {
+            [0xED, 0xA0..=0xBF, 0x80..=0xBF, ..] => 3,
+            [0xED, 0xA0..=0xBF, ..] => 2,
+            // An incomplete sequence at the end is one invalid sequence.
+            _ => error.error_len().unwrap_or(invalid.len()),
+        };
+        rest = invalid.get(skipped..).unwrap_or_default();
+        if rest.is_empty() {
+            return;
+        }
+    }
+}
 
 // Parity: generator/src/main/java/org/apache/kafka/message/MessageDataGenerator.java@4.4.0 MessageDataGenerator.generateVariableLengthReader
 impl Reader {
@@ -77,7 +116,8 @@ impl Reader {
     }
 
     /// The UTF-8 text of `length` bytes, whose length prefix started at `start`.
-    /// Invalid sequences become U+FFFD, as Java's `new String(bytes, UTF_8)` does.
+    /// Invalid sequences become U+FFFD, as Java's `new String(bytes, UTF_8)` makes them
+    /// ([`java_utf8`]).
     fn read_utf8(&mut self, start: usize, length: usize) -> Result<String, DecodeError> {
         if length > MAX_STRING_LENGTH {
             return Err(Reader::error_at(
@@ -95,27 +135,15 @@ impl Reader {
             self.charge(start, length)?;
             return Ok(text.to_owned());
         }
-        // Each invalid sequence becomes one U+FFFD, as in `String::from_utf8_lossy`. The
-        // text is built here so the exact length can be charged before it is allocated.
-        let replaced = |chunk: &Utf8Chunk<'_>| !chunk.invalid().is_empty();
-        let decoded_length = bytes.utf8_chunks().fold(0_usize, |total, chunk| {
-            let replacement = if replaced(&chunk) {
-                REPLACEMENT_LENGTH
-            } else {
-                0
-            };
-            total
-                .saturating_add(chunk.valid().len())
-                .saturating_add(replacement)
+        // The text is measured first, so the exact length can be charged before it is
+        // allocated.
+        let mut decoded_length = 0_usize;
+        java_utf8(&bytes, |piece| {
+            decoded_length = decoded_length.saturating_add(piece.len());
         });
         self.charge(start, decoded_length)?;
         let mut text = String::with_capacity(decoded_length);
-        for chunk in bytes.utf8_chunks() {
-            text.push_str(chunk.valid());
-            if replaced(&chunk) {
-                text.push(char::REPLACEMENT_CHARACTER);
-            }
-        }
+        java_utf8(&bytes, |piece| text.push_str(piece));
         Ok(text)
     }
 
@@ -623,8 +651,11 @@ mod tests {
     }
 
     proptest! {
+        // Java and `from_utf8_lossy` differ only on encoded surrogates, which the golden
+        // vectors recorded from Kafka cover (golden_tests).
         #[test]
-        fn strings_decode_as_from_utf8_lossy_does(bytes in proptest::collection::vec(any::<u8>(), 0..40)) {
+        fn strings_without_encoded_surrogates_decode_as_from_utf8_lossy_does(bytes in proptest::collection::vec(any::<u8>(), 0..40)) {
+            proptest::prop_assume!(!bytes.windows(2).any(|pair| pair[0] == 0xED && (0xA0..=0xBF).contains(&pair[1])));
             let mut input = Writer::new();
             input.write_bytes(Compact, &bytes).unwrap();
             let expected = String::from_utf8_lossy(&bytes).into_owned();

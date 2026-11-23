@@ -546,7 +546,7 @@ Done when: Rust preserves and re-emits them byte for byte.
 P1 · M1 · Task · deps: PROTO-0117, PROTO-0076, PROTO-0077 · labels: test
 Done when: Rust returns the matching EncodeError kind for every recorded case.
 
-### [To Do] PROTO-0124 String decoding parity vectors: invalid UTF-8 sequences decoded by Java and re-encoded
+### [Done] PROTO-0124 String decoding parity vectors: invalid UTF-8 sequences decoded by Java and re-encoded
 P1 · M1 · Task · deps: PROTO-0117, PROTO-0038 · labels: test, decoder
 Done when: Rust string decoding produces the same replacement output for every vector (truncated sequences, overlong forms, surrogates, invalid bytes).
 
