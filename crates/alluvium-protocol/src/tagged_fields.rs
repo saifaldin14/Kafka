@@ -157,13 +157,11 @@ impl Reader {
         let start = self.offset();
         let data = self.take(size)?;
         if fields.len() == fields.capacity() {
-            // Grow as `Vec` would, doubling, but charge the new capacity before it is
-            // allocated, so the budget covers every slot and growth stays amortized.
+            // Grow as `Vec` would, doubling, but charge the whole new block before it is
+            // allocated: while the fields move into it, the old block is live too.
             let additional = fields.capacity().max(1);
-            self.charge(
-                start,
-                additional.saturating_mul(size_of::<RawTaggedField>()),
-            )?;
+            let capacity = fields.capacity().saturating_add(additional);
+            self.charge(start, capacity.saturating_mul(size_of::<RawTaggedField>()))?;
             fields.reserve_exact(additional);
         }
         fields.push(RawTaggedField { tag, data });
