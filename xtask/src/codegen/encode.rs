@@ -321,8 +321,9 @@ struct Plan<'a> {
     /// Writes under their version conditions; adjacent ones under the same condition
     /// share a block, as in the decoder.
     writes: Vec<(Option<String>, String)>,
-    /// Checks of absent fields, by condition. Their order doesn't matter, so all the
-    /// checks under one condition share a block.
+    /// Checks of absent fields, by condition; all the checks under one condition share a
+    /// block. Kafka checks each while writing, in field order, so where several fail it
+    /// may name another field (docs/protocol/codegen.md#errors).
     checks: Vec<(String, String)>,
     /// The tagged fields, by tag, and the versions they are tagged in.
     tagged: Vec<(u32, &'a FieldSpec, Versions)>,
@@ -393,7 +394,8 @@ fn plan<'a>(context: &Context<'_>, item: &Struct<'a>) -> Result<Plan<'a>, String
 }
 
 /// `check_absent_fields`, which fails before anything is written if a field the version
-/// doesn't have holds a value other than its default and isn't `ignorable`.
+/// doesn't have holds a value other than its default and isn't `ignorable`. Kafka makes
+/// this check while writing, not while sizing, so a sizing writer skips it.
 fn render_checks(checks: &[(String, String)], runtime: &str) -> String {
     let blocks = checks
         .iter()
@@ -407,9 +409,10 @@ fn render_checks(checks: &[(String, String)], runtime: &str) -> String {
         });
     format!(
         "    /// Fails if a field `version` doesn't have holds a value other than its default,\n    \
-         /// unless the field is `ignorable`: writing would lose it.\n    fn \
-         check_absent_fields(&self, version: i16) -> Result<(), {runtime}::EncodeError> {{\n        \
-         let check = |non_default: bool, field: &'static str| {{\n            if non_default \
+         /// unless the field is `ignorable`: writing would lose it. Kafka checks this while \
+         writing,\n    /// not while sizing.\n    fn check_absent_fields(&self, writer: \
+         &{runtime}::Writer, version: i16) -> Result<(), {runtime}::EncodeError> {{\n        \
+         if writer.is_sizing() {{\n            return Ok(());\n        }}\n        let check = |non_default: bool, field: &'static str| {{\n            if non_default \
          {{\n                return Err({runtime}::EncodeError::NonDefaultFieldUnsupported {{ \
          field, version }});\n            }}\n            Ok(())\n        }};\n{blocks}Ok(())\n    }}\n"
     )
@@ -479,7 +482,7 @@ pub(crate) fn render_write(
         }
     }
     if !plan.checks.is_empty() {
-        body.insert_str(0, "self.check_absent_fields(version)?;\n");
+        body.insert_str(0, "self.check_absent_fields(writer, version)?;\n");
         methods.push_str(&render_checks(&plan.checks, runtime));
     }
     let writer = if uses(&body, "writer") {
@@ -555,10 +558,18 @@ fn tagged_section(
 }
 
 /// `Message::encode` for the message struct: the version check, then `write_fields`.
+/// When that fails, a rerun into a sizing writer finds the error Kafka would report
+/// first, if it differs (`Writer::sizing` in the protocol crate).
+// Parity: clients/src/main/java/org/apache/kafka/common/protocol/MessageUtil.java@4.4.0 MessageUtil.toByteBufferAccessor
 pub(crate) fn render_encode(message: &MessageSpec, runtime: &str, fallible: bool) -> String {
     let name = &message.name;
     let write = if fallible {
-        "self.write_fields(writer, version)".to_owned()
+        format!(
+            "self.write_fields(writer, version).map_err(|error| {{
+            let mut sizing =              {runtime}::Writer::sizing();
+            self.write_fields(&mut sizing,              version).err().unwrap_or(error)
+        }})"
+        )
     } else {
         "self.write_fields(writer, version);\n        Ok(())".to_owned()
     };

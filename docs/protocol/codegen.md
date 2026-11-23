@@ -182,6 +182,11 @@ Every message implements `Message::encode(writer, version)`, which mirrors Kafka
 
 **Tests.** A generated table encodes every message's default at every version, checks its size, and decodes it back. Each message module also has a property test, `round_trips_at_every_version`, which encodes arbitrary values at each version (from a generated `arbitrary(version)` strategy, unknown tagged fields included), checks `encoded_size`, and decodes them back unchanged.
 
+**Golden vectors.** `golden_tests` checks every case `cargo xtask golden messages` recorded from Kafka 4.4.0 (tests/golden/protocol/messages/):
+- **Every message Kafka wrote:** it must decode at its version, consume all its input, and encode back to the same bytes, with `encoded_size` equal to their length. Data types also round-trip with a version prefix.
+- **Every downgrade:** it must encode as Kafka did, or fail where Kafka throws, with the matching error.
+- **Dispatch:** the generated `TRANSCODE` table maps each schema name to its type.
+
 ## Errors
 
 Kafka throws a `RuntimeException` or `UnsupportedVersionException` whose message is its only detail. Here each failure is a variant of `DecodeErrorKind` (inside a `DecodeError` with the byte offset and field path) or `EncodeError`. The tables give the Kafka 4.4.0 message each variant corresponds to; "—" means Kafka has no such check.
@@ -216,6 +221,17 @@ Sources: `MessageDataGenerator`, `FieldSpec`, `ByteBufferAccessor`, `ByteUtils` 
 | `NonDefaultFieldUnsupported` | "Attempted to write a non-default F at version V" |
 | `TaggedFieldsUnsupported` | "Tagged fields were set, but version V of this message does not support them." |
 | `RawTagIsDefined` | "Attempted to use tag N as an undefined tag." |
+
+**When several errors apply.** Kafka sizes a message before writing it (`MessageUtil.toByteBufferAccessor`).
+- **Reported first, while sizing:**
+  - unknown tagged fields where the version has none;
+  - a null where the field isn't nullable;
+  - a string that is too long.
+- **Reported only while writing:** a non-default field the version lacks.
+
+A failed `encode` reruns into `Writer::sizing()`, a counting writer that skips the absent-field checks, so it reports the error Kafka would.
+
+One difference remains, and only when several fields the version lacks hold values. Kafka names the first in depth-first write order; Alluvium names the first in the outermost struct that has one. The error kind and version are the same. The golden vectors check this for every downgrade Kafka refuses.
 
 ## Keyed arrays
 

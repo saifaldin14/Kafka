@@ -123,7 +123,10 @@ impl crate::Message for PushTelemetryResponse {
                 version,
             });
         }
-        self.write_fields(writer, version)
+        self.write_fields(writer, version).map_err(|error| {
+            let mut sizing = crate::Writer::sizing();
+            self.write_fields(&mut sizing, version).err().unwrap_or(error)
+        })
     }
 }
 

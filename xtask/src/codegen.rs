@@ -57,6 +57,9 @@ pub(crate) struct Filter {
     pub(crate) error_codes: Option<ErrorCodes>,
     /// Whether to generate `ApiKey` too, and from where.
     pub(crate) api_keys: Option<ApiKeys>,
+    /// Whether the root module gets `TRANSCODE`, the table through which the golden
+    /// vector tests decode and encode each message by its schema name.
+    pub(crate) golden_tests: bool,
     /// The directory of the overlay files (`overlays`) applied to the messages, if any.
     pub(crate) overlays: Option<PathBuf>,
     /// The doc comment of the output directory's `mod.rs`: what the directory holds.
@@ -104,6 +107,7 @@ fn protocol() -> (Vec<PathBuf>, PathBuf, Filter) {
                 source: root.join(VENDORED).join("errors"),
                 page: root.join("docs/errors.md"),
             }),
+            golden_tests: true,
             api_keys: Some(ApiKeys {
                 recorded: root.join(crate::golden::API_KEYS_GOLDEN).join("api_keys.json"),
                 page: root.join("docs/protocol/apis.md"),
@@ -130,6 +134,7 @@ fn test_messages() -> (Vec<PathBuf>, PathBuf, Filter) {
             runtime: "crate".to_owned(),
             error_codes: None,
             api_keys: None,
+            golden_tests: false,
             overlays: None,
             doc: "Message types generated from the schemas Kafka's own generator tests use \
                   (`schemas/kafka-4.4.0/clients-test/`). They exercise every schema feature in \
@@ -433,7 +438,7 @@ fn render(inputs: &[PathBuf], filter: &Filter) -> Result<Rendered, String> {
         pages.insert(api_keys.page.clone(), page);
         report.api_keys = count;
     }
-    let mut files = mod_files(&modules, &filter.doc, &decodable);
+    let mut files = mod_files(&modules, &filter.doc, &decodable, filter.golden_tests);
     files.extend(modules);
     let mut formatted = BTreeMap::new();
     for (file, source) in files {
@@ -573,6 +578,7 @@ fn mod_files(
     modules: &BTreeMap<PathBuf, String>,
     root_doc: &str,
     decodable: &[(String, i16, i16)],
+    golden_tests: bool,
 ) -> BTreeMap<PathBuf, String> {
     let mut declared: BTreeMap<PathBuf, Vec<String>> = BTreeMap::new();
     for file in modules.keys() {
@@ -608,7 +614,11 @@ fn mod_files(
                 text
             });
             let tests = if directory.as_os_str().is_empty() {
-                decode_every_version(decodable)
+                let mut tests = decode_every_version(decodable);
+                if golden_tests {
+                    tests.push_str(&transcode_table(decodable));
+                }
+                tests
             } else {
                 String::new()
             };
@@ -622,6 +632,26 @@ fn mod_files(
             )
         })
         .collect()
+}
+
+/// The test-only table of each message's schema name with `golden_tests::transcode` for
+/// its type, for the golden vector tests.
+fn transcode_table(decodable: &[(String, i16, i16)]) -> String {
+    let entries = decodable
+        .iter()
+        .fold(String::new(), |mut entries, (message, _, _)| {
+            let name = message.rsplit("::").next().unwrap_or(message);
+            let _ = writeln!(
+                entries,
+                "    (\"{name}\", crate::golden_tests::transcode::<{message}>),"
+            );
+            entries
+        });
+    format!(
+        "\n/// Each message's schema name with the function that decodes and re-encodes it, for \
+         the\n/// golden vector tests.\n#[cfg(test)]\npub(crate) const TRANSCODE: &[(&str, \
+         crate::golden_tests::Transcode)] = &[\n{entries}];\n"
+    )
 }
 
 /// Test-only tables over every message: functions that each decode their input as one
@@ -797,6 +827,7 @@ mod tests {
             runtime: "alluvium_protocol".to_owned(),
             error_codes: None,
             api_keys: None,
+            golden_tests: false,
             overlays: None,
             doc: "Test records.".to_owned(),
         };
@@ -867,6 +898,7 @@ mod tests {
             runtime: "crate".to_owned(),
             error_codes: None,
             api_keys: None,
+            golden_tests: false,
             overlays: None,
             doc: "Test messages.".to_owned(),
         };
