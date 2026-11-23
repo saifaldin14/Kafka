@@ -143,6 +143,6 @@ Standards evolve. If a rule is wrong for a case, change the standard (and add an
 | Implementing a Kafka API or feature | [docs/guides/adding-a-kafka-feature.md](../../../docs/guides/adding-a-kafka-feature.md) |
 | Investigating a bug | [docs/guides/debugging.md](../../../docs/guides/debugging.md) |
 | What to work on next; every planned task and its status | [docs/backlog/](../../../docs/backlog/README.md) |
-| Kafka API scope and version ranges | [docs/parity.md](../../../docs/parity.md) |
+| Kafka API scope and version ranges | [docs/parity.md](../../../docs/parity.md), [docs/protocol/apis.md](../../../docs/protocol/apis.md) |
 | Why things are the way they are | [docs/adr/](../../../docs/adr/README.md) |
 | Kafka vocabulary | [docs/glossary.md](../../../docs/glossary.md) |
