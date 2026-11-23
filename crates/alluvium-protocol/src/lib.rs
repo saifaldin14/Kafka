@@ -2,8 +2,8 @@
 //! field is made of, decoded from untrusted bytes without panicking; the message types
 //! in [`generated`], one module per Kafka 4.4.0 schema; the API registry ([`ApiKey`]);
 //! request and response headers, at the version each API and version selects
-//! ([`decode_request_header`]); every message as JSON for debugging tools
-//! ([`JsonWriter`]); and version negotiation with a peer
+//! ([`decode_request_header`]); every message, and whole frames, as JSON for debugging
+//! tools ([`JsonWriter`], [`dump_request_frame`]); and version negotiation with a peer
 //! ([`ApiVersionsHandshake`], [`NodeApiVersions`]).
 //!
 //! Layer: 0 ([ADR-0009](../../../docs/adr/0009-crate-layering-and-dependency-rules.md)).
@@ -37,6 +37,7 @@ mod decode_tests;
 mod encode_tests;
 mod error;
 mod error_code;
+mod frame_dump;
 mod framed;
 #[rustfmt::skip]
 pub mod generated;
@@ -65,6 +66,7 @@ pub use api_key::{ApiKey, Listener};
 pub use api_versions::advertised_api_versions;
 pub use error::{DecodeError, DecodeErrorKind, EncodeError, WithinField};
 pub use error_code::{ErrorCode, UnknownErrorCode};
+pub use frame_dump::{FrameDump, FrameError, FrameHeader, dump_request_frame, dump_response_frame};
 pub use framed::Framing;
 pub use header::{
     DecodedRequestHeader, HeaderError, decode_request_header, decode_response_header,

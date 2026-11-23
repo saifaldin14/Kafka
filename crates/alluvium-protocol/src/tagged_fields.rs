@@ -279,6 +279,7 @@ impl<'a> RawTaggedFieldWriter<'a> {
     ///
     /// [`EncodeError::RawTagIsDefined`] for a field whose tag is `next_defined`, and
     /// [`EncodeError::LengthTooLong`] for a size that doesn't fit a varint.
+    #[inline]
     pub fn write_below(
         &mut self,
         writer: &mut Writer,
@@ -303,6 +304,10 @@ impl<'a> RawTaggedFieldWriter<'a> {
     /// # Errors
     ///
     /// As [`RawTaggedFieldWriter::write_below`] and [`Writer::write_tagged_value`].
+    // Inlined so that a struct whose tagged fields are all defaults, the usual case, pays
+    // for a few comparisons rather than a call per field; without the hint, whether it is
+    // inlined depends on unrelated code in the same codegen unit.
+    #[inline]
     pub fn write_known(
         &mut self,
         writer: &mut Writer,
