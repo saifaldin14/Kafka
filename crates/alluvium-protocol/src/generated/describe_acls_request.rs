@@ -147,6 +147,30 @@ impl DescribeAclsRequest {
 }
 
 impl DescribeAclsRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("resourceTypeFilter").integer(i64::from(self.resource_type_filter));
+        json.key("resourceNameFilter").nullable(
+            self.resource_name_filter.as_deref(),
+            |json, value| {
+                json.string(value);
+            },
+        );
+        json.key("patternTypeFilter").integer(i64::from(self.pattern_type_filter));
+        json.key("principalFilter").nullable(self.principal_filter.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("hostFilter").nullable(self.host_filter.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("operation").integer(i64::from(self.operation));
+        json.key("permissionType").integer(i64::from(self.permission_type));
+        json.end_object();
+    }
+}
+
+impl DescribeAclsRequest {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -215,6 +239,10 @@ impl crate::Message for DescribeAclsRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

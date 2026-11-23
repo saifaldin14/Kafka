@@ -240,6 +240,46 @@ impl FetchRequest {
 }
 
 impl FetchRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        if version >= 12 && self.cluster_id.is_some() {
+            json.key("clusterId").nullable(self.cluster_id.as_deref(), |json, value| {
+                json.string(value);
+            });
+        }
+        if version <= 14 {
+            json.key("replicaId").integer(i64::from(self.replica_id));
+        }
+        if version >= 15 && self.replica_state != ReplicaState::default() {
+            self.replica_state.write_json_fields(json.key("replicaState"), version);
+        }
+        json.key("maxWaitMs").integer(i64::from(self.max_wait_ms));
+        json.key("minBytes").integer(i64::from(self.min_bytes));
+        json.key("maxBytes").integer(i64::from(self.max_bytes));
+        json.key("isolationLevel").integer(i64::from(self.isolation_level));
+        if version >= 7 {
+            json.key("sessionId").integer(i64::from(self.session_id));
+        }
+        if version >= 7 {
+            json.key("sessionEpoch").integer(i64::from(self.session_epoch));
+        }
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        if version >= 7 {
+            json.key("forgottenTopicsData").array(&self.forgotten_topics_data, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        }
+        if version >= 11 {
+            json.key("rackId").string(&self.rack_id);
+        }
+        json.end_object();
+    }
+}
+
+impl FetchRequest {
     fn write_tagged_fields(
         &self,
         writer: &mut crate::Writer,
@@ -406,6 +446,16 @@ impl ReplicaState {
 }
 
 impl ReplicaState {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("replicaId").integer(i64::from(self.replica_id));
+        json.key("replicaEpoch").integer(self.replica_epoch);
+        json.end_object();
+    }
+}
+
+impl ReplicaState {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -511,6 +561,23 @@ impl FetchTopic {
                 unknown_tagged_fields: value_3,
             })
             .boxed()
+    }
+}
+
+impl FetchTopic {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        if version <= 12 {
+            json.key("topic").string(&self.topic);
+        }
+        if version >= 13 {
+            json.key("topicId").uuid(self.topic_id);
+        }
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
     }
 }
 
@@ -706,6 +773,32 @@ impl FetchPartition {
 }
 
 impl FetchPartition {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("partition").integer(i64::from(self.partition));
+        if version >= 9 {
+            json.key("currentLeaderEpoch").integer(i64::from(self.current_leader_epoch));
+        }
+        json.key("fetchOffset").integer(self.fetch_offset);
+        if version >= 12 {
+            json.key("lastFetchedEpoch").integer(i64::from(self.last_fetched_epoch));
+        }
+        if version >= 5 {
+            json.key("logStartOffset").integer(self.log_start_offset);
+        }
+        json.key("partitionMaxBytes").integer(i64::from(self.partition_max_bytes));
+        if version >= 17 && self.replica_directory_id != alluvium_types::Uuid::ZERO {
+            json.key("replicaDirectoryId").uuid(self.replica_directory_id);
+        }
+        if version == 18 && self.high_watermark != 9_223_372_036_854_775_807 {
+            json.key("highWatermark").integer(self.high_watermark);
+        }
+        json.end_object();
+    }
+}
+
+impl FetchPartition {
     fn write_tagged_fields(
         &self,
         writer: &mut crate::Writer,
@@ -883,6 +976,23 @@ impl ForgottenTopic {
 }
 
 impl ForgottenTopic {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        if version <= 12 {
+            json.key("topic").string(&self.topic);
+        }
+        if version >= 13 {
+            json.key("topicId").uuid(self.topic_id);
+        }
+        json.key("partitions").array(&self.partitions, |json, value| {
+            json.integer(i64::from(*value));
+        });
+        json.end_object();
+    }
+}
+
+impl ForgottenTopic {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -951,6 +1061,10 @@ impl crate::Message for FetchRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

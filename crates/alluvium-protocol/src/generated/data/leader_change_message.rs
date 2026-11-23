@@ -89,6 +89,22 @@ impl LeaderChangeMessage {
 }
 
 impl LeaderChangeMessage {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("version").integer(i64::from(self.version));
+        json.key("leaderId").integer(i64::from(self.leader_id));
+        json.key("voters").array(&self.voters, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("grantingVoters").array(&self.granting_voters, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl LeaderChangeMessage {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -183,6 +199,18 @@ impl Voter {
 }
 
 impl Voter {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("voterId").integer(i64::from(self.voter_id));
+        if version >= 1 {
+            json.key("voterDirectoryId").uuid(self.voter_directory_id);
+        }
+        json.end_object();
+    }
+}
+
+impl Voter {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -252,6 +280,10 @@ impl crate::Message for LeaderChangeMessage {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

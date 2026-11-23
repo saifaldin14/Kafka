@@ -70,6 +70,17 @@ impl ReadShareGroupStateSummaryResponse {
 }
 
 impl ReadShareGroupStateSummaryResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("results").array(&self.results, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl ReadShareGroupStateSummaryResponse {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -159,6 +170,18 @@ impl ReadStateSummaryResult {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl ReadStateSummaryResult {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("topicId").uuid(self.topic_id);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
     }
 }
 
@@ -316,6 +339,25 @@ impl PartitionResult {
 }
 
 impl PartitionResult {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("partition").integer(i64::from(self.partition));
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("errorMessage").nullable(self.error_message.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("stateEpoch").integer(i64::from(self.state_epoch));
+        json.key("leaderEpoch").integer(i64::from(self.leader_epoch));
+        json.key("startOffset").integer(self.start_offset);
+        if version == 1 {
+            json.key("deliveryCompleteCount").integer(i64::from(self.delivery_complete_count));
+        }
+        json.end_object();
+    }
+}
+
+impl PartitionResult {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -369,6 +411,10 @@ impl crate::Message for ReadShareGroupStateSummaryResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

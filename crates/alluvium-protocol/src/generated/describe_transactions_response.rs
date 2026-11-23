@@ -76,6 +76,18 @@ impl DescribeTransactionsResponse {
 }
 
 impl DescribeTransactionsResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        json.key("transactionStates").array(&self.transaction_states, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl DescribeTransactionsResponse {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -230,6 +242,24 @@ impl TransactionState {
 }
 
 impl TransactionState {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("transactionalId").string(&self.transactional_id);
+        json.key("transactionState").string(&self.transaction_state);
+        json.key("transactionTimeoutMs").integer(i64::from(self.transaction_timeout_ms));
+        json.key("transactionStartTimeMs").integer(self.transaction_start_time_ms);
+        json.key("producerId").integer(self.producer_id);
+        json.key("producerEpoch").integer(i64::from(self.producer_epoch));
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl TransactionState {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -326,6 +356,18 @@ impl TopicData {
 }
 
 impl TopicData {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("topic").string(&self.topic);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            json.integer(i64::from(*value));
+        });
+        json.end_object();
+    }
+}
+
+impl TopicData {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -375,6 +417,10 @@ impl crate::Message for DescribeTransactionsResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

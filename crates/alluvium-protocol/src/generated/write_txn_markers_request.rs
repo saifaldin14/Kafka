@@ -64,6 +64,17 @@ impl WriteTxnMarkersRequest {
 }
 
 impl WriteTxnMarkersRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("markers").array(&self.markers, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl WriteTxnMarkersRequest {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -184,6 +195,24 @@ impl WritableTxnMarker {
 }
 
 impl WritableTxnMarker {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("producerId").integer(self.producer_id);
+        json.key("producerEpoch").integer(i64::from(self.producer_epoch));
+        json.key("transactionResult").boolean(self.transaction_result);
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("coordinatorEpoch").integer(i64::from(self.coordinator_epoch));
+        if version == 2 {
+            json.key("transactionVersion").integer(i64::from(self.transaction_version));
+        }
+        json.end_object();
+    }
+}
+
+impl WritableTxnMarker {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -270,6 +299,18 @@ impl WritableTxnMarkerTopic {
 }
 
 impl WritableTxnMarkerTopic {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("partitionIndexes").array(&self.partition_indexes, |json, value| {
+            json.integer(i64::from(*value));
+        });
+        json.end_object();
+    }
+}
+
+impl WritableTxnMarkerTopic {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -322,6 +363,10 @@ impl crate::Message for WriteTxnMarkersRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

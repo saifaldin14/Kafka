@@ -83,6 +83,22 @@ impl SimpleArraysMessage {
 }
 
 impl SimpleArraysMessage {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        if version >= 1 {
+            json.key("goats").array(&self.goats, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        }
+        json.key("sheep").array(&self.sheep, |json, value| {
+            json.integer(i64::from(*value));
+        });
+        json.end_object();
+    }
+}
+
+impl SimpleArraysMessage {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -198,6 +214,18 @@ impl StructArray {
 }
 
 impl StructArray {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("color").integer(i64::from(self.color));
+        if version == 2 {
+            json.key("name").string(&self.name);
+        }
+        json.end_object();
+    }
+}
+
+impl StructArray {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -267,6 +295,10 @@ impl crate::Message for SimpleArraysMessage {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

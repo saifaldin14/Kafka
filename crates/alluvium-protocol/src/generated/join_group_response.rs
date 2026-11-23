@@ -204,6 +204,35 @@ impl JoinGroupResponse {
 }
 
 impl JoinGroupResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        if version >= 2 {
+            json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        }
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("generationId").integer(i64::from(self.generation_id));
+        if version >= 7 {
+            json.key("protocolType").nullable(self.protocol_type.as_deref(), |json, value| {
+                json.string(value);
+            });
+        }
+        json.key("protocolName").nullable(self.protocol_name.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("leader").string(&self.leader);
+        if version == 9 {
+            json.key("skipAssignment").boolean(self.skip_assignment);
+        }
+        json.key("memberId").string(&self.member_id);
+        json.key("members").array(&self.members, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl JoinGroupResponse {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -379,6 +408,24 @@ impl JoinGroupResponseMember {
 }
 
 impl JoinGroupResponseMember {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("memberId").string(&self.member_id);
+        if version >= 5 {
+            json.key("groupInstanceId").nullable(
+                self.group_instance_id.as_deref(),
+                |json, value| {
+                    json.string(value);
+                },
+            );
+        }
+        json.key("metadata").bytes(&self.metadata);
+        json.end_object();
+    }
+}
+
+impl JoinGroupResponseMember {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -442,6 +489,10 @@ impl crate::Message for JoinGroupResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

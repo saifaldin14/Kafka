@@ -349,6 +349,93 @@ impl AllTypeMessage {
 }
 
 impl AllTypeMessage {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("myBoolean").boolean(self.my_boolean);
+        json.key("myInt8").integer(i64::from(self.my_int8));
+        json.key("myInt16").integer(i64::from(self.my_int16));
+        json.key("myUint16").integer(i64::from(self.my_uint16));
+        json.key("myInt32").integer(i64::from(self.my_int32));
+        json.key("myUint32").integer(i64::from(self.my_uint32));
+        json.key("myUint64").integer(self.my_uint64);
+        json.key("myUuid").uuid(self.my_uuid);
+        json.key("myFloat64").float(self.my_float64);
+        if version == 0 {
+            json.key("myString").string(&self.my_string);
+        }
+        if version == 0 {
+            json.key("myNullableString").nullable(
+                self.my_nullable_string.as_deref(),
+                |json, value| {
+                    json.string(value);
+                },
+            );
+        }
+        if version == 1 {
+            json.key("myCompactString").string(&self.my_compact_string);
+        }
+        if version == 1 {
+            json.key("myCompactNullableString").nullable(
+                self.my_compact_nullable_string.as_deref(),
+                |json, value| {
+                    json.string(value);
+                },
+            );
+        }
+        if version == 0 {
+            json.key("myBytes").bytes(&self.my_bytes);
+        }
+        if version == 0 {
+            json.key("myNullableBytes").nullable(
+                self.my_nullable_bytes.as_deref(),
+                |json, value| {
+                    json.bytes(value);
+                },
+            );
+        }
+        if version == 1 {
+            json.key("myCompactBytes").bytes(&self.my_compact_bytes);
+        }
+        if version == 1 {
+            json.key("myCompactNullableBytes").nullable(
+                self.my_compact_nullable_bytes.as_deref(),
+                |json, value| {
+                    json.bytes(value);
+                },
+            );
+        }
+        if version == 0 {
+            json.records("myRecords", self.my_records.as_ref());
+        }
+        if version == 0 {
+            json.records("myNullableRecords", self.my_nullable_records.as_ref());
+        }
+        if version == 1 {
+            json.records("myCompactRecords", self.my_compact_records.as_ref());
+        }
+        if version == 1 {
+            json.records("myCompactNullableRecords", self.my_compact_nullable_records.as_ref());
+        }
+        json.key("myIntArray").array(&self.my_int_array, |json, value| {
+            json.integer(i64::from(*value));
+        });
+        json.key("myNullableIntArray").nullable(
+            self.my_nullable_int_array.as_deref(),
+            |json, value| {
+                json.array(value, |json, value| {
+                    json.integer(i64::from(*value));
+                });
+            },
+        );
+        json.key("myCommonStruct").nullable(self.my_common_struct.as_ref(), |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl AllTypeMessage {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -562,6 +649,16 @@ impl TestCommonStruct {
 }
 
 impl TestCommonStruct {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("foo").integer(i64::from(self.foo));
+        json.key("bar").integer(i64::from(self.bar));
+        json.end_object();
+    }
+}
+
+impl TestCommonStruct {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -611,6 +708,10 @@ impl crate::Message for AllTypeMessage {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

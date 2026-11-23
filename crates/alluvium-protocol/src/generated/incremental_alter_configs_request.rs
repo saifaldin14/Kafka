@@ -80,6 +80,18 @@ impl IncrementalAlterConfigsRequest {
 }
 
 impl IncrementalAlterConfigsRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("resources").array(&self.resources, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("validateOnly").boolean(self.validate_only);
+        json.end_object();
+    }
+}
+
+impl IncrementalAlterConfigsRequest {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -212,6 +224,19 @@ impl AlterConfigsResource {
                 unknown_tagged_fields: value_3,
             })
             .boxed()
+    }
+}
+
+impl AlterConfigsResource {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("resourceType").integer(i64::from(self.resource_type));
+        json.key("resourceName").string(&self.resource_name);
+        json.key("configs").array(&self.configs, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
     }
 }
 
@@ -368,6 +393,19 @@ impl AlterableConfig {
 }
 
 impl AlterableConfig {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("configOperation").integer(i64::from(self.config_operation));
+        json.key("value").nullable(self.value.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.end_object();
+    }
+}
+
+impl AlterableConfig {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -429,6 +467,10 @@ impl crate::Message for IncrementalAlterConfigsRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

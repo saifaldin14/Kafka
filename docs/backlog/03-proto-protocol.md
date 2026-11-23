@@ -622,11 +622,11 @@ Done when: two runs over shuffled input order produce identical bytes.
 P1 · M1 · Task · deps: PROTO-0135, PROTO-0082 · labels: test
 Done when: round-trip and size tests pass for AllTypeMessage at every version.
 
-## [To Do] PROTO-F13 Wire capture decoding
-P2 · M2 · Feature · deps: PROTO-F06, CLI-F01
-Scope: `alluvium dump frame`: decode hex dumps or pcap payloads of Kafka frames for debugging.
+## [In Progress] PROTO-F13 Wire capture decoding
+P2 · M2 · Feature · deps: PROTO-F06
+Scope: `alluvium dump frame`: decode hex dumps or pcap payloads of Kafka frames for debugging. Only the command and its page need the CLI framework, so CLI-F01 is PROTO-0146's dependency; the decoding is library code.
 
-### [To Do] PROTO-0141 Generated JSON rendering of messages with Kafka's JsonConverter field names; records as size and CRC summary; sensitive fields redacted
+### [Done] PROTO-0141 Generated JSON rendering of messages with Kafka's JsonConverter field names; records as size and CRC summary; sensitive fields redacted
 P2 · M2 · Task · deps: none · ref: generator/src/main/java/org/apache/kafka/message/JsonConverterGenerator.java; server/src/main/java/org/apache/kafka/network/RequestConvertToJson.java @4.4.0
 Done when: output for golden vectors equals Kafka's JsonConverter JSON after documented normalization of records and redacted fields; redaction tests.
 
@@ -647,7 +647,7 @@ P2 · M2 · Task · deps: PROTO-0143
 Done when: a capture of an ApiVersions + Metadata + Produce exchange decodes every response automatically.
 
 ### [To Do] PROTO-0146 `alluvium dump frame` command: human output, `--json`, `--api/--version` overrides, documented exit codes
-P2 · M2 · Task · deps: PROTO-0145 · labels: security
+P2 · M2 · Task · deps: PROTO-0145, CLI-F01 · labels: security
 Done when: command tests over golden frames for every output mode; payloads are never printed.
 
 ### [To Do] PROTO-0147 `docs/operations/wire-captures.md`: capture with tcpdump/Wireshark and decode with `alluvium dump frame`

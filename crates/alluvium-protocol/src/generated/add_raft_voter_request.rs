@@ -123,6 +123,26 @@ impl AddRaftVoterRequest {
 }
 
 impl AddRaftVoterRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("clusterId").nullable(self.cluster_id.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("timeoutMs").integer(i64::from(self.timeout_ms));
+        json.key("voterId").integer(i64::from(self.voter_id));
+        json.key("voterDirectoryId").uuid(self.voter_directory_id);
+        json.key("listeners").array(&self.listeners, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        if version == 1 {
+            json.key("ackWhenCommitted").boolean(self.ack_when_committed);
+        }
+        json.end_object();
+    }
+}
+
+impl AddRaftVoterRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -251,6 +271,17 @@ impl Listener {
 }
 
 impl Listener {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("host").string(&self.host);
+        json.key("port").integer(i64::from(self.port));
+        json.end_object();
+    }
+}
+
+impl Listener {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -301,6 +332,10 @@ impl crate::Message for AddRaftVoterRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

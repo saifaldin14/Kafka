@@ -118,6 +118,24 @@ impl ListOffsetsRequest {
 }
 
 impl ListOffsetsRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("replicaId").integer(i64::from(self.replica_id));
+        if version >= 2 {
+            json.key("isolationLevel").integer(i64::from(self.isolation_level));
+        }
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        if version >= 10 {
+            json.key("timeoutMs").integer(i64::from(self.timeout_ms));
+        }
+        json.end_object();
+    }
+}
+
+impl ListOffsetsRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -248,6 +266,18 @@ impl ListOffsetsTopic {
 }
 
 impl ListOffsetsTopic {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl ListOffsetsTopic {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -363,6 +393,19 @@ impl ListOffsetsPartition {
 }
 
 impl ListOffsetsPartition {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("partitionIndex").integer(i64::from(self.partition_index));
+        if version >= 4 {
+            json.key("currentLeaderEpoch").integer(i64::from(self.current_leader_epoch));
+        }
+        json.key("timestamp").integer(self.timestamp);
+        json.end_object();
+    }
+}
+
+impl ListOffsetsPartition {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -420,6 +463,10 @@ impl crate::Message for ListOffsetsRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

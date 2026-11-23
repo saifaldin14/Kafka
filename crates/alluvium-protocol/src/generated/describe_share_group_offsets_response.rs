@@ -78,6 +78,18 @@ impl DescribeShareGroupOffsetsResponse {
 }
 
 impl DescribeShareGroupOffsetsResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        json.key("groups").array(&self.groups, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl DescribeShareGroupOffsetsResponse {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -195,6 +207,22 @@ impl DescribeShareGroupOffsetsResponseGroup {
 }
 
 impl DescribeShareGroupOffsetsResponseGroup {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("groupId").string(&self.group_id);
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("errorMessage").nullable(self.error_message.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.end_object();
+    }
+}
+
+impl DescribeShareGroupOffsetsResponseGroup {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -299,6 +327,19 @@ impl DescribeShareGroupOffsetsResponseTopic {
                 }
             })
             .boxed()
+    }
+}
+
+impl DescribeShareGroupOffsetsResponseTopic {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("topicName").string(&self.topic_name);
+        json.key("topicId").uuid(self.topic_id);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
     }
 }
 
@@ -448,6 +489,24 @@ impl DescribeShareGroupOffsetsResponsePartition {
 }
 
 impl DescribeShareGroupOffsetsResponsePartition {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("partitionIndex").integer(i64::from(self.partition_index));
+        json.key("startOffset").integer(self.start_offset);
+        json.key("leaderEpoch").integer(i64::from(self.leader_epoch));
+        if version == 1 {
+            json.key("lag").integer(self.lag);
+        }
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("errorMessage").nullable(self.error_message.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.end_object();
+    }
+}
+
+impl DescribeShareGroupOffsetsResponsePartition {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -500,6 +559,10 @@ impl crate::Message for DescribeShareGroupOffsetsResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

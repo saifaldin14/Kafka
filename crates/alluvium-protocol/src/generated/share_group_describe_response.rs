@@ -75,6 +75,18 @@ impl ShareGroupDescribeResponse {
 }
 
 impl ShareGroupDescribeResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        json.key("groups").array(&self.groups, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl ShareGroupDescribeResponse {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -251,6 +263,27 @@ impl DescribedGroup {
 }
 
 impl DescribedGroup {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("errorMessage").nullable(self.error_message.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("groupId").string(&self.group_id);
+        json.key("groupState").string(&self.group_state);
+        json.key("groupEpoch").integer(i64::from(self.group_epoch));
+        json.key("assignmentEpoch").integer(i64::from(self.assignment_epoch));
+        json.key("assignorName").string(&self.assignor_name);
+        json.key("members").array(&self.members, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("authorizedOperations").integer(i64::from(self.authorized_operations));
+        json.end_object();
+    }
+}
+
+impl DescribedGroup {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -380,6 +413,25 @@ impl Member {
 }
 
 impl Member {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("memberId").string(&self.member_id);
+        json.key("rackId").nullable(self.rack_id.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("memberEpoch").integer(i64::from(self.member_epoch));
+        json.key("clientId").string(&self.client_id);
+        json.key("clientHost").string(&self.client_host);
+        json.key("subscribedTopicNames").array(&self.subscribed_topic_names, |json, value| {
+            json.string(value);
+        });
+        self.assignment.write_json_fields(json.key("assignment"), version);
+        json.end_object();
+    }
+}
+
+impl Member {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -450,6 +502,17 @@ impl Assignment {
                 unknown_tagged_fields: value_1,
             })
             .boxed()
+    }
+}
+
+impl Assignment {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("topicPartitions").array(&self.topic_partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
     }
 }
 
@@ -553,6 +616,19 @@ impl TopicPartitions {
 }
 
 impl TopicPartitions {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("topicId").uuid(self.topic_id);
+        json.key("topicName").string(&self.topic_name);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            json.integer(i64::from(*value));
+        });
+        json.end_object();
+    }
+}
+
+impl TopicPartitions {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -603,6 +679,10 @@ impl crate::Message for ShareGroupDescribeResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

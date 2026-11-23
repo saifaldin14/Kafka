@@ -351,7 +351,9 @@ pub(crate) fn render_message(out: &mut String, message: &MessageSpec, runtime: &
          version: i16) -> Result<{name}, {runtime}::DecodeError> {{\n        if \
          !{name}::VERSIONS.contains(version) {{\n            return \
          Err(reader.unsupported_version({name:?}, version));\n        }}\n        \
-         {name}::read(reader, version)\n    }}\n\n{encode}}}\n"
+         {name}::read(reader, version)\n    }}\n\n{encode}\n    fn write_json(&self, json: &mut \
+         {runtime}::JsonWriter, version: i16) {{\n        self.write_json_fields(json, \
+         version);\n    }}\n}}\n"
     );
 }
 

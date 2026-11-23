@@ -119,6 +119,34 @@ impl CreateDelegationTokenRequest {
 }
 
 impl CreateDelegationTokenRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        if version == 3 {
+            json.key("ownerPrincipalType").nullable(
+                self.owner_principal_type.as_deref(),
+                |json, value| {
+                    json.string(value);
+                },
+            );
+        }
+        if version == 3 {
+            json.key("ownerPrincipalName").nullable(
+                self.owner_principal_name.as_deref(),
+                |json, value| {
+                    json.string(value);
+                },
+            );
+        }
+        json.key("renewers").array(&self.renewers, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("maxLifetimeMs").integer(self.max_lifetime_ms);
+        json.end_object();
+    }
+}
+
+impl CreateDelegationTokenRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -255,6 +283,16 @@ impl CreatableRenewers {
 }
 
 impl CreatableRenewers {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("principalType").string(&self.principal_type);
+        json.key("principalName").string(&self.principal_name);
+        json.end_object();
+    }
+}
+
+impl CreatableRenewers {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -315,6 +353,10 @@ impl crate::Message for CreateDelegationTokenRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

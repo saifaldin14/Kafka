@@ -92,6 +92,19 @@ impl AlterPartitionRequest {
 }
 
 impl AlterPartitionRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("brokerId").integer(i64::from(self.broker_id));
+        json.key("brokerEpoch").integer(self.broker_epoch);
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl AlterPartitionRequest {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -178,6 +191,18 @@ impl TopicData {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl TopicData {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("topicId").uuid(self.topic_id);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
     }
 }
 
@@ -299,6 +324,28 @@ impl PartitionData {
 }
 
 impl PartitionData {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("partitionIndex").integer(i64::from(self.partition_index));
+        json.key("leaderEpoch").integer(i64::from(self.leader_epoch));
+        if version == 2 {
+            json.key("newIsr").array(&self.new_isr, |json, value| {
+                json.integer(i64::from(*value));
+            });
+        }
+        if version == 3 {
+            json.key("newIsrWithEpochs").array(&self.new_isr_with_epochs, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        }
+        json.key("leaderRecoveryState").integer(i64::from(self.leader_recovery_state));
+        json.key("partitionEpoch").integer(i64::from(self.partition_epoch));
+        json.end_object();
+    }
+}
+
+impl PartitionData {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -415,6 +462,16 @@ impl BrokerState {
 }
 
 impl BrokerState {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("brokerId").integer(i64::from(self.broker_id));
+        json.key("brokerEpoch").integer(self.broker_epoch);
+        json.end_object();
+    }
+}
+
+impl BrokerState {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -464,6 +521,10 @@ impl crate::Message for AlterPartitionRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

@@ -123,6 +123,29 @@ impl FetchResponse {
 }
 
 impl FetchResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        if version >= 7 {
+            json.key("errorCode").integer(i64::from(self.error_code));
+        }
+        if version >= 7 {
+            json.key("sessionId").integer(i64::from(self.session_id));
+        }
+        json.key("responses").array(&self.responses, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        if version >= 16 && !self.node_endpoints.is_empty() {
+            json.key("nodeEndpoints").array(&self.node_endpoints, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        }
+        json.end_object();
+    }
+}
+
+impl FetchResponse {
     fn write_tagged_fields(
         &self,
         writer: &mut crate::Writer,
@@ -293,6 +316,23 @@ impl FetchableTopicResponse {
                 unknown_tagged_fields: value_3,
             })
             .boxed()
+    }
+}
+
+impl FetchableTopicResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        if version <= 12 {
+            json.key("topic").string(&self.topic);
+        }
+        if version >= 13 {
+            json.key("topicId").uuid(self.topic_id);
+        }
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
     }
 }
 
@@ -555,6 +595,42 @@ impl PartitionData {
 }
 
 impl PartitionData {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("partitionIndex").integer(i64::from(self.partition_index));
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("highWatermark").integer(self.high_watermark);
+        json.key("lastStableOffset").integer(self.last_stable_offset);
+        if version >= 5 {
+            json.key("logStartOffset").integer(self.log_start_offset);
+        }
+        if version >= 12 && self.diverging_epoch != EpochEndOffset::default() {
+            self.diverging_epoch.write_json_fields(json.key("divergingEpoch"), version);
+        }
+        if version >= 12 && self.current_leader != LeaderIdAndEpoch::default() {
+            self.current_leader.write_json_fields(json.key("currentLeader"), version);
+        }
+        if version >= 12 && self.snapshot_id != SnapshotId::default() {
+            self.snapshot_id.write_json_fields(json.key("snapshotId"), version);
+        }
+        json.key("abortedTransactions").nullable(
+            self.aborted_transactions.as_deref(),
+            |json, value| {
+                json.array(value, |json, value| {
+                    value.write_json_fields(json, version);
+                });
+            },
+        );
+        if version >= 11 {
+            json.key("preferredReadReplica").integer(i64::from(self.preferred_read_replica));
+        }
+        json.records("records", self.records.as_ref());
+        json.end_object();
+    }
+}
+
+impl PartitionData {
     fn write_tagged_fields(
         &self,
         writer: &mut crate::Writer,
@@ -718,6 +794,16 @@ impl EpochEndOffset {
 }
 
 impl EpochEndOffset {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("epoch").integer(i64::from(self.epoch));
+        json.key("endOffset").integer(self.end_offset);
+        json.end_object();
+    }
+}
+
+impl EpochEndOffset {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -793,6 +879,16 @@ impl LeaderIdAndEpoch {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl LeaderIdAndEpoch {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("leaderId").integer(i64::from(self.leader_id));
+        json.key("leaderEpoch").integer(i64::from(self.leader_epoch));
+        json.end_object();
     }
 }
 
@@ -873,6 +969,16 @@ impl SnapshotId {
 }
 
 impl SnapshotId {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("endOffset").integer(self.end_offset);
+        json.key("epoch").integer(i64::from(self.epoch));
+        json.end_object();
+    }
+}
+
+impl SnapshotId {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -948,6 +1054,16 @@ impl AbortedTransaction {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl AbortedTransaction {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("producerId").integer(self.producer_id);
+        json.key("firstOffset").integer(self.first_offset);
+        json.end_object();
     }
 }
 
@@ -1061,6 +1177,20 @@ impl NodeEndpoint {
 }
 
 impl NodeEndpoint {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("nodeId").integer(i64::from(self.node_id));
+        json.key("host").string(&self.host);
+        json.key("port").integer(i64::from(self.port));
+        json.key("rack").nullable(self.rack.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.end_object();
+    }
+}
+
+impl NodeEndpoint {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -1109,6 +1239,10 @@ impl crate::Message for FetchResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

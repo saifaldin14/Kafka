@@ -135,6 +135,30 @@ impl InitProducerIdRequest {
 }
 
 impl InitProducerIdRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("transactionalId").nullable(self.transactional_id.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("transactionTimeoutMs").integer(i64::from(self.transaction_timeout_ms));
+        if version >= 3 {
+            json.key("producerId").integer(self.producer_id);
+        }
+        if version >= 3 {
+            json.key("producerEpoch").integer(i64::from(self.producer_epoch));
+        }
+        if version == 6 {
+            json.key("enable2Pc").boolean(self.enable2_pc);
+        }
+        if version == 6 {
+            json.key("keepPreparedTxn").boolean(self.keep_prepared_txn);
+        }
+        json.end_object();
+    }
+}
+
+impl InitProducerIdRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -228,6 +252,10 @@ impl crate::Message for InitProducerIdRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

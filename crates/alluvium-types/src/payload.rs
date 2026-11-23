@@ -19,12 +19,22 @@ use std::fmt;
 #[derive(Clone, Copy)]
 pub struct PayloadSummary<'a>(pub &'a [u8]);
 
+impl PayloadSummary<'_> {
+    /// The payload's CRC-32C, the checksum Kafka uses for record batches.
+    // Parity: clients/src/main/java/org/apache/kafka/common/utils/internals/Crc32C.java@4.4.0 Crc32C.compute
+    pub fn crc32c(&self) -> u32 {
+        crc32c::crc32c(self.0)
+    }
+}
+
 impl fmt::Debug for PayloadSummary<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // Parity: clients/src/main/java/org/apache/kafka/common/utils/internals/Crc32C.java@4.4.0 Crc32C.compute
-        // (the checksum Kafka uses for record batches).
-        let crc = crc32c::crc32c(self.0);
-        write!(f, "Bytes {{ len: {}, crc32c: {crc:#010x} }}", self.0.len())
+        write!(
+            f,
+            "Bytes {{ len: {}, crc32c: {:#010x} }}",
+            self.0.len(),
+            self.crc32c()
+        )
     }
 }
 

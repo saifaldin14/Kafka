@@ -112,6 +112,22 @@ impl ProduceRequest {
 }
 
 impl ProduceRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("transactionalId").nullable(self.transactional_id.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("acks").integer(i64::from(self.acks));
+        json.key("timeoutMs").integer(i64::from(self.timeout_ms));
+        json.key("topicData").array(&self.topic_data, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl ProduceRequest {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -262,6 +278,23 @@ impl TopicProduceData {
 }
 
 impl TopicProduceData {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        if version <= 12 {
+            json.key("name").string(&self.name);
+        }
+        if version == 13 {
+            json.key("topicId").uuid(self.topic_id);
+        }
+        json.key("partitionData").array(&self.partition_data, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl TopicProduceData {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -370,6 +403,16 @@ impl PartitionProduceData {
 }
 
 impl PartitionProduceData {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("index").integer(i64::from(self.index));
+        json.records("records", self.records.as_ref());
+        json.end_object();
+    }
+}
+
+impl PartitionProduceData {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -427,6 +470,10 @@ impl crate::Message for ProduceRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

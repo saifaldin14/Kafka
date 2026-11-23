@@ -31,6 +31,7 @@ mod encode;
 mod errors;
 mod fuzz_targets;
 mod internal;
+mod json;
 pub(crate) mod names;
 mod overlays;
 mod strategy;
@@ -798,11 +799,16 @@ fn mod_files(
 fn transcode_table(decodable: &[(String, i16, i16)]) -> String {
     let mut transcode = String::new();
     let mut arbitrary = String::new();
+    let mut to_json = String::new();
     for (message, lowest, highest) in decodable {
         let name = message.rsplit("::").next().unwrap_or(message);
         let _ = writeln!(
             transcode,
             "    (\"{name}\", crate::golden_tests::transcode::<{message}>),"
+        );
+        let _ = writeln!(
+            to_json,
+            "    (\"{name}\", crate::golden_tests::to_json::<{message}>),"
         );
         let _ = writeln!(
             arbitrary,
@@ -818,7 +824,9 @@ fn transcode_table(decodable: &[(String, i16, i16)]) -> String {
          name, lowest and highest version, with a function that encodes\n/// `count` arbitrary \
          values at a version, for the reverse check by Kafka.\n#[cfg(test)]\npub(crate) const \
          ENCODE_ARBITRARY: &[(&str, i16, i16, crate::golden_tests::EncodeArbitrary)] = \
-         &[\n{arbitrary}];\n"
+         &[\n{arbitrary}];\n\n/// Each message's schema name with the function that decodes it and \
+         writes it as JSON,\n/// for the comparison with Kafka's `JsonConverter`.\n#[cfg(test)]\n\
+         pub(crate) const TO_JSON: &[(&str, crate::golden_tests::ToJson)] = &[\n{to_json}];\n"
     )
 }
 

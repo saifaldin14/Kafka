@@ -122,6 +122,22 @@ impl DescribeUserScramCredentialsResponse {
 }
 
 impl DescribeUserScramCredentialsResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("errorMessage").nullable(self.error_message.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("results").array(&self.results, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl DescribeUserScramCredentialsResponse {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -251,6 +267,22 @@ impl DescribeUserScramCredentialsResult {
 }
 
 impl DescribeUserScramCredentialsResult {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("user").string(&self.user);
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("errorMessage").nullable(self.error_message.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("credentialInfos").array(&self.credential_infos, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl DescribeUserScramCredentialsResult {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -329,6 +361,16 @@ impl CredentialInfo {
 }
 
 impl CredentialInfo {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("mechanism").integer(i64::from(self.mechanism));
+        json.key("iterations").integer(i64::from(self.iterations));
+        json.end_object();
+    }
+}
+
+impl CredentialInfo {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -375,6 +417,10 @@ impl crate::Message for DescribeUserScramCredentialsResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

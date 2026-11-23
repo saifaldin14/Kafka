@@ -93,6 +93,23 @@ impl LeaveGroupRequest {
 }
 
 impl LeaveGroupRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("groupId").string(&self.group_id);
+        if version <= 2 {
+            json.key("memberId").string(&self.member_id);
+        }
+        if version >= 3 {
+            json.key("members").array(&self.members, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        }
+        json.end_object();
+    }
+}
+
+impl LeaveGroupRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -238,6 +255,23 @@ impl MemberIdentity {
 }
 
 impl MemberIdentity {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("memberId").string(&self.member_id);
+        json.key("groupInstanceId").nullable(self.group_instance_id.as_deref(), |json, value| {
+            json.string(value);
+        });
+        if version == 5 {
+            json.key("reason").nullable(self.reason.as_deref(), |json, value| {
+                json.string(value);
+            });
+        }
+        json.end_object();
+    }
+}
+
+impl MemberIdentity {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -301,6 +335,10 @@ impl crate::Message for LeaveGroupRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

@@ -3,6 +3,7 @@
 use bytes::Bytes;
 
 use crate::error::{DecodeError, DecodeErrorKind, EncodeError};
+use crate::json::JsonWriter;
 use crate::reader::Reader;
 use crate::writer::Writer;
 
@@ -45,6 +46,18 @@ pub trait Message: Sized {
             total: writer.len(),
             zero_copy: writer.zero_copy_len(),
         })
+    }
+
+    /// Writes the message at `version`, the version it was read at, as JSON in Kafka's
+    /// `JsonConverter` form ([`JsonWriter`]).
+    // Parity: generator/src/main/java/org/apache/kafka/message/JsonConverterGenerator.java@4.4.0 JsonConverterGenerator.generateWrite
+    fn write_json(&self, json: &mut JsonWriter, version: i16);
+
+    /// The message at `version` as one line of JSON ([`Message::write_json`]).
+    fn to_json(&self, version: i16) -> String {
+        let mut json = JsonWriter::new();
+        self.write_json(&mut json, version);
+        json.finish()
     }
 }
 

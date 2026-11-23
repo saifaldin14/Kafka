@@ -94,6 +94,21 @@ impl UpdateFeaturesRequest {
 }
 
 impl UpdateFeaturesRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("timeoutMs").integer(i64::from(self.timeout_ms));
+        json.key("featureUpdates").array(&self.feature_updates, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        if version >= 1 {
+            json.key("validateOnly").boolean(self.validate_only);
+        }
+        json.end_object();
+    }
+}
+
+impl UpdateFeaturesRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -257,6 +272,22 @@ impl FeatureUpdateKey {
 }
 
 impl FeatureUpdateKey {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("feature").string(&self.feature);
+        json.key("maxVersionLevel").integer(i64::from(self.max_version_level));
+        if version == 0 {
+            json.key("allowDowngrade").boolean(self.allow_downgrade);
+        }
+        if version >= 1 {
+            json.key("upgradeType").integer(i64::from(self.upgrade_type));
+        }
+        json.end_object();
+    }
+}
+
+impl FeatureUpdateKey {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -338,6 +369,10 @@ impl crate::Message for UpdateFeaturesRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

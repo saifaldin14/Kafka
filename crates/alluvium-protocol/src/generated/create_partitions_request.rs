@@ -87,6 +87,19 @@ impl CreatePartitionsRequest {
 }
 
 impl CreatePartitionsRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("timeoutMs").integer(i64::from(self.timeout_ms));
+        json.key("validateOnly").boolean(self.validate_only);
+        json.end_object();
+    }
+}
+
+impl CreatePartitionsRequest {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -229,6 +242,21 @@ impl CreatePartitionsTopic {
 }
 
 impl CreatePartitionsTopic {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("count").integer(i64::from(self.count));
+        json.key("assignments").nullable(self.assignments.as_deref(), |json, value| {
+            json.array(value, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        });
+        json.end_object();
+    }
+}
+
+impl CreatePartitionsTopic {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -325,6 +353,17 @@ impl CreatePartitionsAssignment {
 }
 
 impl CreatePartitionsAssignment {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("brokerIds").array(&self.broker_ids, |json, value| {
+            json.integer(i64::from(*value));
+        });
+        json.end_object();
+    }
+}
+
+impl CreatePartitionsAssignment {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -384,6 +423,10 @@ impl crate::Message for CreatePartitionsRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

@@ -98,6 +98,23 @@ impl VoteResponse {
 }
 
 impl VoteResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        if version >= 1 && !self.node_endpoints.is_empty() {
+            json.key("nodeEndpoints").array(&self.node_endpoints, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        }
+        json.end_object();
+    }
+}
+
+impl VoteResponse {
     fn write_tagged_fields(
         &self,
         writer: &mut crate::Writer,
@@ -219,6 +236,18 @@ impl TopicData {
 }
 
 impl TopicData {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("topicName").string(&self.topic_name);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl TopicData {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -329,6 +358,19 @@ impl PartitionData {
 }
 
 impl PartitionData {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("partitionIndex").integer(i64::from(self.partition_index));
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("leaderId").integer(i64::from(self.leader_id));
+        json.key("leaderEpoch").integer(i64::from(self.leader_epoch));
+        json.key("voteGranted").boolean(self.vote_granted);
+        json.end_object();
+    }
+}
+
+impl PartitionData {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -429,6 +471,17 @@ impl NodeEndpoint {
 }
 
 impl NodeEndpoint {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("nodeId").integer(i64::from(self.node_id));
+        json.key("host").string(&self.host);
+        json.key("port").integer(i64::from(self.port));
+        json.end_object();
+    }
+}
+
+impl NodeEndpoint {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -476,6 +529,10 @@ impl crate::Message for VoteResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

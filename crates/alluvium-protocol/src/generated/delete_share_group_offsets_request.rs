@@ -77,6 +77,18 @@ impl DeleteShareGroupOffsetsRequest {
 }
 
 impl DeleteShareGroupOffsetsRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("groupId").string(&self.group_id);
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl DeleteShareGroupOffsetsRequest {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -149,6 +161,15 @@ impl DeleteShareGroupOffsetsRequestTopic {
 }
 
 impl DeleteShareGroupOffsetsRequestTopic {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("topicName").string(&self.topic_name);
+        json.end_object();
+    }
+}
+
+impl DeleteShareGroupOffsetsRequestTopic {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -197,6 +218,10 @@ impl crate::Message for DeleteShareGroupOffsetsRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

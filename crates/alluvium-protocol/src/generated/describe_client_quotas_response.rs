@@ -129,6 +129,24 @@ impl DescribeClientQuotasResponse {
 }
 
 impl DescribeClientQuotasResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("errorMessage").nullable(self.error_message.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("entries").nullable(self.entries.as_deref(), |json, value| {
+            json.array(value, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        });
+        json.end_object();
+    }
+}
+
+impl DescribeClientQuotasResponse {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -229,6 +247,20 @@ impl EntryData {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl EntryData {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("entity").array(&self.entity, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("values").array(&self.values, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
     }
 }
 
@@ -348,6 +380,18 @@ impl EntityData {
 }
 
 impl EntityData {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("entityType").string(&self.entity_type);
+        json.key("entityName").nullable(self.entity_name.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.end_object();
+    }
+}
+
+impl EntityData {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -441,6 +485,16 @@ impl ValueData {
 }
 
 impl ValueData {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("key").string(&self.key);
+        json.key("value").float(self.value);
+        json.end_object();
+    }
+}
+
+impl ValueData {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -495,6 +549,10 @@ impl crate::Message for DescribeClientQuotasResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

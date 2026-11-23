@@ -109,6 +109,24 @@ impl FetchSnapshotRequest {
 }
 
 impl FetchSnapshotRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        if self.cluster_id.is_some() {
+            json.key("clusterId").nullable(self.cluster_id.as_deref(), |json, value| {
+                json.string(value);
+            });
+        }
+        json.key("replicaId").integer(i64::from(self.replica_id));
+        json.key("maxBytes").integer(i64::from(self.max_bytes));
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl FetchSnapshotRequest {
     fn write_tagged_fields(
         &self,
         writer: &mut crate::Writer,
@@ -201,6 +219,18 @@ impl TopicSnapshot {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl TopicSnapshot {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
     }
 }
 
@@ -330,6 +360,21 @@ impl PartitionSnapshot {
 }
 
 impl PartitionSnapshot {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("partition").integer(i64::from(self.partition));
+        json.key("currentLeaderEpoch").integer(i64::from(self.current_leader_epoch));
+        self.snapshot_id.write_json_fields(json.key("snapshotId"), version);
+        json.key("position").integer(self.position);
+        if version == 1 && self.replica_directory_id != alluvium_types::Uuid::ZERO {
+            json.key("replicaDirectoryId").uuid(self.replica_directory_id);
+        }
+        json.end_object();
+    }
+}
+
+impl PartitionSnapshot {
     fn write_tagged_fields(
         &self,
         writer: &mut crate::Writer,
@@ -418,6 +463,16 @@ impl SnapshotId {
 }
 
 impl SnapshotId {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("endOffset").integer(self.end_offset);
+        json.key("epoch").integer(i64::from(self.epoch));
+        json.end_object();
+    }
+}
+
+impl SnapshotId {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -467,6 +522,10 @@ impl crate::Message for FetchSnapshotRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

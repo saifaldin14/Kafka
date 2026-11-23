@@ -141,6 +141,38 @@ impl SyncGroupRequest {
 }
 
 impl SyncGroupRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("groupId").string(&self.group_id);
+        json.key("generationId").integer(i64::from(self.generation_id));
+        json.key("memberId").string(&self.member_id);
+        if version >= 3 {
+            json.key("groupInstanceId").nullable(
+                self.group_instance_id.as_deref(),
+                |json, value| {
+                    json.string(value);
+                },
+            );
+        }
+        if version == 5 {
+            json.key("protocolType").nullable(self.protocol_type.as_deref(), |json, value| {
+                json.string(value);
+            });
+        }
+        if version == 5 {
+            json.key("protocolName").nullable(self.protocol_name.as_deref(), |json, value| {
+                json.string(value);
+            });
+        }
+        json.key("assignments").array(&self.assignments, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl SyncGroupRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -286,6 +318,16 @@ impl SyncGroupRequestAssignment {
 }
 
 impl SyncGroupRequestAssignment {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("memberId").string(&self.member_id);
+        json.key("assignment").bytes(&self.assignment);
+        json.end_object();
+    }
+}
+
+impl SyncGroupRequestAssignment {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -346,6 +388,10 @@ impl crate::Message for SyncGroupRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

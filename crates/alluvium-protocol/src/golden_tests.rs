@@ -66,6 +66,14 @@ pub(crate) enum Wrap {
     Request(crate::generated::request_header::RequestHeader),
 }
 
+/// [`to_json`] for one message type.
+pub(crate) type ToJson = fn(&Bytes, i16) -> Result<String, DecodeError>;
+
+/// Decodes `input` as `M` at `version` and writes it as JSON.
+pub(crate) fn to_json<M: Message>(input: &Bytes, version: i16) -> Result<String, DecodeError> {
+    Ok(M::decode(&mut Reader::new(input.clone()), version)?.to_json(version))
+}
+
 /// [`transcode`] for one message type.
 pub(crate) type Transcode = fn(&Bytes, i16, i16, &Wrap) -> Result<(Bytes, usize), Failure>;
 
@@ -330,6 +338,89 @@ fn every_case_kafka_wrote_decodes_and_encodes_as_kafka_writes_it() {
         failures.len(),
         failures.join("\n")
     );
+}
+
+/// PROTO-0141: every message Kafka wrote, read and written as JSON, is the JSON Kafka's
+/// `JsonConverter` wrote for it, after two documented normalizations
+/// ([`normalize_json`]).
+#[test]
+fn every_case_kafka_wrote_reads_as_kafkas_json() {
+    let cases: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(golden().join("cases.json")).unwrap()).unwrap();
+    let to_json: std::collections::BTreeMap<&str, ToJson> =
+        crate::generated::TO_JSON.iter().copied().collect();
+    let mut failures = Vec::new();
+    let mut checked = 0_usize;
+    for case in cases.as_array().unwrap() {
+        let (Some(file), None) = (case["file"].as_str(), case.get("built_at")) else {
+            continue;
+        };
+        let message = case["message"].as_str().unwrap();
+        let version = i16::try_from(case["version"].as_i64().unwrap()).unwrap();
+        let ours = to_json[message](&read(file), version).unwrap();
+        let mut ours: serde_json::Value =
+            serde_json::from_str(&ours).unwrap_or_else(|error| panic!("{file}: {error}: {ours}"));
+        let kafka_file = file.replace(".bin", ".json");
+        let kafka: serde_json::Value = serde_json::from_slice(&read(&kafka_file)).unwrap();
+        normalize_json(&mut ours, &kafka);
+        if ours != kafka {
+            failures.push(format!("{file}:\n  ours:  {ours}\n  Kafka: {kafka}"));
+        }
+        checked = checked.saturating_add(1);
+    }
+    assert!(
+        checked > 1900,
+        "every case Kafka wrote is checked: {checked}"
+    );
+    assert!(
+        failures.is_empty(),
+        "{} of {checked} cases differ from Kafka's JSON:\n{}",
+        failures.len(),
+        failures
+            .iter()
+            .take(10)
+            .cloned()
+            .collect::<Vec<_>>()
+            .join("\n")
+    );
+}
+
+/// Makes `ours` comparable with Kafka's JSON:
+/// - Kafka's golden JSON writes every non-null `records` field as an empty string. Ours
+///   writes `<name>SizeInBytes` and `<name>Crc32c` instead, which become `<name>: ""`.
+/// - A redacted credential (`"***"`) stands for whatever Kafka wrote there.
+fn normalize_json(ours: &mut serde_json::Value, kafka: &serde_json::Value) {
+    match (ours, kafka) {
+        (serde_json::Value::Object(ours), serde_json::Value::Object(kafka)) => {
+            let summarized: Vec<String> = ours
+                .keys()
+                .filter_map(|key| key.strip_suffix("SizeInBytes"))
+                .filter(|name| kafka.get(*name) == Some(&serde_json::Value::from("")))
+                .map(str::to_owned)
+                .collect();
+            for name in summarized {
+                ours.remove(&format!("{name}SizeInBytes"));
+                ours.remove(&format!("{name}Crc32c"));
+                ours.insert(name, serde_json::Value::from(""));
+            }
+            for (key, value) in ours.iter_mut() {
+                if let Some(theirs) = kafka.get(key) {
+                    normalize_json(value, theirs);
+                }
+            }
+        }
+        (serde_json::Value::Array(ours), serde_json::Value::Array(kafka)) => {
+            for (value, theirs) in ours.iter_mut().zip(kafka) {
+                normalize_json(value, theirs);
+            }
+        }
+        (ours @ serde_json::Value::String(_), theirs @ serde_json::Value::String(_))
+            if ours == "***" =>
+        {
+            *ours = theirs.clone();
+        }
+        _ => {}
+    }
 }
 
 /// Each sequence of `utf8.json` in a classic string, as Kafka 4.4.0 decodes it and

@@ -79,6 +79,18 @@ impl AlterConfigsResponse {
 }
 
 impl AlterConfigsResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        json.key("responses").array(&self.responses, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl AlterConfigsResponse {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -225,6 +237,20 @@ impl AlterConfigsResourceResponse {
 }
 
 impl AlterConfigsResourceResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("errorMessage").nullable(self.error_message.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("resourceType").integer(i64::from(self.resource_type));
+        json.key("resourceName").string(&self.resource_name);
+        json.end_object();
+    }
+}
+
+impl AlterConfigsResourceResponse {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -284,6 +310,10 @@ impl crate::Message for AlterConfigsResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

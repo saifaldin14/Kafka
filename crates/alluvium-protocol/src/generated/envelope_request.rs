@@ -89,6 +89,19 @@ impl EnvelopeRequest {
 }
 
 impl EnvelopeRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("requestData").bytes(&self.request_data);
+        json.key("requestPrincipal").nullable(self.request_principal.as_deref(), |json, value| {
+            json.bytes(value);
+        });
+        json.key("clientHostAddress").bytes(&self.client_host_address);
+        json.end_object();
+    }
+}
+
+impl EnvelopeRequest {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -139,6 +152,10 @@ impl crate::Message for EnvelopeRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

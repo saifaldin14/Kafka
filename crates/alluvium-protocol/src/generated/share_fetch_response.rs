@@ -122,6 +122,26 @@ impl ShareFetchResponse {
 }
 
 impl ShareFetchResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("errorMessage").nullable(self.error_message.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("acquisitionLockTimeoutMs").integer(i64::from(self.acquisition_lock_timeout_ms));
+        json.key("responses").array(&self.responses, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("nodeEndpoints").array(&self.node_endpoints, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl ShareFetchResponse {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -238,6 +258,18 @@ impl ShareFetchableTopicResponse {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl ShareFetchableTopicResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("topicId").uuid(self.topic_id);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
     }
 }
 
@@ -406,6 +438,31 @@ impl PartitionData {
 }
 
 impl PartitionData {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("partitionIndex").integer(i64::from(self.partition_index));
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("errorMessage").nullable(self.error_message.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("acknowledgeErrorCode").integer(i64::from(self.acknowledge_error_code));
+        json.key("acknowledgeErrorMessage").nullable(
+            self.acknowledge_error_message.as_deref(),
+            |json, value| {
+                json.string(value);
+            },
+        );
+        self.current_leader.write_json_fields(json.key("currentLeader"), version);
+        json.records("records", self.records.as_ref());
+        json.key("acquiredRecords").array(&self.acquired_records, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl PartitionData {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -497,6 +554,16 @@ impl LeaderIdAndEpoch {
 }
 
 impl LeaderIdAndEpoch {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("leaderId").integer(i64::from(self.leader_id));
+        json.key("leaderEpoch").integer(i64::from(self.leader_epoch));
+        json.end_object();
+    }
+}
+
+impl LeaderIdAndEpoch {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -577,6 +644,17 @@ impl AcquiredRecords {
                 unknown_tagged_fields: value_3,
             })
             .boxed()
+    }
+}
+
+impl AcquiredRecords {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("firstOffset").integer(self.first_offset);
+        json.key("lastOffset").integer(self.last_offset);
+        json.key("deliveryCount").integer(i64::from(self.delivery_count));
+        json.end_object();
     }
 }
 
@@ -686,6 +764,20 @@ impl NodeEndpoint {
 }
 
 impl NodeEndpoint {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("nodeId").integer(i64::from(self.node_id));
+        json.key("host").string(&self.host);
+        json.key("port").integer(i64::from(self.port));
+        json.key("rack").nullable(self.rack.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.end_object();
+    }
+}
+
+impl NodeEndpoint {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -734,6 +826,10 @@ impl crate::Message for ShareFetchResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

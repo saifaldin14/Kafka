@@ -2,7 +2,8 @@
 //! field is made of, decoded from untrusted bytes without panicking; the message types
 //! in [`generated`], one module per Kafka 4.4.0 schema; the API registry ([`ApiKey`]);
 //! request and response headers, at the version each API and version selects
-//! ([`decode_request_header`]); and version negotiation with a peer
+//! ([`decode_request_header`]); every message as JSON for debugging tools
+//! ([`JsonWriter`]); and version negotiation with a peer
 //! ([`ApiVersionsHandshake`], [`NodeApiVersions`]).
 //!
 //! Layer: 0 ([ADR-0009](../../../docs/adr/0009-crate-layering-and-dependency-rules.md)).
@@ -42,6 +43,7 @@ pub mod generated;
 #[cfg(test)]
 mod golden_tests;
 mod header;
+mod json;
 #[cfg(test)]
 mod kafka_message_tests;
 mod limits;
@@ -68,6 +70,7 @@ pub use header::{
     DecodedRequestHeader, HeaderError, decode_request_header, decode_response_header,
     encode_request, encode_request_header, encode_response, encode_response_header,
 };
+pub use json::JsonWriter;
 pub use limits::{DecodeLimits, Limit};
 pub use message::{EncodedSize, Message, decode_version_prefixed, encode_version_prefixed};
 pub use negotiation::{

@@ -97,6 +97,19 @@ impl UpdateRaftVoterResponse {
 }
 
 impl UpdateRaftVoterResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        json.key("errorCode").integer(i64::from(self.error_code));
+        if self.current_leader != CurrentLeader::default() {
+            self.current_leader.write_json_fields(json.key("currentLeader"), version);
+        }
+        json.end_object();
+    }
+}
+
+impl UpdateRaftVoterResponse {
     fn write_tagged_fields(
         &self,
         writer: &mut crate::Writer,
@@ -213,6 +226,18 @@ impl CurrentLeader {
 }
 
 impl CurrentLeader {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("leaderId").integer(i64::from(self.leader_id));
+        json.key("leaderEpoch").integer(i64::from(self.leader_epoch));
+        json.key("host").string(&self.host);
+        json.key("port").integer(i64::from(self.port));
+        json.end_object();
+    }
+}
+
+impl CurrentLeader {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -261,6 +286,10 @@ impl crate::Message for UpdateRaftVoterResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 
