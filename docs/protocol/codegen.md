@@ -174,7 +174,12 @@ Every message implements `Message::encode(writer, version)`, which mirrors Kafka
 - Unknown fields in a version without tagged fields fail as `TaggedFieldsUnsupported`.
 - A decoded message re-encodes to the same bytes, unknown tags included, at every level.
 
-**Size.** `encoded_size` encodes into a counting `Writer`, which stores nothing, so it always equals the length `encode` writes. It also reports the bytes of records and `zeroCopy` byte fields, which a frame can share rather than copy.
+**Size.** `encoded_size` encodes into a counting `Writer`, which stores nothing, so it always equals the length `encode` writes. It also reports the bytes of records and `zeroCopy` byte fields.
+
+**Frames.** A `Writer::sharing()` writer never copies records or `zeroCopy` byte fields.
+- Each becomes a segment of its own that holds the message's `Bytes`, as in Kafka's `SendBuilder`.
+- `Writer::into_frame` returns an `EncodedFrame`: those shared segments, with the owned bytes between them coalesced, ready for a vectored write.
+- `Writer::new()` copies them instead. That is cheaper when the caller wants one buffer (`into_bytes`): sharing costs a few hundred instructions per value, and copying a small batch costs less.
 
 **Infallible structs.** A struct whose encoding can't fail, because it has only fixed-size fields that are present in every version, gets a `write_fields` that returns nothing.
 

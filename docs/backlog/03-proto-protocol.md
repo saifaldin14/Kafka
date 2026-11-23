@@ -450,7 +450,7 @@ Scope: Records fields decode to `Bytes` slices without copying; encode from shar
 P0 · M1 · Task · deps: PROTO-0046 · labels: perf · ref: clients/src/main/java/org/apache/kafka/common/protocol/Readable.java readRecords @4.4.0
 Done when: reading a records field leaves its bytes pointing into the frame allocation (pointer-range test); null records map to None; Debug prints a PayloadSummary; the type documents that it keeps the frame alive.
 
-### [To Do] PROTO-0102 Chunked encoder output (`EncodedFrame`): owned header/body bytes interleaved with shared records `Bytes` for vectored writes
+### [Done] PROTO-0102 Chunked encoder output (`EncodedFrame`): owned header/body bytes interleaved with shared records `Bytes` for vectored writes
 P0 · M1 · Task · deps: PROTO-0101 · labels: perf · ref: clients/src/main/java/org/apache/kafka/common/protocol/SendBuilder.java @4.4.0
 Done when: encoding a FetchResponse with 100 partitions copies no record bytes (counting-allocator test); total length equals `encoded_size`; adjacent owned segments are coalesced.
 
