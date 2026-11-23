@@ -21,6 +21,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "alluvium-capture"
+version = "0.0.0"
+dependencies = [
+ "proptest",
+ "thiserror",
+]
+
+[[package]]
 name = "alluvium-protocol"
 version = "0.0.0"
 dependencies = [

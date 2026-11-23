@@ -54,6 +54,7 @@ pub(crate) const LAYERS: &[(&str, Layer)] = &[
     ("alluvium-storage", Layer::Numbered(1)),
     ("alluvium-raft", Layer::Numbered(1)),
     ("alluvium-metadata", Layer::Numbered(1)),
+    ("alluvium-capture", Layer::Numbered(1)),
     ("alluvium-security", Layer::Numbered(1)),
     ("alluvium-controller", Layer::Numbered(2)),
     ("alluvium-replication", Layer::Numbered(2)),

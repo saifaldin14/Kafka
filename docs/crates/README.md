@@ -10,6 +10,7 @@ Crates, in code-map order:
 |---|---|
 | `alluvium-types` | [alluvium-types.md](alluvium-types.md) |
 | `alluvium-protocol` | [Stub](alluvium-protocol.md), to fill in DOCS-0124 |
+| `alluvium-capture` | [alluvium-capture.md](alluvium-capture.md) |
 | `alluvium-records` | Not written yet |
 | `alluvium-storage` | Not written yet |
 | `alluvium-raft` | Not written yet |

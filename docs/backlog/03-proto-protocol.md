@@ -634,7 +634,7 @@ Done when: output for golden vectors equals Kafka's JsonConverter JSON after doc
 P2 · M2 · Task · deps: PROTO-0141 · labels: decoder
 Done when: errors report byte offset and field path; truncated frames are reported, not fatal; a fuzz target `frame_dump` runs clean.
 
-### [To Do] PROTO-0143 Input parsing: raw binary, plain hex, `xxd` output and Wireshark hex streams
+### [Done] PROTO-0143 Input parsing: raw binary, plain hex, `xxd` output and Wireshark hex streams
 P2 · M2 · Task · deps: PROTO-0142
 Done when: each format has fixture tests; malformed input yields an error with line and column.
 

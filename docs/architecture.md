@@ -67,6 +67,7 @@ The workspace is a set of crates under `crates/`. **A crate is created when its 
 | 1 | `alluvium-storage` | Partition log: segments, offset/time indexes, recovery, retention, compaction, producer state, leader-epoch cache. File I/O goes through a narrow `fs` trait, so tests can inject faults | `storage/…/internals/log` |
 | 1 | `alluvium-raft` | KRaft consensus state machine (vote, fetch, snapshots, voter changes) | `raft/` |
 | 1 | `alluvium-metadata` | Metadata record types (generated), `MetadataImage`/`MetadataDelta`, replay | `metadata/…/image` |
+| 1 | `alluvium-capture` | Kafka traffic captured outside Alluvium, read for debugging: hex and `xxd` dumps, packet captures, frames split and paired (PROTO-F13) | none; Wireshark's Kafka dissector |
 | 1 | `alluvium-security` | SASL mechanism state machines, principals, ACL authorizer, SCRAM credentials | `common/security`, `StandardAuthorizer` |
 | 2 | `alluvium-controller` | Controller state machine: topics, partitions, leader election, ISR/ELR, broker registration, features, ACL/config records | `metadata/…/controller` |
 | 2 | `alluvium-replication` | Partition leader/follower state, ISR expand/shrink, high watermark, delayed produce/fetch (purgatory) logic | `cluster/Partition`, `ReplicaManager` |
