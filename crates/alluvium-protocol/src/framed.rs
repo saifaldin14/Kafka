@@ -568,6 +568,23 @@ mod tests {
         );
     }
 
+    // Kafka decodes the string as Java text, and its write fails with "field is too long
+    // to be serialized" once the replacements take it past the limit.
+    #[test]
+    fn a_string_whose_invalid_bytes_expand_past_32767_bytes_decodes_but_does_not_encode() {
+        let input = written(|w| {
+            w.write_i16(0x7fff);
+            w.put_slice(&vec![0xff; 0x7fff]);
+            Ok(())
+        });
+        let text = reader(&input).read_string(Classic).unwrap();
+        assert_eq!(text.len(), 0x7fff * 3);
+        assert_eq!(
+            Writer::new().write_string(Classic, &text),
+            Err(EncodeError::StringTooLong { length: 0x7fff * 3 })
+        );
+    }
+
     #[test]
     fn strings_over_32767_bytes_are_not_encoded() {
         let long = "x".repeat(0x8000);

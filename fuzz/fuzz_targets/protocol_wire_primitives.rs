@@ -1,6 +1,8 @@
 //! Every primitive reader in `alluvium-protocol`, in a sequence the input chooses: no
 //! panic, no allocation beyond the decode budget of 64 bytes per input byte, and every
-//! value read encodes and then decodes to itself.
+//! value read encodes and then decodes to itself. The exception is a string whose
+//! invalid UTF-8 became more than 32767 bytes of U+FFFD: as in Kafka, it decodes but
+//! doesn't encode.
 //!
 //! Each step reads an op byte: bit 7 chooses the framing, the rest which reader runs on
 //! the bytes that follow. The run stops at the first error.
@@ -63,22 +65,32 @@ fn step(op: i8, framing: Framing, reader: &mut Reader) -> Result<(), DecodeError
             Writer::write_varlong,
             Reader::read_varlong,
         ),
-        12 => round_trip(
-            reader.read_string(framing)?,
-            |w, value| {
-                w.write_string(framing, &value)
-                    .expect("a decoded string encodes")
-            },
-            |r| r.read_string(framing),
-        ),
-        13 => round_trip(
-            reader.read_nullable_string(framing)?,
-            |w, value| {
-                w.write_nullable_string(framing, value.as_deref())
-                    .expect("a decoded string encodes");
-            },
-            |r| r.read_nullable_string(framing),
-        ),
+        12 => {
+            let value = reader.read_string(framing)?;
+            if encodable(&value) {
+                round_trip(
+                    value,
+                    |w, value| {
+                        w.write_string(framing, &value)
+                            .expect("a decoded string within the limit encodes");
+                    },
+                    |r| r.read_string(framing),
+                );
+            }
+        }
+        13 => {
+            let value = reader.read_nullable_string(framing)?;
+            if value.as_deref().is_none_or(encodable) {
+                round_trip(
+                    value,
+                    |w, value| {
+                        w.write_nullable_string(framing, value.as_deref())
+                            .expect("a decoded string within the limit encodes");
+                    },
+                    |r| r.read_nullable_string(framing),
+                );
+            }
+        }
         14 => round_trip(
             reader.read_bytes(framing)?,
             |w, value| {
@@ -153,6 +165,19 @@ fn step(op: i8, framing: Framing, reader: &mut Reader) -> Result<(), DecodeError
 }
 
 /// Encodes `value` with `write`, decodes it with `read`, and asserts it is unchanged.
+/// Whether `text`, as decoded, is within Kafka's 32767-byte string limit. Replacing
+/// invalid UTF-8 can take a string past it, and then encoding must fail as Kafka's does.
+fn encodable(text: &str) -> bool {
+    if text.len() <= 0x7fff {
+        return true;
+    }
+    assert_eq!(
+        Writer::new().write_string(Framing::Compact, text),
+        Err(EncodeError::StringTooLong { length: text.len() })
+    );
+    false
+}
+
 fn round_trip<T: PartialEq + std::fmt::Debug + Clone>(
     value: T,
     write: impl FnOnce(&mut Writer, T),
