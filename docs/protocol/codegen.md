@@ -17,7 +17,17 @@ The generator is [`xtask/src/codegen.rs`](../../xtask/src/codegen.rs). It reads 
 - **Error codes too.** `generated::error_code` holds `ErrorCode`, one variant per constant of Kafka's `Errors.java`, and [docs/errors.md](../errors.md) lists every code. `xtask/src/codegen/errors.rs` reads the Java source, and a golden test compares the result with the table Kafka's client jar reports at runtime (`cargo xtask golden errors`).
 - **API keys too.** `generated::api_key` holds `ApiKey`, one variant per API ([API keys](#api-keys)).
 - **Fuzz targets too.** [`fuzz/generated/`](../../fuzz/generated/) holds a cargo-fuzz target for every request and response, both headers, and the version-prefixed data types clients send. Each target is one call into `fuzz/src/lib.rs` ([fuzz/README.md](../../fuzz/README.md#generated-targets)).
-- **Golden output for Kafka's test schemas.** The six schemas Kafka's own generator tests use (`schemas/kafka-4.4.0/clients-test/`) generate into `crates/alluvium-protocol/src/test_messages/`, compiled only for tests. Together they use every schema feature: each field type, nullable and tagged fields with defaults, nullable structs, keyed arrays and records. A generator change shows as a reviewable diff of these files, and the tests of the generated code use them.
+- **Internal APIs apart.** Alluvium's own schemas, in `schemas/alluvium/messages/`, generate into `crates/alluvium-protocol/src/internal/`, so `ApiKey` and ApiVersions never include them ([ADR-0021](../adr/0021-alluvium-internal-api-keys.md)).
+  - Codegen fails, naming the schema, on any of these:
+    - a request or response key outside 32000–32767;
+    - a key Kafka's schemas use, removed APIs included;
+    - two internal requests or responses with one key;
+    - a request without a response, or a response without a request;
+    - a schema, data schemas included, that isn't flexible in every version.
+  - These rules cover retired schemas too.
+  - Their files carry no Apache notice: the schemas are Alluvium's own.
+  - There are none yet. Once there are, codegen fails until `lib.rs` declares the module as `#[rustfmt::skip] pub mod internal;`, so their code can't go uncompiled.
+- **Golden output for Kafka's test schemas.** The six schemas Kafka's own generator tests use (`schemas/kafka-4.4.0/clients-test/`) generate into `crates/alluvium-protocol/src/test_messages/`, compiled only for tests, with a sample internal API, `schemas/alluvium/test/AlluviumExampleRequest.json` and its response. Together they use every schema feature: each field type, nullable and tagged fields with defaults, nullable structs, keyed arrays and records. A generator change shows as a reviewable diff of these files, and the tests of the generated code use them.
 - **Compact formatting.** Generated modules are formatted by rustfmt with every width heuristic at the full line width, so a field's read fits on one line. `cargo fmt` skips them (`#[rustfmt::skip]` where they are declared), and `codegen --check` keeps them exact.
 - **Checked in CI.** `cargo xtask codegen --check` fails, naming the file and line, when committed output differs from what the generator writes.
 - **Usable as a library.** `codegen::generate(inputs, out_dir, filter)` takes the schema directories, the output directory and a filter of message kinds. The metadata record generator (META-F01) reuses it.

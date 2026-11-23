@@ -2,10 +2,13 @@
 // the schema or the generator in xtask/src/codegen/.
 
 //! Message types generated from the schemas Kafka's own generator tests use
-//! (`schemas/kafka-4.4.0/clients-test/`). They exercise every schema feature in small
-//! messages, for the tests of the generated code; nothing else uses them.
+//! (`schemas/kafka-4.4.0/clients-test/`), and from a sample internal API
+//! (`schemas/alluvium/test/`). They exercise every schema feature in small messages, for
+//! the tests of the generated code; nothing else uses them.
 
 pub mod all_type_message;
+pub mod alluvium_example_request;
+pub mod alluvium_example_response;
 pub mod nullable_struct_message;
 pub mod simple_arrays_message;
 pub mod simple_example_message;
@@ -16,6 +19,8 @@ pub mod simple_records_message;
 /// that no input makes a decoder panic.
 #[cfg(test)]
 pub(crate) const DECODE_EVERY_VERSION: &[fn(&bytes::Bytes)] = &[
+    decode_at_every_version::<alluvium_example_request::AlluviumExampleRequest, 0, 1>,
+    decode_at_every_version::<alluvium_example_response::AlluviumExampleResponse, 0, 1>,
     decode_at_every_version::<all_type_message::AllTypeMessage, 0, 1>,
     decode_at_every_version::<nullable_struct_message::NullableStructMessage, 0, 2>,
     decode_at_every_version::<simple_arrays_message::SimpleArraysMessage, 0, 2>,
@@ -38,6 +43,8 @@ fn decode_at_every_version<M: crate::Message, const LOWEST: i16, const HIGHEST: 
 /// and decode it back.
 #[cfg(test)]
 pub(crate) const ROUND_TRIP_DEFAULT_EVERY_VERSION: &[fn()] = &[
+    round_trip_default::<alluvium_example_request::AlluviumExampleRequest, 0, 1>,
+    round_trip_default::<alluvium_example_response::AlluviumExampleResponse, 0, 1>,
     round_trip_default::<all_type_message::AllTypeMessage, 0, 1>,
     round_trip_default::<nullable_struct_message::NullableStructMessage, 0, 2>,
     round_trip_default::<simple_arrays_message::SimpleArraysMessage, 0, 2>,

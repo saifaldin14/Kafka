@@ -30,6 +30,7 @@ mod docs;
 mod encode;
 mod errors;
 mod fuzz_targets;
+mod internal;
 pub(crate) mod names;
 mod overlays;
 mod strategy;
@@ -60,6 +61,8 @@ pub(crate) struct Filter {
     pub(crate) api_keys: Option<ApiKeys>,
     /// Where to write the generated fuzz targets' package, if anywhere.
     pub(crate) fuzz_targets: Option<PathBuf>,
+    /// Whether the schemas are Alluvium's internal APIs, whose rules codegen then checks.
+    pub(crate) internal: Option<internal::Internal>,
     /// Whether the root module gets `TRANSCODE`, the table through which the golden
     /// vector tests decode and encode each message by its schema name.
     pub(crate) golden_tests: bool,
@@ -112,6 +115,7 @@ fn protocol() -> (Vec<PathBuf>, PathBuf, Filter) {
             }),
             golden_tests: true,
             fuzz_targets: Some(root.join("fuzz/generated")),
+            internal: None,
             api_keys: Some(ApiKeys {
                 recorded: root.join(crate::golden::API_KEYS_GOLDEN).join("api_keys.json"),
                 page: root.join("docs/protocol/apis.md"),
@@ -126,24 +130,72 @@ fn protocol() -> (Vec<PathBuf>, PathBuf, Filter) {
     )
 }
 
-/// The protocol crate's test types: Kafka's generator test schemas, each combining many
-/// schema features in one small message. Compiled only for tests.
-fn test_messages() -> (Vec<PathBuf>, PathBuf, Filter) {
+/// Alluvium's own schemas, for its internal APIs (ADR-0021).
+const INTERNAL_SCHEMAS: &str = "schemas/alluvium/messages";
+
+/// The protocol crate's internal APIs: Alluvium's own request and response schemas, kept
+/// apart from Kafka's so that neither `ApiKey` nor an `ApiVersions` response includes
+/// them.
+fn internal_apis() -> (Vec<PathBuf>, PathBuf, Filter) {
     let root = crate::repo_root();
     (
-        vec![root.join(VENDORED).join("clients-test")],
-        root.join("crates/alluvium-protocol/src/test_messages"),
+        vec![root.join(INTERNAL_SCHEMAS)],
+        root.join("crates/alluvium-protocol/src/internal"),
         Filter {
-            kinds: vec![MessageKind::Header],
+            kinds: vec![
+                MessageKind::Request,
+                MessageKind::Response,
+                MessageKind::Data,
+            ],
             runtime: "crate".to_owned(),
             error_codes: None,
             api_keys: None,
             golden_tests: false,
             fuzz_targets: None,
+            internal: Some(internal::Internal {
+                kafka: vec![root.join(VENDORED).join("clients")],
+                declared_in: Some(root.join("crates/alluvium-protocol/src/lib.rs")),
+            }),
+            overlays: None,
+            doc: "Alluvium's internal APIs, generated from `schemas/alluvium/messages/`: \
+                  requests between Alluvium nodes, never advertised to or accepted from Kafka \
+                  clients ([ADR-0021](../../../../docs/adr/0021-alluvium-internal-api-keys.md))."
+                .to_owned(),
+        },
+    )
+}
+
+/// The protocol crate's test types: Kafka's generator test schemas, each combining many
+/// schema features in one small message, and a sample internal API. Compiled only for
+/// tests.
+fn test_messages() -> (Vec<PathBuf>, PathBuf, Filter) {
+    let root = crate::repo_root();
+    (
+        vec![
+            root.join(VENDORED).join("clients-test"),
+            root.join("schemas/alluvium/test"),
+        ],
+        root.join("crates/alluvium-protocol/src/test_messages"),
+        Filter {
+            kinds: vec![
+                MessageKind::Header,
+                MessageKind::Request,
+                MessageKind::Response,
+            ],
+            runtime: "crate".to_owned(),
+            error_codes: None,
+            api_keys: None,
+            golden_tests: false,
+            fuzz_targets: None,
+            internal: Some(internal::Internal {
+                kafka: vec![root.join(VENDORED).join("clients")],
+                declared_in: None,
+            }),
             overlays: None,
             doc: "Message types generated from the schemas Kafka's own generator tests use \
-                  (`schemas/kafka-4.4.0/clients-test/`). They exercise every schema feature in \
-                  small messages, for the tests of the generated code; nothing else uses them."
+                  (`schemas/kafka-4.4.0/clients-test/`), and from a sample internal API \
+                  (`schemas/alluvium/test/`). They exercise every schema feature in small \
+                  messages, for the tests of the generated code; nothing else uses them."
                 .to_owned(),
         },
     )
@@ -171,7 +223,7 @@ pub(crate) fn run(check_only: bool, out: &mut impl Write) -> Exit {
         return Exit::CheckFailed;
     }
     let mut problems = Vec::new();
-    for (inputs, out_dir, filter) in [protocol(), test_messages()] {
+    for (inputs, out_dir, filter) in [protocol(), internal_apis(), test_messages()] {
         let result = if check_only {
             check(&inputs, &out_dir, &filter)
         } else {
@@ -266,6 +318,9 @@ pub(crate) fn generate(
     filter: &Filter,
 ) -> Result<Report, String> {
     let rendered = render(inputs, filter)?;
+    if let Some(internal) = &filter.internal {
+        internal::check_declared(internal, !rendered.files.is_empty())?;
+    }
     write(out_dir, &rendered.files)?;
     if let Some(fuzz_dir) = &filter.fuzz_targets {
         write(fuzz_dir, &rendered.fuzz)?;
@@ -288,6 +343,9 @@ pub(crate) fn check(
     filter: &Filter,
 ) -> Result<(Report, Vec<String>), String> {
     let rendered = render(inputs, filter)?;
+    if let Some(internal) = &filter.internal {
+        internal::check_declared(internal, !rendered.files.is_empty())?;
+    }
     let mut problems = Vec::new();
     let expected = rendered
         .files
@@ -378,7 +436,10 @@ fn fuzz_package(
     }
     let messages: Vec<_> = messages.iter().map(|(_, _, message)| message).collect();
     let sources: Vec<String> = inputs.iter().map(|input| shown_path(input)).collect();
-    let header = header(&format!("from the schemas in {}", sources.join(", ")));
+    let header = header(
+        &format!("from the schemas in {}", sources.join(", ")),
+        from_kafka(inputs),
+    );
     fuzz_targets::render(&messages, &header)
         .into_iter()
         .map(|(file, source)| {
@@ -391,6 +452,43 @@ fn fuzz_package(
         .collect()
 }
 
+/// A loaded schema: its path, the path shown in messages, and the message.
+type Loaded = (PathBuf, String, message_spec::MessageSpec);
+
+/// The schemas in `inputs` that `filter` generates, checked against the internal API
+/// rules if it asks for them, and every request and response, versions or not, since
+/// the registry keeps removed APIs.
+fn load(
+    inputs: &[PathBuf],
+    filter: &Filter,
+) -> Result<(Vec<Loaded>, Vec<message_spec::MessageSpec>), String> {
+    let mut messages = Vec::new();
+    let mut apis = Vec::new();
+    // Alluvium's own schemas, generated or not, for the internal API rules.
+    let mut own = Vec::new();
+    for path in schema_files(inputs)? {
+        let shown = shown_path(&path);
+        let text = std::fs::read_to_string(&path)
+            .map_err(|error| format!("could not read {shown}: {error}"))?;
+        let message = message_spec::load(&shown, &text).map_err(|error| error.to_string())?;
+        if matches!(message.kind, MessageKind::Request | MessageKind::Response) {
+            apis.push(message.clone());
+        }
+        if kafka_version(&path).is_empty() {
+            own.push((path.clone(), shown.clone(), message.clone()));
+        }
+        // Parity: generator/src/main/java/org/apache/kafka/message/MessageGenerator.java@4.4.0 MessageGenerator.generateAndWriteMessageClasses
+        // Kafka generates nothing for a message without valid versions.
+        if filter.kinds.contains(&message.kind) && !message.valid_versions.is_empty() {
+            messages.push((path, shown, message));
+        }
+    }
+    if let Some(internal) = &filter.internal {
+        internal::check(&own, &internal::kafka_keys(&internal.kafka)?)?;
+    }
+    Ok((messages, apis))
+}
+
 fn render(inputs: &[PathBuf], filter: &Filter) -> Result<Rendered, String> {
     let mut modules: BTreeMap<PathBuf, String> = BTreeMap::new();
     let mut pages = BTreeMap::new();
@@ -400,23 +498,7 @@ fn render(inputs: &[PathBuf], filter: &Filter) -> Result<Rendered, String> {
         error_codes: 0,
         api_keys: 0,
     };
-    let mut messages = Vec::new();
-    // Every request and response, versions or not: the registry keeps removed APIs.
-    let mut apis = Vec::new();
-    for path in schema_files(inputs)? {
-        let shown = shown_path(&path);
-        let text = std::fs::read_to_string(&path)
-            .map_err(|error| format!("could not read {shown}: {error}"))?;
-        let message = message_spec::load(&shown, &text).map_err(|error| error.to_string())?;
-        if matches!(message.kind, MessageKind::Request | MessageKind::Response) {
-            apis.push(message.clone());
-        }
-        // Parity: generator/src/main/java/org/apache/kafka/message/MessageGenerator.java@4.4.0 MessageGenerator.generateAndWriteMessageClasses
-        // Kafka generates nothing for a message without valid versions.
-        if filter.kinds.contains(&message.kind) && !message.valid_versions.is_empty() {
-            messages.push((path, shown, message));
-        }
-    }
+    let (messages, apis) = load(inputs, filter)?;
     let overlays = match &filter.overlays {
         Some(dir) => load_overlays(dir, &messages)?,
         None => overlays::Overlays::default(),
@@ -452,7 +534,10 @@ fn render(inputs: &[PathBuf], filter: &Filter) -> Result<Rendered, String> {
         ));
         let source = format!(
             "{}\n{}\n{}",
-            header(&format!("from {shown}{}", kafka_version(path))),
+            header(
+                &format!("from {shown}{}", kafka_version(path)),
+                !kafka_version(path).is_empty()
+            ),
             docs::wrap(&module_doc(message), "//! "),
             module.source
         );
@@ -485,7 +570,13 @@ fn render(inputs: &[PathBuf], filter: &Filter) -> Result<Rendered, String> {
         report.api_keys = count;
     }
     let fuzz = fuzz_package(inputs, filter, &messages)?;
-    let mut files = mod_files(&modules, &filter.doc, &decodable, filter.golden_tests);
+    let mut files = mod_files(
+        &modules,
+        &filter.doc,
+        &decodable,
+        filter.golden_tests,
+        from_kafka(inputs),
+    );
     files.extend(modules);
     let mut formatted = BTreeMap::new();
     for (file, source) in files {
@@ -522,10 +613,10 @@ fn error_code_module(error_codes: &ErrorCodes) -> Result<(String, String, usize)
     let source = shown_path(&error_codes.source.join("Errors.java"));
     let module = format!(
         "{}\n{}",
-        header(&format!(
-            "from {source}{}",
-            kafka_version(&error_codes.source)
-        )),
+        header(
+            &format!("from {source}{}", kafka_version(&error_codes.source)),
+            true
+        ),
         errors::module(&entries)
     );
     Ok((module, errors::page(&entries, &source), entries.len()))
@@ -549,7 +640,7 @@ fn api_key_module(
     );
     let module = format!(
         "{}\n{}",
-        header(&format!("from {sources}")),
+        header(&format!("from {sources}"), true),
         api_keys::module(&apis, runtime)
     );
     Ok((module, api_keys::page(&apis, &sources), apis.len()))
@@ -582,7 +673,14 @@ fn schema_files(inputs: &[PathBuf]) -> Result<Vec<PathBuf>, String> {
 fn shown_path(path: &Path) -> String {
     let root = crate::repo_root();
     let canonical_root = root.canonicalize().unwrap_or(root);
-    let canonical = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
+    // A directory codegen hasn't written yet is shown through its parent.
+    let canonical = path
+        .canonicalize()
+        .or_else(|_| {
+            let parent = path.parent().unwrap_or(path).canonicalize()?;
+            Ok::<_, std::io::Error>(parent.join(path.file_name().unwrap_or_default()))
+        })
+        .unwrap_or_else(|_| path.to_path_buf());
     canonical
         .strip_prefix(&canonical_root)
         .unwrap_or(&canonical)
@@ -599,15 +697,26 @@ fn kafka_version(path: &Path) -> String {
         .map_or_else(String::new, |version| format!(", Apache Kafka {version}"))
 }
 
-/// The comment every generated file starts with.
-fn header(source: &str) -> String {
+/// The comment every generated file starts with. Code generated from Kafka's sources
+/// notes their license; Alluvium's own schemas are under the project's.
+fn header(source: &str, from_kafka: bool) -> String {
+    let license = if from_kafka {
+        " (Apache License 2.0; see NOTICE)"
+    } else {
+        ""
+    };
     docs::wrap(
         &format!(
-            "@generated by `cargo xtask codegen` {source} (Apache License 2.0; see NOTICE). Do \
-             not edit: change the schema or the generator in xtask/src/codegen/."
+            "@generated by `cargo xtask codegen` {source}{license}. Do not edit: change the \
+             schema or the generator in xtask/src/codegen/."
         ),
         "// ",
     )
+}
+
+/// Whether any of `inputs` is a vendored Kafka directory.
+fn from_kafka(inputs: &[PathBuf]) -> bool {
+    inputs.iter().any(|input| !kafka_version(input).is_empty())
 }
 
 fn module_doc(message: &message_spec::MessageSpec) -> String {
@@ -627,6 +736,7 @@ fn mod_files(
     root_doc: &str,
     decodable: &[(String, i16, i16)],
     golden_tests: bool,
+    from_kafka: bool,
 ) -> BTreeMap<PathBuf, String> {
     let mut declared: BTreeMap<PathBuf, Vec<String>> = BTreeMap::new();
     for file in modules.keys() {
@@ -674,7 +784,7 @@ fn mod_files(
                 directory.join("mod.rs"),
                 format!(
                     "{}\n{}\n{declarations}{tests}",
-                    header(""),
+                    header("", from_kafka),
                     docs::wrap(doc, "//! ")
                 ),
             )
@@ -834,8 +944,8 @@ mod tests {
     use alluvium_types::Uuid;
 
     use super::{
-        Filter, VENDORED, check, existing_files, generate, names, protocol, render, schema_files,
-        test_messages,
+        Filter, VENDORED, check, existing_files, generate, internal_apis, names, protocol, render,
+        schema_files, test_messages,
     };
     use crate::message_spec::{
         self, FieldDefault, FieldSpec, FieldType, MessageKind, MessageSpec, StructRegistry,
@@ -887,6 +997,7 @@ mod tests {
             api_keys: None,
             golden_tests: false,
             fuzz_targets: None,
+            internal: None,
             overlays: None,
             doc: "Test records.".to_owned(),
         };
@@ -959,6 +1070,7 @@ mod tests {
             api_keys: None,
             golden_tests: false,
             fuzz_targets: None,
+            internal: None,
             overlays: None,
             doc: "Test messages.".to_owned(),
         };
@@ -1217,7 +1329,11 @@ mod tests {
 
     #[test]
     fn committed_modules_match_the_schema_model() {
-        for ((inputs, out_dir, filter), expected) in [(protocol(), 195), (test_messages(), 6)] {
+        for ((inputs, out_dir, filter), expected) in [
+            (protocol(), 195),
+            (internal_apis(), 0),
+            (test_messages(), 8),
+        ] {
             let mut checked = 0;
             for path in schema_files(&inputs).unwrap() {
                 let text = std::fs::read_to_string(&path).unwrap();
@@ -1247,9 +1363,12 @@ mod tests {
 
     #[test]
     fn output_is_independent_of_input_order_and_names_no_absolute_path() {
-        let (mut inputs, _, filter) = test_messages();
-        // Adds RequestHeader and ResponseHeader, so the inputs interleave when sorted.
+        let (mut inputs, _, mut filter) = test_messages();
+        // Adds RequestHeader and ResponseHeader, so the inputs interleave when sorted; only
+        // headers, since Kafka's requests aren't internal APIs.
         inputs.push(crate::repo_root().join(VENDORED).join("clients"));
+        inputs.retain(|input| !input.ends_with("schemas/alluvium/test"));
+        filter.kinds.retain(|kind| *kind == MessageKind::Header);
         let first = render(&inputs, &filter).unwrap();
         inputs.reverse();
         let second = render(&inputs, &filter).unwrap();
@@ -1265,7 +1384,7 @@ mod tests {
 
     #[test]
     fn generated_code_suppresses_no_lint() {
-        let files = [protocol(), test_messages()]
+        let files = [protocol(), internal_apis(), test_messages()]
             .into_iter()
             .flat_map(|(_, out_dir, _)| existing_files(&out_dir).unwrap());
         for file in files {
@@ -1285,7 +1404,7 @@ mod tests {
     /// (PROTO-0112): no generated code allocates on its own.
     #[test]
     fn generated_code_allocates_only_through_the_reader() {
-        let files = [protocol(), test_messages()]
+        let files = [protocol(), internal_apis(), test_messages()]
             .into_iter()
             .flat_map(|(_, out_dir, _)| existing_files(&out_dir).unwrap());
         for file in files {

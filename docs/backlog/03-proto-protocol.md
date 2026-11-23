@@ -678,15 +678,15 @@ Done when: NET-F10 can log it as one structured event; snapshot test of the Disp
 P2 · M2 · Task · deps: PROTO-0150 · labels: docs
 Done when: the page links the KIP-511 fallback and the implemented-table rule.
 
-## [To Do] PROTO-F15 Alluvium-internal API key range
+## [In Progress] PROTO-F15 Alluvium-internal API key range
 P2 · M1 · Feature · deps: PROTO-F05 · labels: foundation-for:X-ELASTIC, foundation-for:X-DISKLESS, foundation-for:X-TENANT, foundation-for:X-AUTO
 Scope: A reserved API key block and schema location for Alluvium-only inter-node APIs, which are never advertised to or accepted from Kafka clients.
 
-### [To Do] PROTO-0153 Spike: reserve the internal API key block and schema location
+### [Done] PROTO-0153 Spike: reserve the internal API key block and schema location
 P2 · M1 · Spike · deps: none
 Done when: an accepted ADR fixes the reserved API key block (outside any range Kafka could plausibly use), the schema directory `schemas/alluvium/messages/`, versioning rules, and the rule that internal APIs are never listed in ApiVersions responses to Kafka clients.
 
-### [To Do] PROTO-0154 Codegen reads Alluvium internal message schemas and rejects key collisions
+### [Done] PROTO-0154 Codegen reads Alluvium internal message schemas and rejects key collisions
 P2 · M1 · Task · deps: PROTO-0153
 Done when: `cargo xtask codegen` generates codecs for `schemas/alluvium/messages/` with the same rules as Kafka schemas; a schema whose key collides with a Kafka key or falls outside the reserved block fails generation with a clear error; golden tests cover one sample schema.
 
