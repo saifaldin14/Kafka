@@ -550,7 +550,7 @@ Done when: Rust returns the matching EncodeError kind for every recorded case.
 P1 · M1 · Task · deps: PROTO-0117, PROTO-0038 · labels: test, decoder
 Done when: Rust string decoding produces the same replacement output for every vector (truncated sequences, overlong forms, surrogates, invalid bytes).
 
-### [To Do] PROTO-0125 Harness export of the ApiKeys table (id, name, oldest/latest, listeners, clusterAction, forwardable, deprecated range) and default broker and controller ApiVersionsResponses
+### [Done] PROTO-0125 Harness export of the ApiKeys table (id, name, oldest/latest, listeners, clusterAction, forwardable, deprecated range) and default broker and controller ApiVersionsResponses
 P1 · M1 · Task · deps: PROTO-0115 · ref: clients/src/main/java/org/apache/kafka/common/requests/ApiVersionsResponse.java; clients/src/main/java/org/apache/kafka/common/protocol/ApiKeys.java @4.4.0
 Done when: JSON and binary files are committed and used by PROTO-F07 and PROTO-F14 tests.
 

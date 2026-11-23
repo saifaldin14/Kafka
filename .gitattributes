@@ -7,3 +7,8 @@ Cargo.lock linguist-generated=true
 
 # Vendored, unmodified Kafka schemas (ADR-0008).
 schemas/kafka-4.4.0/** linguist-vendored=true
+
+# Golden files recorded from Kafka by `cargo xtask golden`: never converted, and
+# collapsed in PR views.
+tests/golden/** linguist-generated=true
+tests/golden/**/*.bin binary

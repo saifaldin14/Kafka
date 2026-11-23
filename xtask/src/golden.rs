@@ -15,6 +15,10 @@
 //! - `errors`: `Errors.values()`, the golden table for the generated `ErrorCode`.
 //!   The code generator reads `Errors.java` as source text; this reads what the compiled
 //!   class says, so a mistake in the generator's parsing can't hide.
+//! - `api-keys`: the `ApiKeys` registry, with each API's versions, listeners, flags and
+//!   header versions, and the API version lists Kafka's broker and controller listeners
+//!   advertise, as encoded `ApiVersionsResponse`s. Written to [`API_KEYS_GOLDEN`] for the
+//!   generated `ApiKey` and the version negotiation tests.
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -27,6 +31,10 @@ use crate::output;
 
 /// Where the `errors` dump goes, relative to the repository root.
 pub(crate) const ERRORS_GOLDEN: &str = "xtask/tests/fixtures/kafka-4.4.0-errors.json";
+
+/// Where the `api-keys` dump goes, relative to the repository root. The dump replaces
+/// the directory's contents.
+pub(crate) const API_KEYS_GOLDEN: &str = "tests/golden/protocol/registry";
 
 /// The harness sources, relative to the repository root.
 const HARNESS: &str = "tools/kafka-golden/src";
@@ -64,6 +72,7 @@ pub(crate) fn run(dump: GoldenDump, out: &mut impl Write) -> Exit {
     let root = crate::repo_root();
     let result = match dump {
         GoldenDump::Errors => errors(&root),
+        GoldenDump::ApiKeys => api_keys(&root),
     };
     match result {
         Ok(summary) => {
@@ -88,6 +97,40 @@ fn errors(root: &Path) -> Result<String, String> {
     std::fs::write(root.join(ERRORS_GOLDEN), json)
         .map_err(|error| format!("could not write {ERRORS_GOLDEN}: {error}"))?;
     Ok(format!("wrote {count} error codes to {ERRORS_GOLDEN}"))
+}
+
+/// The `api-keys` dump, written to [`API_KEYS_GOLDEN`].
+fn api_keys(root: &Path) -> Result<String, String> {
+    let dir = harness(root, GoldenDump::ApiKeys)?;
+    let count = replace_dir(&dir, &root.join(API_KEYS_GOLDEN))?;
+    Ok(format!("wrote {count} files to {API_KEYS_GOLDEN}"))
+}
+
+/// Replaces the files in `to` with those in `from`, a flat directory, and returns how
+/// many there are. Files the dump no longer writes are removed.
+fn replace_dir(from: &Path, to: &Path) -> Result<usize, String> {
+    match std::fs::remove_dir_all(to) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => return Err(format!("could not remove {}: {error}", to.display())),
+    }
+    std::fs::create_dir_all(to)
+        .map_err(|error| format!("could not create {}: {error}", to.display()))?;
+    let entries = std::fs::read_dir(from)
+        .map_err(|error| format!("the harness wrote no {}: {error}", from.display()))?;
+    let mut count = 0_usize;
+    for entry in entries {
+        let path = entry
+            .map_err(|error| format!("could not read {}: {error}", from.display()))?
+            .path();
+        let Some(name) = path.file_name() else {
+            continue;
+        };
+        std::fs::copy(&path, to.join(name))
+            .map_err(|error| format!("could not copy {}: {error}", path.display()))?;
+        count = count.saturating_add(1);
+    }
+    Ok(count)
 }
 
 /// Runs `dump` in the harness and returns the directory it wrote.
