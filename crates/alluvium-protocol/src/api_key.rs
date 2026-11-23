@@ -60,6 +60,48 @@ impl ApiKey {
         self.deprecated_versions().contains(version)
     }
 
+    /// The request header version a request at `version` uses: 2 where the API's
+    /// version is flexible, else 1. `None` for a removed API, which has no versions.
+    ///
+    /// The flexible range is open-ended, so a version above the API's latest still gets
+    /// one: an `ApiVersions` request from a newer client has a v2 header, which the
+    /// broker must read to answer with its own range (KIP-511).
+    // Parity: generator/src/main/java/org/apache/kafka/message/ApiMessageTypeGenerator.java@4.4.0 ApiMessageTypeGenerator.generateHeaderVersion
+    pub fn request_header_version(self, version: i16) -> Option<i16> {
+        let flexible = self.is_flexible(version)?;
+        Some(i16::from(flexible).saturating_add(1))
+    }
+
+    /// The response header version a response at `version` uses: 1 where the API's
+    /// version is flexible, else 0, and always 0 for `ApiVersions`, whose client can't
+    /// yet know the version the broker answers with (KIP-511). `None` for a removed API.
+    // Parity: generator/src/main/java/org/apache/kafka/message/ApiMessageTypeGenerator.java@4.4.0 ApiMessageTypeGenerator.generateHeaderVersion
+    pub fn response_header_version(self, version: i16) -> Option<i16> {
+        let flexible = self.is_flexible(version)?;
+        Some(i16::from(flexible && self != ApiKey::ApiVersions))
+    }
+
+    /// Whether `version` uses the flexible encoding, as Kafka's generated header version
+    /// functions decide it: a bound of the flexible range is tested only where it falls
+    /// inside the API's versions, so versions outside them are judged by the nearest
+    /// one. `None` for a removed API.
+    fn is_flexible(self, version: i16) -> Option<bool> {
+        let (lowest, highest) = (self.versions().lowest()?, self.versions().highest()?);
+        let flexible = self.flexible_versions();
+        let (Some(flexible_lowest), Some(flexible_highest)) =
+            (flexible.lowest(), flexible.highest())
+        else {
+            return Some(false);
+        };
+        if flexible_lowest > highest || flexible_highest < lowest {
+            return Some(false);
+        }
+        Some(
+            (flexible_lowest <= lowest || version >= flexible_lowest)
+                && (flexible_highest >= highest || version <= flexible_highest),
+        )
+    }
+
     /// Whether `listener` serves the API.
     // Parity: clients/src/main/java/org/apache/kafka/common/protocol/ApiKeys.java@4.4.0 ApiKeys.inScope
     pub fn is_served_on(self, listener: Listener) -> bool {

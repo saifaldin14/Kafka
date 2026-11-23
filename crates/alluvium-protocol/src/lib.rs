@@ -1,6 +1,8 @@
 //! Kafka's wire protocol: the primitive encodings every request, response and header
-//! field is made of, decoded from untrusted bytes without panicking, and the message
-//! types in [`generated`], one module per Kafka 4.4.0 schema.
+//! field is made of, decoded from untrusted bytes without panicking; the message types
+//! in [`generated`], one module per Kafka 4.4.0 schema; the API registry ([`ApiKey`]);
+//! and request and response headers, at the version each API and version selects
+//! ([`decode_request_header`]).
 //!
 //! Layer: 0 ([ADR-0009](../../../docs/adr/0009-crate-layering-and-dependency-rules.md)).
 //! It depends only on `alluvium-types` and does no I/O: a [`Reader`] reads from bytes
@@ -38,6 +40,7 @@ mod framed;
 pub mod generated;
 #[cfg(test)]
 mod golden_tests;
+mod header;
 #[cfg(test)]
 mod kafka_message_tests;
 mod limits;
@@ -59,6 +62,10 @@ pub use api_versions::advertised_api_versions;
 pub use error::{DecodeError, DecodeErrorKind, EncodeError, WithinField};
 pub use error_code::{ErrorCode, UnknownErrorCode};
 pub use framed::Framing;
+pub use header::{
+    DecodedRequestHeader, HeaderError, decode_request_header, decode_response_header,
+    encode_request_header, encode_response_header,
+};
 pub use limits::{DecodeLimits, Limit};
 pub use message::{EncodedSize, Message, decode_version_prefixed, encode_version_prefixed};
 pub use reader::Reader;
