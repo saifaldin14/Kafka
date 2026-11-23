@@ -177,6 +177,37 @@ impl ApiVersionsResponse {
 }
 
 impl ApiVersionsResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("apiKeys").array(&self.api_keys, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        if version >= 1 {
+            json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        }
+        if version >= 3 && !self.supported_features.is_empty() {
+            json.key("supportedFeatures").array(&self.supported_features, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        }
+        if version >= 3 && self.finalized_features_epoch != -1 {
+            json.key("finalizedFeaturesEpoch").integer(self.finalized_features_epoch);
+        }
+        if version >= 3 && !self.finalized_features.is_empty() {
+            json.key("finalizedFeatures").array(&self.finalized_features, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        }
+        if version >= 3 && self.zk_migration_ready {
+            json.key("zkMigrationReady").boolean(self.zk_migration_ready);
+        }
+        json.end_object();
+    }
+}
+
+impl ApiVersionsResponse {
     fn write_tagged_fields(
         &self,
         writer: &mut crate::Writer,
@@ -328,6 +359,17 @@ impl ApiVersion {
 }
 
 impl ApiVersion {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("apiKey").integer(i64::from(self.api_key));
+        json.key("minVersion").integer(i64::from(self.min_version));
+        json.key("maxVersion").integer(i64::from(self.max_version));
+        json.end_object();
+    }
+}
+
+impl ApiVersion {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -438,6 +480,17 @@ impl SupportedFeatureKey {
 }
 
 impl SupportedFeatureKey {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("minVersion").integer(i64::from(self.min_version));
+        json.key("maxVersion").integer(i64::from(self.max_version));
+        json.end_object();
+    }
+}
+
+impl SupportedFeatureKey {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -543,6 +596,17 @@ impl FinalizedFeatureKey {
 }
 
 impl FinalizedFeatureKey {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("maxVersionLevel").integer(i64::from(self.max_version_level));
+        json.key("minVersionLevel").integer(i64::from(self.min_version_level));
+        json.end_object();
+    }
+}
+
+impl FinalizedFeatureKey {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -590,6 +654,10 @@ impl crate::Message for ApiVersionsResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

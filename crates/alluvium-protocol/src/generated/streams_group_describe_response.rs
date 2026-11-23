@@ -76,6 +76,18 @@ impl StreamsGroupDescribeResponse {
 }
 
 impl StreamsGroupDescribeResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        json.key("groups").array(&self.groups, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl StreamsGroupDescribeResponse {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -318,6 +330,46 @@ impl DescribedGroup {
 }
 
 impl DescribedGroup {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("errorMessage").nullable(self.error_message.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("groupId").string(&self.group_id);
+        json.key("groupState").string(&self.group_state);
+        json.key("groupEpoch").integer(i64::from(self.group_epoch));
+        json.key("assignmentEpoch").integer(i64::from(self.assignment_epoch));
+        json.key("topology").nullable(self.topology.as_ref(), |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("members").array(&self.members, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("authorizedOperations").integer(i64::from(self.authorized_operations));
+        if version == 1 {
+            json.key("topologyDescription").nullable(
+                self.topology_description.as_ref(),
+                |json, value| {
+                    value.write_json_fields(json, version);
+                },
+            );
+        }
+        if version == 1 {
+            json.key("topologyDescriptionStatus")
+                .integer(i64::from(self.topology_description_status));
+        }
+        if version == 1 {
+            json.key("assignorName").nullable(self.assignor_name.as_deref(), |json, value| {
+                json.string(value);
+            });
+        }
+        json.end_object();
+    }
+}
+
+impl DescribedGroup {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -450,6 +502,20 @@ impl Topology {
 }
 
 impl Topology {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("epoch").integer(i64::from(self.epoch));
+        json.key("subtopologies").nullable(self.subtopologies.as_deref(), |json, value| {
+            json.array(value, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        });
+        json.end_object();
+    }
+}
+
+impl Topology {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -568,6 +634,30 @@ impl Subtopology {
 }
 
 impl Subtopology {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("subtopologyId").string(&self.subtopology_id);
+        json.key("sourceTopics").array(&self.source_topics, |json, value| {
+            json.string(value);
+        });
+        json.key("repartitionSinkTopics").array(&self.repartition_sink_topics, |json, value| {
+            json.string(value);
+        });
+        json.key("stateChangelogTopics").array(&self.state_changelog_topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("repartitionSourceTopics").array(
+            &self.repartition_source_topics,
+            |json, value| {
+                value.write_json_fields(json, version);
+            },
+        );
+        json.end_object();
+    }
+}
+
+impl Subtopology {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -677,6 +767,20 @@ impl TopicInfo {
 }
 
 impl TopicInfo {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("partitions").integer(i64::from(self.partitions));
+        json.key("replicationFactor").integer(i64::from(self.replication_factor));
+        json.key("topicConfigs").array(&self.topic_configs, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl TopicInfo {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -748,6 +852,16 @@ impl KeyValue {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl KeyValue {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("key").string(&self.key);
+        json.key("value").string(&self.value);
+        json.end_object();
     }
 }
 
@@ -952,6 +1066,41 @@ impl Member {
 }
 
 impl Member {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("memberId").string(&self.member_id);
+        json.key("memberEpoch").integer(i64::from(self.member_epoch));
+        json.key("instanceId").nullable(self.instance_id.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("rackId").nullable(self.rack_id.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("clientId").string(&self.client_id);
+        json.key("clientHost").string(&self.client_host);
+        json.key("topologyEpoch").integer(i64::from(self.topology_epoch));
+        json.key("processId").string(&self.process_id);
+        json.key("userEndpoint").nullable(self.user_endpoint.as_ref(), |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("clientTags").array(&self.client_tags, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("taskOffsets").array(&self.task_offsets, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("taskEndOffsets").array(&self.task_end_offsets, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        self.assignment.write_json_fields(json.key("assignment"), version);
+        self.target_assignment.write_json_fields(json.key("targetAssignment"), version);
+        json.key("isClassic").boolean(self.is_classic);
+        json.end_object();
+    }
+}
+
+impl Member {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -1050,6 +1199,16 @@ impl Endpoint {
 }
 
 impl Endpoint {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("host").string(&self.host);
+        json.key("port").integer(i64::from(self.port));
+        json.end_object();
+    }
+}
+
+impl Endpoint {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -1128,6 +1287,17 @@ impl TaskOffset {
                 unknown_tagged_fields: value_3,
             })
             .boxed()
+    }
+}
+
+impl TaskOffset {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("subtopologyId").string(&self.subtopology_id);
+        json.key("partition").integer(i64::from(self.partition));
+        json.key("offset").integer(self.offset);
+        json.end_object();
     }
 }
 
@@ -1220,6 +1390,23 @@ impl Assignment {
 }
 
 impl Assignment {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("activeTasks").array(&self.active_tasks, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("standbyTasks").array(&self.standby_tasks, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("warmupTasks").array(&self.warmup_tasks, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl Assignment {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -1299,6 +1486,18 @@ impl TaskIds {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl TaskIds {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("subtopologyId").string(&self.subtopology_id);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            json.integer(i64::from(*value));
+        });
+        json.end_object();
     }
 }
 
@@ -1393,6 +1592,20 @@ impl TopologyDescription {
 }
 
 impl TopologyDescription {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("subtopologies").array(&self.subtopologies, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("globalStores").array(&self.global_stores, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl TopologyDescription {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -1479,6 +1692,18 @@ impl TopologyDescriptionSubtopology {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl TopologyDescriptionSubtopology {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("subtopologyId").string(&self.subtopology_id);
+        json.key("nodes").array(&self.nodes, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
     }
 }
 
@@ -1611,6 +1836,28 @@ impl TopologyDescriptionNode {
 }
 
 impl TopologyDescriptionNode {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("nodeType").integer(i64::from(self.node_type));
+        json.key("sourceTopics").array(&self.source_topics, |json, value| {
+            json.string(value);
+        });
+        json.key("sinkTopic").nullable(self.sink_topic.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("stores").array(&self.stores, |json, value| {
+            json.string(value);
+        });
+        json.key("successors").array(&self.successors, |json, value| {
+            json.string(value);
+        });
+        json.end_object();
+    }
+}
+
+impl TopologyDescriptionNode {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -1703,6 +1950,16 @@ impl TopologyDescriptionGlobalStore {
 }
 
 impl TopologyDescriptionGlobalStore {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        self.source.write_json_fields(json.key("source"), version);
+        self.processor.write_json_fields(json.key("processor"), version);
+        json.end_object();
+    }
+}
+
+impl TopologyDescriptionGlobalStore {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -1749,6 +2006,10 @@ impl crate::Message for StreamsGroupDescribeResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

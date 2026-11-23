@@ -167,6 +167,29 @@ impl DescribeClusterResponse {
 }
 
 impl DescribeClusterResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("errorMessage").nullable(self.error_message.as_deref(), |json, value| {
+            json.string(value);
+        });
+        if version >= 1 {
+            json.key("endpointType").integer(i64::from(self.endpoint_type));
+        }
+        json.key("clusterId").string(&self.cluster_id);
+        json.key("controllerId").integer(i64::from(self.controller_id));
+        json.key("brokers").array(&self.brokers, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("clusterAuthorizedOperations")
+            .integer(i64::from(self.cluster_authorized_operations));
+        json.end_object();
+    }
+}
+
+impl DescribeClusterResponse {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -326,6 +349,23 @@ impl DescribeClusterBroker {
 }
 
 impl DescribeClusterBroker {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("brokerId").integer(i64::from(self.broker_id));
+        json.key("host").string(&self.host);
+        json.key("port").integer(i64::from(self.port));
+        json.key("rack").nullable(self.rack.as_deref(), |json, value| {
+            json.string(value);
+        });
+        if version == 2 {
+            json.key("isFenced").boolean(self.is_fenced);
+        }
+        json.end_object();
+    }
+}
+
+impl DescribeClusterBroker {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -400,6 +440,10 @@ impl crate::Message for DescribeClusterResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

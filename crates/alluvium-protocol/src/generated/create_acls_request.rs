@@ -69,6 +69,17 @@ impl CreateAclsRequest {
 }
 
 impl CreateAclsRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("creations").array(&self.creations, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl CreateAclsRequest {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -227,6 +238,21 @@ impl AclCreation {
 }
 
 impl AclCreation {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("resourceType").integer(i64::from(self.resource_type));
+        json.key("resourceName").string(&self.resource_name);
+        json.key("resourcePatternType").integer(i64::from(self.resource_pattern_type));
+        json.key("principal").string(&self.principal);
+        json.key("host").string(&self.host);
+        json.key("operation").integer(i64::from(self.operation));
+        json.key("permissionType").integer(i64::from(self.permission_type));
+        json.end_object();
+    }
+}
+
+impl AclCreation {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -295,6 +321,10 @@ impl crate::Message for CreateAclsRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

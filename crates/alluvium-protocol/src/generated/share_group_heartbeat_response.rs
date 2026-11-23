@@ -134,6 +134,27 @@ impl ShareGroupHeartbeatResponse {
 }
 
 impl ShareGroupHeartbeatResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("errorMessage").nullable(self.error_message.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("memberId").nullable(self.member_id.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("memberEpoch").integer(i64::from(self.member_epoch));
+        json.key("heartbeatIntervalMs").integer(i64::from(self.heartbeat_interval_ms));
+        json.key("assignment").nullable(self.assignment.as_ref(), |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl ShareGroupHeartbeatResponse {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -207,6 +228,17 @@ impl Assignment {
                 unknown_tagged_fields: value_1,
             })
             .boxed()
+    }
+}
+
+impl Assignment {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("topicPartitions").array(&self.topic_partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
     }
 }
 
@@ -298,6 +330,18 @@ impl TopicPartitions {
 }
 
 impl TopicPartitions {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("topicId").uuid(self.topic_id);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            json.integer(i64::from(*value));
+        });
+        json.end_object();
+    }
+}
+
+impl TopicPartitions {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -347,6 +391,10 @@ impl crate::Message for ShareGroupHeartbeatResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

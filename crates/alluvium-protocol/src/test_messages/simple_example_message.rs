@@ -315,6 +315,85 @@ impl SimpleExampleMessage {
 }
 
 impl SimpleExampleMessage {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        if version >= 1 {
+            json.key("processId").uuid(self.process_id);
+        }
+        if version >= 1 && !self.my_tagged_int_array.is_empty() {
+            json.key("myTaggedIntArray").array(&self.my_tagged_int_array, |json, value| {
+                json.integer(i64::from(*value));
+            });
+        }
+        if version >= 1 && self.my_nullable_string.is_some() {
+            json.key("myNullableString").nullable(
+                self.my_nullable_string.as_deref(),
+                |json, value| {
+                    json.string(value);
+                },
+            );
+        }
+        if version >= 1 && self.my_int16 != 123 {
+            json.key("myInt16").integer(i64::from(self.my_int16));
+        }
+        if version >= 1 && self.my_float64.partial_cmp(&12.34) != Some(std::cmp::Ordering::Equal) {
+            json.key("myFloat64").float(self.my_float64);
+        }
+        if version >= 1 && !self.my_string.is_empty() {
+            json.key("myString").string(&self.my_string);
+        }
+        if version >= 1 && self.my_bytes.as_ref().is_none_or(|value| !value.is_empty()) {
+            json.key("myBytes").nullable(self.my_bytes.as_deref(), |json, value| {
+                json.bytes(value);
+            });
+        }
+        if version >= 1
+            && self.tagged_uuid
+                != alluvium_types::Uuid::from_bits(
+                    2_266_025_550_731_756_790,
+                    -9_053_694_137_127_414_036,
+                )
+        {
+            json.key("taggedUuid").uuid(self.tagged_uuid);
+        }
+        if version >= 1 && self.tagged_long != 914_172_222_550_880_202 {
+            json.key("taggedLong").integer(self.tagged_long);
+        }
+        if version == 1 {
+            json.key("zeroCopyByteBuffer").bytes(&self.zero_copy_byte_buffer);
+        }
+        if version == 1 {
+            json.key("nullableZeroCopyByteBuffer").nullable(
+                self.nullable_zero_copy_byte_buffer.as_deref(),
+                |json, value| {
+                    json.bytes(value);
+                },
+            );
+        }
+        if version == 2 {
+            self.my_struct.write_json_fields(json.key("myStruct"), version);
+        }
+        if version == 2 && self.my_tagged_struct != TaggedStruct::default() {
+            self.my_tagged_struct.write_json_fields(json.key("myTaggedStruct"), version);
+        }
+        if version == 2 && self.tagged_long_flexible_version_subset != 0 {
+            json.key("taggedLongFlexibleVersionSubset")
+                .integer(self.tagged_long_flexible_version_subset);
+        }
+        self.my_common_struct.write_json_fields(json.key("myCommonStruct"), version);
+        self.my_other_common_struct.write_json_fields(json.key("myOtherCommonStruct"), version);
+        if version >= 1 {
+            json.key("myUint16").integer(i64::from(self.my_uint16));
+        }
+        if version >= 1 {
+            json.key("myUint32").integer(i64::from(self.my_uint32));
+        }
+        json.end_object();
+    }
+}
+
+impl SimpleExampleMessage {
     fn write_tagged_fields(
         &self,
         writer: &mut crate::Writer,
@@ -545,6 +624,18 @@ impl MyStruct {
 }
 
 impl MyStruct {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("structId").integer(i64::from(self.struct_id));
+        json.key("arrayInStruct").array(&self.array_in_struct, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl MyStruct {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -612,6 +703,15 @@ impl StructArray {
 }
 
 impl StructArray {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("arrayFieldId").integer(i64::from(self.array_field_id));
+        json.end_object();
+    }
+}
+
+impl StructArray {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -671,6 +771,15 @@ impl TaggedStruct {
                 unknown_tagged_fields: value_1,
             })
             .boxed()
+    }
+}
+
+impl TaggedStruct {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("structId").string(&self.struct_id);
+        json.end_object();
     }
 }
 
@@ -759,6 +868,16 @@ impl TestCommonStruct {
 }
 
 impl TestCommonStruct {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("foo").integer(i64::from(self.foo));
+        json.key("bar").integer(i64::from(self.bar));
+        json.end_object();
+    }
+}
+
+impl TestCommonStruct {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -808,6 +927,10 @@ impl crate::Message for SimpleExampleMessage {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

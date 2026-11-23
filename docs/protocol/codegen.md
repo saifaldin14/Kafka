@@ -305,6 +305,19 @@ How the accessors work:
 - An entry that matches no field, or a field of another type, is a generator error.
 - The coordinator key type and the ACL enums are added by the tasks that define them (GRP-0039, SEC-0051).
 
+## JSON
+
+Every message implements `Message::write_json(json, version)` and `Message::to_json(version)`. Debugging tools such as `alluvium dump frame` (PROTO-F13) use them to print a message as Kafka's generated `JsonConverter` writes it. Each struct gets a `write_json_fields`, which mirrors `JsonConverterGenerator.generateWrite`:
+- The fields the version has are written in schema order, each under its camelCase name (`TransactionalId` becomes `transactionalId`). A tagged field is written only when it differs from its default, and unknown tagged fields are left out.
+- Integers and `float64` are numbers. `NaN` and the infinities are strings, as Jackson writes them.
+- Uuids are in Kafka's base64url form, and `bytes` are standard base64.
+- `records` are written as `<name>SizeInBytes`, Kafka's request-log form (KIP-673), and for batches in memory `<name>Crc32c` too, never the records themselves. A null is `<name>: null`.
+- The credentials in the [redaction](#redaction) list are `"***"`, or `""` when empty.
+
+A test reads every message Kafka wrote in the golden vectors and checks that our JSON is Kafka's `JsonConverter` output, after two normalizations:
+- Kafka's golden JSON writes a non-null records field as `""`, and ours writes the size and checksum, so those two keys stand for that `""`;
+- a redacted `"***"` stands for the credential.
+
 ## Redaction
 
 [`xtask/codegen/sensitive_fields.toml`](../../xtask/codegen/sensitive_fields.toml) lists the fields that hold credentials:

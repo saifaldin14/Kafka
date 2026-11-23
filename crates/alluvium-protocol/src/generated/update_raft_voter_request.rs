@@ -122,6 +122,24 @@ impl UpdateRaftVoterRequest {
 }
 
 impl UpdateRaftVoterRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("clusterId").nullable(self.cluster_id.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("currentLeaderEpoch").integer(i64::from(self.current_leader_epoch));
+        json.key("voterId").integer(i64::from(self.voter_id));
+        json.key("voterDirectoryId").uuid(self.voter_directory_id);
+        json.key("listeners").array(&self.listeners, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        self.k_raft_version_feature.write_json_fields(json.key("kRaftVersionFeature"), version);
+        json.end_object();
+    }
+}
+
+impl UpdateRaftVoterRequest {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -225,6 +243,17 @@ impl Listener {
 }
 
 impl Listener {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("host").string(&self.host);
+        json.key("port").integer(i64::from(self.port));
+        json.end_object();
+    }
+}
+
+impl Listener {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -301,6 +330,16 @@ impl KRaftVersionFeature {
 }
 
 impl KRaftVersionFeature {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("minSupportedVersion").integer(i64::from(self.min_supported_version));
+        json.key("maxSupportedVersion").integer(i64::from(self.max_supported_version));
+        json.end_object();
+    }
+}
+
+impl KRaftVersionFeature {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -350,6 +389,10 @@ impl crate::Message for UpdateRaftVoterRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

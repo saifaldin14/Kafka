@@ -91,6 +91,23 @@ impl VoteRequest {
 }
 
 impl VoteRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("clusterId").nullable(self.cluster_id.as_deref(), |json, value| {
+            json.string(value);
+        });
+        if version >= 1 {
+            json.key("voterId").integer(i64::from(self.voter_id));
+        }
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl VoteRequest {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -169,6 +186,18 @@ impl TopicData {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl TopicData {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("topicName").string(&self.topic_name);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
     }
 }
 
@@ -326,6 +355,28 @@ impl PartitionData {
 }
 
 impl PartitionData {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("partitionIndex").integer(i64::from(self.partition_index));
+        json.key("replicaEpoch").integer(i64::from(self.replica_epoch));
+        json.key("replicaId").integer(i64::from(self.replica_id));
+        if version >= 1 {
+            json.key("replicaDirectoryId").uuid(self.replica_directory_id);
+        }
+        if version >= 1 {
+            json.key("voterDirectoryId").uuid(self.voter_directory_id);
+        }
+        json.key("lastOffsetEpoch").integer(i64::from(self.last_offset_epoch));
+        json.key("lastOffset").integer(self.last_offset);
+        if version == 2 {
+            json.key("preVote").boolean(self.pre_vote);
+        }
+        json.end_object();
+    }
+}
+
+impl PartitionData {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -402,6 +453,10 @@ impl crate::Message for VoteRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

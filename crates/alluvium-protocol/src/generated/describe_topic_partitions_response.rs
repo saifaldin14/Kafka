@@ -91,6 +91,21 @@ impl DescribeTopicPartitionsResponse {
 }
 
 impl DescribeTopicPartitionsResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("nextCursor").nullable(self.next_cursor.as_ref(), |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl DescribeTopicPartitionsResponse {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -256,6 +271,24 @@ impl DescribeTopicPartitionsResponseTopic {
                 }
             })
             .boxed()
+    }
+}
+
+impl DescribeTopicPartitionsResponseTopic {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("name").nullable(self.name.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("topicId").uuid(self.topic_id);
+        json.key("isInternal").boolean(self.is_internal);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("topicAuthorizedOperations").integer(i64::from(self.topic_authorized_operations));
+        json.end_object();
     }
 }
 
@@ -449,6 +482,40 @@ impl DescribeTopicPartitionsResponsePartition {
 }
 
 impl DescribeTopicPartitionsResponsePartition {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("partitionIndex").integer(i64::from(self.partition_index));
+        json.key("leaderId").integer(i64::from(self.leader_id));
+        json.key("leaderEpoch").integer(i64::from(self.leader_epoch));
+        json.key("replicaNodes").array(&self.replica_nodes, |json, value| {
+            json.integer(i64::from(*value));
+        });
+        json.key("isrNodes").array(&self.isr_nodes, |json, value| {
+            json.integer(i64::from(*value));
+        });
+        json.key("eligibleLeaderReplicas").nullable(
+            self.eligible_leader_replicas.as_deref(),
+            |json, value| {
+                json.array(value, |json, value| {
+                    json.integer(i64::from(*value));
+                });
+            },
+        );
+        json.key("lastKnownElr").nullable(self.last_known_elr.as_deref(), |json, value| {
+            json.array(value, |json, value| {
+                json.integer(i64::from(*value));
+            });
+        });
+        json.key("offlineReplicas").array(&self.offline_replicas, |json, value| {
+            json.integer(i64::from(*value));
+        });
+        json.end_object();
+    }
+}
+
+impl DescribeTopicPartitionsResponsePartition {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -551,6 +618,16 @@ impl Cursor {
 }
 
 impl Cursor {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("topicName").string(&self.topic_name);
+        json.key("partitionIndex").integer(i64::from(self.partition_index));
+        json.end_object();
+    }
+}
+
+impl Cursor {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -597,6 +674,10 @@ impl crate::Message for DescribeTopicPartitionsResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

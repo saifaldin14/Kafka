@@ -81,6 +81,18 @@ impl OffsetForLeaderEpochResponse {
 }
 
 impl OffsetForLeaderEpochResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl OffsetForLeaderEpochResponse {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -198,6 +210,18 @@ impl OffsetForLeaderTopicResult {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl OffsetForLeaderTopicResult {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("topic").string(&self.topic);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
     }
 }
 
@@ -335,6 +359,18 @@ impl EpochEndOffset {
 }
 
 impl EpochEndOffset {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("partition").integer(i64::from(self.partition));
+        json.key("leaderEpoch").integer(i64::from(self.leader_epoch));
+        json.key("endOffset").integer(self.end_offset);
+        json.end_object();
+    }
+}
+
+impl EpochEndOffset {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -388,6 +424,10 @@ impl crate::Message for OffsetForLeaderEpochResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

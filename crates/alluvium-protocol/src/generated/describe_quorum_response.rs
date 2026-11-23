@@ -121,6 +121,28 @@ impl DescribeQuorumResponse {
 }
 
 impl DescribeQuorumResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("errorCode").integer(i64::from(self.error_code));
+        if version == 2 {
+            json.key("errorMessage").nullable(self.error_message.as_deref(), |json, value| {
+                json.string(value);
+            });
+        }
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        if version == 2 {
+            json.key("nodes").array(&self.nodes, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        }
+        json.end_object();
+    }
+}
+
+impl DescribeQuorumResponse {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -228,6 +250,18 @@ impl TopicData {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl TopicData {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("topicName").string(&self.topic_name);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
     }
 }
 
@@ -401,6 +435,30 @@ impl PartitionData {
 }
 
 impl PartitionData {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("partitionIndex").integer(i64::from(self.partition_index));
+        json.key("errorCode").integer(i64::from(self.error_code));
+        if version == 2 {
+            json.key("errorMessage").nullable(self.error_message.as_deref(), |json, value| {
+                json.string(value);
+            });
+        }
+        json.key("leaderId").integer(i64::from(self.leader_id));
+        json.key("leaderEpoch").integer(i64::from(self.leader_epoch));
+        json.key("highWatermark").integer(self.high_watermark);
+        json.key("currentVoters").array(&self.current_voters, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("observers").array(&self.observers, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl PartitionData {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -532,6 +590,25 @@ impl ReplicaState {
 }
 
 impl ReplicaState {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("replicaId").integer(i64::from(self.replica_id));
+        if version >= 2 {
+            json.key("replicaDirectoryId").uuid(self.replica_directory_id);
+        }
+        json.key("logEndOffset").integer(self.log_end_offset);
+        if version >= 1 {
+            json.key("lastFetchTimestamp").integer(self.last_fetch_timestamp);
+        }
+        if version >= 1 {
+            json.key("lastCaughtUpTimestamp").integer(self.last_caught_up_timestamp);
+        }
+        json.end_object();
+    }
+}
+
+impl ReplicaState {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -651,6 +728,18 @@ impl Node {
 }
 
 impl Node {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("nodeId").integer(i64::from(self.node_id));
+        json.key("listeners").array(&self.listeners, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl Node {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -750,6 +839,17 @@ impl Listener {
 }
 
 impl Listener {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("host").string(&self.host);
+        json.key("port").integer(i64::from(self.port));
+        json.end_object();
+    }
+}
+
+impl Listener {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -797,6 +897,10 @@ impl crate::Message for DescribeQuorumResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

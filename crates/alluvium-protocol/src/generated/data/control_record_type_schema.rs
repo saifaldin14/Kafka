@@ -52,6 +52,15 @@ impl ControlRecordTypeSchema {
 }
 
 impl ControlRecordTypeSchema {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("type").integer(i64::from(self.type_));
+        json.end_object();
+    }
+}
+
+impl ControlRecordTypeSchema {
     fn write_fields(&self, writer: &mut crate::Writer, _version: i16) {
         writer.write_i16(self.type_);
     }
@@ -85,6 +94,10 @@ impl crate::Message for ControlRecordTypeSchema {
         }
         self.write_fields(writer, version);
         Ok(())
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

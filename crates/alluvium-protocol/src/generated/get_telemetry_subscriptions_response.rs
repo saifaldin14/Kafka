@@ -176,6 +176,30 @@ impl GetTelemetrySubscriptionsResponse {
 }
 
 impl GetTelemetrySubscriptionsResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("clientInstanceId").uuid(self.client_instance_id);
+        json.key("subscriptionId").integer(i64::from(self.subscription_id));
+        json.key("acceptedCompressionTypes").array(
+            &self.accepted_compression_types,
+            |json, value| {
+                json.integer(i64::from(*value));
+            },
+        );
+        json.key("pushIntervalMs").integer(i64::from(self.push_interval_ms));
+        json.key("telemetryMaxBytes").integer(i64::from(self.telemetry_max_bytes));
+        json.key("deltaTemporality").boolean(self.delta_temporality);
+        json.key("requestedMetrics").array(&self.requested_metrics, |json, value| {
+            json.string(value);
+        });
+        json.end_object();
+    }
+}
+
+impl GetTelemetrySubscriptionsResponse {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -236,6 +260,10 @@ impl crate::Message for GetTelemetrySubscriptionsResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

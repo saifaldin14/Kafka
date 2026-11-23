@@ -219,7 +219,7 @@ impl Context<'_> {
 /// Kafka's `generateNonDefaultValueCheck`: a null counts as non-default unless the
 /// default is null.
 // Parity: generator/src/main/java/org/apache/kafka/message/FieldSpec.java@4.4.0 FieldSpec.generateNonDefaultValueCheck
-fn non_default(field: &FieldSpec) -> String {
+pub(super) fn non_default(field: &FieldSpec) -> String {
     let value = format!("self.{}", names::identifier(&field.name));
     let (default, _) = structs::default(field);
     if field.field_type == FieldType::Records || field.default == FieldDefault::Null {

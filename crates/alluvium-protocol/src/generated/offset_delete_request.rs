@@ -63,6 +63,18 @@ impl OffsetDeleteRequest {
 }
 
 impl OffsetDeleteRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("groupId").string(&self.group_id);
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl OffsetDeleteRequest {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -152,6 +164,18 @@ impl OffsetDeleteRequestTopic {
 }
 
 impl OffsetDeleteRequestTopic {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl OffsetDeleteRequestTopic {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -211,6 +235,15 @@ impl OffsetDeleteRequestPartition {
 }
 
 impl OffsetDeleteRequestPartition {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("partitionIndex").integer(i64::from(self.partition_index));
+        json.end_object();
+    }
+}
+
+impl OffsetDeleteRequestPartition {
     fn write_fields(&self, writer: &mut crate::Writer, _version: i16) {
         writer.write_i32(self.partition_index);
     }
@@ -251,6 +284,10 @@ impl crate::Message for OffsetDeleteRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

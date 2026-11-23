@@ -108,6 +108,28 @@ impl ApiVersionsRequest {
 }
 
 impl ApiVersionsRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        if version >= 3 {
+            json.key("clientSoftwareName").string(&self.client_software_name);
+        }
+        if version >= 3 {
+            json.key("clientSoftwareVersion").string(&self.client_software_version);
+        }
+        if version == 5 {
+            json.key("clusterId").nullable(self.cluster_id.as_deref(), |json, value| {
+                json.string(value);
+            });
+        }
+        if version == 5 {
+            json.key("nodeId").integer(i64::from(self.node_id));
+        }
+        json.end_object();
+    }
+}
+
+impl ApiVersionsRequest {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -168,6 +190,10 @@ impl crate::Message for ApiVersionsRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

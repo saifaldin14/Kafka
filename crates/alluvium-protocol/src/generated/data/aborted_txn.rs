@@ -71,6 +71,18 @@ impl AbortedTxn {
 }
 
 impl AbortedTxn {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("producerId").integer(self.producer_id);
+        json.key("firstOffset").integer(self.first_offset);
+        json.key("lastOffset").integer(self.last_offset);
+        json.key("lastStableOffset").integer(self.last_stable_offset);
+        json.end_object();
+    }
+}
+
+impl AbortedTxn {
     fn write_fields(&self, writer: &mut crate::Writer, _version: i16) {
         writer.write_i64(self.producer_id);
         writer.write_i64(self.first_offset);
@@ -101,6 +113,10 @@ impl crate::Message for AbortedTxn {
         }
         self.write_fields(writer, version);
         Ok(())
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

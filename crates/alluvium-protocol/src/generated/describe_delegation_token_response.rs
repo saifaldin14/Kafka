@@ -102,6 +102,19 @@ impl DescribeDelegationTokenResponse {
 }
 
 impl DescribeDelegationTokenResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("tokens").array(&self.tokens, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        json.end_object();
+    }
+}
+
+impl DescribeDelegationTokenResponse {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -324,6 +337,30 @@ impl DescribedDelegationToken {
 }
 
 impl DescribedDelegationToken {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("principalType").string(&self.principal_type);
+        json.key("principalName").string(&self.principal_name);
+        if version == 3 {
+            json.key("tokenRequesterPrincipalType").string(&self.token_requester_principal_type);
+        }
+        if version == 3 {
+            json.key("tokenRequesterPrincipalName").string(&self.token_requester_principal_name);
+        }
+        json.key("issueTimestamp").integer(self.issue_timestamp);
+        json.key("expiryTimestamp").integer(self.expiry_timestamp);
+        json.key("maxTimestamp").integer(self.max_timestamp);
+        json.key("tokenId").string(&self.token_id);
+        json.key("hmac").redacted(self.hmac.is_empty());
+        json.key("renewers").array(&self.renewers, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl DescribedDelegationToken {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -474,6 +511,16 @@ impl DescribedDelegationTokenRenewer {
 }
 
 impl DescribedDelegationTokenRenewer {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("principalType").string(&self.principal_type);
+        json.key("principalName").string(&self.principal_name);
+        json.end_object();
+    }
+}
+
+impl DescribedDelegationTokenRenewer {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -531,6 +578,10 @@ impl crate::Message for DescribeDelegationTokenResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

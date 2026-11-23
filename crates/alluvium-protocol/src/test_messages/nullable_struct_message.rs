@@ -142,6 +142,30 @@ impl NullableStructMessage {
 }
 
 impl NullableStructMessage {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("nullableStruct").nullable(self.nullable_struct.as_ref(), |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("nullableStruct2").nullable(self.nullable_struct2.as_ref(), |json, value| {
+            value.write_json_fields(json, version);
+        });
+        if version >= 1 && self.nullable_struct3.is_some() {
+            json.key("nullableStruct3").nullable(self.nullable_struct3.as_ref(), |json, value| {
+                value.write_json_fields(json, version);
+            });
+        }
+        if version >= 1 && self.nullable_struct4 != Some(MyStruct4::default()) {
+            json.key("nullableStruct4").nullable(self.nullable_struct4.as_ref(), |json, value| {
+                value.write_json_fields(json, version);
+            });
+        }
+        json.end_object();
+    }
+}
+
+impl NullableStructMessage {
     fn write_tagged_fields(
         &self,
         writer: &mut crate::Writer,
@@ -310,6 +334,16 @@ impl MyStruct {
 }
 
 impl MyStruct {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("myString").string(&self.my_string);
+        json.key("myInt").integer(i64::from(self.my_int));
+        json.end_object();
+    }
+}
+
+impl MyStruct {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -400,6 +434,16 @@ impl MyStruct2 {
 }
 
 impl MyStruct2 {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("myString").string(&self.my_string);
+        json.key("myInt").integer(i64::from(self.my_int));
+        json.end_object();
+    }
+}
+
+impl MyStruct2 {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -478,6 +522,16 @@ impl MyStruct3 {
 }
 
 impl MyStruct3 {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("myString").string(&self.my_string);
+        json.key("myInt").integer(i64::from(self.my_int));
+        json.end_object();
+    }
+}
+
+impl MyStruct3 {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -548,6 +602,16 @@ impl MyStruct4 {
 }
 
 impl MyStruct4 {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("myString").string(&self.my_string);
+        json.key("myInt").integer(i64::from(self.my_int));
+        json.end_object();
+    }
+}
+
+impl MyStruct4 {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -592,6 +656,10 @@ impl crate::Message for NullableStructMessage {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

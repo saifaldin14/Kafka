@@ -107,6 +107,26 @@ impl AlluviumExampleRequest {
 }
 
 impl AlluviumExampleRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("nodeId").integer(i64::from(self.node_id));
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        if version == 1 {
+            json.key("reason").nullable(self.reason.as_deref(), |json, value| {
+                json.string(value);
+            });
+        }
+        if self.hint != -1 {
+            json.key("hint").integer(self.hint);
+        }
+        json.end_object();
+    }
+}
+
+impl AlluviumExampleRequest {
     fn write_tagged_fields(
         &self,
         writer: &mut crate::Writer,
@@ -235,6 +255,16 @@ impl ExamplePartition {
 }
 
 impl ExamplePartition {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("topicId").uuid(self.topic_id);
+        json.key("partitionIndex").integer(i64::from(self.partition_index));
+        json.end_object();
+    }
+}
+
+impl ExamplePartition {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -284,6 +314,10 @@ impl crate::Message for AlluviumExampleRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

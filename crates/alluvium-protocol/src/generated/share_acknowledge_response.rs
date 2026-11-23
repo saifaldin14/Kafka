@@ -128,6 +128,29 @@ impl ShareAcknowledgeResponse {
 }
 
 impl ShareAcknowledgeResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("errorMessage").nullable(self.error_message.as_deref(), |json, value| {
+            json.string(value);
+        });
+        if version == 2 {
+            json.key("acquisitionLockTimeoutMs")
+                .integer(i64::from(self.acquisition_lock_timeout_ms));
+        }
+        json.key("responses").array(&self.responses, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("nodeEndpoints").array(&self.node_endpoints, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl ShareAcknowledgeResponse {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -250,6 +273,18 @@ impl ShareAcknowledgeTopicResponse {
 }
 
 impl ShareAcknowledgeTopicResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("topicId").uuid(self.topic_id);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl ShareAcknowledgeTopicResponse {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -356,6 +391,20 @@ impl PartitionData {
 }
 
 impl PartitionData {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("partitionIndex").integer(i64::from(self.partition_index));
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("errorMessage").nullable(self.error_message.as_deref(), |json, value| {
+            json.string(value);
+        });
+        self.current_leader.write_json_fields(json.key("currentLeader"), version);
+        json.end_object();
+    }
+}
+
+impl PartitionData {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -427,6 +476,16 @@ impl LeaderIdAndEpoch {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl LeaderIdAndEpoch {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("leaderId").integer(i64::from(self.leader_id));
+        json.key("leaderEpoch").integer(i64::from(self.leader_epoch));
+        json.end_object();
     }
 }
 
@@ -535,6 +594,20 @@ impl NodeEndpoint {
 }
 
 impl NodeEndpoint {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("nodeId").integer(i64::from(self.node_id));
+        json.key("host").string(&self.host);
+        json.key("port").integer(i64::from(self.port));
+        json.key("rack").nullable(self.rack.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.end_object();
+    }
+}
+
+impl NodeEndpoint {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -583,6 +656,10 @@ impl crate::Message for ShareAcknowledgeResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

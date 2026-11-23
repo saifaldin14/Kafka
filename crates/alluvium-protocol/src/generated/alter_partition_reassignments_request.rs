@@ -99,6 +99,21 @@ impl AlterPartitionReassignmentsRequest {
 }
 
 impl AlterPartitionReassignmentsRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("timeoutMs").integer(i64::from(self.timeout_ms));
+        if version == 1 {
+            json.key("allowReplicationFactorChange").boolean(self.allow_replication_factor_change);
+        }
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl AlterPartitionReassignmentsRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -209,6 +224,18 @@ impl ReassignableTopic {
 }
 
 impl ReassignableTopic {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl ReassignableTopic {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -294,6 +321,20 @@ impl ReassignablePartition {
 }
 
 impl ReassignablePartition {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("partitionIndex").integer(i64::from(self.partition_index));
+        json.key("replicas").nullable(self.replicas.as_deref(), |json, value| {
+            json.array(value, |json, value| {
+                json.integer(i64::from(*value));
+            });
+        });
+        json.end_object();
+    }
+}
+
+impl ReassignablePartition {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -351,6 +392,10 @@ impl crate::Message for AlterPartitionReassignmentsRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

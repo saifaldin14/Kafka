@@ -167,6 +167,38 @@ impl MetadataResponse {
 }
 
 impl MetadataResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        if version >= 3 {
+            json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        }
+        json.key("brokers").array(&self.brokers, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        if version >= 2 {
+            json.key("clusterId").nullable(self.cluster_id.as_deref(), |json, value| {
+                json.string(value);
+            });
+        }
+        if version >= 1 {
+            json.key("controllerId").integer(i64::from(self.controller_id));
+        }
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        if (8..=10).contains(&version) {
+            json.key("clusterAuthorizedOperations")
+                .integer(i64::from(self.cluster_authorized_operations));
+        }
+        if version == 13 {
+            json.key("errorCode").integer(i64::from(self.error_code));
+        }
+        json.end_object();
+    }
+}
+
+impl MetadataResponse {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -354,6 +386,22 @@ impl MetadataResponseBroker {
                 unknown_tagged_fields: value_4,
             })
             .boxed()
+    }
+}
+
+impl MetadataResponseBroker {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("nodeId").integer(i64::from(self.node_id));
+        json.key("host").string(&self.host);
+        json.key("port").integer(i64::from(self.port));
+        if version >= 1 {
+            json.key("rack").nullable(self.rack.as_deref(), |json, value| {
+                json.string(value);
+            });
+        }
+        json.end_object();
     }
 }
 
@@ -556,6 +604,31 @@ impl MetadataResponseTopic {
                 }
             })
             .boxed()
+    }
+}
+
+impl MetadataResponseTopic {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("name").nullable(self.name.as_deref(), |json, value| {
+            json.string(value);
+        });
+        if version >= 10 {
+            json.key("topicId").uuid(self.topic_id);
+        }
+        if version >= 1 {
+            json.key("isInternal").boolean(self.is_internal);
+        }
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        if version >= 8 {
+            json.key("topicAuthorizedOperations")
+                .integer(i64::from(self.topic_authorized_operations));
+        }
+        json.end_object();
     }
 }
 
@@ -786,6 +859,31 @@ impl MetadataResponsePartition {
 }
 
 impl MetadataResponsePartition {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("partitionIndex").integer(i64::from(self.partition_index));
+        json.key("leaderId").integer(i64::from(self.leader_id));
+        if version >= 7 {
+            json.key("leaderEpoch").integer(i64::from(self.leader_epoch));
+        }
+        json.key("replicaNodes").array(&self.replica_nodes, |json, value| {
+            json.integer(i64::from(*value));
+        });
+        json.key("isrNodes").array(&self.isr_nodes, |json, value| {
+            json.integer(i64::from(*value));
+        });
+        if version >= 5 {
+            json.key("offlineReplicas").array(&self.offline_replicas, |json, value| {
+                json.integer(i64::from(*value));
+            });
+        }
+        json.end_object();
+    }
+}
+
+impl MetadataResponsePartition {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -864,6 +962,10 @@ impl crate::Message for MetadataResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

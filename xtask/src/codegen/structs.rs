@@ -26,7 +26,7 @@ use alluvium_types::Uuid;
 
 use super::names::{self, UNKNOWN_TAGGED_FIELDS};
 use super::overlays::{self, Overlays};
-use super::{decode, docs, encode, strategy};
+use super::{decode, docs, encode, json, strategy};
 use crate::message_spec::{
     FieldDefault, FieldSpec, FieldType, MessageKind, MessageSpec, StructRegistry, Versions,
 };
@@ -127,6 +127,14 @@ pub(crate) fn module(
             runtime,
         )?;
         strategy::render_arbitrary(&mut source, item.name, item.fields, item.versions, message);
+        json::render_write_json(
+            &mut source,
+            item.name,
+            item.fields,
+            item.versions,
+            &sensitive,
+            runtime,
+        );
         encode::render_write(
             &mut source,
             &encode::Struct {

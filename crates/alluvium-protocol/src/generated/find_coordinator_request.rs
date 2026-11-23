@@ -97,6 +97,25 @@ impl FindCoordinatorRequest {
 }
 
 impl FindCoordinatorRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        if version <= 3 {
+            json.key("key").string(&self.key);
+        }
+        if version >= 1 {
+            json.key("keyType").integer(i64::from(self.key_type));
+        }
+        if version >= 4 {
+            json.key("coordinatorKeys").array(&self.coordinator_keys, |json, value| {
+                json.string(value);
+            });
+        }
+        json.end_object();
+    }
+}
+
+impl FindCoordinatorRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -193,6 +212,10 @@ impl crate::Message for FindCoordinatorRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

@@ -95,6 +95,22 @@ impl DescribeClusterRequest {
 }
 
 impl DescribeClusterRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("includeClusterAuthorizedOperations")
+            .boolean(self.include_cluster_authorized_operations);
+        if version >= 1 {
+            json.key("endpointType").integer(i64::from(self.endpoint_type));
+        }
+        if version == 2 {
+            json.key("includeFencedBrokers").boolean(self.include_fenced_brokers);
+        }
+        json.end_object();
+    }
+}
+
+impl DescribeClusterRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -175,6 +191,10 @@ impl crate::Message for DescribeClusterRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

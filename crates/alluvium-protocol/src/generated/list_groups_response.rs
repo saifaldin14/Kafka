@@ -100,6 +100,21 @@ impl ListGroupsResponse {
 }
 
 impl ListGroupsResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        if version >= 1 {
+            json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        }
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("groups").array(&self.groups, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl ListGroupsResponse {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -220,6 +235,22 @@ impl ListedGroup {
 }
 
 impl ListedGroup {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("groupId").string(&self.group_id);
+        json.key("protocolType").string(&self.protocol_type);
+        if version >= 4 {
+            json.key("groupState").string(&self.group_state);
+        }
+        if version == 5 {
+            json.key("groupType").string(&self.group_type);
+        }
+        json.end_object();
+    }
+}
+
+impl ListedGroup {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -283,6 +314,10 @@ impl crate::Message for ListGroupsResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

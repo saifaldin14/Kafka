@@ -110,6 +110,33 @@ impl ConsumerProtocolSubscription {
 }
 
 impl ConsumerProtocolSubscription {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("topics").array(&self.topics, |json, value| {
+            json.string(value);
+        });
+        json.key("userData").nullable(self.user_data.as_deref(), |json, value| {
+            json.bytes(value);
+        });
+        if version >= 1 {
+            json.key("ownedPartitions").array(&self.owned_partitions, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        }
+        if version >= 2 {
+            json.key("generationId").integer(i64::from(self.generation_id));
+        }
+        if version == 3 {
+            json.key("rackId").nullable(self.rack_id.as_deref(), |json, value| {
+                json.string(value);
+            });
+        }
+        json.end_object();
+    }
+}
+
+impl ConsumerProtocolSubscription {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -204,6 +231,18 @@ impl TopicPartition {
 }
 
 impl TopicPartition {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("topic").string(&self.topic);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            json.integer(i64::from(*value));
+        });
+        json.end_object();
+    }
+}
+
+impl TopicPartition {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -248,6 +287,10 @@ impl crate::Message for ConsumerProtocolSubscription {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

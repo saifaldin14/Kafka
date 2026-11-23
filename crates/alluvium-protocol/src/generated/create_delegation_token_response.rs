@@ -222,6 +222,29 @@ impl CreateDelegationTokenResponse {
 }
 
 impl CreateDelegationTokenResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("principalType").string(&self.principal_type);
+        json.key("principalName").string(&self.principal_name);
+        if version == 3 {
+            json.key("tokenRequesterPrincipalType").string(&self.token_requester_principal_type);
+        }
+        if version == 3 {
+            json.key("tokenRequesterPrincipalName").string(&self.token_requester_principal_name);
+        }
+        json.key("issueTimestampMs").integer(self.issue_timestamp_ms);
+        json.key("expiryTimestampMs").integer(self.expiry_timestamp_ms);
+        json.key("maxTimestampMs").integer(self.max_timestamp_ms);
+        json.key("tokenId").string(&self.token_id);
+        json.key("hmac").redacted(self.hmac.is_empty());
+        json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        json.end_object();
+    }
+}
+
+impl CreateDelegationTokenResponse {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -320,6 +343,10 @@ impl crate::Message for CreateDelegationTokenResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

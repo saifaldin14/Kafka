@@ -146,6 +146,34 @@ impl BrokerHeartbeatRequest {
 }
 
 impl BrokerHeartbeatRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("brokerId").integer(i64::from(self.broker_id));
+        json.key("brokerEpoch").integer(self.broker_epoch);
+        json.key("currentMetadataOffset").integer(self.current_metadata_offset);
+        json.key("wantFence").boolean(self.want_fence);
+        json.key("wantShutDown").boolean(self.want_shut_down);
+        if version >= 1 && !self.offline_log_dirs.is_empty() {
+            json.key("offlineLogDirs").array(&self.offline_log_dirs, |json, value| {
+                json.uuid(*value);
+            });
+        }
+        if version == 2 && self.cordoned_log_dirs.is_some() {
+            json.key("cordonedLogDirs").nullable(
+                self.cordoned_log_dirs.as_deref(),
+                |json, value| {
+                    json.array(value, |json, value| {
+                        json.uuid(*value);
+                    });
+                },
+            );
+        }
+        json.end_object();
+    }
+}
+
+impl BrokerHeartbeatRequest {
     fn write_tagged_fields(
         &self,
         writer: &mut crate::Writer,
@@ -260,6 +288,10 @@ impl crate::Message for BrokerHeartbeatRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

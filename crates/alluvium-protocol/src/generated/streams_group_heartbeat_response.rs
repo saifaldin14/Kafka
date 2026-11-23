@@ -262,6 +262,62 @@ impl StreamsGroupHeartbeatResponse {
 }
 
 impl StreamsGroupHeartbeatResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("errorMessage").nullable(self.error_message.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("memberId").string(&self.member_id);
+        json.key("memberEpoch").integer(i64::from(self.member_epoch));
+        json.key("heartbeatIntervalMs").integer(i64::from(self.heartbeat_interval_ms));
+        if version == 0 {
+            json.key("acceptableRecoveryLagLegacy")
+                .integer(i64::from(self.acceptable_recovery_lag_legacy));
+        }
+        json.key("taskOffsetIntervalMs").integer(i64::from(self.task_offset_interval_ms));
+        if version == 1 {
+            json.key("acceptableRecoveryLag").integer(self.acceptable_recovery_lag);
+        }
+        json.key("status").nullable(self.status.as_deref(), |json, value| {
+            json.array(value, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        });
+        json.key("activeTasks").nullable(self.active_tasks.as_deref(), |json, value| {
+            json.array(value, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        });
+        json.key("standbyTasks").nullable(self.standby_tasks.as_deref(), |json, value| {
+            json.array(value, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        });
+        json.key("warmupTasks").nullable(self.warmup_tasks.as_deref(), |json, value| {
+            json.array(value, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        });
+        if version == 1 {
+            json.key("topologyDescriptionRequired").boolean(self.topology_description_required);
+        }
+        json.key("endpointInformationEpoch").integer(i64::from(self.endpoint_information_epoch));
+        json.key("partitionsByUserEndpoint").nullable(
+            self.partitions_by_user_endpoint.as_deref(),
+            |json, value| {
+                json.array(value, |json, value| {
+                    value.write_json_fields(json, version);
+                });
+            },
+        );
+        json.end_object();
+    }
+}
+
+impl StreamsGroupHeartbeatResponse {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -418,6 +474,16 @@ impl Status {
 }
 
 impl Status {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("statusCode").integer(i64::from(self.status_code));
+        json.key("statusDetail").string(&self.status_detail);
+        json.end_object();
+    }
+}
+
+impl Status {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -487,6 +553,18 @@ impl TaskIds {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl TaskIds {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("subtopologyId").string(&self.subtopology_id);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            json.integer(i64::from(*value));
+        });
+        json.end_object();
     }
 }
 
@@ -586,6 +664,21 @@ impl EndpointToPartitions {
 }
 
 impl EndpointToPartitions {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        self.user_endpoint.write_json_fields(json.key("userEndpoint"), version);
+        json.key("activePartitions").array(&self.active_partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("standbyPartitions").array(&self.standby_partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl EndpointToPartitions {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -659,6 +752,16 @@ impl Endpoint {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl Endpoint {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("host").string(&self.host);
+        json.key("port").integer(i64::from(self.port));
+        json.end_object();
     }
 }
 
@@ -738,6 +841,18 @@ impl TopicPartition {
 }
 
 impl TopicPartition {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("topic").string(&self.topic);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            json.integer(i64::from(*value));
+        });
+        json.end_object();
+    }
+}
+
+impl TopicPartition {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -787,6 +902,10 @@ impl crate::Message for StreamsGroupHeartbeatResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

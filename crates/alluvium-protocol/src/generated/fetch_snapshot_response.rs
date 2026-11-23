@@ -114,6 +114,24 @@ impl FetchSnapshotResponse {
 }
 
 impl FetchSnapshotResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        if version == 1 && !self.node_endpoints.is_empty() {
+            json.key("nodeEndpoints").array(&self.node_endpoints, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        }
+        json.end_object();
+    }
+}
+
+impl FetchSnapshotResponse {
     fn write_tagged_fields(
         &self,
         writer: &mut crate::Writer,
@@ -232,6 +250,18 @@ impl TopicSnapshot {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl TopicSnapshot {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
     }
 }
 
@@ -378,6 +408,23 @@ impl PartitionSnapshot {
 }
 
 impl PartitionSnapshot {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("index").integer(i64::from(self.index));
+        json.key("errorCode").integer(i64::from(self.error_code));
+        self.snapshot_id.write_json_fields(json.key("snapshotId"), version);
+        if self.current_leader != LeaderIdAndEpoch::default() {
+            self.current_leader.write_json_fields(json.key("currentLeader"), version);
+        }
+        json.key("size").integer(self.size);
+        json.key("position").integer(self.position);
+        json.records("unalignedRecords", self.unaligned_records.as_ref());
+        json.end_object();
+    }
+}
+
+impl PartitionSnapshot {
     fn write_tagged_fields(
         &self,
         writer: &mut crate::Writer,
@@ -474,6 +521,16 @@ impl SnapshotId {
 }
 
 impl SnapshotId {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("endOffset").integer(self.end_offset);
+        json.key("epoch").integer(i64::from(self.epoch));
+        json.end_object();
+    }
+}
+
+impl SnapshotId {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -543,6 +600,16 @@ impl LeaderIdAndEpoch {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl LeaderIdAndEpoch {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("leaderId").integer(i64::from(self.leader_id));
+        json.key("leaderEpoch").integer(i64::from(self.leader_epoch));
+        json.end_object();
     }
 }
 
@@ -644,6 +711,17 @@ impl NodeEndpoint {
 }
 
 impl NodeEndpoint {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("nodeId").integer(i64::from(self.node_id));
+        json.key("host").string(&self.host);
+        json.key("port").integer(i64::from(self.port));
+        json.end_object();
+    }
+}
+
+impl NodeEndpoint {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -691,6 +769,10 @@ impl crate::Message for FetchSnapshotResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

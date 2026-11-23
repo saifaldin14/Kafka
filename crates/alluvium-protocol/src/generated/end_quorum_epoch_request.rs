@@ -96,6 +96,25 @@ impl EndQuorumEpochRequest {
 }
 
 impl EndQuorumEpochRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("clusterId").nullable(self.cluster_id.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        if version == 1 {
+            json.key("leaderEndpoints").array(&self.leader_endpoints, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        }
+        json.end_object();
+    }
+}
+
+impl EndQuorumEpochRequest {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -199,6 +218,18 @@ impl TopicData {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl TopicData {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("topicName").string(&self.topic_name);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
     }
 }
 
@@ -322,6 +353,27 @@ impl PartitionData {
 }
 
 impl PartitionData {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("partitionIndex").integer(i64::from(self.partition_index));
+        json.key("leaderId").integer(i64::from(self.leader_id));
+        json.key("leaderEpoch").integer(i64::from(self.leader_epoch));
+        if version == 0 {
+            json.key("preferredSuccessors").array(&self.preferred_successors, |json, value| {
+                json.integer(i64::from(*value));
+            });
+        }
+        if version == 1 {
+            json.key("preferredCandidates").array(&self.preferred_candidates, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        }
+        json.end_object();
+    }
+}
+
+impl PartitionData {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -416,6 +468,16 @@ impl ReplicaInfo {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl ReplicaInfo {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("candidateId").integer(i64::from(self.candidate_id));
+        json.key("candidateDirectoryId").uuid(self.candidate_directory_id);
+        json.end_object();
     }
 }
 
@@ -519,6 +581,17 @@ impl LeaderEndpoint {
 }
 
 impl LeaderEndpoint {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("host").string(&self.host);
+        json.key("port").integer(i64::from(self.port));
+        json.end_object();
+    }
+}
+
+impl LeaderEndpoint {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -569,6 +642,10 @@ impl crate::Message for EndQuorumEpochRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

@@ -88,6 +88,21 @@ impl DescribeConfigsRequest {
 }
 
 impl DescribeConfigsRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("resources").array(&self.resources, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("includeSynonyms").boolean(self.include_synonyms);
+        if version >= 3 {
+            json.key("includeDocumentation").boolean(self.include_documentation);
+        }
+        json.end_object();
+    }
+}
+
+impl DescribeConfigsRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -243,6 +258,24 @@ impl DescribeConfigsResource {
 }
 
 impl DescribeConfigsResource {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("resourceType").integer(i64::from(self.resource_type));
+        json.key("resourceName").string(&self.resource_name);
+        json.key("configurationKeys").nullable(
+            self.configuration_keys.as_deref(),
+            |json, value| {
+                json.array(value, |json, value| {
+                    json.string(value);
+                });
+            },
+        );
+        json.end_object();
+    }
+}
+
+impl DescribeConfigsResource {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -312,6 +345,10 @@ impl crate::Message for DescribeConfigsRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

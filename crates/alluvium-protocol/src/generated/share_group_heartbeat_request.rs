@@ -104,6 +104,28 @@ impl ShareGroupHeartbeatRequest {
 }
 
 impl ShareGroupHeartbeatRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("groupId").string(&self.group_id);
+        json.key("memberId").string(&self.member_id);
+        json.key("memberEpoch").integer(i64::from(self.member_epoch));
+        json.key("rackId").nullable(self.rack_id.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("subscribedTopicNames").nullable(
+            self.subscribed_topic_names.as_deref(),
+            |json, value| {
+                json.array(value, |json, value| {
+                    json.string(value);
+                });
+            },
+        );
+        json.end_object();
+    }
+}
+
+impl ShareGroupHeartbeatRequest {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -164,6 +186,10 @@ impl crate::Message for ShareGroupHeartbeatRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

@@ -121,6 +121,30 @@ impl OffsetFetchResponse {
 }
 
 impl OffsetFetchResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        if version >= 3 {
+            json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        }
+        if version <= 7 {
+            json.key("topics").array(&self.topics, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        }
+        if (2..=7).contains(&version) {
+            json.key("errorCode").integer(i64::from(self.error_code));
+        }
+        if version >= 8 {
+            json.key("groups").array(&self.groups, |json, value| {
+                value.write_json_fields(json, version);
+            });
+        }
+        json.end_object();
+    }
+}
+
+impl OffsetFetchResponse {
     /// Fails if a field `version` doesn't have holds a value other than its default,
     /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
     /// not while sizing.
@@ -259,6 +283,18 @@ impl OffsetFetchResponseTopic {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl OffsetFetchResponseTopic {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
     }
 }
 
@@ -417,6 +453,23 @@ impl OffsetFetchResponsePartition {
 }
 
 impl OffsetFetchResponsePartition {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("partitionIndex").integer(i64::from(self.partition_index));
+        json.key("committedOffset").integer(self.committed_offset);
+        if version >= 5 {
+            json.key("committedLeaderEpoch").integer(i64::from(self.committed_leader_epoch));
+        }
+        json.key("metadata").nullable(self.metadata.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.end_object();
+    }
+}
+
+impl OffsetFetchResponsePartition {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -532,6 +585,19 @@ impl OffsetFetchResponseGroup {
 }
 
 impl OffsetFetchResponseGroup {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("groupId").string(&self.group_id);
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.end_object();
+    }
+}
+
+impl OffsetFetchResponseGroup {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -637,6 +703,23 @@ impl OffsetFetchResponseTopics {
                 unknown_tagged_fields: value_3,
             })
             .boxed()
+    }
+}
+
+impl OffsetFetchResponseTopics {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        if version <= 9 {
+            json.key("name").string(&self.name);
+        }
+        if version == 10 {
+            json.key("topicId").uuid(self.topic_id);
+        }
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
     }
 }
 
@@ -778,6 +861,21 @@ impl OffsetFetchResponsePartitions {
 }
 
 impl OffsetFetchResponsePartitions {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("partitionIndex").integer(i64::from(self.partition_index));
+        json.key("committedOffset").integer(self.committed_offset);
+        json.key("committedLeaderEpoch").integer(i64::from(self.committed_leader_epoch));
+        json.key("metadata").nullable(self.metadata.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.end_object();
+    }
+}
+
+impl OffsetFetchResponsePartitions {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -827,6 +925,10 @@ impl crate::Message for OffsetFetchResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

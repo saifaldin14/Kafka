@@ -103,6 +103,21 @@ impl DescribeLogDirsResponse {
 }
 
 impl DescribeLogDirsResponse {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("throttleTimeMs").integer(i64::from(self.throttle_time_ms));
+        if version >= 3 {
+            json.key("errorCode").integer(i64::from(self.error_code));
+        }
+        json.key("results").array(&self.results, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl DescribeLogDirsResponse {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -273,6 +288,28 @@ impl DescribeLogDirsResult {
 }
 
 impl DescribeLogDirsResult {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("errorCode").integer(i64::from(self.error_code));
+        json.key("logDir").string(&self.log_dir);
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        if version >= 4 {
+            json.key("totalBytes").integer(self.total_bytes);
+        }
+        if version >= 4 {
+            json.key("usableBytes").integer(self.usable_bytes);
+        }
+        if version == 5 {
+            json.key("isCordoned").boolean(self.is_cordoned);
+        }
+        json.end_object();
+    }
+}
+
+impl DescribeLogDirsResult {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -383,6 +420,18 @@ impl DescribeLogDirsTopic {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl DescribeLogDirsTopic {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("partitions").array(&self.partitions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
     }
 }
 
@@ -498,6 +547,18 @@ impl DescribeLogDirsPartition {
 }
 
 impl DescribeLogDirsPartition {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("partitionIndex").integer(i64::from(self.partition_index));
+        json.key("partitionSize").integer(self.partition_size);
+        json.key("offsetLag").integer(self.offset_lag);
+        json.key("isFutureKey").boolean(self.is_future_key);
+        json.end_object();
+    }
+}
+
+impl DescribeLogDirsPartition {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -551,6 +612,10 @@ impl crate::Message for DescribeLogDirsResponse {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

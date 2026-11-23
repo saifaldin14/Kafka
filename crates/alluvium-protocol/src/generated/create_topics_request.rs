@@ -97,6 +97,19 @@ impl CreateTopicsRequest {
 }
 
 impl CreateTopicsRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("topics").array(&self.topics, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("timeoutMs").integer(i64::from(self.timeout_ms));
+        json.key("validateOnly").boolean(self.validate_only);
+        json.end_object();
+    }
+}
+
+impl CreateTopicsRequest {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -246,6 +259,23 @@ impl CreatableTopic {
 }
 
 impl CreatableTopic {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("numPartitions").integer(i64::from(self.num_partitions));
+        json.key("replicationFactor").integer(i64::from(self.replication_factor));
+        json.key("assignments").array(&self.assignments, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("configs").array(&self.configs, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl CreatableTopic {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -371,6 +401,18 @@ impl CreatableReplicaAssignment {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl CreatableReplicaAssignment {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("partitionIndex").integer(i64::from(self.partition_index));
+        json.key("brokerIds").array(&self.broker_ids, |json, value| {
+            json.integer(i64::from(*value));
+        });
+        json.end_object();
     }
 }
 
@@ -507,6 +549,18 @@ impl CreatableTopicConfig {
 }
 
 impl CreatableTopicConfig {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("value").nullable(self.value.as_deref(), |json, value| {
+            json.string(value);
+        });
+        json.end_object();
+    }
+}
+
+impl CreatableTopicConfig {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -567,6 +621,10 @@ impl crate::Message for CreateTopicsRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 

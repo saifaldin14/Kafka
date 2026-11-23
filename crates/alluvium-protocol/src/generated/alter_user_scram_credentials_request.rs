@@ -81,6 +81,20 @@ impl AlterUserScramCredentialsRequest {
 }
 
 impl AlterUserScramCredentialsRequest {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, version: i16) {
+        json.begin_object();
+        json.key("deletions").array(&self.deletions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.key("upsertions").array(&self.upsertions, |json, value| {
+            value.write_json_fields(json, version);
+        });
+        json.end_object();
+    }
+}
+
+impl AlterUserScramCredentialsRequest {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -158,6 +172,16 @@ impl ScramCredentialDeletion {
                 unknown_tagged_fields: value_2,
             })
             .boxed()
+    }
+}
+
+impl ScramCredentialDeletion {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("mechanism").integer(i64::from(self.mechanism));
+        json.end_object();
     }
 }
 
@@ -280,6 +304,19 @@ impl ScramCredentialUpsertion {
 }
 
 impl ScramCredentialUpsertion {
+    /// Writes the struct's fields at `version` as a JSON object.
+    pub(crate) fn write_json_fields(&self, json: &mut crate::JsonWriter, _version: i16) {
+        json.begin_object();
+        json.key("name").string(&self.name);
+        json.key("mechanism").integer(i64::from(self.mechanism));
+        json.key("iterations").integer(i64::from(self.iterations));
+        json.key("salt").redacted(self.salt.is_empty());
+        json.key("saltedPassword").redacted(self.salted_password.is_empty());
+        json.end_object();
+    }
+}
+
+impl ScramCredentialUpsertion {
     fn write_fields(
         &self,
         writer: &mut crate::Writer,
@@ -332,6 +369,10 @@ impl crate::Message for AlterUserScramCredentialsRequest {
             let mut sizing = crate::Writer::sizing();
             self.write_fields(&mut sizing, version).err().unwrap_or(error)
         })
+    }
+
+    fn write_json(&self, json: &mut crate::JsonWriter, version: i16) {
+        self.write_json_fields(json, version);
     }
 }
 
