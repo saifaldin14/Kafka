@@ -631,9 +631,9 @@ mod tests {
         );
     }
 
-    /// The table `cargo xtask schemas dump-errors` read from Kafka's own `Errors.values()`.
+    /// The table `cargo xtask golden errors` read from Kafka's own `Errors.values()`.
     fn golden() -> Vec<ErrorEntry> {
-        let path = crate::repo_root().join("xtask/tests/fixtures/kafka-4.4.0-errors.json");
+        let path = crate::repo_root().join(crate::golden::ERRORS_GOLDEN);
         let json: serde_json::Value =
             serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
         json.as_array()

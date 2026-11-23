@@ -506,11 +506,11 @@ Done when: cases: int32 array length 2^31−1, compact length 0xFFFFFFFF, 10,001
 P1 · M1 · Task · deps: PROTO-0112 · labels: docs, security
 Done when: each limit, its default, its Kafka constant and the error returned are listed.
 
-## [To Do] PROTO-F10 Golden vectors from Kafka
+## [In Progress] PROTO-F10 Golden vectors from Kafka
 P1 · M1 · Feature · deps: PROTO-F05
 Scope: A pinned JVM harness that serializes messages with Kafka 4.4.0's own classes; golden files for every API version; byte-for-byte comparison tests.
 
-### [To Do] PROTO-0115 Pinned JVM harness `tools/kafka-golden/` on `org.apache.kafka:kafka-clients:4.4.0`, run in a digest-pinned Temurin container by `cargo xtask golden`
+### [Done] PROTO-0115 Pinned JVM harness `tools/kafka-golden/` on `org.apache.kafka:kafka-clients:4.4.0`, run in a digest-pinned Temurin container by `cargo xtask golden`
 P1 · M1 · Task · deps: none · ref: ADR-0008
 Done when: no host JVM is needed; dependency checksums are verified; the harness source carries Apache-2.0 attribution where it adapts Kafka code.
 

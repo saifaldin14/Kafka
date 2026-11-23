@@ -46,6 +46,28 @@ pub(crate) enum Command {
     Bench {
         base: Option<String>,
     },
+    /// `golden <dump>`.
+    Golden(GoldenDump),
+}
+
+/// A dump of `cargo xtask golden`: what Kafka's own classes do, recorded by the harness
+/// in `tools/kafka-golden/`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum GoldenDump {
+    /// `errors`: Kafka's error table, for the generated `ErrorCode`.
+    Errors,
+}
+
+impl GoldenDump {
+    /// Every dump, in the order `help` lists them.
+    pub(crate) const ALL: [GoldenDump; 1] = [GoldenDump::Errors];
+
+    /// The dump's name on the command line and in the harness.
+    pub(crate) fn name(self) -> &'static str {
+        match self {
+            GoldenDump::Errors => "errors",
+        }
+    }
 }
 
 /// A `cargo xtask fuzz` command.
@@ -96,8 +118,6 @@ pub(crate) enum SchemasCommand {
     Verify,
     /// `vendor --tag <tag> [--dry-run]`.
     Vendor { tag: String, dry_run: bool },
-    /// `dump-errors`.
-    DumpErrors,
 }
 
 /// Options for `cargo xtask ci`.
@@ -186,8 +206,8 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
         "Copy the schemas from an apache/kafka tag and write the manifest (needs the network)",
     ),
     (
-        "schemas dump-errors",
-        "Dump Kafka's runtime error table from the client jar for the ErrorCode golden test (needs the network and Docker)",
+        "golden errors",
+        "Record Kafka's runtime error table with the Kafka harness, for the ErrorCode golden test (needs the network and Docker)",
     ),
     (
         "lint-canary",
@@ -336,6 +356,7 @@ pub(crate) fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Command,
             }),
         },
         "fuzz" => parse_fuzz(rest).map(Command::Fuzz),
+        "golden" => parse_golden(rest).map(Command::Golden),
         "codegen" => match rest {
             [] => Ok(Command::Codegen { check: false }),
             [flag] if flag == "--check" => Ok(Command::Codegen { check: true }),
@@ -459,6 +480,20 @@ fn parse_tools_install(rest: &[String]) -> Result<(Vec<String>, Vec<String>), Us
         }
     }
     Ok((options.steps, tools))
+}
+
+fn parse_golden(rest: &[String]) -> Result<GoldenDump, UsageError> {
+    let Some((name, rest)) = rest.split_first() else {
+        return Err(UsageError::MissingSubcommand { command: "golden" });
+    };
+    let dump = GoldenDump::ALL
+        .into_iter()
+        .find(|dump| dump.name() == name)
+        .ok_or_else(|| UsageError::UnknownSubcommand {
+            command: "golden",
+            name: name.clone(),
+        })?;
+    no_arguments("golden", rest).map(|()| dump)
 }
 
 fn parse_fuzz(rest: &[String]) -> Result<FuzzCommand, UsageError> {
@@ -635,9 +670,6 @@ fn parse_schemas(rest: &[String]) -> Result<SchemasCommand, UsageError> {
     };
     match sub.as_str() {
         "verify" => no_arguments("schemas verify", rest).map(|()| SchemasCommand::Verify),
-        "dump-errors" => {
-            no_arguments("schemas dump-errors", rest).map(|()| SchemasCommand::DumpErrors)
-        }
         "vendor" => {
             let mut tag = None;
             let mut dry_run = false;
@@ -714,8 +746,8 @@ mod tests {
     use std::ffi::OsString;
 
     use super::{
-        BacklogCommand, CiOptions, Command, DocsCommand, FuzzCommand, SchemasCommand, UsageError,
-        parse,
+        BacklogCommand, CiOptions, Command, DocsCommand, FuzzCommand, GoldenDump, SchemasCommand,
+        UsageError, parse,
     };
 
     fn args(list: &[&str]) -> Vec<OsString> {
@@ -1138,9 +1170,12 @@ mod tests {
             Ok(Command::Schemas(SchemasCommand::Verify))
         );
         assert_eq!(
-            parse(args(&["schemas", "dump-errors"])),
-            Ok(Command::Schemas(SchemasCommand::DumpErrors))
+            parse(args(&["golden", "errors"])),
+            Ok(Command::Golden(GoldenDump::Errors))
         );
+        assert!(parse(args(&["golden"])).is_err());
+        assert!(parse(args(&["golden", "nothing"])).is_err());
+        assert!(parse(args(&["golden", "errors", "extra"])).is_err());
         assert_eq!(
             parse(args(&["schemas", "vendor", "--dry-run", "--tag", "4.4.0"])),
             Ok(Command::Schemas(SchemasCommand::Vendor {
