@@ -49,7 +49,8 @@ import org.apache.kafka.common.protocol.types.RawTaggedField;
  * nullable, tagged fields where there are none.
  *
  * <p>{@code utf8.json} records how Kafka decodes invalid UTF-8 in a string field and
- * writes it back. {@code cases.json} indexes every case.
+ * writes it back; {@code headers.json}, the request and response headers of every API
+ * ({@link HeadersDump}). {@code cases.json} indexes every case.
  */
 final class MessagesDump {
     private static final JsonNodeFactory JSON = JsonNodeFactory.instance;
@@ -74,6 +75,7 @@ final class MessagesDump {
         Files.createDirectories(out);
         Files.writeString(out.resolve("cases.json"), dump.mapper.writeValueAsString(dump.cases) + "\n");
         Files.writeString(out.resolve("utf8.json"), dump.mapper.writeValueAsString(Utf8Cases.all()) + "\n");
+        Files.writeString(out.resolve("headers.json"), dump.mapper.writeValueAsString(HeadersDump.all()) + "\n");
     }
 
     private void message(Schemas.Message message) throws Exception {

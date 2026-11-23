@@ -51,18 +51,33 @@ impl From<EncodeError> for Failure {
     }
 }
 
-/// [`transcode`] for one message type.
-pub(crate) type Transcode = fn(&Bytes, i16, i16, bool) -> Result<(Bytes, usize), Failure>;
+/// What [`transcode`] writes around the message.
+pub(crate) enum Wrap {
+    /// Nothing.
+    None,
+    /// The version, as an `int16`, before the input and the output.
+    VersionPrefix,
+    /// The output is a frame from `encode_response`: a response header, then the message.
+    Response {
+        api: crate::ApiKey,
+        correlation_id: i32,
+    },
+    /// The output is a frame from `encode_request`: this header, then the message.
+    Request(crate::generated::request_header::RequestHeader),
+}
 
-/// Decodes `input` as `M` at version `from`, and encodes it at version `to`, returning the
-/// bytes and the size `encoded_size` reports. With `prefixed`, the input and output start
-/// with the version, as an `int16`.
+/// [`transcode`] for one message type.
+pub(crate) type Transcode = fn(&Bytes, i16, i16, &Wrap) -> Result<(Bytes, usize), Failure>;
+
+/// Decodes `input` as `M` at version `from`, and encodes it at version `to`, wrapped as
+/// `wrap` says, returning the bytes and the size `encoded_size` reports for them.
 pub(crate) fn transcode<M: Message>(
     input: &Bytes,
     from: i16,
     to: i16,
-    prefixed: bool,
+    wrap: &Wrap,
 ) -> Result<(Bytes, usize), Failure> {
+    let prefixed = matches!(wrap, Wrap::VersionPrefix);
     let mut reader = Reader::new(input.clone());
     let message = if prefixed {
         let (version, message) = decode_version_prefixed::<M>(&mut reader)?;
@@ -75,16 +90,29 @@ pub(crate) fn transcode<M: Message>(
         return Err(Failure::Trailing(reader.remaining()));
     }
     let size = message.encoded_size(to)?.total;
-    if prefixed {
-        Ok((
-            encode_version_prefixed(&message, to)?,
-            size.saturating_add(2),
-        ))
-    } else {
-        let mut writer = Writer::new();
-        message.encode(&mut writer, to)?;
-        Ok((writer.into_bytes(), size))
-    }
+    let header_error = |error: crate::HeaderError| match error {
+        crate::HeaderError::Encode(error) => Failure::Encode(error),
+        other => panic!("the header of a golden case: {other}"),
+    };
+    let frame = match wrap {
+        Wrap::None => {
+            let mut writer = Writer::new();
+            message.encode(&mut writer, to)?;
+            return Ok((writer.into_bytes(), size));
+        }
+        Wrap::VersionPrefix => {
+            return Ok((
+                encode_version_prefixed(&message, to)?,
+                size.saturating_add(2),
+            ));
+        }
+        Wrap::Response {
+            api,
+            correlation_id,
+        } => crate::encode_response(*api, to, *correlation_id, &message).map_err(header_error)?,
+        Wrap::Request(header) => crate::encode_request(header, &message).map_err(header_error)?,
+    };
+    Ok((Bytes::from(frame.segments().concat()), frame.len()))
 }
 
 fn golden() -> PathBuf {
@@ -123,6 +151,54 @@ fn matches_kafka(error: &EncodeError, exception: &str, message: Option<&str>) ->
             exception == "NullPointerException" && message.is_none()
         }
         _ => false,
+    }
+}
+
+/// How a case's message is also checked wrapped, and the bytes it must then give: a data
+/// type with its version prefix, as Kafka's `toVersionPrefixedBytes` writes it, and a
+/// request or response in a frame after its header (whose own bytes the header vectors
+/// check). `body` is Kafka's encoding of the message.
+fn wrapped(message: &str, file: &str, version: i16, body: &[u8]) -> Option<(Wrap, Bytes)> {
+    use crate::generated::request_header::RequestHeader;
+    let api = |suffix: &str| {
+        let name = message.strip_suffix(suffix)?;
+        crate::ApiKey::ALL
+            .into_iter()
+            .find(|api| api.name() == name)
+    };
+    let mut writer = Writer::new();
+    let wrap = if file.starts_with("data/") {
+        writer.write_i16(version);
+        Wrap::VersionPrefix
+    } else if let Some(api) = api("Request") {
+        let header = RequestHeader {
+            request_api_key: api.id(),
+            request_api_version: version,
+            correlation_id: 7,
+            client_id: Some("golden".to_owned()),
+            ..RequestHeader::default()
+        };
+        crate::encode_request_header(&header, &mut writer).ok()?;
+        Wrap::Request(header)
+    } else {
+        let api = api("Response")?;
+        crate::encode_response_header(api, version, 7, &mut writer).ok()?;
+        Wrap::Response {
+            api,
+            correlation_id: 7,
+        }
+    };
+    let mut framed = writer.into_bytes().to_vec();
+    framed.extend_from_slice(body);
+    Some((wrap, Bytes::from(framed)))
+}
+
+/// What [`transcode`] reads for `wrap`: the prefixed bytes for a version prefix, and
+/// otherwise the message alone, since only the output carries a header.
+fn framed_input(wrap: &Wrap, framed: &Bytes, body: &Bytes) -> Bytes {
+    match wrap {
+        Wrap::VersionPrefix => framed.clone(),
+        _ => body.clone(),
     }
 }
 
@@ -167,6 +243,7 @@ fn every_case_kafka_wrote_decodes_and_encodes_as_kafka_writes_it() {
         .collect();
     let mut failures = Vec::new();
     let mut checked = 0_usize;
+    let mut wrapped_checked = 0_usize;
     for case in cases {
         let message = case["message"].as_str().unwrap();
         let variant = case["variant"].as_str().unwrap();
@@ -183,7 +260,7 @@ fn every_case_kafka_wrote_decodes_and_encodes_as_kafka_writes_it() {
             .unwrap_or_else(|| panic!("no codec for {message}"));
         let from = built_at.unwrap_or(version);
         let input = read(built[&(message, variant, i64::from(from))]);
-        let result = transcode(&input, from, version, false);
+        let result = transcode(&input, from, version, &Wrap::None);
         checked = checked.saturating_add(1);
         match (case.get("file").and_then(serde_json::Value::as_str), result) {
             (Some(file), Ok((bytes, size))) => {
@@ -195,19 +272,22 @@ fn every_case_kafka_wrote_decodes_and_encodes_as_kafka_writes_it() {
                         "{name}: encoded_size {size}, wrote {}",
                         expected.len()
                     ));
-                } else if file.starts_with("data/") && built_at.is_none() {
-                    let mut prefixed = version.to_be_bytes().to_vec();
-                    prefixed.extend_from_slice(&expected);
-                    let prefixed = Bytes::from(prefixed);
-                    match transcode(&prefixed, version, version, true) {
-                        Ok((bytes, size)) if bytes == prefixed && size == prefixed.len() => {}
+                } else if built_at.is_none()
+                    && let Some((wrap, framed)) = wrapped(message, file, version, &expected)
+                {
+                    wrapped_checked = wrapped_checked.saturating_add(1);
+                    match transcode(
+                        &framed_input(&wrap, &framed, &expected),
+                        version,
+                        version,
+                        &wrap,
+                    ) {
+                        Ok((bytes, size)) if bytes == framed && size == framed.len() => {}
                         Ok((bytes, _)) => failures.push(format!(
-                            "{name}: version-prefixed: {}",
-                            first_difference(&prefixed, &bytes).unwrap_or_default()
+                            "{name}: wrapped: {}",
+                            first_difference(&framed, &bytes).unwrap_or_default()
                         )),
-                        Err(failure) => {
-                            failures.push(format!("{name}: version-prefixed: {failure}"));
-                        }
+                        Err(failure) => failures.push(format!("{name}: wrapped: {failure}")),
                     }
                 }
             }
@@ -229,6 +309,10 @@ fn every_case_kafka_wrote_decodes_and_encodes_as_kafka_writes_it() {
     }
     assert!(checked > 3000, "the cases are all read: {checked}");
     assert!(
+        wrapped_checked > 1900,
+        "every case Kafka wrote is also wrapped: {wrapped_checked}"
+    );
+    assert!(
         failures.is_empty(),
         "{} of {checked} golden cases fail:\n{}",
         failures.len(),
@@ -245,16 +329,7 @@ fn strings_with_invalid_utf8_decode_as_kafka_decodes_them() {
     let mut failures = Vec::new();
     for case in cases.as_array().unwrap() {
         let name = case["name"].as_str().unwrap();
-        let hex = |key: &str| -> Vec<u8> {
-            case[key]
-                .as_str()
-                .unwrap()
-                .as_bytes()
-                .chunks(2)
-                .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
-                .collect()
-        };
-        let (input, kafka) = (hex("input"), hex("kafka"));
+        let (input, kafka) = (hex(&case["input"]), hex(&case["kafka"]));
         let mut framed = i16::try_from(input.len()).unwrap().to_be_bytes().to_vec();
         framed.extend_from_slice(&input);
         let text = Reader::new(Bytes::from(framed))
@@ -313,4 +388,86 @@ fn write_messages_for_the_reverse_check() {
             std::fs::write(dir.join(format!("{name}_v{version}.bin")), file).unwrap();
         }
     }
+}
+
+/// The bytes a JSON string of hex digits stands for.
+fn hex(value: &serde_json::Value) -> Vec<u8> {
+    value
+        .as_str()
+        .unwrap()
+        .as_bytes()
+        .chunks(2)
+        .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+        .collect()
+}
+
+/// Each request and response header in `headers.json`, as Kafka 4.4.0 writes and reads
+/// it, for every API at its oldest, latest and next version, with a null, an empty and a
+/// non-ASCII client id (PROTO-0092, PROTO-0120).
+#[test]
+fn headers_are_written_and_read_as_kafka_does() {
+    use crate::generated::request_header::RequestHeader;
+    use crate::{
+        ApiKey, decode_request_header, decode_response_header, encode_request_header,
+        encode_response_header,
+    };
+    let cases: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(golden().join("headers.json")).unwrap()).unwrap();
+    let cases = cases.as_array().unwrap();
+    assert!(cases.len() > 800, "the cases are all read");
+    let mut failures = Vec::new();
+    for case in cases {
+        let number = |key: &str| case[key].as_i64().unwrap();
+        let api = ApiKey::from_id(i16::try_from(number("api_key")).unwrap()).unwrap();
+        let version = i16::try_from(number("version")).unwrap();
+        let correlation_id = i32::try_from(number("correlation_id")).unwrap();
+        let client_id = case["client_id"].as_str().map(str::to_owned);
+        let name = format!("{} v{version}, client id {client_id:?}", api.name());
+        let header = RequestHeader {
+            request_api_key: api.id(),
+            request_api_version: version,
+            correlation_id,
+            client_id,
+            ..RequestHeader::default()
+        };
+        let (request, response) = (hex(&case["request"]), hex(&case["response"]));
+        let mut writer = Writer::new();
+        encode_request_header(&header, &mut writer).unwrap();
+        if let Some(difference) = first_difference(&request, &writer.into_bytes()) {
+            failures.push(format!("{name}: request header: {difference}"));
+        }
+        match decode_request_header(&mut Reader::new(Bytes::from(request))) {
+            Ok(decoded) => {
+                let kafka = (
+                    i64::from(decoded.header_version),
+                    decoded.header.client_id.as_deref(),
+                    decoded.size,
+                );
+                let expected = (
+                    number("request_header_version"),
+                    case["parsed_client_id"].as_str(),
+                    usize::try_from(number("parsed_size")).unwrap(),
+                );
+                if kafka != expected
+                    || decoded.api != api
+                    || decoded.header.correlation_id != correlation_id
+                {
+                    failures.push(format!(
+                        "{name}: decoded {decoded:?}, Kafka read {expected:?}"
+                    ));
+                }
+            }
+            Err(error) => failures.push(format!("{name}: request header: {error}")),
+        }
+        let mut writer = Writer::new();
+        encode_response_header(api, version, correlation_id, &mut writer).unwrap();
+        if let Some(difference) = first_difference(&response, &writer.into_bytes()) {
+            failures.push(format!("{name}: response header: {difference}"));
+        }
+        let decoded = decode_response_header(api, version, &mut Reader::new(Bytes::from(response)));
+        if decoded != Ok(correlation_id) {
+            failures.push(format!("{name}: response header decoded as {decoded:?}"));
+        }
+    }
+    assert!(failures.is_empty(), "{}", failures.join("\n"));
 }

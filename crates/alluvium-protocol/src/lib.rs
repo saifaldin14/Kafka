@@ -64,7 +64,7 @@ pub use error_code::{ErrorCode, UnknownErrorCode};
 pub use framed::Framing;
 pub use header::{
     DecodedRequestHeader, HeaderError, decode_request_header, decode_response_header,
-    encode_request_header, encode_response_header,
+    encode_request, encode_request_header, encode_response, encode_response_header,
 };
 pub use limits::{DecodeLimits, Limit};
 pub use message::{EncodedSize, Message, decode_version_prefixed, encode_version_prefixed};

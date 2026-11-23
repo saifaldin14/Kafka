@@ -11,6 +11,10 @@
 //! version from them ([`ApiKey::request_header_version`]), and reads the header. A
 //! response header carries only the correlation id; its version comes from the request
 //! it answers ([`ApiKey::response_header_version`]).
+//!
+//! [`encode_response`] and [`encode_request`] put a header and a body into one
+//! [`EncodedFrame`] that shares the body's record batches; its length is exact, so the
+//! network layer writes it as the frame's length prefix.
 
 use crate::api_key::ApiKey;
 use crate::error::{DecodeError, EncodeError};
@@ -18,6 +22,7 @@ use crate::generated::request_header::RequestHeader;
 use crate::generated::response_header::ResponseHeader;
 use crate::message::Message;
 use crate::reader::Reader;
+use crate::writer::EncodedFrame;
 use crate::writer::Writer;
 
 /// Why a header couldn't be read or written.
@@ -40,8 +45,9 @@ pub enum HeaderError {
     /// The header didn't decode.
     #[error("malformed request header, API key {api_key} as far as read: {error}")]
     Malformed {
-        /// The API key, or -1 if the input ended before it: the best guess the network
-        /// layer has for choosing its error response.
+        /// The API key, or -1 if the input ended before it: Kafka's "best guess of the
+        /// apiKeyId", for the log. Kafka sends no response to a header it can't read; it
+        /// closes the connection.
         api_key: i16,
         /// What went wrong.
         error: DecodeError,
@@ -77,8 +83,15 @@ pub fn decode_request_header(reader: &mut Reader) -> Result<DecodedRequestHeader
     let start = reader.offset();
     let mut peek = Reader::new(reader.buf.slice(..reader.buf.len().min(4)));
     let malformed = |api_key| move |error| HeaderError::Malformed { api_key, error };
-    let api_key = peek.read_i16().map_err(malformed(-1))?;
-    let version = peek.read_i16().map_err(malformed(api_key))?;
+    // The peek reads from offset 0; its errors name the offset in the input.
+    let peeked = |api_key| {
+        move |mut error: DecodeError| {
+            error.offset = error.offset.saturating_add(start);
+            HeaderError::Malformed { api_key, error }
+        }
+    };
+    let api_key = peek.read_i16().map_err(peeked(-1))?;
+    let version = peek.read_i16().map_err(peeked(api_key))?;
     let api = ApiKey::from_id(api_key).ok_or(HeaderError::UnknownApiKey { api_key })?;
     let header_version = api
         .request_header_version(version)
@@ -136,6 +149,43 @@ pub fn encode_response_header(
         ..ResponseHeader::default()
     };
     Ok(header.encode(writer, header_version)?)
+}
+
+/// A response: its header, for a request for `api` at `version` with `correlation_id`,
+/// then `body`, as one frame that shares the body's record batches. The frame's length is
+/// exact, so it is the length prefix the network layer writes before it.
+///
+/// # Errors
+///
+/// As [`encode_response_header`], and [`HeaderError::Encode`] if the body doesn't encode.
+// Parity: clients/src/main/java/org/apache/kafka/common/requests/AbstractResponse.java@4.4.0 AbstractResponse.toSend
+pub fn encode_response<M: Message>(
+    api: ApiKey,
+    version: i16,
+    correlation_id: i32,
+    body: &M,
+) -> Result<EncodedFrame, HeaderError> {
+    let mut writer = Writer::sharing();
+    encode_response_header(api, version, correlation_id, &mut writer)?;
+    body.encode(&mut writer, version)?;
+    Ok(writer.into_frame())
+}
+
+/// A request to another node: `header`, then `body` at the header's API version, as one
+/// frame that shares the body's record batches. The frame's length is exact.
+///
+/// # Errors
+///
+/// As [`encode_request_header`], and [`HeaderError::Encode`] if the body doesn't encode.
+// Parity: clients/src/main/java/org/apache/kafka/common/requests/AbstractRequest.java@4.4.0 AbstractRequest.toSend
+pub fn encode_request<M: Message>(
+    header: &RequestHeader,
+    body: &M,
+) -> Result<EncodedFrame, HeaderError> {
+    let mut writer = Writer::sharing();
+    encode_request_header(header, &mut writer)?;
+    body.encode(&mut writer, header.request_api_version)?;
+    Ok(writer.into_frame())
 }
 
 /// Reads the header of a response to a request for `api` at `version`, and returns its
@@ -311,6 +361,12 @@ mod tests {
             decode(&[0, 3]),
             Err(HeaderError::Malformed { api_key: 3, .. })
         ));
+        let mut reader = Reader::new(Bytes::from_static(&[9, 9, 9, 0, 3, 0]));
+        reader.take(3).unwrap();
+        let Err(HeaderError::Malformed { error, .. }) = decode_request_header(&mut reader) else {
+            panic!("a truncated version");
+        };
+        assert_eq!(error.offset, 5, "offsets count from the start of the input");
         assert!(matches!(
             decode(&[0, 3, 0, 12, 0]),
             Err(HeaderError::Malformed { api_key: 3, .. })

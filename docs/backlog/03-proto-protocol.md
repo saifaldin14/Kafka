@@ -374,7 +374,7 @@ Done when: benchmarks run in the benchmark CI job with recorded baselines.
 P1 · M1 · Task · deps: PROTO-0082, PROTO-0067 · labels: docs
 Done when: each DecodeError and EncodeError variant is listed with its Kafka equivalent message.
 
-## [In Progress] PROTO-F06 Request and response headers
+## [Done] PROTO-F06 Request and response headers
 P0 · M1 · Feature · deps: PROTO-F05
 Scope: Request header v1-v2 (the versions valid in Kafka 4.4.0), response header v0-v1, the ApiVersions response-header exception, header version selection per API version.
 
@@ -384,7 +384,7 @@ Done when: a generated function covers every API key; flexible ranges are open-e
 
 ### [Done] PROTO-0087 Request header decode: peek API key and version, select the header version, decode v1/v2, map a null client id to empty
 P0 · M1 · Task · deps: PROTO-0086 · labels: decoder · ref: clients/src/main/java/org/apache/kafka/common/requests/RequestHeader.java parse @4.4.0
-Done when: returns the header and its encoded size; unknown API key → `HeaderError::UnknownApiKey`; API without valid versions → `HeaderError::UnsupportedApi`; any other failure carries the best-guess API key for NET-F04's error response; RequestHeaderTest cases ported.
+Done when: returns the header and its encoded size; unknown API key → `HeaderError::UnknownApiKey`; API without valid versions → `HeaderError::UnsupportedApi`; any other failure carries the best-guess API key for the log (Kafka closes the connection rather than responding); RequestHeaderTest cases ported.
 
 ### [Done] PROTO-0088 Request header encode for inter-node clients (v1, and v2 with the classic nullable `ClientId` and a tagged-field section)
 P0 · M1 · Task · deps: PROTO-0086 · ref: clients/src/main/resources/common/message/RequestHeader.json @4.4.0
@@ -398,11 +398,11 @@ Done when: correlation id copied from the request; ApiVersions always uses v0; g
 P0 · M1 · Task · deps: PROTO-0086 · labels: decoder · ref: clients/src/main/resources/common/message/ResponseHeader.json @4.4.0
 Done when: decode v0 and v1; a truncated header is a DecodeError; matching is left to the caller (NET-F10).
 
-### [To Do] PROTO-0091 Header plus body composition into one output with exact size precomputation (length prefix left to NET-F03)
+### [Done] PROTO-0091 Header plus body composition into one output with exact size precomputation (length prefix left to NET-F03)
 P0 · M1 · Task · deps: PROTO-0089, PROTO-0088, PROTO-0102
 Done when: computed size equals bytes produced for every golden response; zero-copy records chunks from PROTO-F08 are preserved.
 
-### [To Do] PROTO-0092 Header tests over every API key and version: header version table, null/empty/non-ASCII client ids, ApiVersions exception
+### [Done] PROTO-0092 Header tests over every API key and version: header version table, null/empty/non-ASCII client ids, ApiVersions exception
 P0 · M1 · Task · deps: PROTO-0087, PROTO-0090, PROTO-0091 · labels: test · ref: clients/src/test/java/org/apache/kafka/common/requests/RequestHeaderTest.java @4.4.0
 Done when: tests cover all 4.4.0 API keys at min, max and max+1 versions.
 
@@ -506,7 +506,7 @@ Done when: cases: int32 array length 2^31−1, compact length 0xFFFFFFFF, 10,001
 P1 · M1 · Task · deps: PROTO-0112 · labels: docs, security
 Done when: each limit, its default, its Kafka constant and the error returned are listed.
 
-## [In Progress] PROTO-F10 Golden vectors from Kafka
+## [Done] PROTO-F10 Golden vectors from Kafka
 P1 · M1 · Feature · deps: PROTO-F05
 Scope: A pinned JVM harness that serializes messages with Kafka 4.4.0's own classes; golden files for every API version; byte-for-byte comparison tests.
 
@@ -530,7 +530,7 @@ Done when: every golden case passes; failures report API, version, variant and f
 P1 · M1 · Task · deps: PROTO-0118, PROTO-0081 · labels: test
 Done when: 1000 proptest messages per API and version pass the harness `verify` mode; mismatches name API, version and offset.
 
-### [To Do] PROTO-0120 Golden vectors for request header v1/v2 and response header v0/v1, including null client id and the ApiVersions v0 response header
+### [Done] PROTO-0120 Golden vectors for request header v1/v2 and response header v0/v1, including null client id and the ApiVersions v0 response header
 P1 · M1 · Task · deps: PROTO-0117, PROTO-0092 · labels: test
 Done when: Rust header encode and decode match the files.
 
