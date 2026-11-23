@@ -17,7 +17,7 @@ use std::path::{Path, PathBuf};
 use bytes::Bytes;
 
 use crate::{
-    DecodeError, EncodeError, Message, Reader, Writer, decode_version_prefixed,
+    DecodeError, EncodeError, Message, Reader, Segment, Writer, decode_version_prefixed,
     encode_version_prefixed,
 };
 
@@ -112,7 +112,19 @@ pub(crate) fn transcode<M: Message>(
         } => crate::encode_response(*api, to, *correlation_id, &message).map_err(header_error)?,
         Wrap::Request(header) => crate::encode_request(header, &message).map_err(header_error)?,
     };
-    Ok((Bytes::from(frame.segments().concat()), frame.len()))
+    let mut bytes = Vec::with_capacity(frame.len());
+    for segment in frame.segments() {
+        match segment {
+            Segment::Bytes(part) => bytes.extend_from_slice(part),
+            // A decoded message holds its batches in memory, so this can't happen.
+            Segment::Deferred { len, .. } => {
+                return Err(Failure::Encode(EncodeError::DeferredRecordsNotInFrame {
+                    len: *len,
+                }));
+            }
+        }
+    }
+    Ok((Bytes::from(bytes), frame.len()))
 }
 
 fn golden() -> PathBuf {

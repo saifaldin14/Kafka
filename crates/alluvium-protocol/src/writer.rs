@@ -4,6 +4,8 @@
 use alluvium_types::Uuid;
 use bytes::{BufMut, Bytes, BytesMut};
 
+use crate::error::EncodeError;
+
 /// Appends Kafka primitives to a [`BytesMut`], or only counts them.
 ///
 /// A writer from [`Writer::sharing`] shares record batches and zero-copy byte fields
@@ -40,7 +42,7 @@ pub struct Writer {
 struct Shared {
     /// Each value, with the length `buf` had when it was written: the frame is `buf` with
     /// each value inserted at its offset.
-    values: Vec<(usize, Bytes)>,
+    values: Vec<(usize, Segment)>,
     /// Their total length.
     len: usize,
 }
@@ -87,10 +89,39 @@ impl Writer {
         match &mut self.shared {
             Some(shared) if !bytes.is_empty() => {
                 shared.len = shared.len.saturating_add(bytes.len());
-                shared.values.push((self.buf.len(), bytes.clone()));
+                shared
+                    .values
+                    .push((self.buf.len(), Segment::Bytes(bytes.clone())));
             }
             _ => self.put_slice(bytes),
         }
+    }
+
+    /// Appends a placeholder for `len` bytes of record batches the network layer sends
+    /// from where they are stored, identified by the caller's `token`.
+    ///
+    /// # Errors
+    ///
+    /// [`EncodeError::DeferredRecordsNotInFrame`] unless this is a [`Writer::sharing`]
+    /// or counting writer: the batches aren't in memory to copy, as Kafka's `Writable`
+    /// refuses records that aren't `MemoryRecords`.
+    // Parity: clients/src/main/java/org/apache/kafka/common/protocol/Writable.java@4.4.0 Writable.writeRecords
+    // Parity: clients/src/main/java/org/apache/kafka/common/protocol/SendBuilder.java@4.4.0 SendBuilder.writeRecords
+    pub(crate) fn put_deferred(&mut self, len: usize, token: u64) -> Result<(), EncodeError> {
+        if self.counting {
+            self.counted = self.counted.saturating_add(len);
+        } else {
+            let shared = self
+                .shared
+                .as_mut()
+                .ok_or(EncodeError::DeferredRecordsNotInFrame { len })?;
+            shared.len = shared.len.saturating_add(len);
+            shared
+                .values
+                .push((self.buf.len(), Segment::Deferred { len, token }));
+        }
+        self.zero_copy = self.zero_copy.saturating_add(len);
+        Ok(())
     }
 
     /// An empty writer.
@@ -100,7 +131,7 @@ impl Writer {
 
     /// An empty writer that shares record batches and zero-copy byte values with the
     /// message instead of copying them, for a frame sent with a vectored write
-    /// ([`Writer::into_frame`]).
+    /// ([`Writer::into_frame`]). It is the only kind that writes deferred record batches.
     pub fn sharing() -> Writer {
         Writer {
             shared: Some(Box::default()),
@@ -200,17 +231,38 @@ impl Writer {
 
     /// The bytes written so far, in one buffer; none for a counting writer. Shared values
     /// are copied into it; [`Writer::into_frame`] keeps them shared.
+    ///
+    /// # Panics
+    ///
+    /// If a sharing writer holds deferred record batches, which only the network layer
+    /// can read: send such a message with [`Writer::into_frame`]. Decoding never gives
+    /// deferred batches, so only the caller's own message can hold them.
+    #[expect(
+        clippy::panic,
+        reason = "deferred batches are a caller's own value, never input; their bytes don't exist here"
+    )]
     pub fn into_bytes(self) -> Bytes {
         let len = self.len();
         let Some(shared) = self.shared.filter(|shared| !shared.values.is_empty()) else {
             return self.buf.freeze();
         };
+        // Checked before allocating the whole length, deferred batches included.
+        let values: Vec<(usize, &Bytes)> = shared
+            .values
+            .iter()
+            .map(|(offset, value)| match value {
+                Segment::Bytes(value) => (*offset, value),
+                Segment::Deferred { .. } => {
+                    panic!("into_bytes of a writer holding deferred record batches; use into_frame")
+                }
+            })
+            .collect();
         let mut bytes = BytesMut::with_capacity(len);
         let mut owned = 0;
-        for (offset, value) in &shared.values {
-            bytes.put_slice(self.buf.get(owned..*offset).unwrap_or_default());
+        for (offset, value) in values {
+            bytes.put_slice(self.buf.get(owned..offset).unwrap_or_default());
             bytes.put_slice(value);
-            owned = *offset;
+            owned = offset;
         }
         bytes.put_slice(self.buf.get(owned..).unwrap_or_default());
         bytes.freeze()
@@ -227,13 +279,13 @@ impl Writer {
         let mut owned = 0;
         for (offset, value) in values {
             if offset > owned {
-                segments.push(buf.slice(owned..offset));
+                segments.push(Segment::Bytes(buf.slice(owned..offset)));
             }
             segments.push(value);
             owned = offset;
         }
         if buf.len() > owned {
-            segments.push(buf.slice(owned..));
+            segments.push(Segment::Bytes(buf.slice(owned..)));
         }
         EncodedFrame { segments, len }
     }
@@ -288,20 +340,53 @@ impl Writer {
 
 /// An encoded message as segments to send in order, for a vectored write: the bytes the
 /// encoder wrote, and between them each record batch and zero-copy byte value, which
-/// shares the message's buffer rather than copying it.
+/// shares the message's buffer rather than copying it, or a placeholder for deferred
+/// record batches.
 ///
 /// Owned bytes between two shared values are one segment, so a frame has at most one
 /// more owned segment than shared ones.
 // Parity: clients/src/main/java/org/apache/kafka/common/protocol/SendBuilder.java@4.4.0 SendBuilder
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct EncodedFrame {
-    segments: Vec<Bytes>,
+    segments: Vec<Segment>,
     len: usize,
+}
+
+/// One part of an [`EncodedFrame`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Segment {
+    /// Bytes to send as they are.
+    Bytes(Bytes),
+    /// A placeholder for `len` bytes of [`RecordsField::Deferred`](crate::RecordsField::Deferred)
+    /// batches: the network layer sends the batches `token` names in its place, and
+    /// ends the connection if it can't send exactly `len` bytes of them, since the
+    /// frame's length prefix promised that many.
+    Deferred {
+        /// The batches' size, in bytes.
+        len: usize,
+        /// The caller's token for the batches.
+        token: u64,
+    },
+}
+
+impl Segment {
+    /// The segment's length in bytes.
+    pub fn len(&self) -> usize {
+        match self {
+            Segment::Bytes(bytes) => bytes.len(),
+            Segment::Deferred { len, .. } => *len,
+        }
+    }
+
+    /// Whether the segment has no bytes.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 impl EncodedFrame {
     /// The segments, in order.
-    pub fn segments(&self) -> &[Bytes] {
+    pub fn segments(&self) -> &[Segment] {
         &self.segments
     }
 
@@ -320,7 +405,20 @@ impl EncodedFrame {
 mod tests {
     use bytes::Bytes;
 
-    use super::Writer;
+    use super::{EncodedFrame, Segment, Writer};
+    use crate::error::EncodeError;
+
+    /// The frame's segments as bytes, failing on a deferred one.
+    fn bytes(frame: &EncodedFrame) -> Vec<&Bytes> {
+        frame
+            .segments()
+            .iter()
+            .map(|segment| match segment {
+                Segment::Bytes(bytes) => bytes,
+                Segment::Deferred { .. } => panic!("a deferred segment"),
+            })
+            .collect()
+    }
 
     #[test]
     fn shared_values_are_segments_of_their_own_between_coalesced_owned_bytes() {
@@ -335,14 +433,15 @@ mod tests {
         assert_eq!(writer.len(), 2 + 4 + 7 + 7 + 1);
         assert_eq!(writer.zero_copy_len(), 14);
         let frame = writer.clone().into_frame();
-        let segments: Vec<&[u8]> = frame.segments().iter().map(|s| &s[..]).collect();
+        let segments: Vec<&[u8]> = bytes(&frame).into_iter().map(|s| &s[..]).collect();
         assert_eq!(
             segments,
             [&[0, 1, 0, 0, 0, 2][..], b"records", b"records", &[3][..]]
         );
-        assert_eq!(frame.segments()[1].as_ptr(), shared.as_ptr());
+        assert_eq!(bytes(&frame)[1].as_ptr(), shared.as_ptr());
         assert_eq!(frame.len(), writer.len());
-        assert_eq!(writer.into_bytes(), frame.segments().concat());
+        let concatenated: Vec<u8> = bytes(&frame).into_iter().flatten().copied().collect();
+        assert_eq!(writer.into_bytes(), concatenated);
     }
 
     #[test]
@@ -358,9 +457,9 @@ mod tests {
         outer.write_i8(4);
         assert_eq!(outer.zero_copy_len(), 5);
         let frame = outer.into_frame();
-        let segments: Vec<&[u8]> = frame.segments().iter().map(|s| &s[..]).collect();
+        let segments: Vec<&[u8]> = bytes(&frame).into_iter().map(|s| &s[..]).collect();
         assert_eq!(segments, [&[1, 2][..], b"value", &[3, 4][..]]);
-        assert_eq!(frame.segments()[1].as_ptr(), shared.as_ptr());
+        assert_eq!(bytes(&frame)[1].as_ptr(), shared.as_ptr());
     }
 
     #[test]
@@ -370,7 +469,10 @@ mod tests {
         writer.put_shared(&Bytes::from_static(b"value"));
         assert_eq!(writer.zero_copy_len(), 5);
         let frame = writer.into_frame();
-        assert_eq!(frame.segments(), [Bytes::from_static(b"\x01value")]);
+        assert_eq!(
+            frame.segments(),
+            [Segment::Bytes(Bytes::from_static(b"\x01value"))]
+        );
     }
 
     #[test]
@@ -380,5 +482,46 @@ mod tests {
         writer.put_shared(&Bytes::from_static(b"abc"));
         assert_eq!((writer.len(), writer.zero_copy_len()), (7, 3));
         assert!(writer.into_frame().is_empty());
+    }
+
+    // PROTO-0103: deferred batches are a placeholder of their length in a frame, are
+    // counted by a counting writer, and are refused by a copying one.
+    #[test]
+    fn deferred_records_are_a_placeholder_only_a_frame_holds() {
+        let mut writer = Writer::sharing();
+        writer.write_i8(1);
+        writer.put_deferred(1000, 7).unwrap();
+        writer.write_i8(2);
+        assert_eq!((writer.len(), writer.zero_copy_len()), (1002, 1000));
+        let frame = writer.into_frame();
+        assert_eq!(
+            frame.segments(),
+            [
+                Segment::Bytes(Bytes::from_static(&[1])),
+                Segment::Deferred {
+                    len: 1000,
+                    token: 7
+                },
+                Segment::Bytes(Bytes::from_static(&[2])),
+            ]
+        );
+        assert_eq!(frame.len(), 1002);
+        let mut counting = Writer::counting();
+        counting.put_deferred(1000, 7).unwrap();
+        assert_eq!((counting.len(), counting.zero_copy_len()), (1000, 1000));
+        let mut copying = Writer::new();
+        assert_eq!(
+            copying.put_deferred(1000, 7),
+            Err(EncodeError::DeferredRecordsNotInFrame { len: 1000 })
+        );
+        assert_eq!((copying.len(), copying.zero_copy_len()), (0, 0));
+    }
+
+    #[test]
+    #[should_panic(expected = "into_bytes of a writer holding deferred record batches")]
+    fn deferred_records_have_no_bytes_to_copy() {
+        let mut writer = Writer::sharing();
+        writer.put_deferred(1, 0).unwrap();
+        let _ = writer.into_bytes();
     }
 }

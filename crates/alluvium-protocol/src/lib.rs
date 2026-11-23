@@ -73,4 +73,4 @@ pub use records::RecordsField;
 pub use tagged_fields::{RawTaggedField, RawTaggedFieldWriter};
 pub use varint::{size_of_unsigned_varint, size_of_varint, size_of_varlong};
 pub use versions::Versions;
-pub use writer::{EncodedFrame, Writer};
+pub use writer::{EncodedFrame, Segment, Writer};

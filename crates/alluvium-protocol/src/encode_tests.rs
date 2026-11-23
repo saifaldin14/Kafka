@@ -49,6 +49,7 @@ mod versions_and_fields {
 
     use super::{encode, round_trip};
     use crate::Framing::Classic;
+    use crate::generated::fetch_response::{FetchResponse, FetchableTopicResponse, PartitionData};
     use crate::generated::produce_request::{
         PartitionProduceData, ProduceRequest, TopicProduceData,
     };
@@ -58,7 +59,7 @@ mod versions_and_fields {
     use crate::generated::request_header::RequestHeader;
     use crate::test_messages::nullable_struct_message::{MyStruct, NullableStructMessage};
     use crate::test_messages::simple_example_message::SimpleExampleMessage;
-    use crate::{EncodeError, Message, RecordsField, Writer};
+    use crate::{ApiKey, EncodeError, Message, RecordsField, Segment, Writer};
 
     #[test]
     fn a_version_the_message_lacks_is_unsupported() {
@@ -191,6 +192,54 @@ mod versions_and_fields {
         assert_eq!(size.zero_copy, 12);
         assert_eq!(size.total, encode(&request, 3).unwrap().len());
         round_trip(&request, 3..=12);
+    }
+
+    // PROTO-0103: a fetch response's deferred batches are a placeholder in its frame,
+    // after their length, and only a frame can hold them.
+    #[test]
+    fn deferred_records_are_a_placeholder_in_the_frame() {
+        let response = FetchResponse {
+            responses: vec![FetchableTopicResponse {
+                partitions: vec![PartitionData {
+                    records: Some(RecordsField::Deferred {
+                        len: 4096,
+                        token: 9,
+                    }),
+                    ..PartitionData::default()
+                }],
+                ..FetchableTopicResponse::default()
+            }],
+            ..FetchResponse::default()
+        };
+        let frame = crate::encode_response(ApiKey::Fetch, 17, 5, &response).unwrap();
+        let deferred = Segment::Deferred {
+            len: 4096,
+            token: 9,
+        };
+        let at = frame
+            .segments()
+            .iter()
+            .position(|segment| *segment == deferred)
+            .expect("the placeholder is a segment");
+        let before = at
+            .checked_sub(1)
+            .and_then(|index| frame.segments().get(index));
+        let Some(Segment::Bytes(before)) = before else {
+            panic!("owned bytes before the placeholder");
+        };
+        // v17 is flexible: the compact length is 4096 + 1 as an unsigned varint.
+        assert!(before.ends_with(&[0x81, 0x20]), "{before:?}");
+        let size = response.encoded_size(17).unwrap();
+        assert_eq!(size.zero_copy, 4096);
+        assert_eq!(
+            frame.len(),
+            size.total.checked_add(5).unwrap(),
+            "a v1 header is 5 bytes"
+        );
+        assert_eq!(
+            encode(&response, 17),
+            Err(EncodeError::DeferredRecordsNotInFrame { len: 4096 })
+        );
     }
 }
 
