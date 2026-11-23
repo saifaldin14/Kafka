@@ -630,7 +630,7 @@ Scope: `alluvium dump frame`: decode hex dumps or pcap payloads of Kafka frames 
 P2 · M2 · Task · deps: none · ref: generator/src/main/java/org/apache/kafka/message/JsonConverterGenerator.java; server/src/main/java/org/apache/kafka/network/RequestConvertToJson.java @4.4.0
 Done when: output for golden vectors equals Kafka's JsonConverter JSON after documented normalization of records and redacted fields; redaction tests.
 
-### [To Do] PROTO-0142 Frame decoding library: size prefix, request header, body by API key and version; responses decoded given API key and version
+### [Done] PROTO-0142 Frame decoding library: size prefix, request header, body by API key and version; responses decoded given API key and version
 P2 · M2 · Task · deps: PROTO-0141 · labels: decoder
 Done when: errors report byte offset and field path; truncated frames are reported, not fatal; a fuzz target `frame_dump` runs clean.
 

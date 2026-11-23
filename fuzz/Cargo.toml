@@ -24,6 +24,13 @@ libfuzzer-sys = "0.4.13"
 peak_alloc = { version = "0.3.0", default-features = false }
 
 [[bin]]
+name = "protocol_frame_dump"
+path = "fuzz_targets/protocol_frame_dump.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
 name = "protocol_wire_primitives"
 path = "fuzz_targets/protocol_wire_primitives.rs"
 test = false

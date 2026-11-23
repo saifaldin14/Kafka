@@ -318,6 +318,15 @@ A test reads every message Kafka wrote in the golden vectors and checks that our
 - Kafka's golden JSON writes a non-null records field as `""`, and ours writes the size and checksum, so those two keys stand for that `""`;
 - a redacted `"***"` stands for the credential.
 
+**Frame dumps.** `dump_request_frame` and `dump_response_frame` read one whole frame: its `int32` size prefix, its header, and its body as this JSON. A request names its own API and version; a response is read for the API and version the caller supplies. They are generated through `ApiKey::body_json`, a table of each API's body decoders.
+
+Nothing is fatal to a dump:
+- a frame shorter than its prefix declares is read as far as it goes and marked truncated;
+- a header or body that doesn't decode is reported with the byte offset, counted from the frame's first byte, and the field path;
+- bytes after the body, or after the declared frame, are counted.
+
+An `ApiVersions` response that doesn't decode at the version asked is read at version 0, as Kafka's client reads it (KIP-511). The `protocol_frame_dump` fuzz target feeds them arbitrary input.
+
 ## Redaction
 
 [`xtask/codegen/sensitive_fields.toml`](../../xtask/codegen/sensitive_fields.toml) lists the fields that hold credentials:

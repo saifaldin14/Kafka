@@ -18,8 +18,8 @@ use std::collections::BTreeMap;
 use std::fmt::Write as _;
 use std::path::Path;
 
-use super::docs;
 use super::structs::versions;
+use super::{docs, names};
 use crate::message_spec::{Listener, MessageKind, MessageSpec, Versions};
 
 /// One API, as the generated table describes it.
@@ -35,6 +35,9 @@ pub(super) struct Api {
     pub(super) latest_version_unstable: bool,
     pub(super) cluster_action: bool,
     pub(super) forwardable: bool,
+    /// The request and response schema names, as `ProduceRequest`.
+    pub(super) request: String,
+    pub(super) response: String,
 }
 
 /// `clusterAction` and `forwardable` for one API, as Kafka's `ApiKeys` sets them.
@@ -149,6 +152,8 @@ pub(super) fn collect(
             latest_version_unstable: request.latest_version_unstable,
             cluster_action: flag.cluster_action,
             forwardable: flag.forwardable,
+            request: request.name.clone(),
+            response: response.name.clone(),
         });
     }
     if let Some((id, response)) = responses.iter().find(|(id, _)| !requests.contains_key(id)) {
@@ -259,7 +264,39 @@ pub(super) fn module(apis: &[Api], runtime: &str) -> String {
     out.push_str("    ];\n");
     out.push_str(ACCESSORS);
     out.push_str("}\n");
+    render_body_json(&mut out, apis);
     out.replace("crate::", &format!("{runtime}::"))
+}
+
+/// `BODY_JSON`: for each API, in declaration order, the functions that decode its request
+/// and response bodies and write them as JSON, for frame dumps; none for a removed API,
+/// which has no message types.
+fn render_body_json(out: &mut String, apis: &[Api]) {
+    out.push_str(
+        "\n/// Each API's request and response body decoders to JSON, in declaration order \
+         (`frame_dump`).\nconst BODY_JSON: [Option<(crate::frame_dump::BodyJson, \
+         crate::frame_dump::BodyJson)>; ",
+    );
+    let _ = writeln!(out, "{}] = [", apis.len());
+    for api in apis {
+        if api.versions.is_empty() {
+            out.push_str("    None,\n");
+            continue;
+        }
+        let path = |name: &str| format!("crate::generated::{}::{name}", names::identifier(name));
+        let _ = writeln!(
+            out,
+            "    Some((crate::frame_dump::body_json::<{}>, crate::frame_dump::body_json::<{}>)),",
+            path(&api.request),
+            path(&api.response)
+        );
+    }
+    out.push_str(
+        "];\n\nimpl ApiKey {\n    /// The decoders of the API's request and response bodies to \
+         JSON, or `None` for a\n    /// removed API.\n    pub(crate) fn body_json(self) -> \
+         Option<(crate::frame_dump::BodyJson, crate::frame_dump::BodyJson)> {\n        \
+         BODY_JSON.get(self as usize).copied().flatten()\n    }\n}\n",
+    );
 }
 
 fn render_enum(out: &mut String, apis: &[Api]) {
