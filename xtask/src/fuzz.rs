@@ -6,8 +6,14 @@
 //! would start a second run of a crashing input without these limits, so a hang or an
 //! allocation crash could stall it; running the binary keeps every run within
 //! [`LIMITS`].
+//!
+//! The hand-written targets are in `fuzz/Cargo.toml`; the generated ones, one per
+//! message (PROTO-F11), in `fuzz/generated/Cargo.toml`, which codegen writes. CI fuzzes
+//! each hand-written target in a job of its own, and the generated ones in shards
+//! (`--shard`), each building and fuzzing its share in turn.
 
 mod corpus;
+mod seeds;
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -52,6 +58,18 @@ pub(crate) const LIMITS: &[Limit] = &[
 /// The fuzz workspace, relative to the repository root.
 pub(crate) const FUZZ_DIR: &str = "fuzz";
 
+/// The package of generated targets in the fuzz workspace, relative to the repository
+/// root.
+const GENERATED_DIR: &str = "fuzz/generated";
+
+/// A fuzz target.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Target {
+    name: String,
+    /// Whether codegen wrote it, in [`GENERATED_DIR`].
+    generated: bool,
+}
+
 pub(crate) fn run(command: &FuzzCommand, out: &mut impl Write) -> Exit {
     let root = crate::repo_root();
     let targets = match targets(&root) {
@@ -61,31 +79,47 @@ pub(crate) fn run(command: &FuzzCommand, out: &mut impl Write) -> Exit {
             return Exit::CheckFailed;
         }
     };
+    let of_kind = |generated: bool| -> Vec<&String> {
+        targets
+            .iter()
+            .filter(|target| target.generated == generated)
+            .map(|target| &target.name)
+            .collect()
+    };
     let chosen: Vec<&String> = match command {
-        FuzzCommand::List => {
-            for target in &targets {
-                output::line(out, target);
+        FuzzCommand::List { generated } => {
+            for name in of_kind(*generated) {
+                output::line(out, name);
             }
             return Exit::Success;
         }
+        FuzzCommand::Shard { .. } => Vec::new(),
         FuzzCommand::Run { target, .. }
         | FuzzCommand::Reproduce { target, .. }
         | FuzzCommand::CorpusMinimize { target } => vec![target],
-        FuzzCommand::CorpusPull { targets: named } if named.is_empty() => targets.iter().collect(),
+        // Generated targets keep no corpus (ADR-0018).
+        FuzzCommand::CorpusPull { targets: named } if named.is_empty() => of_kind(false),
         FuzzCommand::CorpusPull { targets: named } => named.iter().collect(),
     };
-    if let Some(unknown) = chosen.iter().find(|target| !targets.contains(target)) {
+    if let Some(unknown) = chosen
+        .iter()
+        .find(|name| !targets.iter().any(|target| &&target.name == *name))
+    {
         output::line(
             out,
             &format!(
-                "error: unknown fuzz target `{unknown}`; the targets are: {}",
-                targets.join(", ")
+                "error: unknown fuzz target `{unknown}`; `cargo xtask fuzz --list` lists the targets, and `--list --generated` the generated ones"
             ),
         );
         return Exit::Usage;
     }
     let result = match command {
-        FuzzCommand::List => Ok(String::new()),
+        FuzzCommand::List { .. } => Ok(String::new()),
+        FuzzCommand::Shard {
+            index,
+            count,
+            seconds,
+        } => shard(&root, &of_kind(true), *index, *count, *seconds),
         FuzzCommand::Run { target, seconds } => {
             fuzz(&root, target, &Input::Fuzz { seconds: *seconds })
         }
@@ -127,6 +161,34 @@ fn fuzz(root: &Path, target: &str, input: &Input) -> Result<String, String> {
     })
 }
 
+/// Fuzzes each of the generated targets in shard `index` of `count` for `seconds`,
+/// every `count`th of them in name order, and reports every one that crashed.
+fn shard(
+    root: &Path,
+    generated: &[&String],
+    index: usize,
+    count: usize,
+    seconds: u64,
+) -> Result<String, String> {
+    let chosen: Vec<&&String> = generated
+        .iter()
+        .skip(index.saturating_sub(1))
+        .step_by(count)
+        .collect();
+    let failures: Vec<String> = chosen
+        .iter()
+        .filter_map(|target| fuzz(root, target, &Input::Fuzz { seconds }).err())
+        .collect();
+    if failures.is_empty() {
+        Ok(format!(
+            "shard {index}/{count}: {} generated target(s) ran {seconds}s each without a crash",
+            chosen.len()
+        ))
+    } else {
+        Err(failures.join("\n"))
+    }
+}
+
 /// What a run feeds the target.
 enum Input {
     /// Generated inputs, for this many seconds, growing the corpus.
@@ -135,22 +197,46 @@ enum Input {
     One(PathBuf),
 }
 
-/// The target names: the `[[bin]]` entries of `fuzz/Cargo.toml`, sorted.
-fn targets(root: &Path) -> Result<Vec<String>, String> {
-    let path = root.join(FUZZ_DIR).join("Cargo.toml");
-    let text = std::fs::read_to_string(&path)
-        .map_err(|error| format!("could not read {}: {error}", path.display()))?;
-    let manifest: Value = toml::from_str(&text)
-        .map_err(|error| format!("could not parse {}: {error}", path.display()))?;
-    let mut targets: Vec<String> = manifest
-        .get("bin")
-        .and_then(Value::as_array)
-        .into_iter()
-        .flatten()
-        .filter_map(|bin| bin.get("name").and_then(Value::as_str).map(str::to_owned))
-        .collect();
-    targets.sort();
+/// The targets: the `[[bin]]` entries of `fuzz/Cargo.toml` and of the generated
+/// package's manifest, sorted by name.
+fn targets(root: &Path) -> Result<Vec<Target>, String> {
+    let mut targets = Vec::new();
+    for (dir, generated) in [(FUZZ_DIR, false), (GENERATED_DIR, true)] {
+        let path = root.join(dir).join("Cargo.toml");
+        let text = std::fs::read_to_string(&path)
+            .map_err(|error| format!("could not read {}: {error}", path.display()))?;
+        let manifest: Value = toml::from_str(&text)
+            .map_err(|error| format!("could not parse {}: {error}", path.display()))?;
+        targets.extend(
+            manifest
+                .get("bin")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(|bin| bin.get("name").and_then(Value::as_str))
+                .map(|name| Target {
+                    name: name.to_owned(),
+                    generated,
+                }),
+        );
+    }
+    targets.sort_by(|a, b| a.name.cmp(&b.name));
+    if let Some(pair) = targets.windows(2).find(|pair| pair[0].name == pair[1].name) {
+        return Err(format!(
+            "two fuzz manifests define the target `{}`",
+            pair[0].name
+        ));
+    }
     Ok(targets)
+}
+
+/// The cargo-fuzz directory whose manifest lists `target`.
+fn fuzz_dir(root: &Path, target: &str) -> Result<&'static str, String> {
+    match targets(root)?.iter().find(|known| known.name == target) {
+        Some(known) if known.generated => Ok(GENERATED_DIR),
+        Some(_) => Ok(FUZZ_DIR),
+        None => Err(format!("unknown fuzz target `{target}`")),
+    }
 }
 
 /// The nightly channel `fuzz/rust-toolchain.toml` pins.
@@ -190,6 +276,7 @@ pub(crate) fn build(root: &Path, target: &str) -> Result<PathBuf, String> {
         return Err(problem);
     }
     tools::check(&CARGO_FUZZ).map_err(|problem| problem.to_string())?;
+    let dir = fuzz_dir(root, target)?;
     let host = Command::new("rustup")
         .args(["run", &channel, "rustc", "-vV"])
         .output()
@@ -203,19 +290,15 @@ pub(crate) fn build(root: &Path, target: &str) -> Result<PathBuf, String> {
         .ok_or_else(|| format!("could not read the host target from `rustc -vV` on {channel}"))?;
     let status = Command::new("rustup")
         .args(["run", &channel, "cargo", "fuzz", "build"])
-        .args([
-            "--fuzz-dir",
-            FUZZ_DIR,
-            "--release",
-            "--debug-assertions",
-            target,
-        ])
+        .args(["--fuzz-dir", dir, "--release", "--debug-assertions", target])
         .current_dir(root)
         .status()
         .map_err(|error| format!("could not run cargo fuzz build: {error}"))?;
     if !status.success() {
         return Err(format!("cargo fuzz build {target} failed"));
     }
+    // The generated package is in the fuzz workspace, so it builds into its target
+    // directory too.
     Ok(Path::new(FUZZ_DIR)
         .join("target")
         .join(host)
@@ -238,6 +321,9 @@ fn run_binary(root: &Path, binary: &Path, target: &str, input: &Input) -> Result
             let seeds = Path::new(FUZZ_DIR).join("seeds").join(target);
             if root.join(&seeds).is_dir() {
                 command.arg(seeds);
+            }
+            if let Some(golden) = seeds::write(root, target)? {
+                command.arg(golden);
             }
         }
         Input::One(path) => {
@@ -298,16 +384,23 @@ pub(crate) fn create_dir(path: &Path) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{LIMITS, targets};
+    use super::{FUZZ_DIR, GENERATED_DIR, LIMITS, fuzz_dir, targets};
 
     #[test]
-    fn every_target_in_the_fuzz_manifest_is_listed_in_order() {
-        let targets = targets(&crate::repo_root()).unwrap();
-        assert!(
-            targets.contains(&"types_uuid_parse".to_owned()),
-            "{targets:?}"
+    fn every_target_in_the_fuzz_manifests_is_listed_in_order() {
+        let root = crate::repo_root();
+        let targets = targets(&root).unwrap();
+        let names: Vec<&str> = targets.iter().map(|target| target.name.as_str()).collect();
+        assert!(names.is_sorted(), "{names:?}");
+        assert_eq!(fuzz_dir(&root, "types_uuid_parse"), Ok(FUZZ_DIR));
+        assert_eq!(
+            fuzz_dir(&root, "protocol_produce_request"),
+            Ok(GENERATED_DIR)
         );
-        assert!(targets.is_sorted(), "{targets:?}");
+        assert_eq!(
+            fuzz_dir(&root, "protocol_request_header"),
+            Ok(GENERATED_DIR)
+        );
     }
 
     #[test]

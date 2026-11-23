@@ -1,6 +1,6 @@
 # Every check is a step of `cargo xtask ci` (xtask/src/ci.rs); jobs only choose which
-# steps run where. The exceptions are fuzzing, which runs `cargo xtask fuzz` per target
-# (fuzz/README.md), and the gated benchmarks, which need valgrind (ADR-0019). Security defaults (docs/standards/security.md#dependencies):
+# steps run where. The exceptions are fuzzing, which runs `cargo xtask fuzz` per
+# hand-written target and per shard of generated targets (fuzz/README.md), and the gated benchmarks, which need valgrind (ADR-0019). Security defaults (docs/standards/security.md#dependencies):
 # no permissions unless a job asks, actions pinned to full commit SHAs, no persisted
 # checkout credentials, and a timeout on every job.
 name: CI
@@ -207,6 +207,55 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  fuzz-generated:
+    name: fuzz generated (shard ${{ matrix.shard }}/8)
+    # The generated targets, one per message (PROTO-F11), in 8 shards: each builds its
+    # share and fuzzes each target for 10 s from its golden vectors. They keep no corpus
+    # (ADR-0018). A crash fails the PR, and every crash input of the shard is uploaded.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      SHARD: ${{ matrix.shard }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the pinned toolchains
+        run: |
+          rustup toolchain install --profile minimal
+          cd fuzz && rustup toolchain install --profile minimal
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          key: generated-${{ matrix.shard }}
+          workspaces: |
+            . -> target
+            fuzz -> target
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+          cache-bin: "true"
+      - name: Install cargo-fuzz
+        run: cargo xtask tools install --tool cargo-fuzz
+      # The allocation oracle's own test (PROTO-0134), once.
+      - name: Test the fuzz harness
+        if: ${{ matrix.shard == 1 }}
+        working-directory: fuzz
+        run: cargo test --lib --locked
+      - name: Fuzz
+        run: cargo xtask fuzz --shard "$SHARD/8"
+      - name: Upload the crash inputs
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fuzz-crash-generated-${{ matrix.shard }}
+          path: fuzz/artifacts/
+          if-no-files-found: ignore
+          retention-days: 14
+
   bench:
     name: bench (instruction counts)
     # The gated benchmarks at the base and at this commit, in one job: instruction counts
@@ -244,7 +293,7 @@ jobs:
     # The single required status check. Every job that must pass is in `needs`: add a
     # new required job here. `advisories` is deliberately left out.
     if: always()
-    needs: [lint, policy, docs, deny, test, fuzz-targets, fuzz, bench]
+    needs: [lint, policy, docs, deny, test, fuzz-targets, fuzz, fuzz-generated, bench]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions: {}

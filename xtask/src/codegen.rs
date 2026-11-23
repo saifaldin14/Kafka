@@ -29,7 +29,8 @@ mod decode;
 mod docs;
 mod encode;
 mod errors;
-mod names;
+mod fuzz_targets;
+pub(crate) mod names;
 mod overlays;
 mod strategy;
 mod structs;
@@ -57,6 +58,8 @@ pub(crate) struct Filter {
     pub(crate) error_codes: Option<ErrorCodes>,
     /// Whether to generate `ApiKey` too, and from where.
     pub(crate) api_keys: Option<ApiKeys>,
+    /// Where to write the generated fuzz targets' package, if anywhere.
+    pub(crate) fuzz_targets: Option<PathBuf>,
     /// Whether the root module gets `TRANSCODE`, the table through which the golden
     /// vector tests decode and encode each message by its schema name.
     pub(crate) golden_tests: bool,
@@ -108,6 +111,7 @@ fn protocol() -> (Vec<PathBuf>, PathBuf, Filter) {
                 page: root.join("docs/errors.md"),
             }),
             golden_tests: true,
+            fuzz_targets: Some(root.join("fuzz/generated")),
             api_keys: Some(ApiKeys {
                 recorded: root.join(crate::golden::API_KEYS_GOLDEN).join("api_keys.json"),
                 page: root.join("docs/protocol/apis.md"),
@@ -135,6 +139,7 @@ fn test_messages() -> (Vec<PathBuf>, PathBuf, Filter) {
             error_codes: None,
             api_keys: None,
             golden_tests: false,
+            fuzz_targets: None,
             overlays: None,
             doc: "Message types generated from the schemas Kafka's own generator tests use \
                   (`schemas/kafka-4.4.0/clients-test/`). They exercise every schema feature in \
@@ -262,6 +267,9 @@ pub(crate) fn generate(
 ) -> Result<Report, String> {
     let rendered = render(inputs, filter)?;
     write(out_dir, &rendered.files)?;
+    if let Some(fuzz_dir) = &filter.fuzz_targets {
+        write(fuzz_dir, &rendered.fuzz)?;
+    }
     for (page, contents) in &rendered.pages {
         if std::fs::read_to_string(page).is_ok_and(|existing| existing == *contents) {
             continue;
@@ -296,13 +304,24 @@ pub(crate) fn check(
             problems.push(problem);
         }
     }
-    for stale in existing_files(out_dir)? {
-        let relative = stale.strip_prefix(out_dir).unwrap_or(&stale);
-        if !rendered.files.contains_key(relative) {
-            problems.push(format!(
-                "{}: no longer generated, so codegen would remove it",
-                shown_path(&stale)
-            ));
+    let mut outputs = vec![(out_dir.to_path_buf(), &rendered.files)];
+    if let Some(fuzz_dir) = &filter.fuzz_targets {
+        for (file, contents) in &rendered.fuzz {
+            if let Some(problem) = difference(&fuzz_dir.join(file), contents) {
+                problems.push(problem);
+            }
+        }
+        outputs.push((fuzz_dir.clone(), &rendered.fuzz));
+    }
+    for (dir, files) in outputs {
+        for stale in existing_files(&dir)? {
+            let relative = stale.strip_prefix(&dir).unwrap_or(&stale);
+            if !files.contains_key(relative) {
+                problems.push(format!(
+                    "{}: no longer generated, so codegen would remove it",
+                    shown_path(&stale)
+                ));
+            }
         }
     }
     Ok((rendered.report, problems))
@@ -341,10 +360,37 @@ struct Rendered {
     files: BTreeMap<PathBuf, String>,
     /// Generated pages outside the output directory, by full path.
     pages: BTreeMap<PathBuf, String>,
+    /// The fuzz targets' package, by path within `Filter::fuzz_targets`.
+    fuzz: BTreeMap<PathBuf, String>,
     report: Report,
 }
 
 /// Every file `generate` would write.
+/// The generated fuzz targets' package for `messages`, formatted, if `filter` asks for
+/// one.
+fn fuzz_package(
+    inputs: &[PathBuf],
+    filter: &Filter,
+    messages: &[(PathBuf, String, message_spec::MessageSpec)],
+) -> Result<BTreeMap<PathBuf, String>, String> {
+    if filter.fuzz_targets.is_none() {
+        return Ok(BTreeMap::new());
+    }
+    let messages: Vec<_> = messages.iter().map(|(_, _, message)| message).collect();
+    let sources: Vec<String> = inputs.iter().map(|input| shown_path(input)).collect();
+    let header = header(&format!("from the schemas in {}", sources.join(", ")));
+    fuzz_targets::render(&messages, &header)
+        .into_iter()
+        .map(|(file, source)| {
+            if file.extension().is_some_and(|extension| extension == "rs") {
+                Ok((file, rustfmt(&source)?))
+            } else {
+                Ok((file, source))
+            }
+        })
+        .collect()
+}
+
 fn render(inputs: &[PathBuf], filter: &Filter) -> Result<Rendered, String> {
     let mut modules: BTreeMap<PathBuf, String> = BTreeMap::new();
     let mut pages = BTreeMap::new();
@@ -438,6 +484,7 @@ fn render(inputs: &[PathBuf], filter: &Filter) -> Result<Rendered, String> {
         pages.insert(api_keys.page.clone(), page);
         report.api_keys = count;
     }
+    let fuzz = fuzz_package(inputs, filter, &messages)?;
     let mut files = mod_files(&modules, &filter.doc, &decodable, filter.golden_tests);
     files.extend(modules);
     let mut formatted = BTreeMap::new();
@@ -447,6 +494,7 @@ fn render(inputs: &[PathBuf], filter: &Filter) -> Result<Rendered, String> {
     Ok(Rendered {
         files: formatted,
         pages,
+        fuzz,
         report,
     })
 }
@@ -838,6 +886,7 @@ mod tests {
             error_codes: None,
             api_keys: None,
             golden_tests: false,
+            fuzz_targets: None,
             overlays: None,
             doc: "Test records.".to_owned(),
         };
@@ -909,6 +958,7 @@ mod tests {
             error_codes: None,
             api_keys: None,
             golden_tests: false,
+            fuzz_targets: None,
             overlays: None,
             doc: "Test messages.".to_owned(),
         };

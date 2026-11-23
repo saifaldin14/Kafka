@@ -10,7 +10,7 @@ Decisions are in [ADR-0003](../adr/0003-deterministic-simulation-testing.md).
 |---|---|---|---|
 | **Unit** | `#[cfg(test)] mod tests` beside the code | One function or state machine transition | Any logic |
 | **Property** (`proptest`) | Beside the code | Codecs round-trip; state machine invariants hold for arbitrary input sequences | Every codec; every state machine |
-| **Fuzz** (`cargo-fuzz`) | `fuzz/fuzz_targets/` | No panics, hangs or unbounded allocation on arbitrary bytes | Every decoder (network and disk) |
+| **Fuzz** (`cargo-fuzz`) | `fuzz/fuzz_targets/`, and `fuzz/generated/` for each protocol message | No panics, hangs or unbounded allocation on arbitrary bytes; the generated targets also hold each decode to its allocation budget | Every decoder (network and disk) |
 | **Simulation** | `crates/<crate>/tests/sim_*.rs` using `alluvium-testkit` | Distributed behavior under message loss, delay, reordering, partitions, crashes and disk faults, with invariant checkers | Raft, controller, replication, coordinators, anything with timers or peers |
 | **Crash consistency** | `alluvium-storage` tests with the fault-injecting `fs` | Recovery after torn writes, lost unsynced data and crashes at every write point | Any storage write path |
 | **Golden vectors** | `tests/golden/`, recorded by `cargo xtask golden` ([guide](../guides/golden-vectors.md)) | Bytes Kafka 4.4.0's own classes write, decoded and re-encoded byte for byte, and Alluvium's bytes read and rewritten by Kafka | Every message codec and Kafka-defined table |

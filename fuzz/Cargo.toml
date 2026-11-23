@@ -12,14 +12,16 @@ license-file = "../LICENSE"
 [package.metadata]
 cargo-fuzz = true
 
+# `generated` holds the fuzz targets `cargo xtask codegen` writes, one per message.
 [workspace]
-members = ["."]
+members = [".", "generated"]
 
 [dependencies]
 alluvium-protocol = { path = "../crates/alluvium-protocol" }
 alluvium-types = { path = "../crates/alluvium-types" }
 bytes = { version = "1.12.2", default-features = false, features = ["std"] }
 libfuzzer-sys = "0.4.13"
+peak_alloc = { version = "0.3.0", default-features = false }
 
 [[bin]]
 name = "protocol_wire_primitives"
