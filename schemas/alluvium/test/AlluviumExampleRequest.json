@@ -1,0 +1,25 @@
+// A sample internal API (ADR-0021), generated into the protocol crate's test-only
+// `test_messages`: it shows how an internal API's schema is generated, and is never sent.
+{
+  "apiKey": 32767,
+  "type": "request",
+  "listeners": ["broker", "controller"],
+  "name": "AlluviumExampleRequest",
+  "validVersions": "0-1",
+  "flexibleVersions": "0+",
+  "fields": [
+    { "name": "NodeId", "type": "int32", "versions": "0+", "entityType": "brokerId",
+      "about": "The node sending the request." },
+    { "name": "Partitions", "type": "[]ExamplePartition", "versions": "0+",
+      "about": "The partitions the request is about.", "fields": [
+      { "name": "TopicId", "type": "uuid", "versions": "0+",
+        "about": "The topic's id." },
+      { "name": "PartitionIndex", "type": "int32", "versions": "0+",
+        "about": "The partition's index." }
+    ]},
+    { "name": "Reason", "type": "string", "versions": "1+", "nullableVersions": "1+",
+      "default": "null", "about": "Why the request was sent, from version 1." },
+    { "name": "Hint", "type": "int64", "versions": "0+", "taggedVersions": "0+", "tag": 0,
+      "default": "-1", "about": "A value added as a tagged field, without a new version." }
+  ]
+}

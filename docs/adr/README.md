@@ -33,3 +33,4 @@ An ADR records a decision that is hard to reverse, crosses crates, deviates from
 | [0018](0018-fuzz-corpus-storage.md) | Fuzz corpus storage | Accepted |
 | [0019](0019-benchmark-regression-gating.md) | Benchmark regression gating | Accepted |
 | [0020](0020-known-tagged-fields-read-within-their-declared-size.md) | Known tagged fields are read within their declared size | Accepted |
+| [0021](0021-alluvium-internal-api-keys.md) | Alluvium-internal API keys | Accepted |

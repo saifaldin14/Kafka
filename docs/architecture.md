@@ -210,6 +210,7 @@ Open design decisions are backlog `Spike` tasks that end in an ADR. Examples: st
 ├── fuzz/                   # cargo-fuzz targets, one per decoder; generated/ one per message
 ├── tests/compat/           # real-client and differential (vs Kafka 4.4.0) suites
 ├── schemas/kafka-4.4.0/    # vendored Kafka JSON message schemas (Apache-2.0)
+├── schemas/alluvium/       # Alluvium's own internal API schemas (ADR-0021)
 ├── xtask/
 └── docs/
 ```

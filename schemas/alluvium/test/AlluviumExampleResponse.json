@@ -1,0 +1,15 @@
+// The response to the sample internal API (ADR-0021), generated into the protocol
+// crate's test-only `test_messages`; it is never sent.
+{
+  "apiKey": 32767,
+  "type": "response",
+  "name": "AlluviumExampleResponse",
+  "validVersions": "0-1",
+  "flexibleVersions": "0+",
+  "fields": [
+    { "name": "ErrorCode", "type": "int16", "versions": "0+",
+      "about": "The error code, or 0 if there was no error." },
+    { "name": "ThrottleTimeMs", "type": "int32", "versions": "1+", "ignorable": true,
+      "about": "The duration in milliseconds the request was throttled, from version 1." }
+  ]
+}

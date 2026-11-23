@@ -43,5 +43,6 @@ All work is planned in **[docs/backlog/](docs/backlog/README.md)**: epics, featu
 | `docs/parity.md` | Kafka 4.4.0 API scope; each API's versions are in `docs/protocol/apis.md`, generated |
 | `docs/glossary.md` | Kafka and Alluvium terms |
 | `schemas/kafka-4.4.0/` | Kafka's message schemas, vendored unmodified; the protocol code is generated from them |
+| `schemas/alluvium/` | Alluvium's own schemas, for internal APIs between Alluvium nodes ([ADR-0021](docs/adr/0021-alluvium-internal-api-keys.md)) |
 | `tools/kafka-golden/` | The Java harness `cargo xtask golden` runs on Kafka 4.4.0's own classes to record golden files |
 | `CONTRIBUTING.md` | Onboarding, setup, workflow |
