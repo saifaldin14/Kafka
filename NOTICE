@@ -54,7 +54,7 @@ header naming the Kafka file it was generated from:
 - docs/errors.md: from schemas/kafka-4.4.0/errors/Errors.java, with Kafka's default
   error messages.
 
-Data read from Apache Kafka's released client jar by `cargo xtask schemas dump-errors`:
+Data read from Apache Kafka's released client jar by `cargo xtask golden`:
 
 - xtask/tests/fixtures/kafka-4.4.0-errors.json: the error table of kafka-clients 4.4.0
   (names, codes and default messages), the golden file for the generated error codes.

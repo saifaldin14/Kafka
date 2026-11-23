@@ -44,8 +44,8 @@ mod codegen;
 mod crate_docs;
 mod deps_diff;
 mod doctor;
-mod errors_dump;
 mod fuzz;
+mod golden;
 mod graph;
 mod hooks;
 mod install;
@@ -119,13 +119,13 @@ fn run(command: &Command, out: &mut impl std::io::Write) -> Exit {
         Command::Schemas(SchemasCommand::Vendor { tag, dry_run }) => {
             schemas::run_vendor(tag, *dry_run, out)
         }
-        Command::Schemas(SchemasCommand::DumpErrors) => errors_dump::run(out),
         Command::LintCanary => lint_canary::run(out),
         Command::Doctor => doctor::run(out),
         Command::InstallHooks { uninstall } => hooks::run(*uninstall, out),
         Command::Fuzz(command) => fuzz::run(command, out),
         Command::Codegen { check } => codegen::run(*check, out),
         Command::Bench { base } => bench::run(base.as_deref(), out),
+        Command::Golden(dump) => golden::run(*dump, out),
     }
 }
 
