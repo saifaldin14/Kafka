@@ -1,0 +1,32 @@
+{
+  "groupId" : "OffsetCommitRequest.GroupId",
+  "generationIdOrMemberEpoch" : 1136091291,
+  "memberId" : "OffsetCommitRequest.MemberId",
+  "topics" : [ {
+    "name" : "OffsetCommitRequest.Topics[0].Name",
+    "partitions" : [ {
+      "partitionIndex" : 1298332415,
+      "committedOffset" : 3931515252917697606,
+      "committedLeaderEpoch" : -945557635,
+      "committedMetadata" : "OffsetCommitRequest.Topics[0].Partitions[0].CommittedMetadata"
+    }, {
+      "partitionIndex" : 530831920,
+      "committedOffset" : -7817249118640290369,
+      "committedLeaderEpoch" : 1377669750,
+      "committedMetadata" : "OffsetCommitRequest.Topics[0].Partitions[1].CommittedMetadata"
+    } ]
+  }, {
+    "name" : "OffsetCommitRequest.Topics[1].Name",
+    "partitions" : [ {
+      "partitionIndex" : -2108098636,
+      "committedOffset" : -7345100772812268317,
+      "committedLeaderEpoch" : -229813558,
+      "committedMetadata" : "OffsetCommitRequest.Topics[1].Partitions[0].CommittedMetadata"
+    }, {
+      "partitionIndex" : -1424562653,
+      "committedOffset" : 2721216450899413834,
+      "committedLeaderEpoch" : -2034587167,
+      "committedMetadata" : "OffsetCommitRequest.Topics[1].Partitions[1].CommittedMetadata"
+    } ]
+  } ]
+}

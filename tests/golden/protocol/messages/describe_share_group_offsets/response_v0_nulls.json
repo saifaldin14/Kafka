@@ -1,0 +1,78 @@
+{
+  "throttleTimeMs" : 1649189092,
+  "groups" : [ {
+    "groupId" : "DescribeShareGroupOffsetsResponse.Groups[0].GroupId",
+    "topics" : [ {
+      "topicName" : "DescribeShareGroupOffsetsResponse.Groups[0].Topics[0].TopicName",
+      "topicId" : "3SHqrcQ9Hl39wENEc9rQGg",
+      "partitions" : [ {
+        "partitionIndex" : 806961040,
+        "startOffset" : 5837924941716466441,
+        "leaderEpoch" : 437864224,
+        "errorCode" : -8035,
+        "errorMessage" : null
+      }, {
+        "partitionIndex" : 444749407,
+        "startOffset" : -2938146932250713628,
+        "leaderEpoch" : -1785202015,
+        "errorCode" : 88,
+        "errorMessage" : null
+      } ]
+    }, {
+      "topicName" : "DescribeShareGroupOffsetsResponse.Groups[0].Topics[1].TopicName",
+      "topicId" : "SiM9cxLkWRDeOp2JGgORqQ",
+      "partitions" : [ {
+        "partitionIndex" : -197835637,
+        "startOffset" : 3064363162507685624,
+        "leaderEpoch" : 835882653,
+        "errorCode" : -17476,
+        "errorMessage" : null
+      }, {
+        "partitionIndex" : -360283172,
+        "startOffset" : -3702213990057126899,
+        "leaderEpoch" : 1050279836,
+        "errorCode" : 26161,
+        "errorMessage" : null
+      } ]
+    } ],
+    "errorCode" : 12332,
+    "errorMessage" : null
+  }, {
+    "groupId" : "DescribeShareGroupOffsetsResponse.Groups[1].GroupId",
+    "topics" : [ {
+      "topicName" : "DescribeShareGroupOffsetsResponse.Groups[1].Topics[0].TopicName",
+      "topicId" : "QcCwLLyIvIxDKAsEXFidXQ",
+      "partitions" : [ {
+        "partitionIndex" : -765221553,
+        "startOffset" : 6194921132786887764,
+        "leaderEpoch" : -778551023,
+        "errorCode" : 17192,
+        "errorMessage" : null
+      }, {
+        "partitionIndex" : 126596672,
+        "startOffset" : 8473296698931348345,
+        "leaderEpoch" : -1778882224,
+        "errorCode" : -3347,
+        "errorMessage" : null
+      } ]
+    }, {
+      "topicName" : "DescribeShareGroupOffsetsResponse.Groups[1].Topics[1].TopicName",
+      "topicId" : "PewGHUOTPcnLTE250zI0ng",
+      "partitions" : [ {
+        "partitionIndex" : 59932356,
+        "startOffset" : -7420576974736113339,
+        "leaderEpoch" : -184957420,
+        "errorCode" : -31815,
+        "errorMessage" : null
+      }, {
+        "partitionIndex" : -142206285,
+        "startOffset" : 2520160455341024848,
+        "leaderEpoch" : -762107499,
+        "errorCode" : 11620,
+        "errorMessage" : null
+      } ]
+    } ],
+    "errorCode" : -1311,
+    "errorMessage" : null
+  } ]
+}

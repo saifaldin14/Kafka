@@ -1,0 +1,33 @@
+{
+  "errorCode" : 4400,
+  "apiKeys" : [ {
+    "apiKey" : -14852,
+    "minVersion" : -14557,
+    "maxVersion" : -25927
+  }, {
+    "apiKey" : 26511,
+    "minVersion" : -1584,
+    "maxVersion" : -2830
+  } ],
+  "throttleTimeMs" : -525401768,
+  "supportedFeatures" : [ {
+    "name" : "ApiVersionsResponse.SupportedFeatures[0].Name",
+    "minVersion" : 17618,
+    "maxVersion" : -23392
+  }, {
+    "name" : "ApiVersionsResponse.SupportedFeatures[1].Name",
+    "minVersion" : 5029,
+    "maxVersion" : 30183
+  } ],
+  "finalizedFeaturesEpoch" : -1586562046559855025,
+  "finalizedFeatures" : [ {
+    "name" : "ApiVersionsResponse.FinalizedFeatures[0].Name",
+    "maxVersionLevel" : -7122,
+    "minVersionLevel" : -31272
+  }, {
+    "name" : "ApiVersionsResponse.FinalizedFeatures[1].Name",
+    "maxVersionLevel" : -6625,
+    "minVersionLevel" : -9035
+  } ],
+  "zkMigrationReady" : true
+}

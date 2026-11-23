@@ -1,0 +1,86 @@
+{
+  "throttleTimeMs" : 1649189092,
+  "groups" : [ {
+    "groupId" : "DescribeShareGroupOffsetsResponse.Groups[0].GroupId",
+    "topics" : [ {
+      "topicName" : "DescribeShareGroupOffsetsResponse.Groups[0].Topics[0].TopicName",
+      "topicId" : "3SHqrcQ9Hl39wENEc9rQGg",
+      "partitions" : [ {
+        "partitionIndex" : 806961040,
+        "startOffset" : 5837924941716466441,
+        "leaderEpoch" : 437864224,
+        "lag" : -6962179504371047386,
+        "errorCode" : -8035,
+        "errorMessage" : "DescribeShareGroupOffsetsResponse.Groups[0].Topics[0].Partitions[0].ErrorMessage"
+      }, {
+        "partitionIndex" : 444749407,
+        "startOffset" : -2938146932250713628,
+        "leaderEpoch" : -1785202015,
+        "lag" : 4060359830823066331,
+        "errorCode" : 88,
+        "errorMessage" : "DescribeShareGroupOffsetsResponse.Groups[0].Topics[0].Partitions[1].ErrorMessage"
+      } ]
+    }, {
+      "topicName" : "DescribeShareGroupOffsetsResponse.Groups[0].Topics[1].TopicName",
+      "topicId" : "SiM9cxLkWRDeOp2JGgORqQ",
+      "partitions" : [ {
+        "partitionIndex" : -197835637,
+        "startOffset" : 3064363162507685624,
+        "leaderEpoch" : 835882653,
+        "lag" : -731444930372237737,
+        "errorCode" : -17476,
+        "errorMessage" : "DescribeShareGroupOffsetsResponse.Groups[0].Topics[1].Partitions[0].ErrorMessage"
+      }, {
+        "partitionIndex" : -360283172,
+        "startOffset" : -3702213990057126899,
+        "leaderEpoch" : 1050279836,
+        "lag" : -7204762205469747454,
+        "errorCode" : 26161,
+        "errorMessage" : "DescribeShareGroupOffsetsResponse.Groups[0].Topics[1].Partitions[1].ErrorMessage"
+      } ]
+    } ],
+    "errorCode" : 12332,
+    "errorMessage" : "DescribeShareGroupOffsetsResponse.Groups[0].ErrorMessage"
+  }, {
+    "groupId" : "DescribeShareGroupOffsetsResponse.Groups[1].GroupId",
+    "topics" : [ {
+      "topicName" : "DescribeShareGroupOffsetsResponse.Groups[1].Topics[0].TopicName",
+      "topicId" : "QcCwLLyIvIxDKAsEXFidXQ",
+      "partitions" : [ {
+        "partitionIndex" : -765221553,
+        "startOffset" : 6194921132786887764,
+        "leaderEpoch" : -778551023,
+        "lag" : 3922785850951884619,
+        "errorCode" : 17192,
+        "errorMessage" : "DescribeShareGroupOffsetsResponse.Groups[1].Topics[0].Partitions[0].ErrorMessage"
+      }, {
+        "partitionIndex" : 126596672,
+        "startOffset" : 8473296698931348345,
+        "leaderEpoch" : -1778882224,
+        "lag" : 5022320512553203222,
+        "errorCode" : -3347,
+        "errorMessage" : "DescribeShareGroupOffsetsResponse.Groups[1].Topics[0].Partitions[1].ErrorMessage"
+      } ]
+    }, {
+      "topicName" : "DescribeShareGroupOffsetsResponse.Groups[1].Topics[1].TopicName",
+      "topicId" : "PewGHUOTPcnLTE250zI0ng",
+      "partitions" : [ {
+        "partitionIndex" : 59932356,
+        "startOffset" : -7420576974736113339,
+        "leaderEpoch" : -184957420,
+        "lag" : -3539074496523566502,
+        "errorCode" : -31815,
+        "errorMessage" : "DescribeShareGroupOffsetsResponse.Groups[1].Topics[1].Partitions[0].ErrorMessage"
+      }, {
+        "partitionIndex" : -142206285,
+        "startOffset" : 2520160455341024848,
+        "leaderEpoch" : -762107499,
+        "lag" : -5118286955101266865,
+        "errorCode" : 11620,
+        "errorMessage" : "DescribeShareGroupOffsetsResponse.Groups[1].Topics[1].Partitions[1].ErrorMessage"
+      } ]
+    } ],
+    "errorCode" : -1311,
+    "errorMessage" : "DescribeShareGroupOffsetsResponse.Groups[1].ErrorMessage"
+  } ]
+}

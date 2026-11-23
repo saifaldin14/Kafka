@@ -1,0 +1,26 @@
+{
+  "throttleTimeMs" : 1308245886,
+  "topics" : [ {
+    "name" : "DeleteRecordsResponse.Topics[0].Name",
+    "partitions" : [ {
+      "partitionIndex" : 125590170,
+      "lowWatermark" : 8592509623857584200,
+      "errorCode" : -1205
+    }, {
+      "partitionIndex" : 1252050641,
+      "lowWatermark" : -7585213572644369,
+      "errorCode" : 26542
+    } ]
+  }, {
+    "name" : "DeleteRecordsResponse.Topics[1].Name",
+    "partitions" : [ {
+      "partitionIndex" : 933785253,
+      "lowWatermark" : 7243655341532086707,
+      "errorCode" : 4554
+    }, {
+      "partitionIndex" : 1154649598,
+      "lowWatermark" : 8516040150995397020,
+      "errorCode" : 12247
+    } ]
+  } ]
+}

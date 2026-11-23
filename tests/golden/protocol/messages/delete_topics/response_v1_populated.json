@@ -1,0 +1,10 @@
+{
+  "throttleTimeMs" : 1554645700,
+  "responses" : [ {
+    "name" : "DeleteTopicsResponse.Responses[0].Name",
+    "errorCode" : -19054
+  }, {
+    "name" : "DeleteTopicsResponse.Responses[1].Name",
+    "errorCode" : -3393
+  } ]
+}

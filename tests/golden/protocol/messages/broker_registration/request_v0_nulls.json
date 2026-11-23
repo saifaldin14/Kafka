@@ -1,0 +1,26 @@
+{
+  "brokerId" : 1714379088,
+  "clusterId" : "BrokerRegistrationRequest.ClusterId",
+  "incarnationId" : "ACOPqPdG8TmDXjYcLYuvLg",
+  "listeners" : [ {
+    "name" : "BrokerRegistrationRequest.Listeners[0].Name",
+    "host" : "BrokerRegistrationRequest.Listeners[0].Host",
+    "port" : 30102,
+    "securityProtocol" : -22801
+  }, {
+    "name" : "BrokerRegistrationRequest.Listeners[1].Name",
+    "host" : "BrokerRegistrationRequest.Listeners[1].Host",
+    "port" : 13145,
+    "securityProtocol" : -29212
+  } ],
+  "features" : [ {
+    "name" : "BrokerRegistrationRequest.Features[0].Name",
+    "minSupportedVersion" : 31091,
+    "maxSupportedVersion" : 21001
+  }, {
+    "name" : "BrokerRegistrationRequest.Features[1].Name",
+    "minSupportedVersion" : 26802,
+    "maxSupportedVersion" : -17308
+  } ],
+  "rack" : null
+}

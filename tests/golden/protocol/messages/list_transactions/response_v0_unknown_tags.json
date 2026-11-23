@@ -1,0 +1,14 @@
+{
+  "throttleTimeMs" : 1815655422,
+  "errorCode" : 10918,
+  "unknownStateFilters" : [ "ListTransactionsResponse.UnknownStateFilters[0]", "ListTransactionsResponse.UnknownStateFilters[1]" ],
+  "transactionStates" : [ {
+    "transactionalId" : "ListTransactionsResponse.TransactionStates[0].TransactionalId",
+    "producerId" : -604759841237387200,
+    "transactionState" : "ListTransactionsResponse.TransactionStates[0].TransactionState"
+  }, {
+    "transactionalId" : "ListTransactionsResponse.TransactionStates[1].TransactionalId",
+    "producerId" : 7291549455490903131,
+    "transactionState" : "ListTransactionsResponse.TransactionStates[1].TransactionState"
+  } ]
+}

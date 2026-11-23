@@ -1,0 +1,5 @@
+{
+  "electionType" : 0,
+  "topicPartitions" : [ ],
+  "timeoutMs" : 60000
+}

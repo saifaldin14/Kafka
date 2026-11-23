@@ -1,0 +1,20 @@
+{
+  "throttleTimeMs" : -512051164,
+  "errorCode" : 32204,
+  "errorMessage" : "DescribeClusterResponse.ErrorMessage",
+  "endpointType" : -88,
+  "clusterId" : "DescribeClusterResponse.ClusterId",
+  "controllerId" : 1910903240,
+  "brokers" : [ {
+    "brokerId" : -589738643,
+    "host" : "DescribeClusterResponse.Brokers[0].Host",
+    "port" : 1763471154,
+    "rack" : "DescribeClusterResponse.Brokers[0].Rack"
+  }, {
+    "brokerId" : 2110633362,
+    "host" : "DescribeClusterResponse.Brokers[1].Host",
+    "port" : -1055965259,
+    "rack" : "DescribeClusterResponse.Brokers[1].Rack"
+  } ],
+  "clusterAuthorizedOperations" : 285908326
+}

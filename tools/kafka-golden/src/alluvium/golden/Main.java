@@ -14,19 +14,26 @@ public final class Main {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 2) {
+        if (args.length < 2) {
             usage();
         }
         java.nio.file.Path out = java.nio.file.Path.of(args[1]);
         switch (args[0]) {
             case "errors" -> ErrorsDump.write(out);
             case "api-keys" -> ApiKeysDump.write(out);
+            case "messages" -> {
+                if (args.length != 3) {
+                    usage();
+                }
+                MessagesDump.write(out, java.nio.file.Path.of(args[2]));
+            }
             default -> usage();
         }
     }
 
     private static void usage() {
-        System.err.println("usage: Main <dump> <output-directory>; dumps: errors, api-keys");
+        System.err.println("usage: Main <dump> <output-directory> [<schemas-directory>]; dumps: "
+            + "errors, api-keys, messages <schemas-directory>");
         System.exit(2);
     }
 }

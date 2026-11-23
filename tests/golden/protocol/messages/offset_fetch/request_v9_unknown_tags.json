@@ -1,0 +1,26 @@
+{
+  "groups" : [ {
+    "groupId" : "OffsetFetchRequest.Groups[0].GroupId",
+    "memberId" : "OffsetFetchRequest.Groups[0].MemberId",
+    "memberEpoch" : 1442124518,
+    "topics" : [ {
+      "name" : "OffsetFetchRequest.Groups[0].Topics[0].Name",
+      "partitionIndexes" : [ -519116835, -518862360 ]
+    }, {
+      "name" : "OffsetFetchRequest.Groups[0].Topics[1].Name",
+      "partitionIndexes" : [ 2007958984, 2007815869 ]
+    } ]
+  }, {
+    "groupId" : "OffsetFetchRequest.Groups[1].GroupId",
+    "memberId" : "OffsetFetchRequest.Groups[1].MemberId",
+    "memberEpoch" : 326683595,
+    "topics" : [ {
+      "name" : "OffsetFetchRequest.Groups[1].Topics[0].Name",
+      "partitionIndexes" : [ 792792196, 792537721 ]
+    }, {
+      "name" : "OffsetFetchRequest.Groups[1].Topics[1].Name",
+      "partitionIndexes" : [ 1070870969, 1071014084 ]
+    } ]
+  } ],
+  "requireStable" : true
+}

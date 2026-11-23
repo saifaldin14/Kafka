@@ -1,0 +1,67 @@
+{
+  "throttleTimeMs" : -828268425,
+  "errorCode" : -2023,
+  "topics" : [ {
+    "name" : "FetchSnapshotResponse.Topics[0].Name",
+    "partitions" : [ {
+      "index" : 146144291,
+      "errorCode" : -14176,
+      "snapshotId" : {
+        "endOffset" : -6031737812529132292,
+        "epoch" : -1936893941
+      },
+      "currentLeader" : {
+        "leaderId" : 635235595,
+        "leaderEpoch" : 504359071
+      },
+      "size" : -6181838467365970860,
+      "position" : -2337841852738245390,
+      "unalignedRecords" : ""
+    }, {
+      "index" : -1938467766,
+      "errorCode" : 10821,
+      "snapshotId" : {
+        "endOffset" : 7942831243735327355,
+        "epoch" : 667871192
+      },
+      "currentLeader" : {
+        "leaderId" : -1531864248,
+        "leaderEpoch" : 1342323630
+      },
+      "size" : 4377264301867712327,
+      "position" : -2931225863047322447,
+      "unalignedRecords" : ""
+    } ]
+  }, {
+    "name" : "FetchSnapshotResponse.Topics[1].Name",
+    "partitions" : [ {
+      "index" : 1314793046,
+      "errorCode" : -11599,
+      "snapshotId" : {
+        "endOffset" : 1147612195539298671,
+        "epoch" : 1279226908
+      },
+      "currentLeader" : {
+        "leaderId" : 352843860,
+        "leaderEpoch" : 1297831658
+      },
+      "size" : -7641536060578854741,
+      "position" : 8143373980715356029,
+      "unalignedRecords" : ""
+    }, {
+      "index" : -696183473,
+      "errorCode" : 10300,
+      "snapshotId" : {
+        "endOffset" : -671135752302753392,
+        "epoch" : -88553905
+      },
+      "currentLeader" : {
+        "leaderId" : 2084087479,
+        "leaderEpoch" : 590176971
+      },
+      "size" : 3228337219318547464,
+      "position" : -57549391901247634,
+      "unalignedRecords" : ""
+    } ]
+  } ]
+}

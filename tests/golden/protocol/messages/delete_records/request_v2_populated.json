@@ -1,0 +1,22 @@
+{
+  "topics" : [ {
+    "name" : "DeleteRecordsRequest.Topics[0].Name",
+    "partitions" : [ {
+      "partitionIndex" : -1236536752,
+      "offset" : -6700384115900241799
+    }, {
+      "partitionIndex" : 922820895,
+      "offset" : -8692519558101319222
+    } ]
+  }, {
+    "name" : "DeleteRecordsRequest.Topics[1].Name",
+    "partitions" : [ {
+      "partitionIndex" : 1450807115,
+      "offset" : -2408401001526978842
+    }, {
+      "partitionIndex" : -1632980068,
+      "offset" : 4637222987935148933
+    } ]
+  } ],
+  "timeoutMs" : -996654680
+}

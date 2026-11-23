@@ -1,0 +1,10 @@
+{
+  "timeoutMs" : 347616010,
+  "topics" : [ {
+    "name" : "ListPartitionReassignmentsRequest.Topics[0].Name",
+    "partitionIndexes" : [ -1018371275, -1018256000 ]
+  }, {
+    "name" : "ListPartitionReassignmentsRequest.Topics[1].Name",
+    "partitionIndexes" : [ -1802700864, -1802927499 ]
+  } ]
+}

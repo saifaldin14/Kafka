@@ -1,0 +1,11 @@
+{
+  "errorCode" : 0,
+  "principalType" : "",
+  "principalName" : "",
+  "issueTimestampMs" : 0,
+  "expiryTimestampMs" : 0,
+  "maxTimestampMs" : 0,
+  "tokenId" : "",
+  "hmac" : "",
+  "throttleTimeMs" : 0
+}

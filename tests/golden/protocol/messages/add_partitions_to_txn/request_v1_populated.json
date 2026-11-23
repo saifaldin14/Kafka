@@ -1,0 +1,12 @@
+{
+  "v3AndBelowTransactionalId" : "AddPartitionsToTxnRequest.V3AndBelowTransactionalId",
+  "v3AndBelowProducerId" : 6392378786904159607,
+  "v3AndBelowProducerEpoch" : -28277,
+  "v3AndBelowTopics" : [ {
+    "name" : "AddPartitionsToTxnRequest.V3AndBelowTopics[0].Name",
+    "partitions" : [ -1755470677, -1755212722 ]
+  }, {
+    "name" : "AddPartitionsToTxnRequest.V3AndBelowTopics[1].Name",
+    "partitions" : [ 742956642, 742810047 ]
+  } ]
+}

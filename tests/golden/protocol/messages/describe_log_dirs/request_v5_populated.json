@@ -1,0 +1,9 @@
+{
+  "topics" : [ {
+    "topic" : "DescribeLogDirsRequest.Topics[0].Topic",
+    "partitions" : [ 913949878, 913691923 ]
+  }, {
+    "topic" : "DescribeLogDirsRequest.Topics[1].Topic",
+    "partitions" : [ -2073002529, -2072744574 ]
+  } ]
+}

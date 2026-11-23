@@ -1,0 +1,22 @@
+{
+  "groupId" : "ReadShareGroupStateRequest.GroupId",
+  "topics" : [ {
+    "topicId" : "NG0Tr3Q5klVO6ukifdPegg",
+    "partitions" : [ {
+      "partition" : -691543924,
+      "leaderEpoch" : 649253672
+    }, {
+      "partition" : -1247587583,
+      "leaderEpoch" : -210488631
+    } ]
+  }, {
+    "topicId" : "KrUfSvNfmijxXjdbi3LAsQ",
+    "partitions" : [ {
+      "partition" : 1381227517,
+      "leaderEpoch" : -1725011515
+    }, {
+      "partition" : -1534415624,
+      "leaderEpoch" : -623336572
+    } ]
+  } ]
+}

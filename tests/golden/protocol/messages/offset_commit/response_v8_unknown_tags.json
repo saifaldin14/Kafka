@@ -1,0 +1,22 @@
+{
+  "throttleTimeMs" : 54711035,
+  "topics" : [ {
+    "name" : "OffsetCommitResponse.Topics[0].Name",
+    "partitions" : [ {
+      "partitionIndex" : -727419629,
+      "errorCode" : 25924
+    }, {
+      "partitionIndex" : -175014364,
+      "errorCode" : 9241
+    } ]
+  }, {
+    "name" : "OffsetCommitResponse.Topics[1].Name",
+    "partitions" : [ {
+      "partitionIndex" : 430860952,
+      "errorCode" : 14725
+    }, {
+      "partitionIndex" : 1012189895,
+      "errorCode" : -5920
+    } ]
+  } ]
+}

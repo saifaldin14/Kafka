@@ -1,0 +1,78 @@
+{
+  "groupId" : "WriteShareGroupStateRequest.GroupId",
+  "topics" : [ {
+    "topicId" : "_JScBye4K5DosNMoffJBKQ",
+    "partitions" : [ {
+      "partition" : -1693188219,
+      "stateEpoch" : 87643403,
+      "leaderEpoch" : -2096077539,
+      "startOffset" : -775169802970987144,
+      "deliveryCompleteCount" : 851609677,
+      "stateBatches" : [ {
+        "firstOffset" : 3552132632942305619,
+        "lastOffset" : 7577957903451592793,
+        "deliveryState" : -25,
+        "deliveryCount" : 10921
+      }, {
+        "firstOffset" : -5380824134050388678,
+        "lastOffset" : 5181880728375986330,
+        "deliveryState" : 42,
+        "deliveryCount" : 3504
+      } ]
+    }, {
+      "partition" : 547093536,
+      "stateEpoch" : 941301340,
+      "leaderEpoch" : -1881680356,
+      "startOffset" : -7541746955535799667,
+      "deliveryCompleteCount" : -796762312,
+      "stateBatches" : [ {
+        "firstOffset" : -138238526171257266,
+        "lastOffset" : 3099595468788166134,
+        "deliveryState" : -42,
+        "deliveryCount" : -5068
+      }, {
+        "firstOffset" : -5465245777952004953,
+        "lastOffset" : -3532206296547843499,
+        "deliveryState" : 115,
+        "deliveryCount" : -8243
+      } ]
+    } ]
+  }, {
+    "topicId" : "j5NJQdkQ8N0INnjj18l_mg",
+    "partitions" : [ {
+      "partition" : 522106132,
+      "stateEpoch" : 501865984,
+      "leaderEpoch" : 1800871328,
+      "startOffset" : 1998391976237793673,
+      "deliveryCompleteCount" : -1442005932,
+      "stateBatches" : [ {
+        "firstOffset" : -2328128739302545198,
+        "lastOffset" : -7604320007791395262,
+        "deliveryState" : -46,
+        "deliveryCount" : -5512
+      }, {
+        "firstOffset" : -9155566634196458037,
+        "lastOffset" : -1700232845913282015,
+        "deliveryState" : -81,
+        "deliveryCount" : 25137
+      } ]
+    }, {
+      "partition" : 1716109513,
+      "stateEpoch" : -1519578977,
+      "leaderEpoch" : -422194911,
+      "startOffset" : -6777679897729386396,
+      "deliveryCompleteCount" : -1137304039,
+      "stateBatches" : [ {
+        "firstOffset" : -2713368417783289561,
+        "lastOffset" : -3728289444518425643,
+        "deliveryState" : -13,
+        "deliveryCount" : -10163
+      }, {
+        "firstOffset" : 2613638833997458126,
+        "lastOffset" : 2903512320817583990,
+        "deliveryState" : 86,
+        "deliveryCount" : -6988
+      } ]
+    } ]
+  } ]
+}

@@ -1,0 +1,4 @@
+{
+  "groupIds" : [ "ShareGroupDescribeRequest.GroupIds[0]", "ShareGroupDescribeRequest.GroupIds[1]" ],
+  "includeAuthorizedOperations" : false
+}

@@ -1,0 +1,77 @@
+{
+  "groupId" : "StreamsGroupTopologyDescriptionUpdateRequest.GroupId",
+  "memberId" : "StreamsGroupTopologyDescriptionUpdateRequest.MemberId",
+  "topologyEpoch" : 1757478476,
+  "topologyDescription" : {
+    "subtopologies" : [ {
+      "subtopologyId" : "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[0].SubtopologyId",
+      "nodes" : [ {
+        "name" : "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[0].Nodes[0].Name",
+        "nodeType" : -13,
+        "sourceTopics" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[0].Nodes[0].SourceTopics[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[0].Nodes[0].SourceTopics[1]" ],
+        "sinkTopic" : "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[0].Nodes[0].SinkTopic",
+        "stores" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[0].Nodes[0].Stores[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[0].Nodes[0].Stores[1]" ],
+        "successors" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[0].Nodes[0].Successors[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[0].Nodes[0].Successors[1]" ]
+      }, {
+        "name" : "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[0].Nodes[1].Name",
+        "nodeType" : 112,
+        "sourceTopics" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[0].Nodes[1].SourceTopics[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[0].Nodes[1].SourceTopics[1]" ],
+        "sinkTopic" : "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[0].Nodes[1].SinkTopic",
+        "stores" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[0].Nodes[1].Stores[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[0].Nodes[1].Stores[1]" ],
+        "successors" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[0].Nodes[1].Successors[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[0].Nodes[1].Successors[1]" ]
+      } ]
+    }, {
+      "subtopologyId" : "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[1].SubtopologyId",
+      "nodes" : [ {
+        "name" : "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[1].Nodes[0].Name",
+        "nodeType" : 18,
+        "sourceTopics" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[1].Nodes[0].SourceTopics[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[1].Nodes[0].SourceTopics[1]" ],
+        "sinkTopic" : "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[1].Nodes[0].SinkTopic",
+        "stores" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[1].Nodes[0].Stores[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[1].Nodes[0].Stores[1]" ],
+        "successors" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[1].Nodes[0].Successors[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[1].Nodes[0].Successors[1]" ]
+      }, {
+        "name" : "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[1].Nodes[1].Name",
+        "nodeType" : 61,
+        "sourceTopics" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[1].Nodes[1].SourceTopics[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[1].Nodes[1].SourceTopics[1]" ],
+        "sinkTopic" : "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[1].Nodes[1].SinkTopic",
+        "stores" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[1].Nodes[1].Stores[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[1].Nodes[1].Stores[1]" ],
+        "successors" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[1].Nodes[1].Successors[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.Subtopologies[1].Nodes[1].Successors[1]" ]
+      } ]
+    } ],
+    "globalStores" : [ {
+      "source" : {
+        "name" : "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[0].Source.Name",
+        "nodeType" : -65,
+        "sourceTopics" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[0].Source.SourceTopics[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[0].Source.SourceTopics[1]" ],
+        "sinkTopic" : "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[0].Source.SinkTopic",
+        "stores" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[0].Source.Stores[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[0].Source.Stores[1]" ],
+        "successors" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[0].Source.Successors[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[0].Source.Successors[1]" ]
+      },
+      "processor" : {
+        "name" : "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[0].Processor.Name",
+        "nodeType" : -72,
+        "sourceTopics" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[0].Processor.SourceTopics[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[0].Processor.SourceTopics[1]" ],
+        "sinkTopic" : "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[0].Processor.SinkTopic",
+        "stores" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[0].Processor.Stores[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[0].Processor.Stores[1]" ],
+        "successors" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[0].Processor.Successors[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[0].Processor.Successors[1]" ]
+      }
+    }, {
+      "source" : {
+        "name" : "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[1].Source.Name",
+        "nodeType" : -18,
+        "sourceTopics" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[1].Source.SourceTopics[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[1].Source.SourceTopics[1]" ],
+        "sinkTopic" : "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[1].Source.SinkTopic",
+        "stores" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[1].Source.Stores[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[1].Source.Stores[1]" ],
+        "successors" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[1].Source.Successors[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[1].Source.Successors[1]" ]
+      },
+      "processor" : {
+        "name" : "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[1].Processor.Name",
+        "nodeType" : -109,
+        "sourceTopics" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[1].Processor.SourceTopics[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[1].Processor.SourceTopics[1]" ],
+        "sinkTopic" : "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[1].Processor.SinkTopic",
+        "stores" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[1].Processor.Stores[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[1].Processor.Stores[1]" ],
+        "successors" : [ "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[1].Processor.Successors[0]", "StreamsGroupTopologyDescriptionUpdateRequest.TopologyDescription.GlobalStores[1].Processor.Successors[1]" ]
+      }
+    } ]
+  }
+}

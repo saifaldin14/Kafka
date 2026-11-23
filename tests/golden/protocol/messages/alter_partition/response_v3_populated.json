@@ -1,0 +1,43 @@
+{
+  "throttleTimeMs" : 110229427,
+  "errorCode" : 29477,
+  "topics" : [ {
+    "topicId" : "qxWl218hGYDW4nbCpT6P-Q",
+    "partitions" : [ {
+      "partitionIndex" : 1462067067,
+      "errorCode" : 5580,
+      "leaderId" : -768045211,
+      "leaderEpoch" : 1002424461,
+      "isr" : [ 121210213, 121464688 ],
+      "leaderRecoveryState" : -80,
+      "partitionEpoch" : -559790314
+    }, {
+      "partitionIndex" : 958019852,
+      "errorCode" : -27519,
+      "leaderId" : 1246144986,
+      "leaderEpoch" : 270041164,
+      "isr" : [ 538901638, 538727203 ],
+      "leaderRecoveryState" : -127,
+      "partitionEpoch" : -482842411
+    } ]
+  }, {
+    "topicId" : "UHdWJ1oEhM2_TFLd9a3gag",
+    "partitions" : [ {
+      "partitionIndex" : 1379795136,
+      "errorCode" : 18029,
+      "leaderId" : 1337200526,
+      "leaderEpoch" : 630016208,
+      "isr" : [ 912877562, 912730967 ],
+      "leaderRecoveryState" : -83,
+      "partitionEpoch" : 654398145
+    }, {
+      "partitionIndex" : 487976911,
+      "errorCode" : -26968,
+      "leaderId" : 1890336057,
+      "leaderEpoch" : 1630347409,
+      "isr" : [ 206602089, 206745204 ],
+      "leaderRecoveryState" : 76,
+      "partitionEpoch" : -1529529678
+    } ]
+  } ]
+}

@@ -1,0 +1,9 @@
+{
+  "throttleTimeMs" : 0,
+  "errorCode" : 0,
+  "errorMessage" : null,
+  "memberId" : null,
+  "memberEpoch" : 0,
+  "heartbeatIntervalMs" : 0,
+  "assignment" : null
+}

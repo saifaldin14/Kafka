@@ -1,0 +1,13 @@
+{
+  "resources" : [ {
+    "resourceType" : -9,
+    "resourceName" : "DescribeConfigsRequest.Resources[0].ResourceName",
+    "configurationKeys" : [ "DescribeConfigsRequest.Resources[0].ConfigurationKeys[0]", "DescribeConfigsRequest.Resources[0].ConfigurationKeys[1]" ]
+  }, {
+    "resourceType" : 48,
+    "resourceName" : "DescribeConfigsRequest.Resources[1].ResourceName",
+    "configurationKeys" : [ "DescribeConfigsRequest.Resources[1].ConfigurationKeys[0]", "DescribeConfigsRequest.Resources[1].ConfigurationKeys[1]" ]
+  } ],
+  "includeSynonyms" : false,
+  "includeDocumentation" : false
+}

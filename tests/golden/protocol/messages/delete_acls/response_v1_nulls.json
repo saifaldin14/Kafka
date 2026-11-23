@@ -1,0 +1,52 @@
+{
+  "throttleTimeMs" : 49460859,
+  "filterResults" : [ {
+    "errorCode" : -23375,
+    "errorMessage" : null,
+    "matchingAcls" : [ {
+      "errorCode" : -15705,
+      "errorMessage" : null,
+      "resourceType" : -88,
+      "resourceName" : "DeleteAclsResponse.FilterResults[0].MatchingAcls[0].ResourceName",
+      "patternType" : 110,
+      "principal" : "DeleteAclsResponse.FilterResults[0].MatchingAcls[0].Principal",
+      "host" : "DeleteAclsResponse.FilterResults[0].MatchingAcls[0].Host",
+      "operation" : 101,
+      "permissionType" : 123
+    }, {
+      "errorCode" : -8806,
+      "errorMessage" : null,
+      "resourceType" : 47,
+      "resourceName" : "DeleteAclsResponse.FilterResults[0].MatchingAcls[1].ResourceName",
+      "patternType" : 91,
+      "principal" : "DeleteAclsResponse.FilterResults[0].MatchingAcls[1].Principal",
+      "host" : "DeleteAclsResponse.FilterResults[0].MatchingAcls[1].Host",
+      "operation" : 72,
+      "permissionType" : 4
+    } ]
+  }, {
+    "errorCode" : -1476,
+    "errorMessage" : null,
+    "matchingAcls" : [ {
+      "errorCode" : 14450,
+      "errorMessage" : null,
+      "resourceType" : -105,
+      "resourceName" : "DeleteAclsResponse.FilterResults[1].MatchingAcls[0].ResourceName",
+      "patternType" : -109,
+      "principal" : "DeleteAclsResponse.FilterResults[1].MatchingAcls[0].Principal",
+      "host" : "DeleteAclsResponse.FilterResults[1].MatchingAcls[0].Host",
+      "operation" : -64,
+      "permissionType" : -20
+    }, {
+      "errorCode" : 1183,
+      "errorMessage" : null,
+      "resourceType" : 80,
+      "resourceName" : "DeleteAclsResponse.FilterResults[1].MatchingAcls[1].ResourceName",
+      "patternType" : -26,
+      "principal" : "DeleteAclsResponse.FilterResults[1].MatchingAcls[1].Principal",
+      "host" : "DeleteAclsResponse.FilterResults[1].MatchingAcls[1].Host",
+      "operation" : 61,
+      "permissionType" : -93
+    } ]
+  } ]
+}

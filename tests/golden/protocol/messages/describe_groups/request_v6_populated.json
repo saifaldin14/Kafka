@@ -1,0 +1,4 @@
+{
+  "groups" : [ "DescribeGroupsRequest.Groups[0]", "DescribeGroupsRequest.Groups[1]" ],
+  "includeAuthorizedOperations" : false
+}

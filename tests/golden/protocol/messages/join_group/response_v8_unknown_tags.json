@@ -1,0 +1,18 @@
+{
+  "throttleTimeMs" : 1766812330,
+  "errorCode" : 14818,
+  "generationId" : -692234716,
+  "protocolType" : "JoinGroupResponse.ProtocolType",
+  "protocolName" : "JoinGroupResponse.ProtocolName",
+  "leader" : "JoinGroupResponse.Leader",
+  "memberId" : "JoinGroupResponse.MemberId",
+  "members" : [ {
+    "memberId" : "JoinGroupResponse.Members[0].MemberId",
+    "groupInstanceId" : "JoinGroupResponse.Members[0].GroupInstanceId",
+    "metadata" : "Sm9pbkdyb3VwUmVzcG9uc2UuTWVtYmVyc1swXS5NZXRhZGF0YQ=="
+  }, {
+    "memberId" : "JoinGroupResponse.Members[1].MemberId",
+    "groupInstanceId" : "JoinGroupResponse.Members[1].GroupInstanceId",
+    "metadata" : "Sm9pbkdyb3VwUmVzcG9uc2UuTWVtYmVyc1sxXS5NZXRhZGF0YQ=="
+  } ]
+}

@@ -1,0 +1,46 @@
+{
+  "throttleTimeMs" : 1303299625,
+  "topics" : [ {
+    "name" : "CreateTopicsResponse.Topics[0].Name",
+    "topicId" : "9qmBsJNsxzqOzngKgdZPew",
+    "errorCode" : 23811,
+    "errorMessage" : "CreateTopicsResponse.Topics[0].ErrorMessage",
+    "topicConfigErrorCode" : -19544,
+    "numPartitions" : -815896425,
+    "replicationFactor" : -14175,
+    "configs" : [ {
+      "name" : "CreateTopicsResponse.Topics[0].Configs[0].Name",
+      "value" : "CreateTopicsResponse.Topics[0].Configs[0].Value",
+      "readOnly" : true,
+      "configSource" : -112,
+      "isSensitive" : true
+    }, {
+      "name" : "CreateTopicsResponse.Topics[0].Configs[1].Name",
+      "value" : "CreateTopicsResponse.Topics[0].Configs[1].Value",
+      "readOnly" : false,
+      "configSource" : 35,
+      "isSensitive" : false
+    } ]
+  }, {
+    "name" : "CreateTopicsResponse.Topics[1].Name",
+    "topicId" : "aDGvGN9FxEdSMOtDY4y17A",
+    "errorCode" : -21658,
+    "errorMessage" : "CreateTopicsResponse.Topics[1].ErrorMessage",
+    "topicConfigErrorCode" : 27935,
+    "numPartitions" : -1123891090,
+    "replicationFactor" : 5672,
+    "configs" : [ {
+      "name" : "CreateTopicsResponse.Topics[1].Configs[0].Name",
+      "value" : "CreateTopicsResponse.Topics[1].Configs[0].Value",
+      "readOnly" : false,
+      "configSource" : -115,
+      "isSensitive" : false
+    }, {
+      "name" : "CreateTopicsResponse.Topics[1].Configs[1].Name",
+      "value" : "CreateTopicsResponse.Topics[1].Configs[1].Value",
+      "readOnly" : true,
+      "configSource" : -14,
+      "isSensitive" : true
+    } ]
+  } ]
+}

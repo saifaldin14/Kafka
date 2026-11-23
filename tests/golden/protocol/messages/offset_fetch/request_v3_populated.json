@@ -1,0 +1,10 @@
+{
+  "groupId" : "OffsetFetchRequest.GroupId",
+  "topics" : [ {
+    "name" : "OffsetFetchRequest.Topics[0].Name",
+    "partitionIndexes" : [ -1019948883, -1019777928 ]
+  }, {
+    "name" : "OffsetFetchRequest.Topics[1].Name",
+    "partitionIndexes" : [ 1032179352, 1032064077 ]
+  } ]
+}

@@ -1,0 +1,22 @@
+{
+  "throttleTimeMs" : -462484103,
+  "results" : [ {
+    "topicName" : "AlterReplicaLogDirsResponse.Results[0].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : -1519395813,
+      "errorCode" : 10988
+    }, {
+      "partitionIndex" : 847054764,
+      "errorCode" : -15199
+    } ]
+  }, {
+    "topicName" : "AlterReplicaLogDirsResponse.Results[1].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : -1933129376,
+      "errorCode" : 28045
+    }, {
+      "partitionIndex" : 344449135,
+      "errorCode" : -24248
+    } ]
+  } ]
+}

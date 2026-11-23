@@ -1,0 +1,14 @@
+{
+  "throttleTimeMs" : 1554645700,
+  "responses" : [ {
+    "name" : "DeleteTopicsResponse.Responses[0].Name",
+    "topicId" : "hZq_WpzV4MPb1Ab4f20coA",
+    "errorCode" : -19054,
+    "errorMessage" : "DeleteTopicsResponse.Responses[0].ErrorMessage"
+  }, {
+    "name" : "DeleteTopicsResponse.Responses[1].Name",
+    "topicId" : "4TIn2diJRoYxgFwq8UMKXw",
+    "errorCode" : -3393,
+    "errorMessage" : "DeleteTopicsResponse.Responses[1].ErrorMessage"
+  } ]
+}

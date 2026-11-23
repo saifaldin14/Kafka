@@ -1,0 +1,23 @@
+{
+  "timeoutMs" : 989159260,
+  "allowReplicationFactorChange" : true,
+  "topics" : [ {
+    "name" : "AlterPartitionReassignmentsRequest.Topics[0].Name",
+    "partitions" : [ {
+      "partitionIndex" : 1958793020,
+      "replicas" : null
+    }, {
+      "partitionIndex" : -1486589077,
+      "replicas" : null
+    } ]
+  }, {
+    "name" : "AlterPartitionReassignmentsRequest.Topics[1].Name",
+    "partitions" : [ {
+      "partitionIndex" : -1556913049,
+      "replicas" : null
+    }, {
+      "partitionIndex" : -218918728,
+      "replicas" : null
+    } ]
+  } ]
+}

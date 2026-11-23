@@ -1,0 +1,4 @@
+{
+  "stateFilters" : [ "ListTransactionsRequest.StateFilters[0]", "ListTransactionsRequest.StateFilters[1]" ],
+  "producerIdFilters" : [ -5853185249578473379, -5852063747717887384 ]
+}

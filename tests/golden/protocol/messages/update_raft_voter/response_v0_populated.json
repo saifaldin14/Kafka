@@ -1,0 +1,10 @@
+{
+  "throttleTimeMs" : -1241955065,
+  "errorCode" : 25705,
+  "currentLeader" : {
+    "leaderId" : 1026257772,
+    "leaderEpoch" : 225340866,
+    "host" : "UpdateRaftVoterResponse.CurrentLeader.Host",
+    "port" : -1236734237
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "dirs" : [ {
+    "path" : "AlterReplicaLogDirsRequest.Dirs[0].Path",
+    "topics" : [ {
+      "name" : "AlterReplicaLogDirsRequest.Dirs[0].Topics[0].Name",
+      "partitions" : [ 18929703, 19159818 ]
+    }, {
+      "name" : "AlterReplicaLogDirsRequest.Dirs[0].Topics[1].Name",
+      "partitions" : [ 798588574, 798414139 ]
+    } ]
+  }, {
+    "path" : "AlterReplicaLogDirsRequest.Dirs[1].Path",
+    "topics" : [ {
+      "name" : "AlterReplicaLogDirsRequest.Dirs[1].Topics[0].Name",
+      "partitions" : [ -312624638, -312882593 ]
+    }, {
+      "name" : "AlterReplicaLogDirsRequest.Dirs[1].Topics[1].Name",
+      "partitions" : [ -1677909429, -1677651474 ]
+    } ]
+  } ]
+}

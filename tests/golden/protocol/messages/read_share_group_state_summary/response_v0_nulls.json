@@ -1,0 +1,37 @@
+{
+  "results" : [ {
+    "topicId" : "zsAk6IUcHUdsnBsaLsXw7A",
+    "partitions" : [ {
+      "partition" : -1405468486,
+      "errorCode" : -31833,
+      "errorMessage" : null,
+      "stateEpoch" : 951728426,
+      "leaderEpoch" : 321696558,
+      "startOffset" : -8198034696380694957
+    }, {
+      "partition" : -1009534353,
+      "errorCode" : -24934,
+      "errorMessage" : null,
+      "stateEpoch" : 1779924425,
+      "leaderEpoch" : -555995617,
+      "startOffset" : -225275564010172090
+    } ]
+  }, {
+    "topicId" : "XTf3gDlDIDqpOafhTQ-Kew",
+    "partitions" : [ {
+      "partition" : 1582738803,
+      "errorCode" : 18310,
+      "errorMessage" : null,
+      "stateEpoch" : 851549421,
+      "leaderEpoch" : 278997219,
+      "startOffset" : 226666213660921490
+    }, {
+      "partition" : 1317288110,
+      "errorCode" : 10275,
+      "errorMessage" : null,
+      "stateEpoch" : -652112946,
+      "leaderEpoch" : 898220898,
+      "startOffset" : -7284136541465996257
+    } ]
+  } ]
+}

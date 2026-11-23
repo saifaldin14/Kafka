@@ -1,0 +1,17 @@
+{
+  "throttleTimeMs" : -660243403,
+  "errorCode" : 5311,
+  "errorMessage" : "ShareGroupHeartbeatResponse.ErrorMessage",
+  "memberId" : "ShareGroupHeartbeatResponse.MemberId",
+  "memberEpoch" : -1778381473,
+  "heartbeatIntervalMs" : 1534625513,
+  "assignment" : {
+    "topicPartitions" : [ {
+      "topicId" : "veiXPKx8Os8uc-gZFxgfBA",
+      "partitions" : [ 1033859954, 1033629839 ]
+    }, {
+      "topicId" : "ADk4cC1yb-LTqqedOXPk8w",
+      "partitions" : [ -1226416453, -1226242018 ]
+    } ]
+  }
+}

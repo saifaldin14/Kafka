@@ -1,0 +1,16 @@
+{
+  "throttleTimeMs" : 505628802,
+  "errorCode" : 19306,
+  "errorMessage" : null,
+  "responses" : [ {
+    "topicName" : "DeleteShareGroupOffsetsResponse.Responses[0].TopicName",
+    "topicId" : "iHqj21gvDPUXcUO21_LPog",
+    "errorCode" : 31316,
+    "errorMessage" : null
+  }, {
+    "topicName" : "DeleteShareGroupOffsetsResponse.Responses[1].TopicName",
+    "topicId" : "Z69HE6IqDUhY4zFcjXTM0Q",
+    "errorCode" : 9961,
+    "errorMessage" : null
+  } ]
+}

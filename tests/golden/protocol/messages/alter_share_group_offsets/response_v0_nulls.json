@@ -1,0 +1,30 @@
+{
+  "throttleTimeMs" : -1792113505,
+  "errorCode" : -21103,
+  "errorMessage" : null,
+  "responses" : [ {
+    "topicName" : "AlterShareGroupOffsetsResponse.Responses[0].TopicName",
+    "topicId" : "swUmphn6DKwrzTs-I-NW_Q",
+    "partitions" : [ {
+      "partitionIndex" : -1205094609,
+      "errorCode" : -9464,
+      "errorMessage" : null
+    }, {
+      "partitionIndex" : 1251459104,
+      "errorCode" : -24755,
+      "errorMessage" : null
+    } ]
+  }, {
+    "topicName" : "AlterShareGroupOffsetsResponse.Responses[1].TopicName",
+    "topicId" : "FDLigXG45OkLW6v0PSzDPg",
+    "partitions" : [ {
+      "partitionIndex" : -713864028,
+      "errorCode" : 9113,
+      "errorMessage" : null
+    }, {
+      "partitionIndex" : -1266269293,
+      "errorCode" : 25796,
+      "errorMessage" : null
+    } ]
+  } ]
+}

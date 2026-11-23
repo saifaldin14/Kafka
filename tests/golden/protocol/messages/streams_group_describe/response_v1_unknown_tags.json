@@ -1,0 +1,718 @@
+{
+  "throttleTimeMs" : 53063410,
+  "groups" : [ {
+    "errorCode" : 12146,
+    "errorMessage" : "StreamsGroupDescribeResponse.Groups[0].ErrorMessage",
+    "groupId" : "StreamsGroupDescribeResponse.Groups[0].GroupId",
+    "groupState" : "StreamsGroupDescribeResponse.Groups[0].GroupState",
+    "groupEpoch" : 378929291,
+    "assignmentEpoch" : -1203487957,
+    "topology" : {
+      "epoch" : 225721553,
+      "subtopologies" : [ {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].SubtopologyId",
+        "sourceTopics" : [ "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].SourceTopics[0]", "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].SourceTopics[1]" ],
+        "repartitionSinkTopics" : [ "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].RepartitionSinkTopics[0]", "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].RepartitionSinkTopics[1]" ],
+        "stateChangelogTopics" : [ {
+          "name" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].StateChangelogTopics[0].Name",
+          "partitions" : 852020545,
+          "replicationFactor" : -25633,
+          "topicConfigs" : [ {
+            "key" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].StateChangelogTopics[0].TopicConfigs[0].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].StateChangelogTopics[0].TopicConfigs[0].Value"
+          }, {
+            "key" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].StateChangelogTopics[0].TopicConfigs[1].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].StateChangelogTopics[0].TopicConfigs[1].Value"
+          } ]
+        }, {
+          "name" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].StateChangelogTopics[1].Name",
+          "partitions" : -98690726,
+          "replicationFactor" : 3622,
+          "topicConfigs" : [ {
+            "key" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].StateChangelogTopics[1].TopicConfigs[0].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].StateChangelogTopics[1].TopicConfigs[0].Value"
+          }, {
+            "key" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].StateChangelogTopics[1].TopicConfigs[1].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].StateChangelogTopics[1].TopicConfigs[1].Value"
+          } ]
+        } ],
+        "repartitionSourceTopics" : [ {
+          "name" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].RepartitionSourceTopics[0].Name",
+          "partitions" : -340571994,
+          "replicationFactor" : 9882,
+          "topicConfigs" : [ {
+            "key" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].RepartitionSourceTopics[0].TopicConfigs[0].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].RepartitionSourceTopics[0].TopicConfigs[0].Value"
+          }, {
+            "key" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].RepartitionSourceTopics[0].TopicConfigs[1].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].RepartitionSourceTopics[0].TopicConfigs[1].Value"
+          } ]
+        }, {
+          "name" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].RepartitionSourceTopics[1].Name",
+          "partitions" : 657452285,
+          "replicationFactor" : 26787,
+          "topicConfigs" : [ {
+            "key" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].RepartitionSourceTopics[1].TopicConfigs[0].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].RepartitionSourceTopics[1].TopicConfigs[0].Value"
+          }, {
+            "key" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].RepartitionSourceTopics[1].TopicConfigs[1].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[0].RepartitionSourceTopics[1].TopicConfigs[1].Value"
+          } ]
+        } ]
+      }, {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].SubtopologyId",
+        "sourceTopics" : [ "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].SourceTopics[0]", "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].SourceTopics[1]" ],
+        "repartitionSinkTopics" : [ "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].RepartitionSinkTopics[0]", "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].RepartitionSinkTopics[1]" ],
+        "stateChangelogTopics" : [ {
+          "name" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].StateChangelogTopics[0].Name",
+          "partitions" : 941038870,
+          "replicationFactor" : -2390,
+          "topicConfigs" : [ {
+            "key" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].StateChangelogTopics[0].TopicConfigs[0].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].StateChangelogTopics[0].TopicConfigs[0].Value"
+          }, {
+            "key" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].StateChangelogTopics[0].TopicConfigs[1].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].StateChangelogTopics[0].TopicConfigs[1].Value"
+          } ]
+        }, {
+          "name" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].StateChangelogTopics[1].Name",
+          "partitions" : 1699745325,
+          "replicationFactor" : -25485,
+          "topicConfigs" : [ {
+            "key" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].StateChangelogTopics[1].TopicConfigs[0].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].StateChangelogTopics[1].TopicConfigs[0].Value"
+          }, {
+            "key" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].StateChangelogTopics[1].TopicConfigs[1].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].StateChangelogTopics[1].TopicConfigs[1].Value"
+          } ]
+        } ],
+        "repartitionSourceTopics" : [ {
+          "name" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].RepartitionSourceTopics[0].Name",
+          "partitions" : 509963003,
+          "replicationFactor" : -12019,
+          "topicConfigs" : [ {
+            "key" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].RepartitionSourceTopics[0].TopicConfigs[0].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].RepartitionSourceTopics[0].TopicConfigs[0].Value"
+          }, {
+            "key" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].RepartitionSourceTopics[0].TopicConfigs[1].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].RepartitionSourceTopics[0].TopicConfigs[1].Value"
+          } ]
+        }, {
+          "name" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].RepartitionSourceTopics[1].Name",
+          "partitions" : 1925326276,
+          "replicationFactor" : 28916,
+          "topicConfigs" : [ {
+            "key" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].RepartitionSourceTopics[1].TopicConfigs[0].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].RepartitionSourceTopics[1].TopicConfigs[0].Value"
+          }, {
+            "key" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].RepartitionSourceTopics[1].TopicConfigs[1].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[0].Topology.Subtopologies[1].RepartitionSourceTopics[1].TopicConfigs[1].Value"
+          } ]
+        } ]
+      } ]
+    },
+    "members" : [ {
+      "memberId" : "StreamsGroupDescribeResponse.Groups[0].Members[0].MemberId",
+      "memberEpoch" : -959256391,
+      "instanceId" : "StreamsGroupDescribeResponse.Groups[0].Members[0].InstanceId",
+      "rackId" : "StreamsGroupDescribeResponse.Groups[0].Members[0].RackId",
+      "clientId" : "StreamsGroupDescribeResponse.Groups[0].Members[0].ClientId",
+      "clientHost" : "StreamsGroupDescribeResponse.Groups[0].Members[0].ClientHost",
+      "topologyEpoch" : -869028708,
+      "processId" : "StreamsGroupDescribeResponse.Groups[0].Members[0].ProcessId",
+      "userEndpoint" : {
+        "host" : "StreamsGroupDescribeResponse.Groups[0].Members[0].UserEndpoint.Host",
+        "port" : 11761
+      },
+      "clientTags" : [ {
+        "key" : "StreamsGroupDescribeResponse.Groups[0].Members[0].ClientTags[0].Key",
+        "value" : "StreamsGroupDescribeResponse.Groups[0].Members[0].ClientTags[0].Value"
+      }, {
+        "key" : "StreamsGroupDescribeResponse.Groups[0].Members[0].ClientTags[1].Key",
+        "value" : "StreamsGroupDescribeResponse.Groups[0].Members[0].ClientTags[1].Value"
+      } ],
+      "taskOffsets" : [ {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[0].TaskOffsets[0].SubtopologyId",
+        "partition" : 2038037481,
+        "offset" : -1055212424324137174
+      }, {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[0].TaskOffsets[1].SubtopologyId",
+        "partition" : -1134736076,
+        "offset" : 929322417298576857
+      } ],
+      "taskEndOffsets" : [ {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[0].TaskEndOffsets[0].SubtopologyId",
+        "partition" : -1887579794,
+        "offset" : 6681017937042429707
+      }, {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[0].TaskEndOffsets[1].SubtopologyId",
+        "partition" : -1116163021,
+        "offset" : 2870583885718846636
+      } ],
+      "assignment" : {
+        "activeTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[0].Assignment.ActiveTasks[0].SubtopologyId",
+          "partitions" : [ 1272549936, 1272406821 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[0].Assignment.ActiveTasks[1].SubtopologyId",
+          "partitions" : [ 2103062809, 2103317284 ]
+        } ],
+        "standbyTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[0].Assignment.StandbyTasks[0].SubtopologyId",
+          "partitions" : [ 251055029, 251170304 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[0].Assignment.StandbyTasks[1].SubtopologyId",
+          "partitions" : [ -899428420, -899682895 ]
+        } ],
+        "warmupTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[0].Assignment.WarmupTasks[0].SubtopologyId",
+          "partitions" : [ 647281022, 647162267 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[0].Assignment.WarmupTasks[1].SubtopologyId",
+          "partitions" : [ -1131401721, -1131227286 ]
+        } ]
+      },
+      "targetAssignment" : {
+        "activeTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[0].TargetAssignment.ActiveTasks[0].SubtopologyId",
+          "partitions" : [ 244458167, 244604762 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[0].TargetAssignment.ActiveTasks[1].SubtopologyId",
+          "partitions" : [ 328933742, 328675787 ]
+        } ],
+        "standbyTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[0].TargetAssignment.StandbyTasks[0].SubtopologyId",
+          "partitions" : [ 577746188, 577519553 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[0].TargetAssignment.StandbyTasks[1].SubtopologyId",
+          "partitions" : [ 1108434629, 1108689104 ]
+        } ],
+        "warmupTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[0].TargetAssignment.WarmupTasks[0].SubtopologyId",
+          "partitions" : [ -184548275, -184433000 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[0].TargetAssignment.WarmupTasks[1].SubtopologyId",
+          "partitions" : [ 1543177236, 1543034121 ]
+        } ]
+      },
+      "isClassic" : false
+    }, {
+      "memberId" : "StreamsGroupDescribeResponse.Groups[0].Members[1].MemberId",
+      "memberEpoch" : 1714276988,
+      "instanceId" : "StreamsGroupDescribeResponse.Groups[0].Members[1].InstanceId",
+      "rackId" : "StreamsGroupDescribeResponse.Groups[0].Members[1].RackId",
+      "clientId" : "StreamsGroupDescribeResponse.Groups[0].Members[1].ClientId",
+      "clientHost" : "StreamsGroupDescribeResponse.Groups[0].Members[1].ClientHost",
+      "topologyEpoch" : -742271843,
+      "processId" : "StreamsGroupDescribeResponse.Groups[0].Members[1].ProcessId",
+      "userEndpoint" : {
+        "host" : "StreamsGroupDescribeResponse.Groups[0].Members[1].UserEndpoint.Host",
+        "port" : 20120
+      },
+      "clientTags" : [ {
+        "key" : "StreamsGroupDescribeResponse.Groups[0].Members[1].ClientTags[0].Key",
+        "value" : "StreamsGroupDescribeResponse.Groups[0].Members[1].ClientTags[0].Value"
+      }, {
+        "key" : "StreamsGroupDescribeResponse.Groups[0].Members[1].ClientTags[1].Key",
+        "value" : "StreamsGroupDescribeResponse.Groups[0].Members[1].ClientTags[1].Value"
+      } ],
+      "taskOffsets" : [ {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[1].TaskOffsets[0].SubtopologyId",
+        "partition" : -603789550,
+        "offset" : 2636483571072980447
+      }, {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[1].TaskOffsets[1].SubtopologyId",
+        "partition" : -829801849,
+        "offset" : 6488152719271298192
+      } ],
+      "taskEndOffsets" : [ {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[1].TaskEndOffsets[0].SubtopologyId",
+        "partition" : -2000227561,
+        "offset" : 3186150271925164736
+      }, {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[1].TaskEndOffsets[1].SubtopologyId",
+        "partition" : -1816617886,
+        "offset" : -5548667035529638001
+      } ],
+      "assignment" : {
+        "activeTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[1].Assignment.ActiveTasks[0].SubtopologyId",
+          "partitions" : [ 1158583649, 1158754604 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[1].Assignment.ActiveTasks[1].SubtopologyId",
+          "partitions" : [ -1936722280, -1936837555 ]
+        } ],
+        "standbyTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[1].Assignment.StandbyTasks[0].SubtopologyId",
+          "partitions" : [ 158485934, 158339339 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[1].Assignment.StandbyTasks[1].SubtopologyId",
+          "partitions" : [ -169918985, -169661030 ]
+        } ],
+        "warmupTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[1].Assignment.WarmupTasks[0].SubtopologyId",
+          "partitions" : [ 1916801767, 1916920522 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[1].Assignment.WarmupTasks[1].SubtopologyId",
+          "partitions" : [ 110283614, 110109179 ]
+        } ]
+      },
+      "targetAssignment" : {
+        "activeTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[1].TargetAssignment.ActiveTasks[0].SubtopologyId",
+          "partitions" : [ 125361542, 125187107 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[1].TargetAssignment.ActiveTasks[1].SubtopologyId",
+          "partitions" : [ -311084753, -310910318 ]
+        } ],
+        "standbyTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[1].TargetAssignment.StandbyTasks[0].SubtopologyId",
+          "partitions" : [ 1450263043, 1450381798 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[1].TargetAssignment.StandbyTasks[1].SubtopologyId",
+          "partitions" : [ -2052303590, -2052561545 ]
+        } ],
+        "warmupTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[1].TargetAssignment.WarmupTasks[0].SubtopologyId",
+          "partitions" : [ 299472300, 299301345 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].Members[1].TargetAssignment.WarmupTasks[1].SubtopologyId",
+          "partitions" : [ -1973974811, -1973720336 ]
+        } ]
+      },
+      "isClassic" : true
+    } ],
+    "authorizedOperations" : -1968773888,
+    "topologyDescription" : {
+      "subtopologies" : [ {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[0].SubtopologyId",
+        "nodes" : [ {
+          "name" : "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[0].Nodes[0].Name",
+          "nodeType" : -54,
+          "sourceTopics" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[0].Nodes[0].SourceTopics[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[0].Nodes[0].SourceTopics[1]" ],
+          "sinkTopic" : "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[0].Nodes[0].SinkTopic",
+          "stores" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[0].Nodes[0].Stores[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[0].Nodes[0].Stores[1]" ],
+          "successors" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[0].Nodes[0].Successors[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[0].Nodes[0].Successors[1]" ]
+        }, {
+          "name" : "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[0].Nodes[1].Name",
+          "nodeType" : 85,
+          "sourceTopics" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[0].Nodes[1].SourceTopics[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[0].Nodes[1].SourceTopics[1]" ],
+          "sinkTopic" : "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[0].Nodes[1].SinkTopic",
+          "stores" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[0].Nodes[1].Stores[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[0].Nodes[1].Stores[1]" ],
+          "successors" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[0].Nodes[1].Successors[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[0].Nodes[1].Successors[1]" ]
+        } ]
+      }, {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[1].SubtopologyId",
+        "nodes" : [ {
+          "name" : "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[1].Nodes[0].Name",
+          "nodeType" : 43,
+          "sourceTopics" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[1].Nodes[0].SourceTopics[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[1].Nodes[0].SourceTopics[1]" ],
+          "sinkTopic" : "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[1].Nodes[0].SinkTopic",
+          "stores" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[1].Nodes[0].Stores[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[1].Nodes[0].Stores[1]" ],
+          "successors" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[1].Nodes[0].Successors[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[1].Nodes[0].Successors[1]" ]
+        }, {
+          "name" : "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[1].Nodes[1].Name",
+          "nodeType" : 8,
+          "sourceTopics" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[1].Nodes[1].SourceTopics[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[1].Nodes[1].SourceTopics[1]" ],
+          "sinkTopic" : "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[1].Nodes[1].SinkTopic",
+          "stores" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[1].Nodes[1].Stores[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[1].Nodes[1].Stores[1]" ],
+          "successors" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[1].Nodes[1].Successors[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.Subtopologies[1].Nodes[1].Successors[1]" ]
+        } ]
+      } ],
+      "globalStores" : [ {
+        "source" : {
+          "name" : "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[0].Source.Name",
+          "nodeType" : 108,
+          "sourceTopics" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[0].Source.SourceTopics[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[0].Source.SourceTopics[1]" ],
+          "sinkTopic" : "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[0].Source.SinkTopic",
+          "stores" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[0].Source.Stores[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[0].Source.Stores[1]" ],
+          "successors" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[0].Source.Successors[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[0].Source.Successors[1]" ]
+        },
+        "processor" : {
+          "name" : "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[0].Processor.Name",
+          "nodeType" : 33,
+          "sourceTopics" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[0].Processor.SourceTopics[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[0].Processor.SourceTopics[1]" ],
+          "sinkTopic" : "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[0].Processor.SinkTopic",
+          "stores" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[0].Processor.Stores[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[0].Processor.Stores[1]" ],
+          "successors" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[0].Processor.Successors[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[0].Processor.Successors[1]" ]
+        }
+      }, {
+        "source" : {
+          "name" : "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[1].Source.Name",
+          "nodeType" : 61,
+          "sourceTopics" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[1].Source.SourceTopics[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[1].Source.SourceTopics[1]" ],
+          "sinkTopic" : "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[1].Source.SinkTopic",
+          "stores" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[1].Source.Stores[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[1].Source.Stores[1]" ],
+          "successors" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[1].Source.Successors[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[1].Source.Successors[1]" ]
+        },
+        "processor" : {
+          "name" : "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[1].Processor.Name",
+          "nodeType" : 22,
+          "sourceTopics" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[1].Processor.SourceTopics[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[1].Processor.SourceTopics[1]" ],
+          "sinkTopic" : "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[1].Processor.SinkTopic",
+          "stores" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[1].Processor.Stores[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[1].Processor.Stores[1]" ],
+          "successors" : [ "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[1].Processor.Successors[0]", "StreamsGroupDescribeResponse.Groups[0].TopologyDescription.GlobalStores[1].Processor.Successors[1]" ]
+        }
+      } ]
+    },
+    "topologyDescriptionStatus" : -50,
+    "assignorName" : "StreamsGroupDescribeResponse.Groups[0].AssignorName"
+  }, {
+    "errorCode" : -1121,
+    "errorMessage" : "StreamsGroupDescribeResponse.Groups[1].ErrorMessage",
+    "groupId" : "StreamsGroupDescribeResponse.Groups[1].GroupId",
+    "groupState" : "StreamsGroupDescribeResponse.Groups[1].GroupState",
+    "groupEpoch" : -1221615860,
+    "assignmentEpoch" : 1807951166,
+    "topology" : {
+      "epoch" : -566111066,
+      "subtopologies" : [ {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].SubtopologyId",
+        "sourceTopics" : [ "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].SourceTopics[0]", "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].SourceTopics[1]" ],
+        "repartitionSinkTopics" : [ "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].RepartitionSinkTopics[0]", "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].RepartitionSinkTopics[1]" ],
+        "stateChangelogTopics" : [ {
+          "name" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].StateChangelogTopics[0].Name",
+          "partitions" : -455614282,
+          "replicationFactor" : 31370,
+          "topicConfigs" : [ {
+            "key" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].StateChangelogTopics[0].TopicConfigs[0].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].StateChangelogTopics[0].TopicConfigs[0].Value"
+          }, {
+            "key" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].StateChangelogTopics[0].TopicConfigs[1].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].StateChangelogTopics[0].TopicConfigs[1].Value"
+          } ]
+        }, {
+          "name" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].StateChangelogTopics[1].Name",
+          "partitions" : 905209677,
+          "replicationFactor" : 595,
+          "topicConfigs" : [ {
+            "key" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].StateChangelogTopics[1].TopicConfigs[0].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].StateChangelogTopics[1].TopicConfigs[0].Value"
+          }, {
+            "key" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].StateChangelogTopics[1].TopicConfigs[1].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].StateChangelogTopics[1].TopicConfigs[1].Value"
+          } ]
+        } ],
+        "repartitionSourceTopics" : [ {
+          "name" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].RepartitionSourceTopics[0].Name",
+          "partitions" : -574032229,
+          "replicationFactor" : -16147,
+          "topicConfigs" : [ {
+            "key" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].RepartitionSourceTopics[0].TopicConfigs[0].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].RepartitionSourceTopics[0].TopicConfigs[0].Value"
+          }, {
+            "key" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].RepartitionSourceTopics[0].TopicConfigs[1].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].RepartitionSourceTopics[0].TopicConfigs[1].Value"
+          } ]
+        }, {
+          "name" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].RepartitionSourceTopics[1].Name",
+          "partitions" : -1294193180,
+          "replicationFactor" : -28972,
+          "topicConfigs" : [ {
+            "key" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].RepartitionSourceTopics[1].TopicConfigs[0].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].RepartitionSourceTopics[1].TopicConfigs[0].Value"
+          }, {
+            "key" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].RepartitionSourceTopics[1].TopicConfigs[1].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[0].RepartitionSourceTopics[1].TopicConfigs[1].Value"
+          } ]
+        } ]
+      }, {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].SubtopologyId",
+        "sourceTopics" : [ "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].SourceTopics[0]", "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].SourceTopics[1]" ],
+        "repartitionSinkTopics" : [ "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].RepartitionSinkTopics[0]", "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].RepartitionSinkTopics[1]" ],
+        "stateChangelogTopics" : [ {
+          "name" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].StateChangelogTopics[0].Name",
+          "partitions" : -912340895,
+          "replicationFactor" : -18113,
+          "topicConfigs" : [ {
+            "key" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].StateChangelogTopics[0].TopicConfigs[0].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].StateChangelogTopics[0].TopicConfigs[0].Value"
+          }, {
+            "key" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].StateChangelogTopics[0].TopicConfigs[1].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].StateChangelogTopics[0].TopicConfigs[1].Value"
+          } ]
+        }, {
+          "name" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].StateChangelogTopics[1].Name",
+          "partitions" : -1121860486,
+          "replicationFactor" : -25978,
+          "topicConfigs" : [ {
+            "key" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].StateChangelogTopics[1].TopicConfigs[0].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].StateChangelogTopics[1].TopicConfigs[0].Value"
+          }, {
+            "key" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].StateChangelogTopics[1].TopicConfigs[1].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].StateChangelogTopics[1].TopicConfigs[1].Value"
+          } ]
+        } ],
+        "repartitionSourceTopics" : [ {
+          "name" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].RepartitionSourceTopics[0].Name",
+          "partitions" : -1812289082,
+          "replicationFactor" : 14330,
+          "topicConfigs" : [ {
+            "key" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].RepartitionSourceTopics[0].TopicConfigs[0].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].RepartitionSourceTopics[0].TopicConfigs[0].Value"
+          }, {
+            "key" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].RepartitionSourceTopics[0].TopicConfigs[1].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].RepartitionSourceTopics[0].TopicConfigs[1].Value"
+          } ]
+        }, {
+          "name" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].RepartitionSourceTopics[1].Name",
+          "partitions" : 1376559005,
+          "replicationFactor" : 19971,
+          "topicConfigs" : [ {
+            "key" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].RepartitionSourceTopics[1].TopicConfigs[0].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].RepartitionSourceTopics[1].TopicConfigs[0].Value"
+          }, {
+            "key" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].RepartitionSourceTopics[1].TopicConfigs[1].Key",
+            "value" : "StreamsGroupDescribeResponse.Groups[1].Topology.Subtopologies[1].RepartitionSourceTopics[1].TopicConfigs[1].Value"
+          } ]
+        } ]
+      } ]
+    },
+    "members" : [ {
+      "memberId" : "StreamsGroupDescribeResponse.Groups[1].Members[0].MemberId",
+      "memberEpoch" : -1471430386,
+      "instanceId" : "StreamsGroupDescribeResponse.Groups[1].Members[0].InstanceId",
+      "rackId" : "StreamsGroupDescribeResponse.Groups[1].Members[0].RackId",
+      "clientId" : "StreamsGroupDescribeResponse.Groups[1].Members[0].ClientId",
+      "clientHost" : "StreamsGroupDescribeResponse.Groups[1].Members[0].ClientHost",
+      "topologyEpoch" : -513958521,
+      "processId" : "StreamsGroupDescribeResponse.Groups[1].Members[0].ProcessId",
+      "userEndpoint" : {
+        "host" : "StreamsGroupDescribeResponse.Groups[1].Members[0].UserEndpoint.Host",
+        "port" : 11162
+      },
+      "clientTags" : [ {
+        "key" : "StreamsGroupDescribeResponse.Groups[1].Members[0].ClientTags[0].Key",
+        "value" : "StreamsGroupDescribeResponse.Groups[1].Members[0].ClientTags[0].Value"
+      }, {
+        "key" : "StreamsGroupDescribeResponse.Groups[1].Members[0].ClientTags[1].Key",
+        "value" : "StreamsGroupDescribeResponse.Groups[1].Members[0].ClientTags[1].Value"
+      } ],
+      "taskOffsets" : [ {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[0].TaskOffsets[0].SubtopologyId",
+        "partition" : 189735296,
+        "offset" : 939991467843916325
+      }, {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[0].TaskOffsets[1].SubtopologyId",
+        "partition" : -1837811995,
+        "offset" : 8348281240019377542
+      } ],
+      "taskEndOffsets" : [ {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[0].TaskEndOffsets[0].SubtopologyId",
+        "partition" : 1230866805,
+        "offset" : 5027349865758500150
+      }, {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[0].TaskEndOffsets[1].SubtopologyId",
+        "partition" : -944870192,
+        "offset" : 4903787969511950165
+      } ],
+      "assignment" : {
+        "activeTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[0].Assignment.ActiveTasks[0].SubtopologyId",
+          "partitions" : [ 49532459, 49790414 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[0].Assignment.ActiveTasks[1].SubtopologyId",
+          "partitions" : [ -1747007518, -1747154113 ]
+        } ],
+        "standbyTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[0].Assignment.StandbyTasks[0].SubtopologyId",
+          "partitions" : [ -10517064, -10688019 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[0].Assignment.StandbyTasks[1].SubtopologyId",
+          "partitions" : [ -1987728511, -1987613236 ]
+        } ],
+        "warmupTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[0].Assignment.WarmupTasks[0].SubtopologyId",
+          "partitions" : [ 1081216241, 1081359356 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[0].Assignment.WarmupTasks[1].SubtopologyId",
+          "partitions" : [ -234372504, -234626979 ]
+        } ]
+      },
+      "targetAssignment" : {
+        "activeTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[0].TargetAssignment.ActiveTasks[0].SubtopologyId",
+          "partitions" : [ 1186592672, 1186421717 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[0].TargetAssignment.ActiveTasks[1].SubtopologyId",
+          "partitions" : [ 1117683401, 1117937876 ]
+        } ],
+        "standbyTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[0].TargetAssignment.StandbyTasks[0].SubtopologyId",
+          "partitions" : [ -432879515, -432625040 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[0].TargetAssignment.StandbyTasks[1].SubtopologyId",
+          "partitions" : [ 1840567596, 1840396641 ]
+        } ],
+        "warmupTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[0].TargetAssignment.WarmupTasks[0].SubtopologyId",
+          "partitions" : [ 1434927790, 1434781195 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[0].TargetAssignment.WarmupTasks[1].SubtopologyId",
+          "partitions" : [ 1106522871, 1106780826 ]
+        } ]
+      },
+      "isClassic" : true
+    }, {
+      "memberId" : "StreamsGroupDescribeResponse.Groups[1].Members[1].MemberId",
+      "memberEpoch" : -1275045997,
+      "instanceId" : "StreamsGroupDescribeResponse.Groups[1].Members[1].InstanceId",
+      "rackId" : "StreamsGroupDescribeResponse.Groups[1].Members[1].RackId",
+      "clientId" : "StreamsGroupDescribeResponse.Groups[1].Members[1].ClientId",
+      "clientHost" : "StreamsGroupDescribeResponse.Groups[1].Members[1].ClientHost",
+      "topologyEpoch" : -202158874,
+      "processId" : "StreamsGroupDescribeResponse.Groups[1].Members[1].ProcessId",
+      "userEndpoint" : {
+        "host" : "StreamsGroupDescribeResponse.Groups[1].Members[1].UserEndpoint.Host",
+        "port" : 16835
+      },
+      "clientTags" : [ {
+        "key" : "StreamsGroupDescribeResponse.Groups[1].Members[1].ClientTags[0].Key",
+        "value" : "StreamsGroupDescribeResponse.Groups[1].Members[1].ClientTags[0].Value"
+      }, {
+        "key" : "StreamsGroupDescribeResponse.Groups[1].Members[1].ClientTags[1].Key",
+        "value" : "StreamsGroupDescribeResponse.Groups[1].Members[1].ClientTags[1].Value"
+      } ],
+      "taskOffsets" : [ {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[1].TaskOffsets[0].SubtopologyId",
+        "partition" : -840802145,
+        "offset" : 5250153746018227592
+      }, {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[1].TaskOffsets[1].SubtopologyId",
+        "partition" : -1859312086,
+        "offset" : 7862425362445024279
+      } ],
+      "taskEndOffsets" : [ {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[1].TaskEndOffsets[0].SubtopologyId",
+        "partition" : -1194038532,
+        "offset" : 5242471229902705345
+      }, {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[1].TaskEndOffsets[1].SubtopologyId",
+        "partition" : 867226033,
+        "offset" : -8849981684746657550
+      } ],
+      "assignment" : {
+        "activeTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[1].Assignment.ActiveTasks[0].SubtopologyId",
+          "partitions" : [ -1053903566, -1054022321 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[1].Assignment.ActiveTasks[1].SubtopologyId",
+          "partitions" : [ -1233641861, -1233467426 ]
+        } ],
+        "standbyTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[1].Assignment.StandbyTasks[0].SubtopologyId",
+          "partitions" : [ 631728775, 631903210 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[1].Assignment.StandbyTasks[1].SubtopologyId",
+          "partitions" : [ -1884555778, -1884674533 ]
+        } ],
+        "warmupTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[1].Assignment.WarmupTasks[0].SubtopologyId",
+          "partitions" : [ 386186200, 385959565 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[1].Assignment.WarmupTasks[1].SubtopologyId",
+          "partitions" : [ 1974180001, 1974350956 ]
+        } ]
+      },
+      "targetAssignment" : {
+        "activeTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[1].TargetAssignment.ActiveTasks[0].SubtopologyId",
+          "partitions" : [ 1269899169, 1270070124 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[1].TargetAssignment.ActiveTasks[1].SubtopologyId",
+          "partitions" : [ -318094632, -318321267 ]
+        } ],
+        "standbyTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[1].TargetAssignment.StandbyTasks[0].SubtopologyId",
+          "partitions" : [ -2088284946, -2088542901 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[1].TargetAssignment.StandbyTasks[1].SubtopologyId",
+          "partitions" : [ 2122206775, 2122353370 ]
+        } ],
+        "warmupTasks" : [ {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[1].TargetAssignment.WarmupTasks[0].SubtopologyId",
+          "partitions" : [ -1757059801, -1756829686 ]
+        }, {
+          "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].Members[1].TargetAssignment.WarmupTasks[1].SubtopologyId",
+          "partitions" : [ -977400930, -977575365 ]
+        } ]
+      },
+      "isClassic" : false
+    } ],
+    "authorizedOperations" : -23580053,
+    "topologyDescription" : {
+      "subtopologies" : [ {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[0].SubtopologyId",
+        "nodes" : [ {
+          "name" : "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[0].Nodes[0].Name",
+          "nodeType" : 37,
+          "sourceTopics" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[0].Nodes[0].SourceTopics[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[0].Nodes[0].SourceTopics[1]" ],
+          "sinkTopic" : "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[0].Nodes[0].SinkTopic",
+          "stores" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[0].Nodes[0].Stores[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[0].Nodes[0].Stores[1]" ],
+          "successors" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[0].Nodes[0].Successors[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[0].Nodes[0].Successors[1]" ]
+        }, {
+          "name" : "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[0].Nodes[1].Name",
+          "nodeType" : 26,
+          "sourceTopics" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[0].Nodes[1].SourceTopics[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[0].Nodes[1].SourceTopics[1]" ],
+          "sinkTopic" : "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[0].Nodes[1].SinkTopic",
+          "stores" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[0].Nodes[1].Stores[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[0].Nodes[1].Stores[1]" ],
+          "successors" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[0].Nodes[1].Successors[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[0].Nodes[1].Successors[1]" ]
+        } ]
+      }, {
+        "subtopologyId" : "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[1].SubtopologyId",
+        "nodes" : [ {
+          "name" : "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[1].Nodes[0].Name",
+          "nodeType" : 12,
+          "sourceTopics" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[1].Nodes[0].SourceTopics[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[1].Nodes[0].SourceTopics[1]" ],
+          "sinkTopic" : "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[1].Nodes[0].SinkTopic",
+          "stores" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[1].Nodes[0].Stores[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[1].Nodes[0].Stores[1]" ],
+          "successors" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[1].Nodes[0].Successors[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[1].Nodes[0].Successors[1]" ]
+        }, {
+          "name" : "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[1].Nodes[1].Name",
+          "nodeType" : -17,
+          "sourceTopics" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[1].Nodes[1].SourceTopics[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[1].Nodes[1].SourceTopics[1]" ],
+          "sinkTopic" : "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[1].Nodes[1].SinkTopic",
+          "stores" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[1].Nodes[1].Stores[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[1].Nodes[1].Stores[1]" ],
+          "successors" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[1].Nodes[1].Successors[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.Subtopologies[1].Nodes[1].Successors[1]" ]
+        } ]
+      } ],
+      "globalStores" : [ {
+        "source" : {
+          "name" : "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[0].Source.Name",
+          "nodeType" : -107,
+          "sourceTopics" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[0].Source.SourceTopics[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[0].Source.SourceTopics[1]" ],
+          "sinkTopic" : "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[0].Source.SinkTopic",
+          "stores" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[0].Source.Stores[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[0].Source.Stores[1]" ],
+          "successors" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[0].Source.Successors[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[0].Source.Successors[1]" ]
+        },
+        "processor" : {
+          "name" : "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[0].Processor.Name",
+          "nodeType" : -82,
+          "sourceTopics" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[0].Processor.SourceTopics[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[0].Processor.SourceTopics[1]" ],
+          "sinkTopic" : "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[0].Processor.SinkTopic",
+          "stores" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[0].Processor.Stores[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[0].Processor.Stores[1]" ],
+          "successors" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[0].Processor.Successors[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[0].Processor.Successors[1]" ]
+        }
+      }, {
+        "source" : {
+          "name" : "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[1].Source.Name",
+          "nodeType" : -28,
+          "sourceTopics" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[1].Source.SourceTopics[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[1].Source.SourceTopics[1]" ],
+          "sinkTopic" : "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[1].Source.SinkTopic",
+          "stores" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[1].Source.Stores[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[1].Source.Stores[1]" ],
+          "successors" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[1].Source.Successors[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[1].Source.Successors[1]" ]
+        },
+        "processor" : {
+          "name" : "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[1].Processor.Name",
+          "nodeType" : -7,
+          "sourceTopics" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[1].Processor.SourceTopics[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[1].Processor.SourceTopics[1]" ],
+          "sinkTopic" : "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[1].Processor.SinkTopic",
+          "stores" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[1].Processor.Stores[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[1].Processor.Stores[1]" ],
+          "successors" : [ "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[1].Processor.Successors[0]", "StreamsGroupDescribeResponse.Groups[1].TopologyDescription.GlobalStores[1].Processor.Successors[1]" ]
+        }
+      } ]
+    },
+    "topologyDescriptionStatus" : -89,
+    "assignorName" : "StreamsGroupDescribeResponse.Groups[1].AssignorName"
+  } ]
+}

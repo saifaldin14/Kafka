@@ -1,0 +1,5 @@
+{
+  "groupIds" : [ "StreamsGroupDescribeRequest.GroupIds[0]", "StreamsGroupDescribeRequest.GroupIds[1]" ],
+  "includeAuthorizedOperations" : false,
+  "includeTopologyDescription" : false
+}

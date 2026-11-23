@@ -1,0 +1,30 @@
+{
+  "replicaId" : 148829555,
+  "maxWaitMs" : -793760899,
+  "minBytes" : -1525031135,
+  "maxBytes" : -631918637,
+  "isolationLevel" : -112,
+  "topics" : [ {
+    "topic" : "FetchRequest.Topics[0].Topic",
+    "partitions" : [ {
+      "partition" : -833875099,
+      "fetchOffset" : -6965325582742891060,
+      "partitionMaxBytes" : 775437424
+    }, {
+      "partition" : 1193672192,
+      "fetchOffset" : 4995469716767026561,
+      "partitionMaxBytes" : 863228309
+    } ]
+  }, {
+    "topic" : "FetchRequest.Topics[1].Topic",
+    "partitions" : [ {
+      "partition" : 1465636340,
+      "fetchOffset" : -8417145500449208795,
+      "partitionMaxBytes" : -742868959
+    }, {
+      "partition" : 1120784809,
+      "fetchOffset" : 5715240337616726576,
+      "partitionMaxBytes" : -2107677060
+    } ]
+  } ]
+}

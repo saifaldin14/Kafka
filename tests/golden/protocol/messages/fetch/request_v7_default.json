@@ -1,0 +1,11 @@
+{
+  "replicaId" : -1,
+  "maxWaitMs" : 0,
+  "minBytes" : 0,
+  "maxBytes" : 2147483647,
+  "isolationLevel" : 0,
+  "sessionId" : 0,
+  "sessionEpoch" : -1,
+  "topics" : [ ],
+  "forgottenTopicsData" : [ ]
+}

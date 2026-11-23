@@ -1,0 +1,13 @@
+{
+  "groupId" : "SyncGroupRequest.GroupId",
+  "generationId" : 956127911,
+  "memberId" : "SyncGroupRequest.MemberId",
+  "groupInstanceId" : null,
+  "assignments" : [ {
+    "memberId" : "SyncGroupRequest.Assignments[0].MemberId",
+    "assignment" : "U3luY0dyb3VwUmVxdWVzdC5Bc3NpZ25tZW50c1swXS5Bc3NpZ25tZW50"
+  }, {
+    "memberId" : "SyncGroupRequest.Assignments[1].MemberId",
+    "assignment" : "U3luY0dyb3VwUmVxdWVzdC5Bc3NpZ25tZW50c1sxXS5Bc3NpZ25tZW50"
+  } ]
+}

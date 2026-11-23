@@ -1,0 +1,12 @@
+{
+  "ownerPrincipalType" : "CreateDelegationTokenRequest.OwnerPrincipalType",
+  "ownerPrincipalName" : "CreateDelegationTokenRequest.OwnerPrincipalName",
+  "renewers" : [ {
+    "principalType" : "CreateDelegationTokenRequest.Renewers[0].PrincipalType",
+    "principalName" : "CreateDelegationTokenRequest.Renewers[0].PrincipalName"
+  }, {
+    "principalType" : "CreateDelegationTokenRequest.Renewers[1].PrincipalType",
+    "principalName" : "CreateDelegationTokenRequest.Renewers[1].PrincipalName"
+  } ],
+  "maxLifetimeMs" : -3583007308932532418
+}

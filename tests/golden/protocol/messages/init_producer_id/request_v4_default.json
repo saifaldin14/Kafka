@@ -1,0 +1,6 @@
+{
+  "transactionalId" : "",
+  "transactionTimeoutMs" : 0,
+  "producerId" : -1,
+  "producerEpoch" : -1
+}

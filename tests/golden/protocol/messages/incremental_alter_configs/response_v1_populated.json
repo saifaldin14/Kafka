@@ -1,0 +1,14 @@
+{
+  "throttleTimeMs" : 763360994,
+  "responses" : [ {
+    "errorCode" : 28852,
+    "errorMessage" : "IncrementalAlterConfigsResponse.Responses[0].ErrorMessage",
+    "resourceType" : 9,
+    "resourceName" : "IncrementalAlterConfigsResponse.Responses[0].ResourceName"
+  }, {
+    "errorCode" : 17097,
+    "errorMessage" : "IncrementalAlterConfigsResponse.Responses[1].ErrorMessage",
+    "resourceType" : -78,
+    "resourceName" : "IncrementalAlterConfigsResponse.Responses[1].ResourceName"
+  } ]
+}

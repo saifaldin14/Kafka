@@ -1,0 +1,20 @@
+{
+  "throttleTimeMs" : 1303299625,
+  "topics" : [ {
+    "name" : "CreateTopicsResponse.Topics[0].Name",
+    "errorCode" : 23811,
+    "errorMessage" : null,
+    "topicConfigErrorCode" : -19544,
+    "numPartitions" : -815896425,
+    "replicationFactor" : -14175,
+    "configs" : null
+  }, {
+    "name" : "CreateTopicsResponse.Topics[1].Name",
+    "errorCode" : -21658,
+    "errorMessage" : null,
+    "topicConfigErrorCode" : 27935,
+    "numPartitions" : -1123891090,
+    "replicationFactor" : 5672,
+    "configs" : null
+  } ]
+}

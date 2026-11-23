@@ -1,0 +1,4 @@
+{
+  "errorCode" : 23389,
+  "mechanisms" : [ "SaslHandshakeResponse.Mechanisms[0]", "SaslHandshakeResponse.Mechanisms[1]" ]
+}

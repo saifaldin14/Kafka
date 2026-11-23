@@ -1,0 +1,29 @@
+{
+  "transactionalId" : "TxnOffsetCommitRequest.TransactionalId",
+  "groupId" : "TxnOffsetCommitRequest.GroupId",
+  "producerId" : -7794383243883903903,
+  "producerEpoch" : -6983,
+  "topics" : [ {
+    "name" : "TxnOffsetCommitRequest.Topics[0].Name",
+    "partitions" : [ {
+      "partitionIndex" : -95437593,
+      "committedOffset" : 963340345069064990,
+      "committedMetadata" : null
+    }, {
+      "partitionIndex" : 1242556728,
+      "committedOffset" : -5031232011610704201,
+      "committedMetadata" : null
+    } ]
+  }, {
+    "name" : "TxnOffsetCommitRequest.Topics[1].Name",
+    "partitions" : [ {
+      "partitionIndex" : -874698820,
+      "committedOffset" : -5469314144229596389,
+      "committedMetadata" : null
+    }, {
+      "partitionIndex" : -25113621,
+      "committedOffset" : 6148660707229641474,
+      "committedMetadata" : null
+    } ]
+  } ]
+}

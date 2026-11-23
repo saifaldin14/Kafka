@@ -1,0 +1,53 @@
+{
+  "clusterId" : "FetchRequest.ClusterId",
+  "replicaId" : 148829555,
+  "maxWaitMs" : -793760899,
+  "minBytes" : -1525031135,
+  "maxBytes" : -631918637,
+  "isolationLevel" : -112,
+  "sessionId" : 149719015,
+  "sessionEpoch" : 945490619,
+  "topics" : [ {
+    "topic" : "FetchRequest.Topics[0].Topic",
+    "partitions" : [ {
+      "partition" : -833875099,
+      "currentLeaderEpoch" : -1679565080,
+      "fetchOffset" : -6965325582742891060,
+      "lastFetchedEpoch" : 905236267,
+      "logStartOffset" : 8331998841151720292,
+      "partitionMaxBytes" : 775437424
+    }, {
+      "partition" : 1193672192,
+      "currentLeaderEpoch" : 2018264359,
+      "fetchOffset" : 4995469716767026561,
+      "lastFetchedEpoch" : 98235768,
+      "logStartOffset" : 4896211747360342351,
+      "partitionMaxBytes" : 863228309
+    } ]
+  }, {
+    "topic" : "FetchRequest.Topics[1].Topic",
+    "partitions" : [ {
+      "partition" : 1465636340,
+      "currentLeaderEpoch" : -677358413,
+      "fetchOffset" : -8417145500449208795,
+      "lastFetchedEpoch" : -1295170852,
+      "logStartOffset" : 4183872564353232219,
+      "partitionMaxBytes" : -742868959
+    }, {
+      "partition" : 1120784809,
+      "currentLeaderEpoch" : -966630732,
+      "fetchOffset" : 5715240337616726576,
+      "lastFetchedEpoch" : -300628001,
+      "logStartOffset" : 7207448740098526928,
+      "partitionMaxBytes" : -2107677060
+    } ]
+  } ],
+  "forgottenTopicsData" : [ {
+    "topic" : "FetchRequest.ForgottenTopicsData[0].Topic",
+    "partitions" : [ -1779888905, -1779630950 ]
+  }, {
+    "topic" : "FetchRequest.ForgottenTopicsData[1].Topic",
+    "partitions" : [ -1451483986, -1451630581 ]
+  } ],
+  "rackId" : "FetchRequest.RackId"
+}

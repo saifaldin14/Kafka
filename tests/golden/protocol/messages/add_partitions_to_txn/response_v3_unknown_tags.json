@@ -1,0 +1,22 @@
+{
+  "throttleTimeMs" : -803979394,
+  "resultsByTopicV3AndBelow" : [ {
+    "name" : "AddPartitionsToTxnResponse.ResultsByTopicV3AndBelow[0].Name",
+    "resultsByPartition" : [ {
+      "partitionIndex" : 1167342333,
+      "partitionErrorCode" : -1274
+    }, {
+      "partitionIndex" : -1604987530,
+      "partitionErrorCode" : -21615
+    } ]
+  }, {
+    "name" : "AddPartitionsToTxnResponse.ResultsByTopicV3AndBelow[1].Name",
+    "resultsByPartition" : [ {
+      "partitionIndex" : 415121270,
+      "partitionErrorCode" : -19055
+    }, {
+      "partitionIndex" : -1107516163,
+      "partitionErrorCode" : 1286
+    } ]
+  } ]
+}

@@ -1,0 +1,13 @@
+{
+  "throttleTimeMs" : 1558562903,
+  "errorCode" : 5433,
+  "members" : [ {
+    "memberId" : "LeaveGroupResponse.Members[0].MemberId",
+    "groupInstanceId" : "LeaveGroupResponse.Members[0].GroupInstanceId",
+    "errorCode" : -7768
+  }, {
+    "memberId" : "LeaveGroupResponse.Members[1].MemberId",
+    "groupInstanceId" : "LeaveGroupResponse.Members[1].GroupInstanceId",
+    "errorCode" : -28307
+  } ]
+}

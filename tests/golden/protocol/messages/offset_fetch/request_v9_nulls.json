@@ -1,0 +1,14 @@
+{
+  "groups" : [ {
+    "groupId" : "OffsetFetchRequest.Groups[0].GroupId",
+    "memberId" : null,
+    "memberEpoch" : 1442124518,
+    "topics" : null
+  }, {
+    "groupId" : "OffsetFetchRequest.Groups[1].GroupId",
+    "memberId" : null,
+    "memberEpoch" : 326683595,
+    "topics" : null
+  } ],
+  "requireStable" : true
+}

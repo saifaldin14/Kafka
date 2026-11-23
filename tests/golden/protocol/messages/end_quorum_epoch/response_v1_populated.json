@@ -1,0 +1,39 @@
+{
+  "errorCode" : 802,
+  "topics" : [ {
+    "topicName" : "EndQuorumEpochResponse.Topics[0].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : 1668530638,
+      "errorCode" : 24327,
+      "leaderId" : 1903757736,
+      "leaderEpoch" : 1276450702
+    }, {
+      "partitionIndex" : 298007861,
+      "errorCode" : 19962,
+      "leaderId" : -593016725,
+      "leaderEpoch" : 742088831
+    } ]
+  }, {
+    "topicName" : "EndQuorumEpochResponse.Topics[1].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : 1759783721,
+      "errorCode" : -23706,
+      "leaderId" : 877259983,
+      "leaderEpoch" : -1185623101
+    }, {
+      "partitionIndex" : 152757682,
+      "errorCode" : 21763,
+      "leaderId" : 635369708,
+      "leaderEpoch" : 307075650
+    } ]
+  } ],
+  "nodeEndpoints" : [ {
+    "nodeId" : -1946800190,
+    "host" : "EndQuorumEpochResponse.NodeEndpoints[0].Host",
+    "port" : 42936
+  }, {
+    "nodeId" : -1200717743,
+    "host" : "EndQuorumEpochResponse.NodeEndpoints[1].Host",
+    "port" : 57195
+  } ]
+}

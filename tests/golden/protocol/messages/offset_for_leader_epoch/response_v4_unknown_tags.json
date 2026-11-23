@@ -1,0 +1,30 @@
+{
+  "throttleTimeMs" : -391366055,
+  "topics" : [ {
+    "topic" : "OffsetForLeaderEpochResponse.Topics[0].Topic",
+    "partitions" : [ {
+      "errorCode" : 6198,
+      "partition" : 499042883,
+      "leaderEpoch" : 799145075,
+      "endOffset" : -8551108361118374353
+    }, {
+      "errorCode" : -27885,
+      "partition" : 1802911358,
+      "leaderEpoch" : 97950066,
+      "endOffset" : 8964813639510649058
+    } ]
+  }, {
+    "topic" : "OffsetForLeaderEpochResponse.Topics[1].Topic",
+    "partitions" : [ {
+      "errorCode" : -6633,
+      "partition" : 607838602,
+      "leaderEpoch" : -516460418,
+      "endOffset" : -6204697390264733826
+    }, {
+      "errorCode" : 32266,
+      "partition" : -1161171073,
+      "leaderEpoch" : -886053969,
+      "endOffset" : 2834894106207814827
+    } ]
+  } ]
+}

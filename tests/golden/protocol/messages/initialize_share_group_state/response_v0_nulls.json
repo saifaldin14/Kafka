@@ -1,0 +1,25 @@
+{
+  "results" : [ {
+    "topicId" : "jNjsZkAmdSl7Dru_AVjf_g",
+    "partitions" : [ {
+      "partition" : -894130264,
+      "errorCode" : -32295,
+      "errorMessage" : null
+    }, {
+      "partition" : 496283309,
+      "errorCode" : -11772,
+      "errorMessage" : null
+    } ]
+  }, {
+    "topicId" : "5StLP_F3Xezf7qynTdRmvQ",
+    "partitions" : [ {
+      "partition" : -1258989031,
+      "errorCode" : 22600,
+      "errorMessage" : null
+    }, {
+      "partition" : -1759399196,
+      "errorCode" : 9357,
+      "errorMessage" : null
+    } ]
+  } ]
+}

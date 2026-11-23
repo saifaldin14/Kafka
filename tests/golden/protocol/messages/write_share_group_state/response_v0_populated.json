@@ -1,0 +1,25 @@
+{
+  "results" : [ {
+    "topicId" : "jtxO1-bHcq6HzIXdJOellw",
+    "partitions" : [ {
+      "partition" : 192245327,
+      "errorCode" : -4294,
+      "errorMessage" : "WriteShareGroupStateResponse.Results[0].Partitions[0].ErrorMessage"
+    }, {
+      "partition" : -1651127910,
+      "errorCode" : -9913,
+      "errorMessage" : "WriteShareGroupStateResponse.Results[0].Partitions[1].ErrorMessage"
+    } ]
+  }, {
+    "topicId" : "QTC6bjC8SuuCF5E8z_MR2A",
+    "partitions" : [ {
+      "partition" : 1014411398,
+      "errorCode" : 4859,
+      "errorMessage" : "WriteShareGroupStateResponse.Results[1].Partitions[0].ErrorMessage"
+    }, {
+      "partition" : 1587673291,
+      "errorCode" : -5986,
+      "errorMessage" : "WriteShareGroupStateResponse.Results[1].Partitions[1].ErrorMessage"
+    } ]
+  } ]
+}

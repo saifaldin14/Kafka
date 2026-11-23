@@ -1,0 +1,73 @@
+[ {
+  "name" : "valid_multibyte",
+  "input" : "61c3a9e282acf09f9880",
+  "kafka" : "61c3a9e282acf09f9880"
+}, {
+  "name" : "lone_continuation",
+  "input" : "6180",
+  "kafka" : "61efbfbd"
+}, {
+  "name" : "truncated_two_byte",
+  "input" : "61c3",
+  "kafka" : "61efbfbd"
+}, {
+  "name" : "truncated_three_byte",
+  "input" : "61e282",
+  "kafka" : "61efbfbd"
+}, {
+  "name" : "truncated_four_byte",
+  "input" : "61f09f98",
+  "kafka" : "61efbfbd"
+}, {
+  "name" : "truncated_then_ascii",
+  "input" : "e28261",
+  "kafka" : "efbfbd61"
+}, {
+  "name" : "overlong_nul",
+  "input" : "c080",
+  "kafka" : "efbfbdefbfbd"
+}, {
+  "name" : "overlong_slash",
+  "input" : "c0af",
+  "kafka" : "efbfbdefbfbd"
+}, {
+  "name" : "overlong_three_byte",
+  "input" : "e080af",
+  "kafka" : "efbfbdefbfbdefbfbd"
+}, {
+  "name" : "overlong_four_byte",
+  "input" : "f08080af",
+  "kafka" : "efbfbdefbfbdefbfbdefbfbd"
+}, {
+  "name" : "surrogate_high",
+  "input" : "eda080",
+  "kafka" : "efbfbd"
+}, {
+  "name" : "surrogate_low",
+  "input" : "edbfbf",
+  "kafka" : "efbfbd"
+}, {
+  "name" : "surrogate_pair",
+  "input" : "eda0bdedb880",
+  "kafka" : "efbfbdefbfbd"
+}, {
+  "name" : "above_unicode",
+  "input" : "f4908080",
+  "kafka" : "efbfbdefbfbdefbfbdefbfbd"
+}, {
+  "name" : "five_byte_form",
+  "input" : "f888808080",
+  "kafka" : "efbfbdefbfbdefbfbdefbfbdefbfbd"
+}, {
+  "name" : "six_byte_form",
+  "input" : "fc8480808080",
+  "kafka" : "efbfbdefbfbdefbfbdefbfbdefbfbdefbfbd"
+}, {
+  "name" : "invalid_bytes",
+  "input" : "fffe61",
+  "kafka" : "efbfbdefbfbd61"
+}, {
+  "name" : "mixed",
+  "input" : "41ff42e2824343eda08044",
+  "kafka" : "41efbfbd42efbfbd4343efbfbd44"
+} ]

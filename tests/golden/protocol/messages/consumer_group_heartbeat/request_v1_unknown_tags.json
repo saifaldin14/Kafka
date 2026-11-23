@@ -1,0 +1,18 @@
+{
+  "groupId" : "ConsumerGroupHeartbeatRequest.GroupId",
+  "memberId" : "ConsumerGroupHeartbeatRequest.MemberId",
+  "memberEpoch" : 265255400,
+  "instanceId" : "ConsumerGroupHeartbeatRequest.InstanceId",
+  "rackId" : "ConsumerGroupHeartbeatRequest.RackId",
+  "rebalanceTimeoutMs" : -475666345,
+  "subscribedTopicNames" : [ "ConsumerGroupHeartbeatRequest.SubscribedTopicNames[0]", "ConsumerGroupHeartbeatRequest.SubscribedTopicNames[1]" ],
+  "subscribedTopicRegex" : "ConsumerGroupHeartbeatRequest.SubscribedTopicRegex",
+  "serverAssignor" : "ConsumerGroupHeartbeatRequest.ServerAssignor",
+  "topicPartitions" : [ {
+    "topicId" : "pL4rnAbf60vPD4Ifrn0BuA",
+    "partitions" : [ 223351118, 223093163 ]
+  }, {
+    "topicId" : "zIO4fmqEuQ4Ii6vO_4andw",
+    "partitions" : [ 214914071, 215172026 ]
+  } ]
+}

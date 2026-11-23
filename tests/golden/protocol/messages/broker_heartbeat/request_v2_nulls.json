@@ -1,0 +1,8 @@
+{
+  "brokerId" : 846858653,
+  "brokerEpoch" : -7258982092703081979,
+  "currentMetadataOffset" : 5579309635400329288,
+  "wantFence" : false,
+  "wantShutDown" : true,
+  "offlineLogDirs" : [ "b34QeOGwgmQjuERnfu1epQ", "b3sUeOGuU1kcd0NnezfYTg" ]
+}

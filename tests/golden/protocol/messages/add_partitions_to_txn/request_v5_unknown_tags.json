@@ -1,0 +1,27 @@
+{
+  "transactions" : [ {
+    "transactionalId" : "AddPartitionsToTxnRequest.Transactions[0].TransactionalId",
+    "producerId" : -3585371247924833233,
+    "producerEpoch" : -22365,
+    "verifyOnly" : true,
+    "topics" : [ {
+      "name" : "AddPartitionsToTxnRequest.Transactions[0].Topics[0].Name",
+      "partitions" : [ 2053518179, 2053692614 ]
+    }, {
+      "name" : "AddPartitionsToTxnRequest.Transactions[0].Topics[1].Name",
+      "partitions" : [ 347856762, 347710167 ]
+    } ]
+  }, {
+    "transactionalId" : "AddPartitionsToTxnRequest.Transactions[1].TransactionalId",
+    "producerId" : -7127355690219843276,
+    "producerEpoch" : 20298,
+    "verifyOnly" : false,
+    "topics" : [ {
+      "name" : "AddPartitionsToTxnRequest.Transactions[1].Topics[0].Name",
+      "partitions" : [ -788476290, -788595045 ]
+    }, {
+      "name" : "AddPartitionsToTxnRequest.Transactions[1].Topics[1].Name",
+      "partitions" : [ 1727808263, 1727982698 ]
+    } ]
+  } ]
+}

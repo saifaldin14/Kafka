@@ -1,0 +1,12 @@
+{
+  "throttleTimeMs" : -1232275644,
+  "results" : [ {
+    "groupId" : "DeleteGroupsResponse.Results[0].GroupId",
+    "errorCode" : 15972,
+    "errorMessage" : "DeleteGroupsResponse.Results[0].ErrorMessage"
+  }, {
+    "groupId" : "DeleteGroupsResponse.Results[1].GroupId",
+    "errorCode" : -27463,
+    "errorMessage" : "DeleteGroupsResponse.Results[1].ErrorMessage"
+  } ]
+}

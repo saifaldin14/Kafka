@@ -1,0 +1,38 @@
+{
+  "entries" : [ {
+    "entity" : [ {
+      "entityType" : "AlterClientQuotasRequest.Entries[0].Entity[0].EntityType",
+      "entityName" : "AlterClientQuotasRequest.Entries[0].Entity[0].EntityName"
+    }, {
+      "entityType" : "AlterClientQuotasRequest.Entries[0].Entity[1].EntityType",
+      "entityName" : "AlterClientQuotasRequest.Entries[0].Entity[1].EntityName"
+    } ],
+    "ops" : [ {
+      "key" : "AlterClientQuotasRequest.Entries[0].Ops[0].Key",
+      "value" : 4496.81,
+      "remove" : false
+    }, {
+      "key" : "AlterClientQuotasRequest.Entries[0].Ops[1].Key",
+      "value" : 434.44,
+      "remove" : true
+    } ]
+  }, {
+    "entity" : [ {
+      "entityType" : "AlterClientQuotasRequest.Entries[1].Entity[0].EntityType",
+      "entityName" : "AlterClientQuotasRequest.Entries[1].Entity[0].EntityName"
+    }, {
+      "entityType" : "AlterClientQuotasRequest.Entries[1].Entity[1].EntityType",
+      "entityName" : "AlterClientQuotasRequest.Entries[1].Entity[1].EntityName"
+    } ],
+    "ops" : [ {
+      "key" : "AlterClientQuotasRequest.Entries[1].Ops[0].Key",
+      "value" : -5341.46,
+      "remove" : true
+    }, {
+      "key" : "AlterClientQuotasRequest.Entries[1].Ops[1].Key",
+      "value" : 4667.23,
+      "remove" : false
+    } ]
+  } ],
+  "validateOnly" : false
+}

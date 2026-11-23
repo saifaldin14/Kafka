@@ -1,0 +1,62 @@
+{
+  "throttleTimeMs" : -1248041993,
+  "responses" : [ {
+    "topic" : "FetchResponse.Responses[0].Topic",
+    "partitions" : [ {
+      "partitionIndex" : -1240619417,
+      "errorCode" : 17920,
+      "highWatermark" : 8751234655543770129,
+      "lastStableOffset" : -5145190486196979843,
+      "abortedTransactions" : [ {
+        "producerId" : -6673164397400184394,
+        "firstOffset" : 1375313991955674146
+      }, {
+        "producerId" : -8643838009746418935,
+        "firstOffset" : 715327258800896987
+      } ],
+      "records" : ""
+    }, {
+      "partitionIndex" : 97374904,
+      "errorCode" : -11867,
+      "highWatermark" : 7982101444118884260,
+      "lastStableOffset" : -5823535902373927822,
+      "abortedTransactions" : [ {
+        "producerId" : -3006898378182301401,
+        "firstOffset" : -8951913077986110807
+      }, {
+        "producerId" : 4981301716416298636,
+        "firstOffset" : -4350997744128604024
+      } ],
+      "records" : ""
+    } ]
+  }, {
+    "topic" : "FetchResponse.Responses[1].Topic",
+    "partitions" : [ {
+      "partitionIndex" : -2019880644,
+      "errorCode" : -18287,
+      "highWatermark" : 6051713773555471664,
+      "lastStableOffset" : 6782364349823856366,
+      "abortedTransactions" : [ {
+        "producerId" : -8110636577243606933,
+        "firstOffset" : -367997885791373275
+      }, {
+        "producerId" : 6797373851602492304,
+        "firstOffset" : 1216107419742119812
+      } ],
+      "records" : ""
+    }, {
+      "partitionIndex" : -1170295445,
+      "errorCode" : -18148,
+      "highWatermark" : -2969841583369869347,
+      "lastStableOffset" : 3801487926543804649,
+      "abortedTransactions" : [ {
+        "producerId" : 6330467621312111546,
+        "firstOffset" : -4071243862671959858
+      }, {
+        "producerId" : -6359522306604624707,
+        "firstOffset" : 9048492959256844071
+      } ],
+      "records" : ""
+    } ]
+  } ]
+}

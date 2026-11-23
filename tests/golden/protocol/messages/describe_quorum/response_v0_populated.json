@@ -1,0 +1,90 @@
+{
+  "errorCode" : -16345,
+  "topics" : [ {
+    "topicName" : "DescribeQuorumResponse.Topics[0].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : 814634885,
+      "errorCode" : -15062,
+      "leaderId" : -1766257093,
+      "leaderEpoch" : 286351567,
+      "highWatermark" : -1792811146759984169,
+      "currentVoters" : [ {
+        "replicaId" : -1996210528,
+        "logEndOffset" : -5375905279003853681
+      }, {
+        "replicaId" : -905288551,
+        "logEndOffset" : 1250267912758571100
+      } ],
+      "observers" : [ {
+        "replicaId" : -2127378221,
+        "logEndOffset" : 2460215699790257230
+      }, {
+        "replicaId" : -1487308846,
+        "logEndOffset" : 5369525428987169529
+      } ]
+    }, {
+      "partitionIndex" : 1788928222,
+      "errorCode" : -21321,
+      "leaderId" : -814794952,
+      "leaderEpoch" : -1868087010,
+      "highWatermark" : 3671697987608420090,
+      "currentVoters" : [ {
+        "replicaId" : 323732319,
+        "logEndOffset" : 7957788136363111858
+      }, {
+        "replicaId" : -854640274,
+        "logEndOffset" : -4700778326335954547
+      } ],
+      "observers" : [ {
+        "replicaId" : 429873320,
+        "logEndOffset" : 4487177228654902679
+      }, {
+        "replicaId" : -324774687,
+        "logEndOffset" : -6856290923460242652
+      } ]
+    } ]
+  }, {
+    "topicName" : "DescribeQuorumResponse.Topics[1].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : -548656390,
+      "errorCode" : -2645,
+      "leaderId" : 617505796,
+      "leaderEpoch" : 739995162,
+      "highWatermark" : -8971472754587367058,
+      "currentVoters" : [ {
+        "replicaId" : -2819733,
+        "logEndOffset" : -3105736121833854266
+      }, {
+        "replicaId" : -505399894,
+        "logEndOffset" : -6054159216777471599
+      } ],
+      "observers" : [ {
+        "replicaId" : -657077804,
+        "logEndOffset" : 8525838718558792139
+      }, {
+        "replicaId" : -482442019,
+        "logEndOffset" : 7778681536611460184
+      } ]
+    }, {
+      "partitionIndex" : 1183111857,
+      "errorCode" : -5874,
+      "leaderId" : -320106457,
+      "leaderEpoch" : -1026358277,
+      "highWatermark" : 5922085578559521627,
+      "currentVoters" : [ {
+        "replicaId" : 735740220,
+        "logEndOffset" : 2980895987649079571
+      }, {
+        "replicaId" : -1681368699,
+        "logEndOffset" : 444661000321133344
+      } ],
+      "observers" : [ {
+        "replicaId" : 1706409023,
+        "logEndOffset" : 127513092949020114
+      }, {
+        "replicaId" : -971455922,
+        "logEndOffset" : -7729613591422279635
+      } ]
+    } ]
+  } ]
+}

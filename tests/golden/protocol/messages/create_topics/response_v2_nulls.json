@@ -1,0 +1,12 @@
+{
+  "throttleTimeMs" : 1303299625,
+  "topics" : [ {
+    "name" : "CreateTopicsResponse.Topics[0].Name",
+    "errorCode" : 23811,
+    "errorMessage" : null
+  }, {
+    "name" : "CreateTopicsResponse.Topics[1].Name",
+    "errorCode" : -21658,
+    "errorMessage" : null
+  } ]
+}

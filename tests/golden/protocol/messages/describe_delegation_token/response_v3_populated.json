@@ -1,0 +1,39 @@
+{
+  "errorCode" : 24121,
+  "tokens" : [ {
+    "principalType" : "DescribeDelegationTokenResponse.Tokens[0].PrincipalType",
+    "principalName" : "DescribeDelegationTokenResponse.Tokens[0].PrincipalName",
+    "tokenRequesterPrincipalType" : "DescribeDelegationTokenResponse.Tokens[0].TokenRequesterPrincipalType",
+    "tokenRequesterPrincipalName" : "DescribeDelegationTokenResponse.Tokens[0].TokenRequesterPrincipalName",
+    "issueTimestamp" : 8541640363156236873,
+    "expiryTimestamp" : 4557195276889850217,
+    "maxTimestamp" : -8430130569014488858,
+    "tokenId" : "DescribeDelegationTokenResponse.Tokens[0].TokenId",
+    "hmac" : "RGVzY3JpYmVEZWxlZ2F0aW9uVG9rZW5SZXNwb25zZS5Ub2tlbnNbMF0uSG1hYw==",
+    "renewers" : [ {
+      "principalType" : "DescribeDelegationTokenResponse.Tokens[0].Renewers[0].PrincipalType",
+      "principalName" : "DescribeDelegationTokenResponse.Tokens[0].Renewers[0].PrincipalName"
+    }, {
+      "principalType" : "DescribeDelegationTokenResponse.Tokens[0].Renewers[1].PrincipalType",
+      "principalName" : "DescribeDelegationTokenResponse.Tokens[0].Renewers[1].PrincipalName"
+    } ]
+  }, {
+    "principalType" : "DescribeDelegationTokenResponse.Tokens[1].PrincipalType",
+    "principalName" : "DescribeDelegationTokenResponse.Tokens[1].PrincipalName",
+    "tokenRequesterPrincipalType" : "DescribeDelegationTokenResponse.Tokens[1].TokenRequesterPrincipalType",
+    "tokenRequesterPrincipalName" : "DescribeDelegationTokenResponse.Tokens[1].TokenRequesterPrincipalName",
+    "issueTimestamp" : -3861441574244721594,
+    "expiryTimestamp" : 2326360566881399052,
+    "maxTimestamp" : 2148550592110849685,
+    "tokenId" : "DescribeDelegationTokenResponse.Tokens[1].TokenId",
+    "hmac" : "RGVzY3JpYmVEZWxlZ2F0aW9uVG9rZW5SZXNwb25zZS5Ub2tlbnNbMV0uSG1hYw==",
+    "renewers" : [ {
+      "principalType" : "DescribeDelegationTokenResponse.Tokens[1].Renewers[0].PrincipalType",
+      "principalName" : "DescribeDelegationTokenResponse.Tokens[1].Renewers[0].PrincipalName"
+    }, {
+      "principalType" : "DescribeDelegationTokenResponse.Tokens[1].Renewers[1].PrincipalType",
+      "principalName" : "DescribeDelegationTokenResponse.Tokens[1].Renewers[1].PrincipalName"
+    } ]
+  } ],
+  "throttleTimeMs" : 1749418839
+}

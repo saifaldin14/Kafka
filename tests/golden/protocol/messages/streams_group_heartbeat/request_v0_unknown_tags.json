@@ -1,0 +1,185 @@
+{
+  "groupId" : "StreamsGroupHeartbeatRequest.GroupId",
+  "memberId" : "StreamsGroupHeartbeatRequest.MemberId",
+  "memberEpoch" : -268158455,
+  "endpointInformationEpoch" : -494373544,
+  "instanceId" : "StreamsGroupHeartbeatRequest.InstanceId",
+  "rackId" : "StreamsGroupHeartbeatRequest.RackId",
+  "rebalanceTimeoutMs" : -601600212,
+  "topology" : {
+    "epoch" : 532930232,
+    "subtopologies" : [ {
+      "subtopologyId" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].SubtopologyId",
+      "sourceTopics" : [ "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].SourceTopics[0]", "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].SourceTopics[1]" ],
+      "sourceTopicRegex" : [ "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].SourceTopicRegex[0]", "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].SourceTopicRegex[1]" ],
+      "stateChangelogTopics" : [ {
+        "name" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].StateChangelogTopics[0].Name",
+        "partitions" : -2078808752,
+        "replicationFactor" : -13256,
+        "topicConfigs" : [ {
+          "key" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].StateChangelogTopics[0].TopicConfigs[0].Key",
+          "value" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].StateChangelogTopics[0].TopicConfigs[0].Value"
+        }, {
+          "key" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].StateChangelogTopics[0].TopicConfigs[1].Key",
+          "value" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].StateChangelogTopics[0].TopicConfigs[1].Value"
+        } ]
+      }, {
+        "name" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].StateChangelogTopics[1].Name",
+        "partitions" : 1980624343,
+        "replicationFactor" : -10767,
+        "topicConfigs" : [ {
+          "key" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].StateChangelogTopics[1].TopicConfigs[0].Key",
+          "value" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].StateChangelogTopics[1].TopicConfigs[0].Value"
+        }, {
+          "key" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].StateChangelogTopics[1].TopicConfigs[1].Key",
+          "value" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].StateChangelogTopics[1].TopicConfigs[1].Value"
+        } ]
+      } ],
+      "repartitionSinkTopics" : [ "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].RepartitionSinkTopics[0]", "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].RepartitionSinkTopics[1]" ],
+      "repartitionSourceTopics" : [ {
+        "name" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].RepartitionSourceTopics[0].Name",
+        "partitions" : 1500322513,
+        "replicationFactor" : -10737,
+        "topicConfigs" : [ {
+          "key" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].RepartitionSourceTopics[0].TopicConfigs[0].Key",
+          "value" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].RepartitionSourceTopics[0].TopicConfigs[0].Value"
+        }, {
+          "key" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].RepartitionSourceTopics[0].TopicConfigs[1].Key",
+          "value" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].RepartitionSourceTopics[0].TopicConfigs[1].Value"
+        } ]
+      }, {
+        "name" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].RepartitionSourceTopics[1].Name",
+        "partitions" : 1278644970,
+        "replicationFactor" : -15914,
+        "topicConfigs" : [ {
+          "key" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].RepartitionSourceTopics[1].TopicConfigs[0].Key",
+          "value" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].RepartitionSourceTopics[1].TopicConfigs[0].Value"
+        }, {
+          "key" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].RepartitionSourceTopics[1].TopicConfigs[1].Key",
+          "value" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[0].RepartitionSourceTopics[1].TopicConfigs[1].Value"
+        } ]
+      } ],
+      "copartitionGroups" : [ {
+        "sourceTopics" : [ -20173, -24362 ],
+        "sourceTopicRegex" : [ 27021, -8488 ],
+        "repartitionSourceTopics" : [ 9940, 17609 ]
+      }, {
+        "sourceTopics" : [ -23002, 9027 ],
+        "sourceTopicRegex" : [ 9000, -3043 ],
+        "repartitionSourceTopics" : [ -18341, 15166 ]
+      } ]
+    }, {
+      "subtopologyId" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].SubtopologyId",
+      "sourceTopics" : [ "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].SourceTopics[0]", "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].SourceTopics[1]" ],
+      "sourceTopicRegex" : [ "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].SourceTopicRegex[0]", "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].SourceTopicRegex[1]" ],
+      "stateChangelogTopics" : [ {
+        "name" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].StateChangelogTopics[0].Name",
+        "partitions" : -396645405,
+        "replicationFactor" : 11333,
+        "topicConfigs" : [ {
+          "key" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].StateChangelogTopics[0].TopicConfigs[0].Key",
+          "value" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].StateChangelogTopics[0].TopicConfigs[0].Value"
+        }, {
+          "key" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].StateChangelogTopics[0].TopicConfigs[1].Key",
+          "value" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].StateChangelogTopics[0].TopicConfigs[1].Value"
+        } ]
+      }, {
+        "name" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].StateChangelogTopics[1].Name",
+        "partitions" : 1337593324,
+        "replicationFactor" : 30540,
+        "topicConfigs" : [ {
+          "key" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].StateChangelogTopics[1].TopicConfigs[0].Key",
+          "value" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].StateChangelogTopics[1].TopicConfigs[0].Value"
+        }, {
+          "key" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].StateChangelogTopics[1].TopicConfigs[1].Key",
+          "value" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].StateChangelogTopics[1].TopicConfigs[1].Value"
+        } ]
+      } ],
+      "repartitionSinkTopics" : [ "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].RepartitionSinkTopics[0]", "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].RepartitionSinkTopics[1]" ],
+      "repartitionSourceTopics" : [ {
+        "name" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].RepartitionSourceTopics[0].Name",
+        "partitions" : -1027542876,
+        "replicationFactor" : -11116,
+        "topicConfigs" : [ {
+          "key" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].RepartitionSourceTopics[0].TopicConfigs[0].Key",
+          "value" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].RepartitionSourceTopics[0].TopicConfigs[0].Value"
+        }, {
+          "key" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].RepartitionSourceTopics[0].TopicConfigs[1].Key",
+          "value" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].RepartitionSourceTopics[0].TopicConfigs[1].Value"
+        } ]
+      }, {
+        "name" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].RepartitionSourceTopics[1].Name",
+        "partitions" : 2042347611,
+        "replicationFactor" : 22701,
+        "topicConfigs" : [ {
+          "key" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].RepartitionSourceTopics[1].TopicConfigs[0].Key",
+          "value" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].RepartitionSourceTopics[1].TopicConfigs[0].Value"
+        }, {
+          "key" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].RepartitionSourceTopics[1].TopicConfigs[1].Key",
+          "value" : "StreamsGroupHeartbeatRequest.Topology.Subtopologies[1].RepartitionSourceTopics[1].TopicConfigs[1].Value"
+        } ]
+      } ],
+      "copartitionGroups" : [ {
+        "sourceTopics" : [ -31660, -23991 ],
+        "sourceTopicRegex" : [ 28146, -5361 ],
+        "repartitionSourceTopics" : [ -25083, -13040 ]
+      }, {
+        "sourceTopics" : [ -14415, -22084 ],
+        "sourceTopicRegex" : [ -8713, -12902 ],
+        "repartitionSourceTopics" : [ 17710, 2187 ]
+      } ]
+    } ]
+  },
+  "activeTasks" : [ {
+    "subtopologyId" : "StreamsGroupHeartbeatRequest.ActiveTasks[0].SubtopologyId",
+    "partitions" : [ -1475065683, -1474894728 ]
+  }, {
+    "subtopologyId" : "StreamsGroupHeartbeatRequest.ActiveTasks[1].SubtopologyId",
+    "partitions" : [ 1814164724, 1814021609 ]
+  } ],
+  "standbyTasks" : [ {
+    "subtopologyId" : "StreamsGroupHeartbeatRequest.StandbyTasks[0].SubtopologyId",
+    "partitions" : [ -232838094, -232956849 ]
+  }, {
+    "subtopologyId" : "StreamsGroupHeartbeatRequest.StandbyTasks[1].SubtopologyId",
+    "partitions" : [ -412576389, -412401954 ]
+  } ],
+  "warmupTasks" : [ {
+    "subtopologyId" : "StreamsGroupHeartbeatRequest.WarmupTasks[0].SubtopologyId",
+    "partitions" : [ 1980005811, 1980263766 ]
+  }, {
+    "subtopologyId" : "StreamsGroupHeartbeatRequest.WarmupTasks[1].SubtopologyId",
+    "partitions" : [ 1997256394, 1997137639 ]
+  } ],
+  "processId" : "StreamsGroupHeartbeatRequest.ProcessId",
+  "userEndpoint" : {
+    "host" : "StreamsGroupHeartbeatRequest.UserEndpoint.Host",
+    "port" : 44865
+  },
+  "clientTags" : [ {
+    "key" : "StreamsGroupHeartbeatRequest.ClientTags[0].Key",
+    "value" : "StreamsGroupHeartbeatRequest.ClientTags[0].Value"
+  }, {
+    "key" : "StreamsGroupHeartbeatRequest.ClientTags[1].Key",
+    "value" : "StreamsGroupHeartbeatRequest.ClientTags[1].Value"
+  } ],
+  "taskOffsets" : [ {
+    "subtopologyId" : "StreamsGroupHeartbeatRequest.TaskOffsets[0].SubtopologyId",
+    "partition" : 1386420057,
+    "offset" : -1731231130305999494
+  }, {
+    "subtopologyId" : "StreamsGroupHeartbeatRequest.TaskOffsets[1].SubtopologyId",
+    "partition" : -1838194396,
+    "offset" : 5123285357325707305
+  } ],
+  "taskEndOffsets" : [ {
+    "subtopologyId" : "StreamsGroupHeartbeatRequest.TaskEndOffsets[0].SubtopologyId",
+    "partition" : 1742432766,
+    "offset" : 8676295323740601019
+  }, {
+    "subtopologyId" : "StreamsGroupHeartbeatRequest.TaskEndOffsets[1].SubtopologyId",
+    "partition" : 438564291,
+    "offset" : -2625116193040523364
+  } ],
+  "shutdownApplication" : false
+}

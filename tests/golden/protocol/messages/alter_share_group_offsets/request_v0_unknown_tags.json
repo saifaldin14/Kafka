@@ -1,0 +1,22 @@
+{
+  "groupId" : "AlterShareGroupOffsetsRequest.GroupId",
+  "topics" : [ {
+    "topicName" : "AlterShareGroupOffsetsRequest.Topics[0].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : 1445183795,
+      "startOffset" : 6919888504990046672
+    }, {
+      "partitionIndex" : 1647322436,
+      "startOffset" : -3020848925087091515
+    } ]
+  }, {
+    "topicName" : "AlterShareGroupOffsetsRequest.Topics[1].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : 1556740408,
+      "startOffset" : 3530371151172072001
+    }, {
+      "partitionIndex" : 218746087,
+      "startOffset" : -6447405839017298340
+    } ]
+  } ]
+}

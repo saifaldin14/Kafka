@@ -1,0 +1,6 @@
+{
+  "transactionalId" : null,
+  "acks" : 0,
+  "timeoutMs" : 0,
+  "topicData" : [ ]
+}

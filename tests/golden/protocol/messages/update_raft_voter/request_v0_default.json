@@ -1,0 +1,11 @@
+{
+  "clusterId" : "",
+  "currentLeaderEpoch" : 0,
+  "voterId" : 0,
+  "voterDirectoryId" : "AAAAAAAAAAAAAAAAAAAAAA",
+  "listeners" : [ ],
+  "kRaftVersionFeature" : {
+    "minSupportedVersion" : 0,
+    "maxSupportedVersion" : 0
+  }
+}

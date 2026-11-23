@@ -1,0 +1,11 @@
+{
+  "electionType" : 68,
+  "topicPartitions" : [ {
+    "topic" : "ElectLeadersRequest.TopicPartitions[0].Topic",
+    "partitions" : [ -2120440072, -2120611027 ]
+  }, {
+    "topic" : "ElectLeadersRequest.TopicPartitions[1].Topic",
+    "partitions" : [ -1684852287, -1684625652 ]
+  } ],
+  "timeoutMs" : -380716090
+}

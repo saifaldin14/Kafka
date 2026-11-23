@@ -1,0 +1,38 @@
+{
+  "throttleTimeMs" : -1248041993,
+  "responses" : [ {
+    "topic" : "FetchResponse.Responses[0].Topic",
+    "partitions" : [ {
+      "partitionIndex" : -1240619417,
+      "errorCode" : 17920,
+      "highWatermark" : 8751234655543770129,
+      "lastStableOffset" : -5145190486196979843,
+      "abortedTransactions" : null,
+      "records" : null
+    }, {
+      "partitionIndex" : 97374904,
+      "errorCode" : -11867,
+      "highWatermark" : 7982101444118884260,
+      "lastStableOffset" : -5823535902373927822,
+      "abortedTransactions" : null,
+      "records" : null
+    } ]
+  }, {
+    "topic" : "FetchResponse.Responses[1].Topic",
+    "partitions" : [ {
+      "partitionIndex" : -2019880644,
+      "errorCode" : -18287,
+      "highWatermark" : 6051713773555471664,
+      "lastStableOffset" : 6782364349823856366,
+      "abortedTransactions" : null,
+      "records" : null
+    }, {
+      "partitionIndex" : -1170295445,
+      "errorCode" : -18148,
+      "highWatermark" : -2969841583369869347,
+      "lastStableOffset" : 3801487926543804649,
+      "abortedTransactions" : null,
+      "records" : null
+    } ]
+  } ]
+}

@@ -1,0 +1,28 @@
+{
+  "throttleTimeMs" : -1638471542,
+  "errorCode" : 24066,
+  "errorMessage" : null,
+  "responses" : [ {
+    "name" : "AlterPartitionReassignmentsResponse.Responses[0].Name",
+    "partitions" : [ {
+      "partitionIndex" : 1156148880,
+      "errorCode" : -23139,
+      "errorMessage" : null
+    }, {
+      "partitionIndex" : 793937247,
+      "errorCode" : -15016,
+      "errorMessage" : null
+    } ]
+  }, {
+    "name" : "AlterPartitionReassignmentsResponse.Responses[1].Name",
+    "partitions" : [ {
+      "partitionIndex" : 151352203,
+      "errorCode" : -32580,
+      "errorMessage" : null
+    }, {
+      "partitionIndex" : -11095332,
+      "errorCode" : 11057,
+      "errorMessage" : null
+    } ]
+  } ]
+}

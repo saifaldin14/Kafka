@@ -1,0 +1,9 @@
+{
+  "groupId" : "",
+  "memberId" : "",
+  "topologyEpoch" : 0,
+  "topologyDescription" : {
+    "subtopologies" : [ ],
+    "globalStores" : [ ]
+  }
+}

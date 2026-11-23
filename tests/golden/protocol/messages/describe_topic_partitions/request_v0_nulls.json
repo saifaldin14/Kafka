@@ -1,0 +1,9 @@
+{
+  "topics" : [ {
+    "name" : "DescribeTopicPartitionsRequest.Topics[0].Name"
+  }, {
+    "name" : "DescribeTopicPartitionsRequest.Topics[1].Name"
+  } ],
+  "responsePartitionLimit" : -1677487649,
+  "cursor" : null
+}

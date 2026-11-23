@@ -1,0 +1,14 @@
+{
+  "throttleTimeMs" : 1888671367,
+  "errorCode" : -31511,
+  "errorMessage" : "UpdateFeaturesResponse.ErrorMessage",
+  "results" : [ {
+    "feature" : "UpdateFeaturesResponse.Results[0].Feature",
+    "errorCode" : 19527,
+    "errorMessage" : "UpdateFeaturesResponse.Results[0].ErrorMessage"
+  }, {
+    "feature" : "UpdateFeaturesResponse.Results[1].Feature",
+    "errorCode" : 25146,
+    "errorMessage" : "UpdateFeaturesResponse.Results[1].ErrorMessage"
+  } ]
+}

@@ -1,0 +1,28 @@
+{
+  "resources" : [ {
+    "resourceType" : 86,
+    "resourceName" : "IncrementalAlterConfigsRequest.Resources[0].ResourceName",
+    "configs" : [ {
+      "name" : "IncrementalAlterConfigsRequest.Resources[0].Configs[0].Name",
+      "configOperation" : 80,
+      "value" : "IncrementalAlterConfigsRequest.Resources[0].Configs[0].Value"
+    }, {
+      "name" : "IncrementalAlterConfigsRequest.Resources[0].Configs[1].Name",
+      "configOperation" : -115,
+      "value" : "IncrementalAlterConfigsRequest.Resources[0].Configs[1].Value"
+    } ]
+  }, {
+    "resourceType" : 109,
+    "resourceName" : "IncrementalAlterConfigsRequest.Resources[1].ResourceName",
+    "configs" : [ {
+      "name" : "IncrementalAlterConfigsRequest.Resources[1].Configs[0].Name",
+      "configOperation" : 91,
+      "value" : "IncrementalAlterConfigsRequest.Resources[1].Configs[0].Value"
+    }, {
+      "name" : "IncrementalAlterConfigsRequest.Resources[1].Configs[1].Name",
+      "configOperation" : 54,
+      "value" : "IncrementalAlterConfigsRequest.Resources[1].Configs[1].Value"
+    } ]
+  } ],
+  "validateOnly" : true
+}

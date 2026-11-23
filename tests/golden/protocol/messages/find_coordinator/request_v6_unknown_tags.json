@@ -1,0 +1,4 @@
+{
+  "keyType" : 36,
+  "coordinatorKeys" : [ "FindCoordinatorRequest.CoordinatorKeys[0]", "FindCoordinatorRequest.CoordinatorKeys[1]" ]
+}

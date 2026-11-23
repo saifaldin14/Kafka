@@ -1,0 +1,7 @@
+{
+  "groupId" : "ShareGroupHeartbeatRequest.GroupId",
+  "memberId" : "ShareGroupHeartbeatRequest.MemberId",
+  "memberEpoch" : -136991197,
+  "rackId" : "ShareGroupHeartbeatRequest.RackId",
+  "subscribedTopicNames" : [ "ShareGroupHeartbeatRequest.SubscribedTopicNames[0]", "ShareGroupHeartbeatRequest.SubscribedTopicNames[1]" ]
+}

@@ -1,0 +1,10 @@
+{
+  "assignedPartitions" : [ {
+    "topic" : "ConsumerProtocolAssignment.AssignedPartitions[0].Topic",
+    "partitions" : [ -559069264, -559212379 ]
+  }, {
+    "topic" : "ConsumerProtocolAssignment.AssignedPartitions[1].Topic",
+    "partitions" : [ 271443609, 271698084 ]
+  } ],
+  "userData" : "Q29uc3VtZXJQcm90b2NvbEFzc2lnbm1lbnQuVXNlckRhdGE="
+}

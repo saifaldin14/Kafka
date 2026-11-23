@@ -1,0 +1,8 @@
+{
+  "throttleTimeMs" : 0,
+  "brokers" : [ ],
+  "clusterId" : null,
+  "controllerId" : -1,
+  "topics" : [ ],
+  "clusterAuthorizedOperations" : -2147483648
+}

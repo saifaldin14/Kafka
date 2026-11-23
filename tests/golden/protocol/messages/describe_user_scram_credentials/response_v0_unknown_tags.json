@@ -1,0 +1,28 @@
+{
+  "throttleTimeMs" : -1411271405,
+  "errorCode" : -31803,
+  "errorMessage" : "DescribeUserScramCredentialsResponse.ErrorMessage",
+  "results" : [ {
+    "user" : "DescribeUserScramCredentialsResponse.Results[0].User",
+    "errorCode" : 4619,
+    "errorMessage" : "DescribeUserScramCredentialsResponse.Results[0].ErrorMessage",
+    "credentialInfos" : [ {
+      "mechanism" : -25,
+      "iterations" : 1509953438
+    }, {
+      "mechanism" : 74,
+      "iterations" : 1944797921
+    } ]
+  }, {
+    "user" : "DescribeUserScramCredentialsResponse.Results[1].User",
+    "errorCode" : 13422,
+    "errorMessage" : "DescribeUserScramCredentialsResponse.Results[1].ErrorMessage",
+    "credentialInfos" : [ {
+      "mechanism" : 120,
+      "iterations" : -1634547113
+    }, {
+      "mechanism" : 101,
+      "iterations" : -134224716
+    } ]
+  } ]
+}

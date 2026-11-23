@@ -1,0 +1,59 @@
+{
+  "throttleTimeMs" : 1211223146,
+  "topics" : [ {
+    "errorCode" : 21382,
+    "name" : null,
+    "topicId" : "jTJzlU00fGchNqqyMC8njA",
+    "isInternal" : false,
+    "partitions" : [ {
+      "errorCode" : -377,
+      "partitionIndex" : 557740110,
+      "leaderId" : -22205400,
+      "leaderEpoch" : 2040734478,
+      "replicaNodes" : [ -2115192655, -2114938180 ],
+      "isrNodes" : [ -1358358813, -1358184378 ],
+      "eligibleLeaderReplicas" : null,
+      "lastKnownElr" : null,
+      "offlineReplicas" : [ 1387614632, 1387471517 ]
+    }, {
+      "errorCode" : -4742,
+      "partitionIndex" : -812782667,
+      "leaderId" : 1775987435,
+      "leaderEpoch" : 1506372607,
+      "replicaNodes" : [ -563707952, -563962427 ],
+      "isrNodes" : [ 1294311334, 1294081219 ],
+      "eligibleLeaderReplicas" : null,
+      "lastKnownElr" : null,
+      "offlineReplicas" : [ 429436335, 429610770 ]
+    } ],
+    "topicAuthorizedOperations" : -1640205431
+  }, {
+    "errorCode" : 13347,
+    "name" : null,
+    "topicId" : "NOfhFfv6V1rgWvFbKmKimw",
+    "isInternal" : true,
+    "partitions" : [ {
+      "errorCode" : 17126,
+      "partitionIndex" : 648993193,
+      "leaderId" : -1048703153,
+      "leaderEpoch" : -421339325,
+      "replicaNodes" : [ -1441262852, -1441405967 ],
+      "isrNodes" : [ -2113815182, -2114045297 ],
+      "eligibleLeaderReplicas" : null,
+      "lastKnownElr" : null,
+      "offlineReplicas" : [ -929148733, -928918618 ]
+    }, {
+      "errorCode" : -2941,
+      "partitionIndex" : -958032846,
+      "leaderId" : -1290593428,
+      "leaderEpoch" : 1071359426,
+      "replicaNodes" : [ -2095411779, -2095268664 ],
+      "isrNodes" : [ 1201375775, 1201522370 ],
+      "eligibleLeaderReplicas" : null,
+      "lastKnownElr" : null,
+      "offlineReplicas" : [ 1088827900, 1088684785 ]
+    } ],
+    "topicAuthorizedOperations" : -1286870844
+  } ],
+  "nextCursor" : null
+}

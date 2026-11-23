@@ -1,0 +1,24 @@
+{
+  "transactionalId" : "ProduceRequest.TransactionalId",
+  "acks" : 12556,
+  "timeoutMs" : 1500137353,
+  "topicData" : [ {
+    "name" : "ProduceRequest.TopicData[0].Name",
+    "partitionData" : [ {
+      "index" : 737132983,
+      "records" : ""
+    }, {
+      "index" : 402639454,
+      "records" : ""
+    } ]
+  }, {
+    "name" : "ProduceRequest.TopicData[1].Name",
+    "partitionData" : [ {
+      "index" : -1766892436,
+      "records" : ""
+    }, {
+      "index" : -895516299,
+      "records" : ""
+    } ]
+  } ]
+}

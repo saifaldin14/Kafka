@@ -1,0 +1,12 @@
+{
+  "topics" : [ {
+    "topicId" : "DdnEC5g5knHCmnGzqdOhVg",
+    "name" : null
+  }, {
+    "topicId" : "ThOzGO2eCbRJgupbw4pLlQ",
+    "name" : null
+  } ],
+  "allowAutoTopicCreation" : true,
+  "includeClusterAuthorizedOperations" : false,
+  "includeTopicAuthorizedOperations" : true
+}

@@ -1,0 +1,34 @@
+{
+  "throttleTimeMs" : 1509479797,
+  "transactionStates" : [ {
+    "errorCode" : -23247,
+    "transactionalId" : "DescribeTransactionsResponse.TransactionStates[0].TransactionalId",
+    "transactionState" : "DescribeTransactionsResponse.TransactionStates[0].TransactionState",
+    "transactionTimeoutMs" : -293531955,
+    "transactionStartTimeMs" : 8402220971534215767,
+    "producerId" : 5525639523173015529,
+    "producerEpoch" : 7681,
+    "topics" : [ {
+      "topic" : "DescribeTransactionsResponse.TransactionStates[0].Topics[0].Topic",
+      "partitions" : [ 761677545, 761820660 ]
+    }, {
+      "topic" : "DescribeTransactionsResponse.TransactionStates[0].Topics[1].Topic",
+      "partitions" : [ -1903470528, -1903697163 ]
+    } ]
+  }, {
+    "errorCode" : -1348,
+    "transactionalId" : "DescribeTransactionsResponse.TransactionStates[1].TransactionalId",
+    "transactionState" : "DescribeTransactionsResponse.TransactionStates[1].TransactionState",
+    "transactionTimeoutMs" : 1109115986,
+    "transactionStartTimeMs" : 4638930934911128384,
+    "producerId" : -1367817797075282666,
+    "producerEpoch" : 2968,
+    "topics" : [ {
+      "topic" : "DescribeTransactionsResponse.TransactionStates[1].Topics[0].Topic",
+      "partitions" : [ -508291260, -508434375 ]
+    }, {
+      "topic" : "DescribeTransactionsResponse.TransactionStates[1].Topics[1].Topic",
+      "partitions" : [ 1683177405, 1683320520 ]
+    } ]
+  } ]
+}

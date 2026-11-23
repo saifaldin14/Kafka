@@ -1,0 +1,26 @@
+{
+  "groupId" : "InitializeShareGroupStateRequest.GroupId",
+  "topics" : [ {
+    "topicId" : "vDn6lQs3YdMN5rtCDxtq0A",
+    "partitions" : [ {
+      "partition" : 34547438,
+      "stateEpoch" : -1875054578,
+      "startOffset" : 9205036486819000671
+    }, {
+      "partition" : 805964211,
+      "stateEpoch" : 2138255405,
+      "startOffset" : -81462846270317614
+    } ]
+  }, {
+    "topicId" : "0D6LhGRVgBYvx0b2fUjaDw",
+    "partitions" : [ {
+      "partition" : -1381067081,
+      "stateEpoch" : -1629919007,
+      "startOffset" : -2487335827764689122
+    }, {
+      "partition" : 1315553794,
+      "stateEpoch" : 260100674,
+      "startOffset" : 5530525836358101643
+    } ]
+  } ]
+}

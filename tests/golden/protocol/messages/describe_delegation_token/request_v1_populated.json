@@ -1,0 +1,9 @@
+{
+  "owners" : [ {
+    "principalType" : "DescribeDelegationTokenRequest.Owners[0].PrincipalType",
+    "principalName" : "DescribeDelegationTokenRequest.Owners[0].PrincipalName"
+  }, {
+    "principalType" : "DescribeDelegationTokenRequest.Owners[1].PrincipalType",
+    "principalName" : "DescribeDelegationTokenRequest.Owners[1].PrincipalName"
+  } ]
+}

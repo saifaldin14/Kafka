@@ -1,0 +1,18 @@
+{
+  "version" : -20983,
+  "leaderId" : 783211103,
+  "voters" : [ {
+    "voterId" : 516381655,
+    "voterDirectoryId" : "pa4FN_fX2pxejZ0aI8iyjQ"
+  }, {
+    "voterId" : 1078532266,
+    "voterDirectoryId" : "XSoAeF8hHuNvfYyJpUdAQA"
+  } ],
+  "grantingVoters" : [ {
+    "voterId" : 1424398017,
+    "voterDirectoryId" : "pJ44kSSF-3o-1XehD6oYOw"
+  }, {
+    "voterId" : 639954932,
+    "voterDirectoryId" : "dIkIkPfSZVHXPwBVGoJgtg"
+  } ]
+}

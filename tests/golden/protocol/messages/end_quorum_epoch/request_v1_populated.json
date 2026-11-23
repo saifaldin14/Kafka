@@ -1,0 +1,63 @@
+{
+  "clusterId" : "EndQuorumEpochRequest.ClusterId",
+  "topics" : [ {
+    "topicName" : "EndQuorumEpochRequest.Topics[0].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : -123071396,
+      "leaderId" : -1059589206,
+      "leaderEpoch" : -1748324068,
+      "preferredCandidates" : [ {
+        "candidateId" : 678781199,
+        "candidateDirectoryId" : "inOptzorYlRt69lX17hQNQ"
+      }, {
+        "candidateId" : 294045674,
+        "candidateDirectoryId" : "3dGCzQHpbyPUcEJaP6edAA"
+      } ]
+    }, {
+      "partitionIndex" : 39376139,
+      "leaderId" : 266952565,
+      "leaderEpoch" : -1962721251,
+      "preferredCandidates" : [ {
+        "candidateId" : -391150084,
+        "candidateDirectoryId" : "7OFVxlSu-nkx3xoB5VNm7g"
+      }, {
+        "candidateId" : -1542399135,
+        "candidateDirectoryId" : "lEfkIlX-A1r0LB9YHp_mmw"
+      } ]
+    } ]
+  }, {
+    "topicName" : "EndQuorumEpochRequest.Topics[1].TopicName",
+    "partitions" : [ {
+      "partitionIndex" : 1578349959,
+      "leaderId" : -1752598687,
+      "leaderEpoch" : -1144146503,
+      "preferredCandidates" : [ {
+        "candidateId" : -352623040,
+        "candidateDirectoryId" : "7mnUOjBXevV1TnTgJKW5og"
+      }, {
+        "candidateId" : 1032088021,
+        "candidateDirectoryId" : "0hqV1JCbhAaesL0xuEGK3w"
+      } ]
+    }, {
+      "partitionIndex" : 1705199960,
+      "leaderId" : -592132010,
+      "leaderEpoch" : -469185832,
+      "preferredCandidates" : [ {
+        "candidateId" : -69992909,
+        "candidateDirectoryId" : "PDFmpzrjBnAq98EpD8O_CQ"
+      }, {
+        "candidateId" : -1310278418,
+        "candidateDirectoryId" : "6siAK88bNu8N6JZw6z4cpA"
+      } ]
+    } ]
+  } ],
+  "leaderEndpoints" : [ {
+    "name" : "EndQuorumEpochRequest.LeaderEndpoints[0].Name",
+    "host" : "EndQuorumEpochRequest.LeaderEndpoints[0].Host",
+    "port" : 45969
+  }, {
+    "name" : "EndQuorumEpochRequest.LeaderEndpoints[1].Name",
+    "host" : "EndQuorumEpochRequest.LeaderEndpoints[1].Host",
+    "port" : 9198
+  } ]
+}

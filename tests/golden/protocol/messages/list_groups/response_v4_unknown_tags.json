@@ -1,0 +1,13 @@
+{
+  "throttleTimeMs" : -869165747,
+  "errorCode" : 9095,
+  "groups" : [ {
+    "groupId" : "ListGroupsResponse.Groups[0].GroupId",
+    "protocolType" : "ListGroupsResponse.Groups[0].ProtocolType",
+    "groupState" : "ListGroupsResponse.Groups[0].GroupState"
+  }, {
+    "groupId" : "ListGroupsResponse.Groups[1].GroupId",
+    "protocolType" : "ListGroupsResponse.Groups[1].ProtocolType",
+    "groupState" : "ListGroupsResponse.Groups[1].GroupState"
+  } ]
+}

@@ -1,0 +1,18 @@
+{
+  "throttleTimeMs" : -2056517902,
+  "coordinators" : [ {
+    "key" : "FindCoordinatorResponse.Coordinators[0].Key",
+    "nodeId" : -1275835287,
+    "host" : "FindCoordinatorResponse.Coordinators[0].Host",
+    "port" : 660556931,
+    "errorCode" : 29539,
+    "errorMessage" : "FindCoordinatorResponse.Coordinators[0].ErrorMessage"
+  }, {
+    "key" : "FindCoordinatorResponse.Coordinators[1].Key",
+    "nodeId" : 2077481242,
+    "host" : "FindCoordinatorResponse.Coordinators[1].Host",
+    "port" : -1311680016,
+    "errorCode" : -4666,
+    "errorMessage" : "FindCoordinatorResponse.Coordinators[1].ErrorMessage"
+  } ]
+}

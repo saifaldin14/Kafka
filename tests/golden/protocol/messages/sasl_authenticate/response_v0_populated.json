@@ -1,0 +1,5 @@
+{
+  "errorCode" : -10207,
+  "errorMessage" : "SaslAuthenticateResponse.ErrorMessage",
+  "authBytes" : "U2FzbEF1dGhlbnRpY2F0ZVJlc3BvbnNlLkF1dGhCeXRlcw=="
+}

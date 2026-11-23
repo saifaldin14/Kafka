@@ -1,0 +1,77 @@
+{
+  "results" : [ {
+    "topicId" : "-_xTtGLgys8OjSeEA_jPBA",
+    "partitions" : [ {
+      "partition" : 1509739426,
+      "errorCode" : 1839,
+      "errorMessage" : null,
+      "stateEpoch" : 1491177506,
+      "startOffset" : -1768219189216936853,
+      "stateBatches" : [ {
+        "firstOffset" : 8671850906593218384,
+        "lastOffset" : 1246309554609661676,
+        "deliveryState" : 88,
+        "deliveryCount" : -17074
+      }, {
+        "firstOffset" : 1678136771025430257,
+        "lastOffset" : 3326206248098607803,
+        "deliveryState" : 21,
+        "deliveryCount" : -2897
+      } ]
+    }, {
+      "partition" : -1819146921,
+      "errorCode" : -18046,
+      "errorMessage" : null,
+      "stateEpoch" : -2009631679,
+      "startOffset" : -3266142307499829378,
+      "stateBatches" : [ {
+        "firstOffset" : 5800992535680201629,
+        "lastOffset" : 1996013759160951759,
+        "deliveryState" : 73,
+        "deliveryCount" : -6005
+      }, {
+        "firstOffset" : -5496777048956128260,
+        "lastOffset" : 2796086189259987360,
+        "deliveryState" : -100,
+        "deliveryCount" : -16854
+      } ]
+    } ]
+  }, {
+    "topicId" : "Pkz05-PW_-Kzw-cIJlSU8w",
+    "partitions" : [ {
+      "partition" : 890167355,
+      "errorCode" : 2542,
+      "errorMessage" : null,
+      "stateEpoch" : -1984911003,
+      "startOffset" : 5189978799471315594,
+      "stateBatches" : [ {
+        "firstOffset" : 6181002516268606609,
+        "lastOffset" : 5643634929190476123,
+        "deliveryState" : -75,
+        "deliveryCount" : 1359
+      }, {
+        "firstOffset" : 6050745765345680496,
+        "lastOffset" : 2719474473705966348,
+        "deliveryState" : 120,
+        "deliveryCount" : 13934
+      } ]
+    }, {
+      "partition" : 1708620982,
+      "errorCode" : -6261,
+      "errorMessage" : null,
+      "stateEpoch" : -441162554,
+      "startOffset" : 4534911403442272279,
+      "stateBatches" : [ {
+        "firstOffset" : -7409833554826793084,
+        "lastOffset" : 6482837370458152120,
+        "deliveryState" : -76,
+        "deliveryCount" : 26082
+      }, {
+        "firstOffset" : -8993938860360286171,
+        "lastOffset" : -1957904844674073689,
+        "deliveryState" : 33,
+        "deliveryCount" : -5789
+      } ]
+    } ]
+  } ]
+}

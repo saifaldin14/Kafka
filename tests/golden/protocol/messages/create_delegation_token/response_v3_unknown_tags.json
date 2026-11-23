@@ -1,0 +1,13 @@
+{
+  "errorCode" : -16642,
+  "principalType" : "CreateDelegationTokenResponse.PrincipalType",
+  "principalName" : "CreateDelegationTokenResponse.PrincipalName",
+  "tokenRequesterPrincipalType" : "CreateDelegationTokenResponse.TokenRequesterPrincipalType",
+  "tokenRequesterPrincipalName" : "CreateDelegationTokenResponse.TokenRequesterPrincipalName",
+  "issueTimestampMs" : 9078007832721246646,
+  "expiryTimestampMs" : 5116978733102615632,
+  "maxTimestampMs" : -5586540050702021999,
+  "tokenId" : "CreateDelegationTokenResponse.TokenId",
+  "hmac" : "Q3JlYXRlRGVsZWdhdGlvblRva2VuUmVzcG9uc2UuSG1hYw==",
+  "throttleTimeMs" : 1802482310
+}

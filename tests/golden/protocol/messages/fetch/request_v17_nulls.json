@@ -1,0 +1,59 @@
+{
+  "replicaState" : {
+    "replicaId" : 1020546848,
+    "replicaEpoch" : -2447060116831895930
+  },
+  "maxWaitMs" : -793760899,
+  "minBytes" : -1525031135,
+  "maxBytes" : -631918637,
+  "isolationLevel" : -112,
+  "sessionId" : 149719015,
+  "sessionEpoch" : 945490619,
+  "topics" : [ {
+    "topicId" : "0SX3TWhod_DL-wuIaYObiQ",
+    "partitions" : [ {
+      "partition" : -833875099,
+      "currentLeaderEpoch" : -1679565080,
+      "fetchOffset" : -6965325582742891060,
+      "lastFetchedEpoch" : 905236267,
+      "logStartOffset" : 8331998841151720292,
+      "partitionMaxBytes" : 775437424,
+      "replicaDirectoryId" : "kXUJGhts3L-WuxNcmfrdFA"
+    }, {
+      "partition" : 1193672192,
+      "currentLeaderEpoch" : 2018264359,
+      "fetchOffset" : 4995469716767026561,
+      "lastFetchedEpoch" : 98235768,
+      "logStartOffset" : 4896211747360342351,
+      "partitionMaxBytes" : 863228309,
+      "replicaDirectoryId" : "ZqGQqRhmX9TK6MZUdfUQtQ"
+    } ]
+  }, {
+    "topicId" : "aVT1VxDtp73pBIDxw9PReg",
+    "partitions" : [ {
+      "partition" : 1465636340,
+      "currentLeaderEpoch" : -677358413,
+      "fetchOffset" : -8417145500449208795,
+      "lastFetchedEpoch" : -1295170852,
+      "logStartOffset" : 4183872564353232219,
+      "partitionMaxBytes" : -742868959,
+      "replicaDirectoryId" : "CEMC04xMM4hWEXh3ZXvLkQ"
+    }, {
+      "partition" : 1120784809,
+      "currentLeaderEpoch" : -966630732,
+      "fetchOffset" : 5715240337616726576,
+      "lastFetchedEpoch" : -300628001,
+      "logStartOffset" : 7207448740098526928,
+      "partitionMaxBytes" : -2107677060,
+      "replicaDirectoryId" : "h68zjesvwGO-dNomoiOswA"
+    } ]
+  } ],
+  "forgottenTopicsData" : [ {
+    "topicId" : "R-4eVBbCJ677xRXiq-k0lw",
+    "partitions" : [ -1779888905, -1779630950 ]
+  }, {
+    "topicId" : "-kKJ6mC2_-v2ECFCVvSg2A",
+    "partitions" : [ -1451483986, -1451630581 ]
+  } ],
+  "rackId" : "FetchRequest.RackId"
+}

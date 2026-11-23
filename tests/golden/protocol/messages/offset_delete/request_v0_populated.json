@@ -1,0 +1,18 @@
+{
+  "groupId" : "OffsetDeleteRequest.GroupId",
+  "topics" : [ {
+    "name" : "OffsetDeleteRequest.Topics[0].Name",
+    "partitions" : [ {
+      "partitionIndex" : -2112533763
+    }, {
+      "partitionIndex" : -589896330
+    } ]
+  }, {
+    "name" : "OffsetDeleteRequest.Topics[1].Name",
+    "partitions" : [ {
+      "partitionIndex" : 633357298
+    }, {
+      "partitionIndex" : 689442153
+    } ]
+  } ]
+}

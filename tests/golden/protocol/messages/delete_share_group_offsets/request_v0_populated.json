@@ -1,0 +1,8 @@
+{
+  "groupId" : "DeleteShareGroupOffsetsRequest.GroupId",
+  "topics" : [ {
+    "topicName" : "DeleteShareGroupOffsetsRequest.Topics[0].TopicName"
+  }, {
+    "topicName" : "DeleteShareGroupOffsetsRequest.Topics[1].TopicName"
+  } ]
+}

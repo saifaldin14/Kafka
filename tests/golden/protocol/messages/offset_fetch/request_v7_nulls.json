@@ -1,0 +1,5 @@
+{
+  "groupId" : "OffsetFetchRequest.GroupId",
+  "topics" : null,
+  "requireStable" : true
+}

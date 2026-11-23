@@ -1,0 +1,24 @@
+{
+  "throttleTimeMs" : 1046425473,
+  "entries" : [ {
+    "errorCode" : 7863,
+    "errorMessage" : null,
+    "entity" : [ {
+      "entityType" : "AlterClientQuotasResponse.Entries[0].Entity[0].EntityType",
+      "entityName" : null
+    }, {
+      "entityType" : "AlterClientQuotasResponse.Entries[0].Entity[1].EntityType",
+      "entityName" : null
+    } ]
+  }, {
+    "errorCode" : 14122,
+    "errorMessage" : null,
+    "entity" : [ {
+      "entityType" : "AlterClientQuotasResponse.Entries[1].Entity[0].EntityType",
+      "entityName" : null
+    }, {
+      "entityType" : "AlterClientQuotasResponse.Entries[1].Entity[1].EntityType",
+      "entityName" : null
+    } ]
+  } ]
+}

@@ -1,0 +1,25 @@
+{
+  "topics" : [ {
+    "topic" : "OffsetForLeaderEpochRequest.Topics[0].Topic",
+    "partitions" : [ {
+      "partition" : 1909360319,
+      "currentLeaderEpoch" : 774684230,
+      "leaderEpoch" : 941267951
+    }, {
+      "partition" : 168810186,
+      "currentLeaderEpoch" : -1330750547,
+      "leaderEpoch" : -2146371138
+    } ]
+  }, {
+    "topic" : "OffsetForLeaderEpochRequest.Topics[1].Topic",
+    "partitions" : [ {
+      "partition" : -13341706,
+      "currentLeaderEpoch" : 31209713,
+      "leaderEpoch" : 590853562
+    }, {
+      "partition" : 1820465531,
+      "currentLeaderEpoch" : -1808876726,
+      "leaderEpoch" : -904226021
+    } ]
+  } ]
+}
