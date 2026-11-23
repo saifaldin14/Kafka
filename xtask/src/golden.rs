@@ -24,6 +24,11 @@
 //!   refuses; and its decoding of invalid UTF-8. Written to [`MESSAGES_GOLDEN`]
 //!   (tools/kafka-golden/src/alluvium/golden/MessagesDump.java describes the cases).
 //!
+//! - `verify`: the reverse check. A test of the protocol crate encodes 1000 arbitrary
+//!   values of every message at every version into `target/kafka-golden/rust/`; the
+//!   harness reads each with Kafka's classes and writes it back, and every one must give
+//!   the same bytes. It writes nothing to the repository.
+//!
 //! The dumps under [`GOLDEN`] are listed with their SHA-256s in its `MANIFEST.sha256`,
 //! rewritten after each dump and checked by a test, so a golden file edited by hand, or
 //! left behind, fails.
@@ -109,6 +114,7 @@ pub(crate) fn run(dump: GoldenDump, out: &mut impl Write) -> Exit {
         GoldenDump::Errors => errors(&root),
         GoldenDump::ApiKeys => api_keys(&root),
         GoldenDump::Messages => messages(&root),
+        GoldenDump::Verify => verify(&root),
     };
     match result {
         Ok(summary) => {
@@ -149,6 +155,49 @@ fn messages(root: &Path) -> Result<String, String> {
     let count = replace_dir(&dir, &root.join(MESSAGES_GOLDEN))?;
     write_manifest(root, MESSAGES_GOLDEN)?;
     Ok(format!("wrote {count} files to {MESSAGES_GOLDEN}"))
+}
+
+/// The reverse check: Kafka reads and rewrites the messages the protocol crate encodes.
+fn verify(root: &Path) -> Result<String, String> {
+    let encoded = root.join("target").join("kafka-golden").join("rust");
+    match std::fs::remove_dir_all(&encoded) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => return Err(format!("could not remove {}: {error}", encoded.display())),
+    }
+    let status = Command::new(crate::tools::cargo_program())
+        .current_dir(root)
+        .env("ALLUVIUM_REVERSE_CHECK_DIR", &encoded)
+        .args([
+            "test",
+            "--locked",
+            "-p",
+            "alluvium-protocol",
+            "--lib",
+            "--",
+            "--ignored",
+            "--exact",
+            "golden_tests::write_messages_for_the_reverse_check",
+        ])
+        .status()
+        .map_err(|error| format!("could not run cargo: {error}"))?;
+    if !status.success() {
+        return Err(format!("encoding the messages failed: {status}"));
+    }
+    let dir = harness(root, GoldenDump::Verify, &["/work/rust", "/kafka/clients"])?;
+    let report: serde_json::Value = serde_json::from_str(&read(&dir.join("report.json"))?)
+        .map_err(|error| format!("the harness wrote an invalid report: {error}"))?;
+    let checked = report["checked"].as_u64().unwrap_or(0);
+    let mismatched = report["mismatched"].as_u64().unwrap_or(u64::MAX);
+    if mismatched != 0 || checked == 0 {
+        return Err(format!(
+            "Kafka read and rewrote {checked} messages, and {mismatched} differ:\n{:#}",
+            report["mismatches"]
+        ));
+    }
+    Ok(format!(
+        "Kafka read and rewrote all {checked} messages Alluvium encoded, byte for byte"
+    ))
 }
 
 /// Replaces the files under `to` with those under `from`, and returns how many there

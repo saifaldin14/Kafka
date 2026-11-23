@@ -27,13 +27,19 @@ public final class Main {
                 }
                 MessagesDump.write(out, java.nio.file.Path.of(args[2]));
             }
+            case "verify" -> {
+                if (args.length != 4) {
+                    usage();
+                }
+                Verify.write(out, java.nio.file.Path.of(args[2]), java.nio.file.Path.of(args[3]));
+            }
             default -> usage();
         }
     }
 
     private static void usage() {
-        System.err.println("usage: Main <dump> <output-directory> [<schemas-directory>]; dumps: "
-            + "errors, api-keys, messages <schemas-directory>");
+        System.err.println("usage: Main <dump> <output-directory> [<input>...]; dumps: errors, "
+            + "api-keys, messages <schemas-directory>, verify <encoded-directory> <schemas-directory>");
         System.exit(2);
     }
 }

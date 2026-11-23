@@ -814,3 +814,1394 @@ pub(crate) const TRANSCODE: &[(&str, crate::golden_tests::Transcode)] = &[
     ("WriteTxnMarkersRequest", crate::golden_tests::transcode::<write_txn_markers_request::WriteTxnMarkersRequest>),
     ("WriteTxnMarkersResponse", crate::golden_tests::transcode::<write_txn_markers_response::WriteTxnMarkersResponse>),
 ];
+
+/// Each message's schema name, lowest and highest version, with a function that encodes
+/// `count` arbitrary values at a version, for the reverse check by Kafka.
+#[cfg(test)]
+pub(crate) const ENCODE_ARBITRARY: &[(&str, i16, i16, crate::golden_tests::EncodeArbitrary)] = &[
+    ("AbortedTxn", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &data::aborted_txn::AbortedTxn::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("AddOffsetsToTxnRequest", 0, 4, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &add_offsets_to_txn_request::AddOffsetsToTxnRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("AddOffsetsToTxnResponse", 0, 4, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &add_offsets_to_txn_response::AddOffsetsToTxnResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("AddPartitionsToTxnRequest", 0, 5, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &add_partitions_to_txn_request::AddPartitionsToTxnRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("AddPartitionsToTxnResponse", 0, 5, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &add_partitions_to_txn_response::AddPartitionsToTxnResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("AddRaftVoterRequest", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &add_raft_voter_request::AddRaftVoterRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("AddRaftVoterResponse", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &add_raft_voter_response::AddRaftVoterResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("AllocateProducerIdsRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &allocate_producer_ids_request::AllocateProducerIdsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("AllocateProducerIdsResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &allocate_producer_ids_response::AllocateProducerIdsResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("AlterClientQuotasRequest", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &alter_client_quotas_request::AlterClientQuotasRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("AlterClientQuotasResponse", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &alter_client_quotas_response::AlterClientQuotasResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("AlterConfigsRequest", 0, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &alter_configs_request::AlterConfigsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("AlterConfigsResponse", 0, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &alter_configs_response::AlterConfigsResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("AlterPartitionReassignmentsRequest", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &alter_partition_reassignments_request::AlterPartitionReassignmentsRequest::arbitrary(
+                version,
+            ),
+            version,
+            count,
+        )
+    }),
+    ("AlterPartitionReassignmentsResponse", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &alter_partition_reassignments_response::AlterPartitionReassignmentsResponse::arbitrary(
+                version,
+            ),
+            version,
+            count,
+        )
+    }),
+    ("AlterPartitionRequest", 2, 3, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &alter_partition_request::AlterPartitionRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("AlterPartitionResponse", 2, 3, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &alter_partition_response::AlterPartitionResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("AlterReplicaLogDirsRequest", 1, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &alter_replica_log_dirs_request::AlterReplicaLogDirsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("AlterReplicaLogDirsResponse", 1, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &alter_replica_log_dirs_response::AlterReplicaLogDirsResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("AlterShareGroupOffsetsRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &alter_share_group_offsets_request::AlterShareGroupOffsetsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("AlterShareGroupOffsetsResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &alter_share_group_offsets_response::AlterShareGroupOffsetsResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("AlterUserScramCredentialsRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &alter_user_scram_credentials_request::AlterUserScramCredentialsRequest::arbitrary(
+                version,
+            ),
+            version,
+            count,
+        )
+    }),
+    ("AlterUserScramCredentialsResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &alter_user_scram_credentials_response::AlterUserScramCredentialsResponse::arbitrary(
+                version,
+            ),
+            version,
+            count,
+        )
+    }),
+    ("ApiVersionsRequest", 0, 5, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &api_versions_request::ApiVersionsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ApiVersionsResponse", 0, 5, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &api_versions_response::ApiVersionsResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("AssignReplicasToDirsRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &assign_replicas_to_dirs_request::AssignReplicasToDirsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("AssignReplicasToDirsResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &assign_replicas_to_dirs_response::AssignReplicasToDirsResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("BeginQuorumEpochRequest", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &begin_quorum_epoch_request::BeginQuorumEpochRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("BeginQuorumEpochResponse", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &begin_quorum_epoch_response::BeginQuorumEpochResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("BrokerHeartbeatRequest", 0, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &broker_heartbeat_request::BrokerHeartbeatRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("BrokerHeartbeatResponse", 0, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &broker_heartbeat_response::BrokerHeartbeatResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("BrokerRegistrationRequest", 0, 4, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &broker_registration_request::BrokerRegistrationRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("BrokerRegistrationResponse", 0, 4, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &broker_registration_response::BrokerRegistrationResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ConsumerGroupDescribeRequest", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &consumer_group_describe_request::ConsumerGroupDescribeRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ConsumerGroupDescribeResponse", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &consumer_group_describe_response::ConsumerGroupDescribeResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ConsumerGroupHeartbeatRequest", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &consumer_group_heartbeat_request::ConsumerGroupHeartbeatRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ConsumerGroupHeartbeatResponse", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &consumer_group_heartbeat_response::ConsumerGroupHeartbeatResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ConsumerProtocolAssignment", 0, 3, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &data::consumer_protocol_assignment::ConsumerProtocolAssignment::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ConsumerProtocolSubscription", 0, 3, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &data::consumer_protocol_subscription::ConsumerProtocolSubscription::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ControlRecordTypeSchema", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &data::control_record_type_schema::ControlRecordTypeSchema::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ControllerRegistrationRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &controller_registration_request::ControllerRegistrationRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ControllerRegistrationResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &controller_registration_response::ControllerRegistrationResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("CreateAclsRequest", 1, 3, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &create_acls_request::CreateAclsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("CreateAclsResponse", 1, 3, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &create_acls_response::CreateAclsResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("CreateDelegationTokenRequest", 1, 3, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &create_delegation_token_request::CreateDelegationTokenRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("CreateDelegationTokenResponse", 1, 3, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &create_delegation_token_response::CreateDelegationTokenResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("CreatePartitionsRequest", 0, 3, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &create_partitions_request::CreatePartitionsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("CreatePartitionsResponse", 0, 3, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &create_partitions_response::CreatePartitionsResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("CreateTopicsRequest", 2, 7, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &create_topics_request::CreateTopicsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("CreateTopicsResponse", 2, 7, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &create_topics_response::CreateTopicsResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DefaultPrincipalData", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &data::default_principal_data::DefaultPrincipalData::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DeleteAclsRequest", 1, 3, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &delete_acls_request::DeleteAclsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DeleteAclsResponse", 1, 3, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &delete_acls_response::DeleteAclsResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DeleteGroupsRequest", 0, 3, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &delete_groups_request::DeleteGroupsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DeleteGroupsResponse", 0, 3, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &delete_groups_response::DeleteGroupsResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DeleteRecordsRequest", 0, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &delete_records_request::DeleteRecordsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DeleteRecordsResponse", 0, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &delete_records_response::DeleteRecordsResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DeleteShareGroupOffsetsRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &delete_share_group_offsets_request::DeleteShareGroupOffsetsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DeleteShareGroupOffsetsResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &delete_share_group_offsets_response::DeleteShareGroupOffsetsResponse::arbitrary(
+                version,
+            ),
+            version,
+            count,
+        )
+    }),
+    ("DeleteShareGroupStateRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &delete_share_group_state_request::DeleteShareGroupStateRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DeleteShareGroupStateResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &delete_share_group_state_response::DeleteShareGroupStateResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DeleteTopicsRequest", 1, 6, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &delete_topics_request::DeleteTopicsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DeleteTopicsResponse", 1, 6, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &delete_topics_response::DeleteTopicsResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DescribeAclsRequest", 1, 3, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_acls_request::DescribeAclsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DescribeAclsResponse", 1, 3, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_acls_response::DescribeAclsResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DescribeClientQuotasRequest", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_client_quotas_request::DescribeClientQuotasRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DescribeClientQuotasResponse", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_client_quotas_response::DescribeClientQuotasResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DescribeClusterRequest", 0, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_cluster_request::DescribeClusterRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DescribeClusterResponse", 0, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_cluster_response::DescribeClusterResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DescribeConfigsRequest", 1, 4, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_configs_request::DescribeConfigsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DescribeConfigsResponse", 1, 4, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_configs_response::DescribeConfigsResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DescribeDelegationTokenRequest", 1, 3, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_delegation_token_request::DescribeDelegationTokenRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DescribeDelegationTokenResponse", 1, 3, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_delegation_token_response::DescribeDelegationTokenResponse::arbitrary(
+                version,
+            ),
+            version,
+            count,
+        )
+    }),
+    ("DescribeGroupsRequest", 0, 6, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_groups_request::DescribeGroupsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DescribeGroupsResponse", 0, 6, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_groups_response::DescribeGroupsResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DescribeLogDirsRequest", 1, 5, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_log_dirs_request::DescribeLogDirsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DescribeLogDirsResponse", 1, 5, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_log_dirs_response::DescribeLogDirsResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DescribeProducersRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_producers_request::DescribeProducersRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DescribeProducersResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_producers_response::DescribeProducersResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DescribeQuorumRequest", 0, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_quorum_request::DescribeQuorumRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DescribeQuorumResponse", 0, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_quorum_response::DescribeQuorumResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DescribeShareGroupOffsetsRequest", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_share_group_offsets_request::DescribeShareGroupOffsetsRequest::arbitrary(
+                version,
+            ),
+            version,
+            count,
+        )
+    }),
+    ("DescribeShareGroupOffsetsResponse", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_share_group_offsets_response::DescribeShareGroupOffsetsResponse::arbitrary(
+                version,
+            ),
+            version,
+            count,
+        )
+    }),
+    ("DescribeTopicPartitionsRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_topic_partitions_request::DescribeTopicPartitionsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DescribeTopicPartitionsResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_topic_partitions_response::DescribeTopicPartitionsResponse::arbitrary(
+                version,
+            ),
+            version,
+            count,
+        )
+    }),
+    ("DescribeTransactionsRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_transactions_request::DescribeTransactionsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DescribeTransactionsResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &describe_transactions_response::DescribeTransactionsResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("DescribeUserScramCredentialsRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(&describe_user_scram_credentials_request::DescribeUserScramCredentialsRequest::arbitrary(version), version, count)
+    }),
+    ("DescribeUserScramCredentialsResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(&describe_user_scram_credentials_response::DescribeUserScramCredentialsResponse::arbitrary(version), version, count)
+    }),
+    ("ElectLeadersRequest", 0, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &elect_leaders_request::ElectLeadersRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ElectLeadersResponse", 0, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &elect_leaders_response::ElectLeadersResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("EndQuorumEpochRequest", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &end_quorum_epoch_request::EndQuorumEpochRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("EndQuorumEpochResponse", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &end_quorum_epoch_response::EndQuorumEpochResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("EndTxnMarker", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &data::end_txn_marker::EndTxnMarker::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("EndTxnRequest", 0, 5, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &end_txn_request::EndTxnRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("EndTxnResponse", 0, 5, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &end_txn_response::EndTxnResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("EnvelopeRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &envelope_request::EnvelopeRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("EnvelopeResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &envelope_response::EnvelopeResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ExpireDelegationTokenRequest", 1, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &expire_delegation_token_request::ExpireDelegationTokenRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ExpireDelegationTokenResponse", 1, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &expire_delegation_token_response::ExpireDelegationTokenResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("FetchRequest", 4, 18, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &fetch_request::FetchRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("FetchResponse", 4, 18, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &fetch_response::FetchResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("FetchSnapshotRequest", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &fetch_snapshot_request::FetchSnapshotRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("FetchSnapshotResponse", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &fetch_snapshot_response::FetchSnapshotResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("FindCoordinatorRequest", 0, 6, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &find_coordinator_request::FindCoordinatorRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("FindCoordinatorResponse", 0, 6, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &find_coordinator_response::FindCoordinatorResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("GetTelemetrySubscriptionsRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &get_telemetry_subscriptions_request::GetTelemetrySubscriptionsRequest::arbitrary(
+                version,
+            ),
+            version,
+            count,
+        )
+    }),
+    ("GetTelemetrySubscriptionsResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &get_telemetry_subscriptions_response::GetTelemetrySubscriptionsResponse::arbitrary(
+                version,
+            ),
+            version,
+            count,
+        )
+    }),
+    ("HeartbeatRequest", 0, 4, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &heartbeat_request::HeartbeatRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("HeartbeatResponse", 0, 4, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &heartbeat_response::HeartbeatResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("IncrementalAlterConfigsRequest", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &incremental_alter_configs_request::IncrementalAlterConfigsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("IncrementalAlterConfigsResponse", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &incremental_alter_configs_response::IncrementalAlterConfigsResponse::arbitrary(
+                version,
+            ),
+            version,
+            count,
+        )
+    }),
+    ("InitProducerIdRequest", 0, 6, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &init_producer_id_request::InitProducerIdRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("InitProducerIdResponse", 0, 6, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &init_producer_id_response::InitProducerIdResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("InitializeShareGroupStateRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &initialize_share_group_state_request::InitializeShareGroupStateRequest::arbitrary(
+                version,
+            ),
+            version,
+            count,
+        )
+    }),
+    ("InitializeShareGroupStateResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &initialize_share_group_state_response::InitializeShareGroupStateResponse::arbitrary(
+                version,
+            ),
+            version,
+            count,
+        )
+    }),
+    ("JoinGroupRequest", 0, 9, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &join_group_request::JoinGroupRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("JoinGroupResponse", 0, 9, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &join_group_response::JoinGroupResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("KRaftVersionRecord", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &data::k_raft_version_record::KRaftVersionRecord::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("LeaderChangeMessage", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &data::leader_change_message::LeaderChangeMessage::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("LeaveGroupRequest", 0, 5, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &leave_group_request::LeaveGroupRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("LeaveGroupResponse", 0, 5, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &leave_group_response::LeaveGroupResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ListConfigResourcesRequest", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &list_config_resources_request::ListConfigResourcesRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ListConfigResourcesResponse", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &list_config_resources_response::ListConfigResourcesResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ListGroupsRequest", 0, 5, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &list_groups_request::ListGroupsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ListGroupsResponse", 0, 5, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &list_groups_response::ListGroupsResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ListOffsetsRequest", 1, 11, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &list_offsets_request::ListOffsetsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ListOffsetsResponse", 1, 11, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &list_offsets_response::ListOffsetsResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ListPartitionReassignmentsRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &list_partition_reassignments_request::ListPartitionReassignmentsRequest::arbitrary(
+                version,
+            ),
+            version,
+            count,
+        )
+    }),
+    ("ListPartitionReassignmentsResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &list_partition_reassignments_response::ListPartitionReassignmentsResponse::arbitrary(
+                version,
+            ),
+            version,
+            count,
+        )
+    }),
+    ("ListTransactionsRequest", 0, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &list_transactions_request::ListTransactionsRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ListTransactionsResponse", 0, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &list_transactions_response::ListTransactionsResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("MetadataRequest", 0, 13, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &metadata_request::MetadataRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("MetadataResponse", 0, 13, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &metadata_response::MetadataResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("OffsetCommitRequest", 2, 10, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &offset_commit_request::OffsetCommitRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("OffsetCommitResponse", 2, 10, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &offset_commit_response::OffsetCommitResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("OffsetDeleteRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &offset_delete_request::OffsetDeleteRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("OffsetDeleteResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &offset_delete_response::OffsetDeleteResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("OffsetFetchRequest", 1, 10, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &offset_fetch_request::OffsetFetchRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("OffsetFetchResponse", 1, 10, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &offset_fetch_response::OffsetFetchResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("OffsetForLeaderEpochRequest", 2, 4, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &offset_for_leader_epoch_request::OffsetForLeaderEpochRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("OffsetForLeaderEpochResponse", 2, 4, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &offset_for_leader_epoch_response::OffsetForLeaderEpochResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ProduceRequest", 3, 13, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &produce_request::ProduceRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ProduceResponse", 3, 13, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &produce_response::ProduceResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("PushTelemetryRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &push_telemetry_request::PushTelemetryRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("PushTelemetryResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &push_telemetry_response::PushTelemetryResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ReadShareGroupStateRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &read_share_group_state_request::ReadShareGroupStateRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ReadShareGroupStateResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &read_share_group_state_response::ReadShareGroupStateResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ReadShareGroupStateSummaryRequest", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &read_share_group_state_summary_request::ReadShareGroupStateSummaryRequest::arbitrary(
+                version,
+            ),
+            version,
+            count,
+        )
+    }),
+    ("ReadShareGroupStateSummaryResponse", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &read_share_group_state_summary_response::ReadShareGroupStateSummaryResponse::arbitrary(
+                version,
+            ),
+            version,
+            count,
+        )
+    }),
+    ("RemoveRaftVoterRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &remove_raft_voter_request::RemoveRaftVoterRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("RemoveRaftVoterResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &remove_raft_voter_response::RemoveRaftVoterResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("RenewDelegationTokenRequest", 1, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &renew_delegation_token_request::RenewDelegationTokenRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("RenewDelegationTokenResponse", 1, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &renew_delegation_token_response::RenewDelegationTokenResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("RequestHeader", 1, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &request_header::RequestHeader::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ResponseHeader", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &response_header::ResponseHeader::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("SaslAuthenticateRequest", 0, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &sasl_authenticate_request::SaslAuthenticateRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("SaslAuthenticateResponse", 0, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &sasl_authenticate_response::SaslAuthenticateResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("SaslHandshakeRequest", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &sasl_handshake_request::SaslHandshakeRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("SaslHandshakeResponse", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &sasl_handshake_response::SaslHandshakeResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ShareAcknowledgeRequest", 1, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &share_acknowledge_request::ShareAcknowledgeRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ShareAcknowledgeResponse", 1, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &share_acknowledge_response::ShareAcknowledgeResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ShareFetchRequest", 1, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &share_fetch_request::ShareFetchRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ShareFetchResponse", 1, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &share_fetch_response::ShareFetchResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ShareGroupDescribeRequest", 1, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &share_group_describe_request::ShareGroupDescribeRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ShareGroupDescribeResponse", 1, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &share_group_describe_response::ShareGroupDescribeResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ShareGroupHeartbeatRequest", 1, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &share_group_heartbeat_request::ShareGroupHeartbeatRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("ShareGroupHeartbeatResponse", 1, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &share_group_heartbeat_response::ShareGroupHeartbeatResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("SnapshotFooterRecord", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &data::snapshot_footer_record::SnapshotFooterRecord::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("SnapshotHeaderRecord", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &data::snapshot_header_record::SnapshotHeaderRecord::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("StreamsGroupDescribeRequest", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &streams_group_describe_request::StreamsGroupDescribeRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("StreamsGroupDescribeResponse", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &streams_group_describe_response::StreamsGroupDescribeResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("StreamsGroupHeartbeatRequest", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &streams_group_heartbeat_request::StreamsGroupHeartbeatRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("StreamsGroupHeartbeatResponse", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &streams_group_heartbeat_response::StreamsGroupHeartbeatResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("StreamsGroupTopologyDescriptionUpdateRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(&streams_group_topology_description_update_request::StreamsGroupTopologyDescriptionUpdateRequest::arbitrary(version), version, count)
+    }),
+    ("StreamsGroupTopologyDescriptionUpdateResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(&streams_group_topology_description_update_response::StreamsGroupTopologyDescriptionUpdateResponse::arbitrary(version), version, count)
+    }),
+    ("SyncGroupRequest", 0, 5, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &sync_group_request::SyncGroupRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("SyncGroupResponse", 0, 5, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &sync_group_response::SyncGroupResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("TxnOffsetCommitRequest", 0, 6, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &txn_offset_commit_request::TxnOffsetCommitRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("TxnOffsetCommitResponse", 0, 6, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &txn_offset_commit_response::TxnOffsetCommitResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("UnregisterBrokerRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &unregister_broker_request::UnregisterBrokerRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("UnregisterBrokerResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &unregister_broker_response::UnregisterBrokerResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("UnregisterControllerRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &unregister_controller_request::UnregisterControllerRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("UnregisterControllerResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &unregister_controller_response::UnregisterControllerResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("UpdateFeaturesRequest", 0, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &update_features_request::UpdateFeaturesRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("UpdateFeaturesResponse", 0, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &update_features_response::UpdateFeaturesResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("UpdateRaftVoterRequest", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &update_raft_voter_request::UpdateRaftVoterRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("UpdateRaftVoterResponse", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &update_raft_voter_response::UpdateRaftVoterResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("VoteRequest", 0, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &vote_request::VoteRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("VoteResponse", 0, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &vote_response::VoteResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("VotersRecord", 0, 0, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &data::voters_record::VotersRecord::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("WriteShareGroupStateRequest", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &write_share_group_state_request::WriteShareGroupStateRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("WriteShareGroupStateResponse", 0, 1, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &write_share_group_state_response::WriteShareGroupStateResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("WriteTxnMarkersRequest", 1, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &write_txn_markers_request::WriteTxnMarkersRequest::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+    ("WriteTxnMarkersResponse", 1, 2, |version, count| {
+        crate::golden_tests::encode_arbitrary(
+            &write_txn_markers_response::WriteTxnMarkersResponse::arbitrary(version),
+            version,
+            count,
+        )
+    }),
+];

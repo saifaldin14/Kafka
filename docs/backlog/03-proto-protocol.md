@@ -526,7 +526,7 @@ Done when: files and manifest are committed; the manifest is verified by tests.
 P1 · M1 · Task · deps: PROTO-0117, PROTO-0082 · labels: test
 Done when: every golden case passes; failures report API, version, variant and first differing offset.
 
-### [To Do] PROTO-0119 Reverse check: the harness decodes Rust-encoded random messages with Kafka's classes and re-encodes them byte for byte
+### [Done] PROTO-0119 Reverse check: the harness decodes Rust-encoded random messages with Kafka's classes and re-encodes them byte for byte
 P1 · M1 · Task · deps: PROTO-0118, PROTO-0081 · labels: test
 Done when: 1000 proptest messages per API and version pass the harness `verify` mode; mismatches name API, version and offset.
 
@@ -554,11 +554,11 @@ Done when: Rust string decoding produces the same replacement output for every v
 P1 · M1 · Task · deps: PROTO-0115 · ref: clients/src/main/java/org/apache/kafka/common/requests/ApiVersionsResponse.java; clients/src/main/java/org/apache/kafka/common/protocol/ApiKeys.java @4.4.0
 Done when: JSON and binary files are committed and used by PROTO-F07 and PROTO-F14 tests.
 
-### [To Do] PROTO-0126 CI: golden tests on every run; a nightly job regenerates goldens with the harness and fails on any diff
+### [Done] PROTO-0126 CI: golden tests on every run; a nightly job regenerates goldens with the harness and fails on any diff
 P1 · M1 · Task · deps: PROTO-0118, PROTO-0119 · labels: test
 Done when: the nightly job is green on main and posts the diff on failure.
 
-### [To Do] PROTO-0127 `docs/testing/golden-vectors.md`: regenerate, add a variant, read a mismatch report
+### [Done] PROTO-0127 `docs/guides/golden-vectors.md`: regenerate, add a variant, read a mismatch report
 P2 · M1 · Task · deps: PROTO-0126 · labels: docs
 Done when: a new engineer can regenerate goldens by following the page.
 

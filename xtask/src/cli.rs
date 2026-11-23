@@ -60,14 +60,18 @@ pub(crate) enum GoldenDump {
     ApiKeys,
     /// `messages`: Kafka's bytes for every message, version and case.
     Messages,
+    /// `verify`: not a dump but the reverse check, Kafka reading and rewriting messages
+    /// Alluvium encoded.
+    Verify,
 }
 
 impl GoldenDump {
     /// Every dump, in the order `help` lists them.
-    pub(crate) const ALL: [GoldenDump; 3] = [
+    pub(crate) const ALL: [GoldenDump; 4] = [
         GoldenDump::Errors,
         GoldenDump::ApiKeys,
         GoldenDump::Messages,
+        GoldenDump::Verify,
     ];
 
     /// The dump's name on the command line and in the harness.
@@ -76,6 +80,7 @@ impl GoldenDump {
             GoldenDump::Errors => "errors",
             GoldenDump::ApiKeys => "api-keys",
             GoldenDump::Messages => "messages",
+            GoldenDump::Verify => "verify",
         }
     }
 }
@@ -222,6 +227,10 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
     (
         "golden messages",
         "Record Kafka's bytes for every message, version and case, with the Kafka harness (needs the network and Docker)",
+    ),
+    (
+        "golden verify",
+        "Have Kafka read and rewrite 1000 arbitrary Alluvium-encoded messages per message and version, which must give the same bytes (needs the network and Docker)",
     ),
     (
         "golden errors",
