@@ -36,8 +36,6 @@ After vendoring the new tag, in this order:
 
 1. **Write the ADR** that supersedes ADR-0001 as the compatibility target. It lists the APIs and versions that change, as found in the steps below.
 2. **Regenerate and review the generated diff.** Point `cargo xtask codegen` at the new directory and read the diff of the generated code: every new field, version, tagged field, API and error code shows up there. The `codegen` CI step fails until the committed code matches. Changes to a schema's model, such as a new property, fail in the schema parser first, naming the file. Then pin the new version's client jar in [`xtask/src/golden.rs`](../../xtask/src/golden.rs) and run `cargo xtask golden errors`: the golden test fails until the error codes read from `Errors.java` equal the ones the jar reports at runtime.
-3. **Regenerate the golden vectors** from the new version's `kafka-clients` jar with the golden-vector harness (PROTO-F10). A vector that changes is a wire change to read carefully.
+3. **Regenerate the golden vectors** with `cargo xtask golden api-keys`, `golden messages` and `golden verify`, which run on the jar pinned in step 2 ([golden vectors](golden-vectors.md)). A vector that changes is a wire change to read carefully; codegen reads `clusterAction` and `forwardable` from the new registry.
 4. **Update [docs/parity.md](../parity.md)**: link each new API to a backlog feature. Versions and listeners need no edit: [docs/protocol/apis.md](../protocol/apis.md) is regenerated with the code. New work goes into the [backlog](../backlog/README.md#adding-work).
 5. **Remove the old directory** once nothing reads it.
-
-The golden-vector harness is being built in milestone M1 (PROTO-F10). Until it exists, step 3 doesn't apply.

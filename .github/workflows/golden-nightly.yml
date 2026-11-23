@@ -1,0 +1,61 @@
+# Nightly golden vectors (docs/guides/golden-vectors.md). Records again everything
+# `cargo xtask golden` records from Kafka 4.4.0's own classes and fails if any committed
+# golden file differs, uploading the diff; then has Kafka read and rewrite arbitrary
+# messages Alluvium encoded (the reverse check). The per-PR `test` job already checks
+# every committed golden file; this checks that they are still what Kafka writes.
+name: Golden nightly
+
+on:
+  schedule:
+    - cron: "47 3 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: golden-nightly-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: never
+
+jobs:
+  golden:
+    name: golden
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the pinned toolchain
+        run: rustup toolchain install --profile minimal
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Record the golden files again
+        run: |
+          cargo xtask golden errors
+          cargo xtask golden api-keys
+          cargo xtask golden messages
+      - name: Compare with the committed files
+        id: compare
+        run: |
+          git add --all --intent-to-add
+          git diff --stat --exit-code || {
+            git diff --binary > golden.diff
+            echo "::error::the golden files Kafka writes differ from the committed ones; see the golden-diff artifact"
+            exit 1
+          }
+      - name: Upload the diff
+        if: ${{ failure() && steps.compare.outcome == 'failure' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: golden-diff
+          path: golden.diff
+          retention-days: 30
+      - name: Reverse check
+        if: ${{ !cancelled() }}
+        run: cargo xtask golden verify

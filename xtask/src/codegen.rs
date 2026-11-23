@@ -634,23 +634,33 @@ fn mod_files(
         .collect()
 }
 
-/// The test-only table of each message's schema name with `golden_tests::transcode` for
-/// its type, for the golden vector tests.
+/// The test-only tables of each message's schema name with `golden_tests::transcode` for
+/// its type, and with its versions and a function encoding arbitrary values, for the
+/// golden vector tests and the reverse check.
 fn transcode_table(decodable: &[(String, i16, i16)]) -> String {
-    let entries = decodable
-        .iter()
-        .fold(String::new(), |mut entries, (message, _, _)| {
-            let name = message.rsplit("::").next().unwrap_or(message);
-            let _ = writeln!(
-                entries,
-                "    (\"{name}\", crate::golden_tests::transcode::<{message}>),"
-            );
-            entries
-        });
+    let mut transcode = String::new();
+    let mut arbitrary = String::new();
+    for (message, lowest, highest) in decodable {
+        let name = message.rsplit("::").next().unwrap_or(message);
+        let _ = writeln!(
+            transcode,
+            "    (\"{name}\", crate::golden_tests::transcode::<{message}>),"
+        );
+        let _ = writeln!(
+            arbitrary,
+            "    (\"{name}\", {lowest}, {highest}, |version, count| \
+             crate::golden_tests::encode_arbitrary(&{message}::arbitrary(version), version, \
+             count)),"
+        );
+    }
     format!(
         "\n/// Each message's schema name with the function that decodes and re-encodes it, for \
          the\n/// golden vector tests.\n#[cfg(test)]\npub(crate) const TRANSCODE: &[(&str, \
-         crate::golden_tests::Transcode)] = &[\n{entries}];\n"
+         crate::golden_tests::Transcode)] = &[\n{transcode}];\n\n/// Each message's schema \
+         name, lowest and highest version, with a function that encodes\n/// `count` arbitrary \
+         values at a version, for the reverse check by Kafka.\n#[cfg(test)]\npub(crate) const \
+         ENCODE_ARBITRARY: &[(&str, i16, i16, crate::golden_tests::EncodeArbitrary)] = \
+         &[\n{arbitrary}];\n"
     )
 }
 

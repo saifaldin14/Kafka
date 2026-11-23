@@ -269,3 +269,48 @@ fn strings_with_invalid_utf8_decode_as_kafka_decodes_them() {
     }
     assert!(failures.is_empty(), "{}", failures.join("\n"));
 }
+
+/// A function encoding `count` arbitrary values of one message at a version.
+pub(crate) type EncodeArbitrary = fn(i16, u32) -> Vec<Bytes>;
+
+/// `count` values from `strategy`, encoded at `version`, from a fixed seed.
+pub(crate) fn encode_arbitrary<M: Message + std::fmt::Debug>(
+    strategy: &proptest::strategy::BoxedStrategy<M>,
+    version: i16,
+    count: u32,
+) -> Vec<Bytes> {
+    use proptest::strategy::{Strategy, ValueTree};
+    let mut runner = proptest::test_runner::TestRunner::deterministic();
+    (0..count)
+        .map(|_| {
+            let value = strategy.new_tree(&mut runner).unwrap().current();
+            let mut writer = Writer::new();
+            value.encode(&mut writer, version).unwrap();
+            writer.into_bytes()
+        })
+        .collect()
+}
+
+/// How many arbitrary messages the reverse check sends Kafka per message and version.
+const REVERSE_CHECK_MESSAGES: u32 = 1000;
+
+/// Writes the messages `cargo xtask golden verify` has Kafka 4.4.0 decode and re-encode
+/// (PROTO-0119): [`REVERSE_CHECK_MESSAGES`] arbitrary values of each message at each
+/// version, in `$ALLUVIUM_REVERSE_CHECK_DIR/<Message>_v<version>.bin`, each value
+/// preceded by its length as an `int32`.
+#[test]
+#[ignore = "writes files for `cargo xtask golden verify`, which runs it"]
+fn write_messages_for_the_reverse_check() {
+    let dir = PathBuf::from(std::env::var("ALLUVIUM_REVERSE_CHECK_DIR").unwrap());
+    std::fs::create_dir_all(&dir).unwrap();
+    for (name, lowest, highest, encode) in crate::generated::ENCODE_ARBITRARY {
+        for version in *lowest..=*highest {
+            let mut file = Vec::new();
+            for message in encode(version, REVERSE_CHECK_MESSAGES) {
+                file.extend_from_slice(&i32::try_from(message.len()).unwrap().to_be_bytes());
+                file.extend_from_slice(&message);
+            }
+            std::fs::write(dir.join(format!("{name}_v{version}.bin")), file).unwrap();
+        }
+    }
+}
