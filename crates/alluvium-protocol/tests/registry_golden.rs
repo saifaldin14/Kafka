@@ -77,6 +77,28 @@ fn every_api_matches_kafkas_api_keys() {
                 served
             );
         }
+        for (key, header_version) in [
+            (
+                "request_header_versions",
+                ApiKey::request_header_version as fn(ApiKey, i16) -> _,
+            ),
+            ("response_header_versions", ApiKey::response_header_version),
+        ] {
+            match entry[key].as_array() {
+                None => assert_eq!(header_version(api, 0), None, "{name}: {key}"),
+                Some(pairs) => {
+                    for pair in pairs {
+                        let version = i16::try_from(pair[0].as_i64().unwrap()).unwrap();
+                        let kafka = i16::try_from(pair[1].as_i64().unwrap()).unwrap();
+                        assert_eq!(
+                            header_version(api, version),
+                            Some(kafka),
+                            "{name}: {key} at version {version}"
+                        );
+                    }
+                }
+            }
+        }
         let deprecated = entry["deprecated"].as_array().unwrap();
         let (low, high) = (
             deprecated[0].as_i64().unwrap(),

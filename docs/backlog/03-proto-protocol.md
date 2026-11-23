@@ -374,27 +374,27 @@ Done when: benchmarks run in the benchmark CI job with recorded baselines.
 P1 · M1 · Task · deps: PROTO-0082, PROTO-0067 · labels: docs
 Done when: each DecodeError and EncodeError variant is listed with its Kafka equivalent message.
 
-## [To Do] PROTO-F06 Request and response headers
+## [In Progress] PROTO-F06 Request and response headers
 P0 · M1 · Feature · deps: PROTO-F05
 Scope: Request header v1-v2 (the versions valid in Kafka 4.4.0), response header v0-v1, the ApiVersions response-header exception, header version selection per API version.
 
-### [To Do] PROTO-0086 Header version selection: request header v2 when the API version is flexible else v1; response header v1 when flexible else v0; ApiVersions responses always v0 (KIP-511)
+### [Done] PROTO-0086 Header version selection: request header v2 when the API version is flexible else v1; response header v1 when flexible else v0; ApiVersions responses always v0 (KIP-511)
 P0 · M1 · Task · deps: PROTO-0093 · ref: generator/src/main/java/org/apache/kafka/message/ApiMessageTypeGenerator.java generateHeaderVersion @4.4.0
 Done when: a generated function covers every API key; flexible ranges are open-ended so versions above the supported range still get a header version (an ApiVersions v127 request header decodes as v2); unknown API keys return None; table test against the PROTO-F10 ApiKeys export.
 
-### [To Do] PROTO-0087 Request header decode: peek API key and version, select the header version, decode v1/v2, map a null client id to empty
+### [Done] PROTO-0087 Request header decode: peek API key and version, select the header version, decode v1/v2, map a null client id to empty
 P0 · M1 · Task · deps: PROTO-0086 · labels: decoder · ref: clients/src/main/java/org/apache/kafka/common/requests/RequestHeader.java parse @4.4.0
 Done when: returns the header and its encoded size; unknown API key → `HeaderError::UnknownApiKey`; API without valid versions → `HeaderError::UnsupportedApi`; any other failure carries the best-guess API key for NET-F04's error response; RequestHeaderTest cases ported.
 
-### [To Do] PROTO-0088 Request header encode for inter-node clients (v1, and v2 with the classic nullable `ClientId` and a tagged-field section)
+### [Done] PROTO-0088 Request header encode for inter-node clients (v1, and v2 with the classic nullable `ClientId` and a tagged-field section)
 P0 · M1 · Task · deps: PROTO-0086 · ref: clients/src/main/resources/common/message/RequestHeader.json @4.4.0
 Done when: encoded bytes equal Kafka's for golden vectors; client id null and empty are distinct on the wire.
 
-### [To Do] PROTO-0089 Response header encode v0/v1 (v1 adds an empty tagged-field section)
+### [Done] PROTO-0089 Response header encode v0/v1 (v1 adds an empty tagged-field section)
 P0 · M1 · Task · deps: PROTO-0086 · ref: clients/src/main/resources/common/message/ResponseHeader.json; clients/src/main/java/org/apache/kafka/common/requests/RequestHeader.java toResponseHeader @4.4.0
 Done when: correlation id copied from the request; ApiVersions always uses v0; golden bytes match.
 
-### [To Do] PROTO-0090 Response header decode for inter-node clients returning the correlation id for the caller to match
+### [Done] PROTO-0090 Response header decode for inter-node clients returning the correlation id for the caller to match
 P0 · M1 · Task · deps: PROTO-0086 · labels: decoder · ref: clients/src/main/resources/common/message/ResponseHeader.json @4.4.0
 Done when: decode v0 and v1; a truncated header is a DecodeError; matching is left to the caller (NET-F10).
 
