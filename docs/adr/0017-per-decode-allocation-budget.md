@@ -16,9 +16,9 @@ The [security standard](../standards/security.md#untrusted-input) requires every
 ## Decision
 
 1. Each decode has an **allocation budget**: `DecodeLimits::allocation_budget`, in bytes. Every heap allocation a decode makes is charged against it *before* it is made:
-   - an array of `n` elements of type `T` is charged `n × size_of::<T>()`, at least one byte per element, when its count is read;
+   - an array of `n` elements of type `T` is charged `n × size_of::<T>()`, at least one byte per element, when its count is read. Beyond 1000 elements it is charged for its first 1000 too, which it holds while it moves into its full allocation;
    - a string is charged its decoded UTF-8 length;
-   - a tagged-field section is charged its count × `size_of::<RawTaggedField>()`.
+   - each time the unknown tagged fields kept from a section outgrow their vector, the new, doubled vector is charged in full, since the old one is held while they move.
 
    Byte, records and tagged-field values are slices of the frame, which the network layer has already accounted for, so they cost nothing.
 2. A charge that exceeds what is left fails the decode with `DecodeErrorKind::LimitExceeded { limit: AllocationBudget, requested, allowed }`, where `allowed` is the budget left. That is a request Alluvium can't parse, and it is handled like every other: the connection is closed (SRV-0036).
@@ -31,7 +31,7 @@ The [security standard](../standards/security.md#untrusted-input) requires every
 ## Consequences
 
 - Decoding memory is bounded by a number an operator can reason about. The fuzz targets can check every input against it (PROTO-0134).
-- A decode never holds more than its budget, with one brief exception. When an array has decoded its first 1000 elements (Kafka's preallocation cap), the rest of its charged count is allocated in one step, and those first elements are copied across. Only during that copy are both buffers held. Doubling instead would hold half the array twice over, and could go over the budget.
+- A decode never holds more than its budget, even while a collection grows. An array that outgrows its first 1000 elements (Kafka's preallocation cap) moves in one step to its full count, rather than doubling, which would hold half the array twice over; it was charged for both blocks. The generated fuzz targets' allocation oracle found that this once held only for arrays, and that the old vector of a growing tagged-field section went uncharged.
 - The `Reader` is not `Clone`: a clone would duplicate the budget left.
 - Generated decoders must allocate only through the `Reader`'s array, string and tagged-field readers, so that every allocation is charged. PROTO-0112 enforces this with a generator test.
 - A decode's allocation is now testable. `tests/allocation.rs` in `alluvium-protocol` measures peak heap use with a counting allocator and asserts it stays within the budget.

@@ -94,8 +94,9 @@ fn heap_use_is_bounded() {
         error = holders.err();
     });
     // The holders, then four arrays of empties, fit in the budget; the fifth doesn't.
-    let empties = 1_000_000 * size_of::<Empty>();
-    let charged = holders * size_of::<Holder>() + 4 * empties;
+    // Each array is charged for its 1000 first elements too, which it outgrows.
+    let empties = (1_000_000 + 1000) * size_of::<Empty>();
+    let charged = (holders + 1000) * size_of::<Holder>() + 4 * empties;
     let error = error.expect("the decode exhausts the budget");
     assert_eq!(
         (error.offset, error.kind),
@@ -137,6 +138,70 @@ fn heap_use_is_bounded() {
     );
     encoding_shares_records().unwrap();
     hostile_messages_fail_small().unwrap();
+    growing_collections_stay_within_the_budget().unwrap();
+}
+
+/// Whether a decode from the reader succeeds.
+type Decodes = fn(Reader) -> bool;
+
+/// PROTO-0134: a decode never holds more than it was charged, even while a collection
+/// grows and its old and new blocks are both live. Each case decodes under the smallest
+/// budget it succeeds with, which must then bound its peak.
+fn growing_collections_stay_within_the_budget() -> Result<(), String> {
+    // A response header keeping 33 unknown tagged fields, grown by doubling to 64.
+    let mut writer = Writer::new();
+    writer.write_i32(1);
+    writer.write_unsigned_varint(33);
+    for tag in 0..33 {
+        writer.write_unsigned_varint(tag);
+        writer.write_unsigned_varint(0);
+    }
+    let tagged = writer.into_bytes();
+    // An array of 1001 int8, past the 1000 elements allocated up front.
+    let mut writer = Writer::new();
+    writer
+        .write_array_length(Framing::Classic, 1001)
+        .map_err(|error| error.to_string())?;
+    for _ in 0..1001 {
+        writer.write_i8(0);
+    }
+    let array = writer.into_bytes();
+    let cases: [(&str, Bytes, Decodes); 2] = [
+        ("33 unknown tagged fields", tagged, |mut reader| {
+            ResponseHeader::decode(&mut reader, 1).is_ok()
+        }),
+        ("an array of 1001 elements", array, |mut reader| {
+            reader.read_array(Framing::Classic, Reader::read_i8).is_ok()
+        }),
+    ];
+    for (name, input, decodes) in cases {
+        // Sharing the input allocates its shared header now, not during the decode.
+        let input = input.clone();
+        let with_budget = |allocation_budget| {
+            let limits = DecodeLimits {
+                allocation_budget,
+                ..DecodeLimits::default()
+            };
+            Reader::with_limits(input.clone(), limits)
+        };
+        let (mut low, mut high) = (0_usize, 1 << 20);
+        while low < high {
+            let middle = low + (high - low) / 2;
+            if decodes(with_budget(middle)) {
+                high = middle;
+            } else {
+                low = middle + 1;
+            }
+        }
+        let reader = with_budget(low);
+        let peak = peak_during(|| assert!(decodes(reader)));
+        if peak > low {
+            return Err(format!(
+                "{name}: peak {peak} bytes under the smallest budget it decodes with, {low}"
+            ));
+        }
+    }
+    Ok(())
 }
 
 /// A decode that fails, and the error it must fail with.

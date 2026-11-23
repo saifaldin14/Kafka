@@ -85,16 +85,22 @@ impl Reader {
     /// whole collection is charged to the budget first, at least a byte per element so
     /// that zero-sized elements still bound the work. At most
     /// `MAX_PREALLOCATED_ARRAY_CAPACITY` elements are allocated until that many have
-    /// decoded; then the rest of the charged count is allocated at once. The capacity
-    /// never exceeds `count`, and the only moment a decode holds more than it was
-    /// charged is that one copy of the first elements.
+    /// decoded; then the whole count is allocated at once, while the first block is
+    /// still live, so a count beyond that is charged for the first block too. The
+    /// capacity never exceeds `count`.
     pub(crate) fn read_elements<T>(
         &mut self,
         start: usize,
         count: usize,
         mut read_element: impl FnMut(&mut Reader) -> Result<T, DecodeError>,
     ) -> Result<Vec<T>, DecodeError> {
-        self.charge(start, count.saturating_mul(size_of::<T>().max(1)))?;
+        let first_block = if count > MAX_PREALLOCATED_ARRAY_CAPACITY {
+            MAX_PREALLOCATED_ARRAY_CAPACITY
+        } else {
+            0
+        };
+        let charged = count.saturating_add(first_block);
+        self.charge(start, charged.saturating_mul(size_of::<T>().max(1)))?;
         let mut elements = Vec::with_capacity(count.min(MAX_PREALLOCATED_ARRAY_CAPACITY));
         while elements.len() < count {
             if elements.len() == elements.capacity() {
