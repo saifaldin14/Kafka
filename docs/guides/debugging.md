@@ -57,10 +57,10 @@ A bug that can't be reproduced isn't understood yet. If you're stuck, add the mi
 A fuzz crash is a bug with its reproduction already attached: an input that makes a target panic, hang or allocate past its limits ([fuzz/README.md](../../fuzz/README.md)). Triage it like any other bug, in this order.
 
 1. **Get the input.**
-   - From a PR: download the `fuzz-crash-<target>` artifact of the failing run, with `gh run download <run-id> --name fuzz-crash-<target> --dir crash/`.
+   - From a PR: download the `fuzz-crash-<target>` artifact of the failing run, with `gh run download <run-id> --name fuzz-crash-<target> --dir crash/`. A generated target's crash is in its shard's `fuzz-crash-generated-<n>` artifact, under `<target>/`.
    - From the nightly run: the `Fuzz crash: <target>` issue names the run and the commit, and carries an input of up to 4 KiB base64-encoded. Decode it with `base64 -d > crash.bin`, or download the artifact as above.
 2. **Reproduce it** at the commit the issue names: `cargo xtask fuzz <target> <input>`. That run uses the same limits as CI, so a timeout or allocation crash reproduces too.
-3. **Minimize it**: `cargo +<nightly from fuzz/rust-toolchain.toml> fuzz tmin --fuzz-dir fuzz <target> <input>`. It writes `fuzz/artifacts/<target>/minimized-from-<hash>`. Check the result with `cargo xtask fuzz <target> <minimized>`, because `tmin` doesn't apply the standard limits.
+3. **Minimize it**: `cargo +<nightly from fuzz/rust-toolchain.toml> fuzz tmin --fuzz-dir fuzz <target> <input>`. It writes `fuzz/artifacts/<target>/minimized-from-<hash>`. For a generated target use `--fuzz-dir fuzz/generated`, which writes under `fuzz/generated/artifacts/` instead; move the result out, since codegen owns `fuzz/generated/`. Check the result with `cargo xtask fuzz <target> <minimized>`, because `tmin` doesn't apply the standard limits.
 4. **Find the root cause** (section 5). Decide whose rule is broken: the decoder's, or the target's assertion about the decoder. Read the Kafka source before deciding that a decoder is wrong.
 5. **Write the failing unit test** in the crate that owns the broken rule, beside the code. Name it for the behavior, as every test is named (testing standard, rule 8), and put the crash file or issue in a comment. Commit it before the fix.
 6. **Fix it**, then add the minimized input to `fuzz/seeds/<target>/` as `crash-<what it shows>`. Every later run then starts from it.

@@ -1,7 +1,8 @@
-# Nightly fuzzing (fuzz/README.md, ADR-0018). Each target fuzzes for an hour from the
-# corpus earlier runs grew. On main, the grown corpus is uploaded as the artifact PR runs
-# and `cargo xtask fuzz corpus pull` start from. On Sundays, or when asked, each corpus
-# is minimized first.
+# Nightly fuzzing (fuzz/README.md, ADR-0018). Each hand-written target fuzzes for an
+# hour from the corpus earlier runs grew. On main, the grown corpus is uploaded as the
+# artifact PR runs and `cargo xtask fuzz corpus pull` start from. On Sundays, or when
+# asked, each corpus is minimized first. The generated targets, one per message, fuzz
+# for 5 minutes each in 16 shards, from their golden vectors; they keep no corpus.
 #
 # A crash opens one issue per target, or comments on the open one. The jobs that run
 # the targets can't write anything; only `report`, which never runs repository code,
@@ -18,6 +19,10 @@ on:
         description: Seconds to fuzz each target
         type: number
         default: 3600
+      generated_seconds:
+        description: Seconds to fuzz each generated target
+        type: number
+        default: 300
       minimize:
         description: Minimize each corpus before uploading it
         type: boolean
@@ -118,59 +123,78 @@ jobs:
           path: fuzz/artifacts/${{ matrix.target }}/
           if-no-files-found: ignore
           retention-days: 90
-      # The issue text, written here because only this job has the crash input. It
-      # inlines an input of up to 4 KiB, so the issue outlives the artifact.
+      # The issue text, written here because only this job has the crash input.
       - name: Write the crash report
         if: ${{ steps.fuzz.outcome == 'failure' }}
-        env:
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          COMMIT: ${{ github.sha }}
-        run: |
-          mkdir -p report
-          input=$(find "fuzz/artifacts/$TARGET" -type f 2>/dev/null | sort | head -n 1)
-          toolchain=$(sed -n 's/^channel = "\(.*\)"$/\1/p' fuzz/rust-toolchain.toml)
-          {
-            echo "The nightly fuzz run found a crash in \`$TARGET\`."
-            echo
-            echo "- Run: $RUN_URL"
-            echo "- Commit: $COMMIT"
-            echo "- Toolchain: $toolchain; limits as in fuzz/README.md at that commit"
-            if [ -z "$input" ]; then
-              echo "- Input: none was written (a build or setup failure?); see the run log"
-            else
-              echo "- Input: \`$(basename "$input")\`, in the run's \`fuzz-crash-$TARGET\` artifact (kept 90 days)"
-              if [ "$(wc -c < "$input")" -le 4096 ]; then
-                echo
-                echo "The input, base64-encoded:"
-                echo
-                echo '```'
-                base64 -w 76 "$input"
-                echo '```'
-              fi
-            fi
-            echo
-            echo "Reproduce it: save the input, then run \`cargo xtask fuzz $TARGET <input>\`."
-            echo "Triage it as docs/guides/debugging.md#fuzz-crashes says: a failing unit test in the owning crate, the fix, and the input in fuzz/seeds/$TARGET/."
-          } > "report/$TARGET.md"
-      - name: Upload the crash report
-        if: ${{ steps.fuzz.outcome == 'failure' }}
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: ./.github/actions/fuzz-crash-report
         with:
-          name: fuzz-report-${{ matrix.target }}
-          path: report/
-          retention-days: 7
+          name: ${{ matrix.target }}
       - name: Fail if the target crashed
         if: ${{ steps.fuzz.outcome == 'failure' }}
         run: |
           echo "$TARGET crashed; the input is in the fuzz-crash-$TARGET artifact."
           exit 1
 
+  generated:
+    name: generated (shard ${{ matrix.shard }}/16)
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    permissions:
+      contents: read
+    env:
+      SHARD: ${{ matrix.shard }}
+      SECONDS_PER_TARGET: ${{ inputs.generated_seconds || 300 }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the pinned toolchains
+        run: |
+          rustup toolchain install --profile minimal
+          cd fuzz && rustup toolchain install --profile minimal
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          key: generated-${{ matrix.shard }}
+          workspaces: |
+            . -> target
+            fuzz -> target
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+          cache-bin: "true"
+      - name: Install cargo-fuzz
+        run: cargo xtask tools install --tool cargo-fuzz
+      - name: Fuzz
+        id: fuzz
+        continue-on-error: true
+        run: cargo xtask fuzz --shard "$SHARD/16" --time "${SECONDS_PER_TARGET}s"
+      - name: Upload the crash inputs
+        if: ${{ steps.fuzz.outcome == 'failure' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fuzz-crash-generated-${{ matrix.shard }}
+          path: fuzz/artifacts/
+          if-no-files-found: ignore
+          retention-days: 90
+      - name: Write the crash reports
+        if: ${{ steps.fuzz.outcome == 'failure' }}
+        uses: ./.github/actions/fuzz-crash-report
+        with:
+          name: generated-${{ matrix.shard }}
+      - name: Fail if a target crashed
+        if: ${{ steps.fuzz.outcome == 'failure' }}
+        run: |
+          echo "Shard $SHARD crashed; the inputs are in the fuzz-crash-generated-$SHARD artifact."
+          exit 1
+
   report:
     name: report crashes
     # Reads the reports the fuzz jobs wrote and opens or updates one issue per crashing
     # target. It checks out no code and runs nothing from the repository.
-    needs: fuzz
-    if: ${{ always() && needs.fuzz.result == 'failure' }}
+    needs: [fuzz, generated]
+    if: ${{ always() && (needs.fuzz.result == 'failure' || needs.generated.result == 'failure') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:

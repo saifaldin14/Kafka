@@ -38,6 +38,11 @@ The options:
    - Crash reproducers from PR runs: 14 days.
    - Crash reproducers from nightly runs: 90 days, GitHub's maximum. The crash issue also records the commit, the toolchain, the limits and, for small inputs, the reproducer itself, so the evidence outlives the artifact.
 6. **`.gitignore` keeps `/fuzz/corpus/` and `/fuzz/artifacts/`**, and adds `/fuzz/target/`.
+7. **Generated targets keep no corpus, and their seeds are the golden vectors** (amended for PROTO-F11).
+   - There is a generated target for each message, nearly 200 in all, fuzzed in shards. One corpus artifact per target would take a job per target, since a job uploads one artifact per step.
+   - Instead, each run writes the target's golden vectors (PROTO-F10), Kafka's bytes for every version of the message, to `fuzz/target/golden-seeds/<target>/` and reads them as seeds. They are not copied into `fuzz/seeds/`.
+   - The goldens already cover every version and field, so a run reaches the message's code from its first inputs.
+   - A fixed crash's input is still committed to `fuzz/seeds/<target>/`.
 
 ## Consequences
 
@@ -45,6 +50,7 @@ The options:
 - Downloading a corpus needs a `gh` login, even locally, because GitHub serves public artifacts only to signed-in users.
 - A corpus can be lost, if no nightly run succeeds in uploading it for 30 days. The cost is a slower start until it regrows, not lost coverage of known bugs: those are in the seeds.
 - PR fuzzing depends on the GitHub API for the download. When the API is down, the job fails rather than fuzzing from nothing.
+- Generated targets don't build on earlier runs' discoveries. If their nightly coverage stops growing, storing a corpus per shard is the next step.
 - TEST-0052 implements the pull command, the seeds and the minimization; TEST-0053 and TEST-0054 implement the PR and nightly jobs.
 
 ## Alternatives considered

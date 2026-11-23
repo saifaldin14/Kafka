@@ -88,8 +88,15 @@ impl GoldenDump {
 /// A `cargo xtask fuzz` command.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum FuzzCommand {
-    /// `--list`.
-    List,
+    /// `--list [--generated]`: the hand-written targets, or the generated ones.
+    List { generated: bool },
+    /// `--shard <index>/<count> [--time <duration>]`: fuzz each generated target in
+    /// that shard for that long.
+    Shard {
+        index: usize,
+        count: usize,
+        seconds: u64,
+    },
     /// `<target> [--time <duration>]`: fuzz for that long.
     Run { target: String, seconds: u64 },
     /// `<target> <input>`: run one input, such as a crash artifact.
@@ -103,6 +110,11 @@ pub(crate) enum FuzzCommand {
 
 /// How long `cargo xtask fuzz <target>` runs without `--time`.
 pub(crate) const DEFAULT_FUZZ_SECONDS: u64 = 60;
+
+/// How long `cargo xtask fuzz --shard` runs each target without `--time`: a shard holds
+/// a share of the generated targets, so each gets a fraction of a hand-written
+/// target's minute.
+pub(crate) const DEFAULT_SHARD_SECONDS: u64 = 10;
 
 /// A `cargo xtask backlog` subcommand.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -163,7 +175,14 @@ pub(crate) const COMMANDS: &[(&str, &str)] = &[
         "fuzz <target> <input>",
         "Run one input through a target with the standard limits, such as a crash artifact",
     ),
-    ("fuzz --list", "List the fuzz targets"),
+    (
+        "fuzz --list [--generated]",
+        "List the hand-written fuzz targets, or with --generated the ones codegen writes",
+    ),
+    (
+        "fuzz --shard <index>/<count> [--time <duration>]",
+        "Fuzz each generated target in one of <count> shards, 10s each unless `--time` says otherwise",
+    ),
     (
         "codegen [--check]",
         "Generate the protocol crate's message types, ApiKey and ErrorCode, and docs/errors.md, from the vendored Kafka sources; --check fails if the committed output differs",
@@ -274,6 +293,7 @@ pub(crate) enum UsageError {
         flag: &'static str,
         value: String,
     },
+    InvalidShard(String),
     MissingArgument {
         command: &'static str,
         name: &'static str,
@@ -302,6 +322,10 @@ impl fmt::Display for UsageError {
             UsageError::InvalidNumber { flag, value } => {
                 write!(f, "`{flag}` needs a number, not `{value}`")
             }
+            UsageError::InvalidShard(value) => write!(
+                f,
+                "`--shard` needs `<index>/<count>`, with an index from 1 to the count, not `{value}`"
+            ),
             UsageError::MissingArgument { command, name } => {
                 write!(f, "`{command}` needs {name}")
             }
@@ -533,9 +557,13 @@ fn parse_fuzz(rest: &[String]) -> Result<FuzzCommand, UsageError> {
             command: "fuzz",
             name: "a target, or `--list`",
         }),
-        [flag] if flag == "--list" => Ok(FuzzCommand::List),
+        [flag] if flag == "--list" => Ok(FuzzCommand::List { generated: false }),
+        [flag, generated] if flag == "--list" && generated == "--generated" => {
+            Ok(FuzzCommand::List { generated: true })
+        }
         [corpus, rest @ ..] if corpus == "corpus" => parse_fuzz_corpus(rest),
-        [flag, extra, ..] if flag == "--list" => Err(unexpected(extra)),
+        [flag, rest @ ..] if flag == "--shard" => parse_fuzz_shard(rest),
+        [flag, .., extra] if flag == "--list" => Err(unexpected(extra)),
         [target] => Ok(FuzzCommand::Run {
             target: target.clone(),
             seconds: DEFAULT_FUZZ_SECONDS,
@@ -556,6 +584,37 @@ fn parse_fuzz(rest: &[String]) -> Result<FuzzCommand, UsageError> {
         }),
         [_, _, extra, ..] => Err(unexpected(extra)),
     }
+}
+
+fn parse_fuzz_shard(rest: &[String]) -> Result<FuzzCommand, UsageError> {
+    let (shard, seconds) = match rest {
+        [] => return Err(UsageError::MissingValue { flag: "--shard" }),
+        [shard] => (shard, DEFAULT_SHARD_SECONDS),
+        [_, flag] if flag == "--time" => return Err(UsageError::MissingValue { flag: "--time" }),
+        [shard, flag, duration] if flag == "--time" => (
+            shard,
+            parse_duration(duration).ok_or_else(|| UsageError::InvalidNumber {
+                flag: "--time",
+                value: duration.clone(),
+            })?,
+        ),
+        [_, extra, ..] => {
+            return Err(UsageError::UnexpectedArgument {
+                command: "fuzz --shard",
+                argument: extra.clone(),
+            });
+        }
+    };
+    let parsed = shard.split_once('/').and_then(|(index, count)| {
+        let (index, count) = (index.parse().ok()?, count.parse().ok()?);
+        (1..=count).contains(&index).then_some((index, count))
+    });
+    let (index, count) = parsed.ok_or_else(|| UsageError::InvalidShard(shard.clone()))?;
+    Ok(FuzzCommand::Shard {
+        index,
+        count,
+        seconds,
+    })
 }
 
 fn parse_fuzz_corpus(rest: &[String]) -> Result<FuzzCommand, UsageError> {
@@ -935,6 +994,33 @@ mod tests {
     }
 
     #[test]
+    fn fuzz_shards_parse() {
+        let shard = |index, count, seconds| {
+            Ok(Command::Fuzz(FuzzCommand::Shard {
+                index,
+                count,
+                seconds,
+            }))
+        };
+        assert_eq!(parse(args(&["fuzz", "--shard", "3/8"])), shard(3, 8, 10));
+        assert_eq!(
+            parse(args(&["fuzz", "--shard", "8/8", "--time", "5m"])),
+            shard(8, 8, 300)
+        );
+        for bad in ["0/8", "9/8", "1/0", "1", "a/8", "1/8/2"] {
+            assert_eq!(
+                parse(args(&["fuzz", "--shard", bad])),
+                Err(UsageError::InvalidShard(bad.to_owned())),
+                "{bad}"
+            );
+        }
+        assert_eq!(
+            parse(args(&["fuzz", "--shard"])),
+            Err(UsageError::MissingValue { flag: "--shard" })
+        );
+    }
+
+    #[test]
     fn fuzz_commands_parse() {
         let run = |target: &str, seconds| {
             Ok(Command::Fuzz(FuzzCommand::Run {
@@ -944,7 +1030,11 @@ mod tests {
         };
         assert_eq!(
             parse(args(&["fuzz", "--list"])),
-            Ok(Command::Fuzz(FuzzCommand::List))
+            Ok(Command::Fuzz(FuzzCommand::List { generated: false }))
+        );
+        assert_eq!(
+            parse(args(&["fuzz", "--list", "--generated"])),
+            Ok(Command::Fuzz(FuzzCommand::List { generated: true }))
         );
         assert_eq!(parse(args(&["fuzz", "t"])), run("t", 60));
         assert_eq!(parse(args(&["fuzz", "t", "--time", "90"])), run("t", 90));

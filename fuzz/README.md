@@ -9,14 +9,32 @@ This directory is its own Cargo workspace, which the main workspace excludes. Th
 ```sh
 cargo xtask tools install --tool cargo-fuzz             # the pinned cargo-fuzz
 rustup toolchain install nightly-2026-11-20 --profile minimal   # the date in rust-toolchain.toml
-cargo xtask fuzz --list                                 # the targets
+cargo xtask fuzz --list                                 # the hand-written targets
+cargo xtask fuzz --list --generated                     # the generated ones, one per message
 cargo xtask fuzz types_uuid_parse --time 5m             # fuzz for 5 minutes (default 60s)
 cargo xtask fuzz types_uuid_parse fuzz/artifacts/types_uuid_parse/crash-…   # rerun one input
+cargo xtask fuzz --shard 3/8                            # each generated target in shard 3 of 8, 10s each
 ```
 
 `cargo xtask fuzz` builds the target with `cargo fuzz build` and debug assertions, so integer overflow is a crash. Then it runs the target's binary itself, with the limits below, so that every run uses them. cargo-fuzz's own `run` reruns a crashing input without them.
 
-A run reads the corpus in `corpus/<target>/` and the committed seeds in `seeds/<target>/`, and adds new inputs to the corpus only. A crash leaves its input in `artifacts/<target>/`. `corpus/`, `artifacts/` and `target/` are ignored by git.
+A run reads the corpus in `corpus/<target>/` and the committed seeds in `seeds/<target>/`, and adds new inputs to the corpus only. A generated target also reads its message's golden vectors (below). A crash leaves its input in `artifacts/<target>/`. `corpus/`, `artifacts/` and `target/` are ignored by git.
+
+## Generated targets
+
+`cargo xtask codegen` writes the package in [`generated/`](generated/), so the drift check covers it (PROTO-F11). Don't edit it. There is a target for each of these, named `protocol_<module>`, such as `protocol_produce_request`:
+- every request and response;
+- the request header, read as a broker reads it, at the version its API key and version select;
+- the response header;
+- ConsumerProtocolAssignment, ConsumerProtocolSubscription and DefaultPrincipalData, which clients send after their version. Control records are fuzzed with the records they arrive in (REC-F14).
+
+Each target is one call into the harness in [`src/lib.rs`](src/lib.rs). A message target reads an `int16` version, then the message at that version, as Kafka's `MessageUtil.toVersionPrefixedBytes` writes it. The harness checks:
+
+1. **No panic.**
+2. **The allocation oracle.** The input decodes under a budget of 64 bytes per input byte, and this crate's global allocator counts the heap the decode uses at its peak. That must not exceed the budget (plus 1 KiB for an error's field path), so a decoder that allocates without charging the budget fails ([ADR-0017](../docs/adr/0017-per-decode-allocation-budget.md)). `cargo test --lib` here proves that the oracle catches a decode that allocates beyond its budget.
+3. **What decodes, round-trips byte for byte.** Encoding gives bytes that decode and encode to the same bytes again, and `encoded_size` equals their length. Kafka reads some values it can't write: a string whose invalid UTF-8 grew past 32767 bytes of U+FFFD, and unknown tagged fields that are out of order or repeated. For those values the encode error ends the check, as it would in Kafka.
+
+The seeds are the golden vectors in [`tests/golden/protocol/messages/`](../tests/golden/protocol/messages/), Kafka's own bytes for every version. For each run they are written to `target/golden-seeds/<target>/`, each with its version in front; the request header target's seeds are the requests of `headers.json`. Generated targets keep no corpus ([ADR-0018](../docs/adr/0018-fuzz-corpus-storage.md)).
 
 ## Corpora and seeds
 
@@ -45,13 +63,15 @@ Every run uses these libFuzzer limits, from `LIMITS` in [`xtask/src/fuzz.rs`](..
 
 ## In CI
 
-Every pull request fuzzes each target for 60 s, one job per target, in [ci.yml](../.github/workflows/ci.yml). Each job starts from the corpus the nightly run grew. A crash fails the PR and uploads its input as the artifact `fuzz-crash-<target>`, kept 14 days. To reproduce it, download it and run `cargo xtask fuzz <target> <input>`.
+Every pull request fuzzes each hand-written target for 60 s, one job per target, in [ci.yml](../.github/workflows/ci.yml). Each job starts from the corpus the nightly run grew. A crash fails the PR and uploads its input as the artifact `fuzz-crash-<target>`, kept 14 days. To reproduce it, download it and run `cargo xtask fuzz <target> <input>`.
 
-Every night, [fuzz-nightly.yml](../.github/workflows/fuzz-nightly.yml) fuzzes each target for an hour, and on `main` uploads the grown corpus. On Sundays it minimizes each corpus first. A crash uploads its input as `fuzz-crash-<target>`, kept 90 days. It also opens one issue per target titled `Fuzz crash: <target>`, or comments on the open one. The issue carries the commit, the toolchain and, for inputs up to 4 KiB, the input itself. A maintainer can start the workflow by hand with a duration and minimization; dispatched runs on other branches report crashes but never upload corpora.
+The generated targets are too many for a job each, so 8 jobs each build their share (`--shard <n>/8`) and fuzz each target for 10 s. A shard runs every target even after a crash, then fails and uploads `artifacts/` as `fuzz-crash-generated-<n>`. New messages get targets, and so CI coverage, as soon as codegen writes them.
+
+Every night, [fuzz-nightly.yml](../.github/workflows/fuzz-nightly.yml) fuzzes each hand-written target for an hour, and on `main` uploads the grown corpus. On Sundays it minimizes each corpus first. It fuzzes each generated target for 5 minutes, in 16 shards of about an hour each. An hour for each of nearly 200 generated targets would take about 200 runner-hours a night. A crash uploads its input as `fuzz-crash-<target>`, or `fuzz-crash-generated-<n>`, kept 90 days. It also opens one issue per target titled `Fuzz crash: <target>`, or comments on the open one. The issue carries the commit, the toolchain and, for inputs up to 4 KiB, the input itself. A maintainer can start the workflow by hand with the durations and minimization; dispatched runs on other branches report crashes but never upload corpora.
 
 ## Writing a target
 
-A target is named `<crate>_<decoder>`, after the crate without its `alluvium-` prefix and the decoder it feeds, such as `types_uuid_parse` or `protocol_wire_primitives`. Its file is `fuzz_targets/<name>.rs`, with a `[[bin]]` entry of the same name in `Cargo.toml`.
+A hand-written target is named `<crate>_<decoder>`, after the crate without its `alluvium-` prefix and the decoder it feeds, such as `types_uuid_parse` or `protocol_wire_primitives`. Its file is `fuzz_targets/<name>.rs`, with a `[[bin]]` entry of the same name in `Cargo.toml`.
 
 Each target checks two things:
 
