@@ -55,9 +55,8 @@ pub(crate) struct Filter {
     pub(crate) runtime: String,
     /// Whether to generate `ErrorCode` too, and from where.
     pub(crate) error_codes: Option<ErrorCodes>,
-    /// Whether to generate `ApiKey` too: the registry recorded from Kafka's `ApiKeys`,
-    /// which holds the flags the schemas don't state.
-    pub(crate) api_keys: Option<PathBuf>,
+    /// Whether to generate `ApiKey` too, and from where.
+    pub(crate) api_keys: Option<ApiKeys>,
     /// The directory of the overlay files (`overlays`) applied to the messages, if any.
     pub(crate) overlays: Option<PathBuf>,
     /// The doc comment of the output directory's `mod.rs`: what the directory holds.
@@ -70,6 +69,16 @@ pub(crate) struct ErrorCodes {
     /// The directory holding `Errors.java` and the exception classes.
     pub(crate) source: PathBuf,
     /// The Markdown page listing every code.
+    pub(crate) page: PathBuf,
+}
+
+/// The inputs and outputs of `ApiKey`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ApiKeys {
+    /// The registry recorded from Kafka's `ApiKeys`, which holds the flags the schemas
+    /// don't state.
+    pub(crate) recorded: PathBuf,
+    /// The Markdown page listing every API.
     pub(crate) page: PathBuf,
 }
 
@@ -95,7 +104,10 @@ fn protocol() -> (Vec<PathBuf>, PathBuf, Filter) {
                 source: root.join(VENDORED).join("errors"),
                 page: root.join("docs/errors.md"),
             }),
-            api_keys: Some(root.join(crate::golden::API_KEYS_GOLDEN).join("api_keys.json")),
+            api_keys: Some(ApiKeys {
+                recorded: root.join(crate::golden::API_KEYS_GOLDEN).join("api_keys.json"),
+                page: root.join("docs/protocol/apis.md"),
+            }),
             overlays: Some(root.join("xtask/codegen")),
             doc: "Types generated from Kafka's sources: one module per message schema, \
                   `api_key` from the request and response schemas, and `error_code` from \
@@ -409,14 +421,16 @@ fn render(inputs: &[PathBuf], filter: &Filter) -> Result<Rendered, String> {
         pages.insert(error_codes.page.clone(), page);
         report.error_codes = count;
     }
-    if let Some(recorded) = &filter.api_keys {
-        let (module, count) = api_key_module(inputs, recorded, &apis, &filter.runtime)?;
+    if let Some(api_keys) = &filter.api_keys {
+        let (module, page, count) =
+            api_key_module(inputs, &api_keys.recorded, &apis, &filter.runtime)?;
         if modules
             .insert(PathBuf::from("api_key.rs"), module)
             .is_some()
         {
             return Err("a schema generates api_key.rs".to_owned());
         }
+        pages.insert(api_keys.page.clone(), page);
         report.api_keys = count;
     }
     let mut files = mod_files(&modules, &filter.doc, &decodable);
@@ -464,27 +478,28 @@ fn error_code_module(error_codes: &ErrorCodes) -> Result<(String, String, usize)
     Ok((module, errors::page(&entries, &source), entries.len()))
 }
 
-/// The `api_key` module from the requests and responses in `messages` and the registry
-/// `recorded` from Kafka, and the number of APIs in it.
+/// The `api_key` module and the page listing every API, from the requests and responses
+/// in `messages` and the registry `recorded` from Kafka, and the number of APIs.
 fn api_key_module(
     inputs: &[PathBuf],
     recorded: &Path,
     messages: &[message_spec::MessageSpec],
     runtime: &str,
-) -> Result<(String, usize), String> {
+) -> Result<(String, String, usize), String> {
     let flags = api_keys::flags(recorded)?;
     let apis = api_keys::collect(messages, &flags)?;
-    let sources: Vec<String> = inputs.iter().map(|input| shown_path(input)).collect();
+    let inputs: Vec<String> = inputs.iter().map(|input| shown_path(input)).collect();
+    let sources = format!(
+        "the request and response schemas in {} and {}",
+        inputs.join(", "),
+        shown_path(recorded)
+    );
     let module = format!(
         "{}\n{}",
-        header(&format!(
-            "from the request and response schemas in {} and {}",
-            sources.join(", "),
-            shown_path(recorded)
-        )),
+        header(&format!("from {sources}")),
         api_keys::module(&apis, runtime)
     );
-    Ok((module, apis.len()))
+    Ok((module, api_keys::page(&apis, &sources), apis.len()))
 }
 
 /// The `.json` schema files in `inputs`, sorted, so the output doesn't depend on the

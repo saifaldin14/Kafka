@@ -25,6 +25,7 @@
 #![deny(clippy::indexing_slicing, clippy::arithmetic_side_effects)]
 
 mod api_key;
+mod api_versions;
 mod array;
 #[cfg(test)]
 mod decode_tests;
@@ -52,6 +53,7 @@ mod versions;
 mod writer;
 
 pub use api_key::{ApiKey, Listener};
+pub use api_versions::advertised_api_versions;
 pub use error::{DecodeError, DecodeErrorKind, EncodeError, WithinField};
 pub use error_code::{ErrorCode, UnknownErrorCode};
 pub use framed::Framing;

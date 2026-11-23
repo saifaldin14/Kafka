@@ -30,6 +30,7 @@ dependencies = [
  "gungraun",
  "peak_alloc",
  "proptest",
+ "serde_json",
  "thiserror",
 ]
 

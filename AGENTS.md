@@ -40,7 +40,7 @@ All work is planned in **[docs/backlog/](docs/backlog/README.md)**: epics, featu
 | `docs/crates/` | Per-crate deep dives: state machines, invariants, tests, debugging |
 | `docs/adr/` | Architecture decision records |
 | `docs/backlog/` | Every planned task with status, dependencies and milestones; `cargo xtask backlog next` picks the next task |
-| `docs/parity.md` | Kafka 4.4.0 API scope and version ranges |
+| `docs/parity.md` | Kafka 4.4.0 API scope; each API's versions are in `docs/protocol/apis.md`, generated |
 | `docs/glossary.md` | Kafka and Alluvium terms |
 | `schemas/kafka-4.4.0/` | Kafka's message schemas, vendored unmodified; the protocol code is generated from them |
 | `tools/kafka-golden/` | The Java harness `cargo xtask golden` runs on Kafka 4.4.0's own classes to record golden files |
