@@ -29,7 +29,7 @@ use std::fmt;
 pub(crate) use defaults::FieldDefault;
 pub(crate) use field_type::FieldType;
 pub(crate) use registry::StructRegistry;
-pub(crate) use spec::{FieldSpec, MessageKind, MessageSpec};
+pub(crate) use spec::{FieldSpec, Listener, MessageKind, MessageSpec};
 pub(crate) use versions::Versions;
 
 /// Why a schema file can't be used, and where in it.

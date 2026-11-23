@@ -24,6 +24,7 @@
 //! parse, and the network layer decides that.
 #![deny(clippy::indexing_slicing, clippy::arithmetic_side_effects)]
 
+mod api_key;
 mod array;
 #[cfg(test)]
 mod decode_tests;
@@ -50,6 +51,7 @@ mod varint;
 mod versions;
 mod writer;
 
+pub use api_key::{ApiKey, Listener};
 pub use error::{DecodeError, DecodeErrorKind, EncodeError, WithinField};
 pub use error_code::{ErrorCode, UnknownErrorCode};
 pub use framed::Framing;
