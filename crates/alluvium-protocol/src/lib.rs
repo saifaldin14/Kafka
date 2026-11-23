@@ -37,6 +37,8 @@ mod framed;
 #[rustfmt::skip]
 pub mod generated;
 #[cfg(test)]
+mod golden_tests;
+#[cfg(test)]
 mod kafka_message_tests;
 mod limits;
 mod message;

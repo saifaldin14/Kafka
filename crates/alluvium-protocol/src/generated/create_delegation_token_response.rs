@@ -223,8 +223,16 @@ impl CreateDelegationTokenResponse {
 
 impl CreateDelegationTokenResponse {
     /// Fails if a field `version` doesn't have holds a value other than its default,
-    /// unless the field is `ignorable`: writing would lose it.
-    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+    /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
+    /// not while sizing.
+    fn check_absent_fields(
+        &self,
+        writer: &crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        if writer.is_sizing() {
+            return Ok(());
+        }
         let check = |non_default: bool, field: &'static str| {
             if non_default {
                 return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
@@ -242,7 +250,7 @@ impl CreateDelegationTokenResponse {
         writer: &mut crate::Writer,
         version: i16,
     ) -> Result<(), crate::EncodeError> {
-        self.check_absent_fields(version)?;
+        self.check_absent_fields(writer, version)?;
         writer.write_i16(self.error_code);
         writer.write_string(
             if version >= 2 { crate::Framing::Compact } else { crate::Framing::Classic },
@@ -308,7 +316,10 @@ impl crate::Message for CreateDelegationTokenResponse {
                 version,
             });
         }
-        self.write_fields(writer, version)
+        self.write_fields(writer, version).map_err(|error| {
+            let mut sizing = crate::Writer::sizing();
+            self.write_fields(&mut sizing, version).err().unwrap_or(error)
+        })
     }
 }
 

@@ -72,8 +72,16 @@ impl ListConfigResourcesRequest {
 
 impl ListConfigResourcesRequest {
     /// Fails if a field `version` doesn't have holds a value other than its default,
-    /// unless the field is `ignorable`: writing would lose it.
-    fn check_absent_fields(&self, version: i16) -> Result<(), crate::EncodeError> {
+    /// unless the field is `ignorable`: writing would lose it. Kafka checks this while writing,
+    /// not while sizing.
+    fn check_absent_fields(
+        &self,
+        writer: &crate::Writer,
+        version: i16,
+    ) -> Result<(), crate::EncodeError> {
+        if writer.is_sizing() {
+            return Ok(());
+        }
         let check = |non_default: bool, field: &'static str| {
             if non_default {
                 return Err(crate::EncodeError::NonDefaultFieldUnsupported { field, version });
@@ -90,7 +98,7 @@ impl ListConfigResourcesRequest {
         writer: &mut crate::Writer,
         version: i16,
     ) -> Result<(), crate::EncodeError> {
-        self.check_absent_fields(version)?;
+        self.check_absent_fields(writer, version)?;
         if version == 1 {
             writer.write_array_length(crate::Framing::Compact, self.resource_types.len())?;
             for value in &self.resource_types {
@@ -135,7 +143,10 @@ impl crate::Message for ListConfigResourcesRequest {
                 version,
             });
         }
-        self.write_fields(writer, version)
+        self.write_fields(writer, version).map_err(|error| {
+            let mut sizing = crate::Writer::sizing();
+            self.write_fields(&mut sizing, version).err().unwrap_or(error)
+        })
     }
 }
 

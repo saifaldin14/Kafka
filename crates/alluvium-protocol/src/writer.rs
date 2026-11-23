@@ -16,6 +16,9 @@ pub struct Writer {
     buf: BytesMut,
     /// Whether bytes are only counted.
     counting: bool,
+    /// Whether this is a [`Writer::sizing`] writer, which skips the checks Kafka makes
+    /// only while writing.
+    sizing: bool,
     /// The bytes counted, when counting.
     counted: usize,
     /// The bytes of record batches and zero-copy byte fields written.
@@ -75,11 +78,34 @@ impl Writer {
         }
     }
 
+    /// A counting writer for Kafka's sizing pass, which a failed encode reruns to report
+    /// the error Kafka would.
+    ///
+    /// Kafka computes a message's size before writing it, and the sizing pass finds some
+    /// problems (unknown tagged fields where the version has none, a null where it is not
+    /// nullable, a string too long) while the write finds others (a non-default field the
+    /// version lacks). Where a message has both, Kafka reports the sizing problem.
+    /// Generated encoders check only what the sizing pass checks when writing into this
+    /// writer.
+    pub fn sizing() -> Writer {
+        Writer {
+            counting: true,
+            sizing: true,
+            ..Writer::default()
+        }
+    }
+
+    /// Whether this is a [`Writer::sizing`] writer.
+    pub fn is_sizing(&self) -> bool {
+        self.sizing
+    }
+
     /// An empty writer of the same kind, for a value whose size must be known before it
     /// is written.
     pub(crate) fn nested(&self) -> Writer {
         Writer {
             counting: self.counting,
+            sizing: self.sizing,
             ..Writer::default()
         }
     }

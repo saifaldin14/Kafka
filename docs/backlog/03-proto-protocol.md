@@ -522,7 +522,7 @@ Done when: values are derived from the field path so reruns are identical; outpu
 P1 · M1 · Task · deps: PROTO-0116
 Done when: files and manifest are committed; the manifest is verified by tests.
 
-### [To Do] PROTO-0118 Rust golden tests: decode each golden file, re-encode byte for byte, `encoded_size` equals the file length
+### [Done] PROTO-0118 Rust golden tests: decode each golden file, re-encode byte for byte, `encoded_size` equals the file length
 P1 · M1 · Task · deps: PROTO-0117, PROTO-0082 · labels: test
 Done when: every golden case passes; failures report API, version, variant and first differing offset.
 
@@ -534,15 +534,15 @@ Done when: 1000 proptest messages per API and version pass the harness `verify` 
 P1 · M1 · Task · deps: PROTO-0117, PROTO-0092 · labels: test
 Done when: Rust header encode and decode match the files.
 
-### [To Do] PROTO-0121 Golden vectors for data types (control record key, EndTxnMarker, LeaderChangeMessage, snapshot header/footer, KRaftVersionRecord, VotersRecord, consumer protocol, DefaultPrincipalData)
+### [Done] PROTO-0121 Golden vectors for data types (control record key, EndTxnMarker, LeaderChangeMessage, snapshot header/footer, KRaftVersionRecord, VotersRecord, consumer protocol, DefaultPrincipalData)
 P1 · M1 · Task · deps: PROTO-0117, PROTO-0080 · labels: test
 Done when: Rust decode/encode of each file is byte-identical, using version-prefixed helpers where Kafka uses them.
 
-### [To Do] PROTO-0122 Golden vectors with unknown tagged fields set through Kafka's RawTaggedField at root and nested levels
+### [Done] PROTO-0122 Golden vectors with unknown tagged fields set through Kafka's RawTaggedField at root and nested levels
 P1 · M1 · Task · deps: PROTO-0117, PROTO-0079 · labels: test
 Done when: Rust preserves and re-emits them byte for byte.
 
-### [To Do] PROTO-0123 Negative vectors: cases where Kafka's encoder throws (non-default non-ignorable field, tagged field in a non-flexible version, null in a non-nullable version) recorded as expected errors
+### [Done] PROTO-0123 Negative vectors: cases where Kafka's encoder throws (non-default non-ignorable field, tagged field in a non-flexible version, null in a non-nullable version) recorded as expected errors
 P1 · M1 · Task · deps: PROTO-0117, PROTO-0076, PROTO-0077 · labels: test
 Done when: Rust returns the matching EncodeError kind for every recorded case.
 
