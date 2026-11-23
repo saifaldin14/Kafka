@@ -3,9 +3,17 @@
 version = 4
 
 [[package]]
+name = "alluvium-capture"
+version = "0.0.0"
+dependencies = [
+ "thiserror",
+]
+
+[[package]]
 name = "alluvium-fuzz"
 version = "0.0.0"
 dependencies = [
+ "alluvium-capture",
  "alluvium-protocol",
  "alluvium-types",
  "bytes",

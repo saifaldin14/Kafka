@@ -62,6 +62,7 @@ pub(crate) struct Standard {
 /// indexes is added here in the change that creates it.
 pub(crate) const DECODER_FILES: &[(&str, &str)] = &[
     ("alluvium-protocol", "src/lib.rs"),
+    ("alluvium-capture", "src/lib.rs"),
     ("alluvium-records", "src/lib.rs"),
 ];
 
