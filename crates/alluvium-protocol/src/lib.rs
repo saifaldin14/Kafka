@@ -1,8 +1,9 @@
 //! Kafka's wire protocol: the primitive encodings every request, response and header
 //! field is made of, decoded from untrusted bytes without panicking; the message types
 //! in [`generated`], one module per Kafka 4.4.0 schema; the API registry ([`ApiKey`]);
-//! and request and response headers, at the version each API and version selects
-//! ([`decode_request_header`]).
+//! request and response headers, at the version each API and version selects
+//! ([`decode_request_header`]); and version negotiation with a peer
+//! ([`ApiVersionsHandshake`], [`NodeApiVersions`]).
 //!
 //! Layer: 0 ([ADR-0009](../../../docs/adr/0009-crate-layering-and-dependency-rules.md)).
 //! It depends only on `alluvium-types` and does no I/O: a [`Reader`] reads from bytes
@@ -45,6 +46,7 @@ mod header;
 mod kafka_message_tests;
 mod limits;
 mod message;
+mod negotiation;
 mod reader;
 mod records;
 mod tagged_fields;
@@ -68,6 +70,10 @@ pub use header::{
 };
 pub use limits::{DecodeLimits, Limit};
 pub use message::{EncodedSize, Message, decode_version_prefixed, encode_version_prefixed};
+pub use negotiation::{
+    ApiVersionsHandshake, HandshakeError, HandshakeStep, Negotiation, NodeApiVersions,
+    PeerApiVersion, UnsupportedVersion,
+};
 pub use reader::Reader;
 pub use records::RecordsField;
 pub use tagged_fields::{RawTaggedField, RawTaggedFieldWriter};

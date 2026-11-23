@@ -1,13 +1,19 @@
+// Portions of this file are ported from Apache Kafka 4.4.0 and modified by Alluvium;
+// each is marked `// Ported from:`. Apache Kafka is Copyright The Apache Software
+// Foundation and licensed under the Apache License 2.0 (LICENSES/Apache-2.0.txt).
+// See NOTICE.
+
 //! The API registry against Kafka's own, recorded by `cargo xtask golden api-keys` in
 //! tests/golden/protocol/registry/: `ApiKey` and its rules must say what Kafka's
 //! `ApiKeys` says about every API, and the API version lists each listener advertises
-//! must equal Kafka's, byte for byte on the wire.
+//! must equal Kafka's, byte for byte on the wire. A peer's versions read from each list
+//! must print as Kafka's `NodeApiVersions` prints them.
 
 use std::path::{Path, PathBuf};
 
 use alluvium_protocol::generated::api_versions_response::ApiVersionsResponse;
 use alluvium_protocol::{
-    ApiKey, Listener, Message, Reader, Versions, Writer, advertised_api_versions,
+    ApiKey, Listener, Message, NodeApiVersions, Reader, Versions, Writer, advertised_api_versions,
 };
 use bytes::Bytes;
 
@@ -162,4 +168,50 @@ fn each_listener_advertises_kafkas_api_versions() {
         checked, 6,
         "one file per listener, unstable and telemetry setting"
     );
+}
+
+// PROTO-0148, PROTO-0151: a Kafka broker's or controller's list, read as a peer's.
+// Ported from: clients/src/test/java/org/apache/kafka/clients/NodeApiVersionsTest.java@4.4.0 (testUsableVersionLatestVersions, testConstructionFromApiVersionsResponse)
+#[test]
+fn kafkas_lists_read_as_kafkas_client_reads_them() {
+    let mut checked = 0;
+    for entry in std::fs::read_dir(registry()).unwrap() {
+        let path = entry.unwrap().path();
+        let name = path.file_name().unwrap().to_str().unwrap().to_owned();
+        let Some(stem) = name.strip_suffix(".bin") else {
+            continue;
+        };
+        let Some((_, version)) = stem.rsplit_once("_v") else {
+            continue;
+        };
+        let bytes = Bytes::from(std::fs::read(&path).unwrap());
+        let response =
+            ApiVersionsResponse::decode(&mut Reader::new(bytes), version.parse().unwrap()).unwrap();
+        let peer = NodeApiVersions::new(&response);
+        let printed = std::fs::read_to_string(path.with_extension("txt")).unwrap();
+        assert_eq!(peer.to_string(), printed.trim_end(), "{name}");
+        assert!(peer.unknown_apis().is_empty(), "{name}");
+        for listed in &response.api_keys {
+            let api = ApiKey::from_id(listed.api_key).unwrap();
+            let versions = peer.api_version(api).unwrap();
+            assert_eq!(
+                (versions.min_version, versions.max_version),
+                (listed.min_version, listed.max_version),
+                "{name}: {}",
+                api.name()
+            );
+            let latest = api.versions().highest().unwrap();
+            assert_eq!(
+                peer.latest_usable_version(api, api.versions()),
+                Ok(latest.min(listed.max_version)),
+                "{name}: {}",
+                api.name()
+            );
+            if stem.contains("unstable") {
+                assert_eq!(listed.max_version, latest, "{name}: {}", api.name());
+            }
+        }
+        checked += 1;
+    }
+    assert_eq!(checked, 6);
 }

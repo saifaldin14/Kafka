@@ -40,6 +40,23 @@ impl Versions {
         }
     }
 
+    /// The versions in both ranges.
+    // Parity: generator/src/main/java/org/apache/kafka/message/Versions.java@4.4.0 Versions.intersect
+    #[must_use]
+    pub const fn intersect(self, other: Versions) -> Versions {
+        let lowest = if self.lowest > other.lowest {
+            self.lowest
+        } else {
+            other.lowest
+        };
+        let highest = if self.highest < other.highest {
+            self.highest
+        } else {
+            other.highest
+        };
+        Versions::new(lowest, highest)
+    }
+
     /// The highest version, or `None` for no versions.
     pub const fn highest(self) -> Option<i16> {
         if self.lowest > self.highest {
